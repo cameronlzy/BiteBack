@@ -4,6 +4,8 @@ const Joi = require('joi');
 const config = require('config');
 const validator = require('validator');
 const passwordComplexity = require('joi-password-complexity');
+const bcrypt = require('bcrypt');
+const { create } = require('lodash');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -43,7 +45,24 @@ const userJoiSchema = Joi.object({
   password: passwordComplexity().required(),
 });
 
+async function createTestUser(role) {
+  const now = Date.now();
+  const threeDigit = now % 1000; //
+  const paddedDigits = String(threeDigit).padStart(3, '0');
+  let email = `myEmail${paddedDigits}@gmail.com`;
+  let username = `username${paddedDigits}`;
+  let password = "myPassword@123";
+  let roleProfile = role == "customer" ? 'CustomerProfile' : 'OwnerProfile';
+  const salt = await bcrypt.genSalt(10);
+  let hashedPassword = await bcrypt.hash(password, salt); 
+  return new User({
+      email, username, password: hashedPassword, role, roleProfile,
+      profile: new mongoose.Types.ObjectId(),
+  });
+}
+
 const User = mongoose.model('User', userSchema);
 
 exports.User = User; 
 exports.userJoiSchema = userJoiSchema;
+exports.createTestUser = createTestUser;

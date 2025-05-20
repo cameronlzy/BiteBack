@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const Joi = require('joi');
+Joi.objectId = require('joi-objectid')(Joi);
+const { DateTime } = require('luxon');
 
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$|^Closed$/;
 
@@ -53,6 +55,7 @@ const cuisineList = [
 ];
 
 const restaurantSchema = new mongoose.Schema({
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
   address: {type: String, minLength: 2, maxLength: 255, required: true },
   contactNumber: {
@@ -84,9 +87,10 @@ const restaurantSchema = new mongoose.Schema({
     ]
   },
   openingHours: { type: Object, required: true },
+  maxCapacity: { type: Number, min: 0, max: 1000, required: true },
+  slotDuration: { type: Number, min: 0, max: 1440, default: 60 },
   email: {
     type: String,
-    required: true,
     validate: {
       validator: validator.isEmail,
       message: 'Invalid email'
@@ -122,8 +126,9 @@ let restaurantJoiSchema = Joi.object({
       friday: dailyTimeSchema,
       saturday: dailyTimeSchema,
       sunday: dailyTimeSchema
-    }),
-    email: Joi.string().email({ tlds: { allow: false } }).optional(),
+    }).required(),
+    maxCapacity: Joi.number().integer().min(0).max(1000).required(),
+    email: Joi.string().email().optional(),
     website: Joi.string().uri().optional().messages({
       "string.uri": "Invalid website URL",
     })
@@ -133,11 +138,14 @@ function validateRestaurant(profile) {
   return restaurantJoiSchema.validate(profile);
 }
 
-async function createRestaurantArray(arr) {
+async function createRestaurantArray(arr, userId) {
+  let restaurant;
   try {
     let output = [];
-    for (const item of arr) {
+    for (let item of arr) {
       validateRestaurant(item);
+      item.owner = userId;
+      item.openingHours = convertSGTOpeningHoursToUTC(item.openingHours);
       restaurant = new Restaurant(item);
       await restaurant.save();
       output.push(new Restaurant(item));
@@ -148,8 +156,109 @@ async function createRestaurantArray(arr) {
   }
 }
 
+function createTestRestaurant(owner) {
+  let restaurantName = "restaurant";
+  let address = "new york";
+  let contactNumber = "87654321";
+  let cuisines = ["Chinese"];
+  let openingHours = {
+    monday: "09:00-17:00",
+    tuesday: "09:00-17:00",
+    wednesday: "09:00-17:00",
+    thursday: "09:00-17:00",
+    friday: "09:00-17:00",
+    saturday: "10:00-14:00",
+    sunday: "Closed"
+  };
+  openingHours = convertSGTOpeningHoursToUTC(openingHours);
+  let restaurantEmail = `restaurant@gmail.com`;
+  let website = "https://www.restaurant.com";
+  let maxCapacity = 50;
+  return new Restaurant({
+    owner,
+    name: restaurantName,
+    address,
+    contactNumber,
+    cuisines,
+    openingHours,
+    maxCapacity,
+    email: restaurantEmail,
+    website
+  });
+}
+
+function createSlots(restaurant, queryDate) {
+  // find day of week and opening hours
+  // make sure that it works if it loops over a day
+  const dayOfWeek = queryDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  const timeRange = restaurant.openingHours[dayOfWeek];
+  const slotDuration = restaurant.slotDuration;
+
+  if (!timeRange || timeRange == "Closed") return null;
+  const [startTime, endTime] = timeRange.split('-');
+
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+
+  const slots = [];
+
+  const start = new Date();
+  start.setHours(startHour, startMin, 0, 0);
+
+  const end = new Date();
+  end.setHours(endHour, endMin, 0, 0);
+
+  let current = new Date(start);
+
+  while (current < end) {
+    const hours = String(current.getHours()).padStart(2, '0');
+    const minutes = String(current.getMinutes()).padStart(2, '0');
+    current = new Date(current.getTime() + slotDuration * 60000);
+    if (current > end) break;
+    slots.push(`${hours}:${minutes}`);
+  }
+  return slots;
+}
+
+function convertSGTOpeningHoursToUTC(openingHours) {
+  const daysOfWeek = [
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+  ];
+
+  const result = {};
+
+  for (const day of daysOfWeek) {
+    const hours = openingHours[day];
+
+    if (hours.toLowerCase() === 'closed') {
+      result[day] = 'Closed';
+      continue;
+    }
+
+    const [start, end] = hours.split('-');
+
+    // using an arbitrary date
+    const dateString = '2025-01-01';
+
+    const startUTC = DateTime.fromISO(`${dateString}T${start}`, { zone: 'Asia/Singapore' })
+      .toUTC()
+      .toFormat('HH:mm');
+
+    const endUTC = DateTime.fromISO(`${dateString}T${end}`, { zone: 'Asia/Singapore' })
+      .toUTC()
+      .toFormat('HH:mm');
+
+    result[day] = `${startUTC}-${endUTC}`;
+  }
+
+  return result;
+}
+
 exports.Restaurant = Restaurant;
 exports.validateRestaurant = validateRestaurant;
 exports.restaurantSchema = restaurantSchema;
 exports.restaurantJoiSchema = restaurantJoiSchema;
 exports.createRestaurantArray = createRestaurantArray;
+exports.createTestRestaurant = createTestRestaurant;
+exports.createSlots = createSlots;
+exports.convertSGTOpeningHoursToUTC = convertSGTOpeningHoursToUTC;
