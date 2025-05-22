@@ -194,7 +194,6 @@ describe.skip('auth test', () => {
         let role;
 
         let companyName;
-        let restaurant;
         let restaurantName;
         let address;
         let contactNumber;

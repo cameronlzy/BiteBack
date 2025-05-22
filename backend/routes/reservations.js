@@ -9,8 +9,7 @@ const validateObjectId = require('../middleware/validateObjectId');
 const isOwner = require('../middleware/isOwner');
 const Joi = require('joi');
 
-router.get('/owner', auth, isOwner, async (req, res) => {
-    try {
+router.get('/owner', [auth, isOwner], async (req, res) => {
     // validate query
     const ownerId = req.user._id;
     const querySchema = Joi.object({
@@ -46,12 +45,9 @@ router.get('/owner', auth, isOwner, async (req, res) => {
     }
 
     return res.send(reservations);
-} catch (err) {
-    console.error(err);
-}
 });
 
-router.get('/restaurant/:id', auth, isOwner, validateObjectId, async (req, res) => {
+router.get('/restaurant/:id', [auth, isOwner, validateObjectId], async (req, res) => {
     // validate query
     const restaurantId = req.params.id;
     const querySchema = Joi.object({
@@ -130,7 +126,7 @@ router.post('/', auth, async (req, res) => {
     return res.send(reservation);
 });
 
-router.get('/:id', auth, validateObjectId, async (req, res) => {
+router.get('/:id', [auth, validateObjectId], async (req, res) => {
     const id = req.params.id;
     const currentDate = Date.now();
     const reservation = await Reservation.findOne({ 
@@ -144,7 +140,7 @@ router.get('/:id', auth, validateObjectId, async (req, res) => {
     return res.send(reservation);
 });
 
-router.put('/:id', auth, validateObjectId, async (req, res) => {
+router.put('/:id', [auth, validateObjectId], async (req, res) => {
     // validate new reservation
     const { error } = validateNewReservation(req.body);
     if (error) return res.status(400).send(error.details[0].message);
@@ -164,7 +160,7 @@ router.put('/:id', auth, validateObjectId, async (req, res) => {
     res.send(reservation);
 });
 
-router.delete('/:id', auth, validateObjectId, async (req, res) => {
+router.delete('/:id', [auth, validateObjectId], async (req, res) => {
     const reservation = await Reservation.findById(req.params.id);
     if (!reservation) return res.status(404).send('Reservation not found.');
     if (reservation.user != req.user._id) return res.status(403).send('Reservation does not belong to user.');

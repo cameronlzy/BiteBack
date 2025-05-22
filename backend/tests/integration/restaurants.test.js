@@ -4,6 +4,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const { Restaurant, createTestRestaurant } = require('../../models/restaurant');
 const { DateTime } = require('luxon');
+const { create } = require('lodash');
 
 describe.skip('reservation test', () => {
     let server;
@@ -15,6 +16,77 @@ describe.skip('reservation test', () => {
     afterAll(async () => {
         await mongoose.connection.close();
         await server.close();
+    });
+
+    describe('GET /api/restaurants', () => {
+        let restaurant;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+
+            // create 3 restaurants
+            for (let step = 0; step < 3; step++) {
+                restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+                await restaurant.save();
+            }
+        });
+
+        const exec = () => {
+            return request(server)
+            .get('/api/restaurants');
+        };
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        it('should return an array of restaurants', async () => {
+            const res = await exec();
+            expect(res.body.length).toBe(3);
+            res.body.forEach(restaurant => {
+                expect(restaurant).toHaveProperty('name');
+                expect(restaurant).toHaveProperty('address');
+                expect(restaurant).toHaveProperty('contactNumber');
+                expect(restaurant).toHaveProperty('cuisines');
+                expect(restaurant).toHaveProperty('openingHours');
+                expect(restaurant).toHaveProperty('maxCapacity');
+            });
+        });
+    });
+
+    describe('GET /api/restaurants/:id', () => {
+        let restaurant;
+        let restaurantId;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+
+            // create restaurant
+            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+            await restaurant.save();
+            restaurantId = restaurant._id;
+        });
+
+        const exec = () => {
+            return request(server)
+            .get(`/api/restaurants/${restaurantId}`);
+        };
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        it('should return a restaurant object', async () => {
+            const res = await exec();
+            expect(res.body).toHaveProperty('name');
+            expect(res.body).toHaveProperty('address');
+            expect(res.body).toHaveProperty('contactNumber');
+            expect(res.body).toHaveProperty('cuisines');
+            expect(res.body).toHaveProperty('openingHours');
+            expect(res.body).toHaveProperty('maxCapacity');
+        });
     });
 
     describe('GET /api/restaurants/:id/availability', () => {
@@ -125,6 +197,263 @@ describe.skip('reservation test', () => {
                 expect(typeof slot.available).toBe('number');
                 expect(slot.available).toBeGreaterThanOrEqual(0);
             });
+        });
+    });
+
+    describe('POST /api/restaurants', () => {
+        let name;
+        let address;
+        let contactNumber;
+        let cuisines;
+        let openingHours;
+        let maxCapacity;
+        let owner;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+
+            // create an owner
+            owner = await createTestUser('owner');
+            token = owner.generateAuthToken();
+
+            // restaurant
+            name = "restaurant";
+            address = "new york";
+            contactNumber = "87654321";
+            cuisines = ["Chinese"];
+            openingHours = {
+                monday: "09:00-17:00",
+                tuesday: "09:00-17:00",
+                wednesday: "09:00-17:00",
+                thursday: "09:00-17:00",
+                friday: "09:00-17:00",
+                saturday: "10:00-14:00",
+                sunday: "Closed"
+            };
+            maxCapacity = 50;
+        });
+
+        const exec = () => {
+            return request(server)
+            .post('/api/restaurants')
+            .set('x-auth-token', token)
+            .send({
+                name, address, contactNumber, cuisines,
+                openingHours, maxCapacity
+            });
+        };
+
+        it('should return 401 if no token', async () => {
+            token = "";
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid token', async () => {
+            token = "1";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 403 if customer', async () => {
+            let customer = await createTestUser('customer');
+            token = customer.generateAuthToken();
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        it('should return a restaurant object', async () => {
+            const res = await exec();
+            expect(res.body).toHaveProperty('name');
+            expect(res.body).toHaveProperty('address');
+            expect(res.body).toHaveProperty('contactNumber');
+            expect(res.body).toHaveProperty('cuisines');
+            expect(res.body).toHaveProperty('openingHours');
+            expect(res.body).toHaveProperty('maxCapacity');
+        });
+    });
+
+    describe('PUT /api/restaurants/:id', () => {
+        let restaurant;
+        let restaurantId;
+        let token;
+        let name;
+        let address;
+        let contactNumber;
+        let cuisines;
+        let openingHours;
+        let maxCapacity;
+        let owner;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            
+            // create an owner
+            owner = await createTestUser('owner');
+            await owner.save();
+            token = owner.generateAuthToken();
+
+            // create restaurant
+            restaurant = createTestRestaurant(owner._id);
+            await restaurant.save();
+            restaurantId = restaurant._id;
+
+            // updated details
+            name = "restaurant";
+            address = "new york";
+            contactNumber = "87654321";
+            cuisines = ["Chinese"];
+            openingHours = {
+                monday: "09:00-17:00",
+                tuesday: "09:00-17:00",
+                wednesday: "09:00-17:00",
+                thursday: "09:00-17:00",
+                friday: "09:00-17:00",
+                saturday: "10:00-14:00",
+                sunday: "Closed"
+            };
+            maxCapacity = 50;
+        });
+
+        const exec = () => {
+            return request(server)
+            .put(`/api/restaurants/${restaurantId}`)
+            .set('x-auth-token', token)
+            .send({
+                name, address, contactNumber, cuisines,
+                openingHours, maxCapacity
+            });
+        };
+
+        it('should return 401 if no token', async () => {
+            token = "";
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid token', async () => {
+            token = "1";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if invalid id', async () => {
+            restaurantId = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if invalid request', async () => {
+            cuisines = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if restaurant not found', async () => {
+            restaurantId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if restaurant does not belong to user', async () => {
+            let otherUser = await createTestUser('owner');
+            token = otherUser.generateAuthToken();
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        it('should return updated restaurant', async () => {
+            const res = await exec();
+            expect(res.body).toHaveProperty('name');
+            expect(res.body).toHaveProperty('address');
+            expect(res.body).toHaveProperty('contactNumber');
+            expect(res.body).toHaveProperty('cuisines');
+            expect(res.body).toHaveProperty('openingHours');
+            expect(res.body).toHaveProperty('maxCapacity');
+        });
+    });
+
+    describe('DELETE /api/restaurants/:id', () => {
+        let restaurant;
+        let restaurantId;
+        let token;
+        let owner;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            
+            // create an owner
+            owner = await createTestUser('owner');
+            await owner.save();
+            token = owner.generateAuthToken();
+
+            // create restaurant
+            restaurant = createTestRestaurant(owner._id);
+            await restaurant.save();
+            restaurantId = restaurant._id;
+        });
+
+        const exec = () => {
+            return request(server)
+            .delete(`/api/restaurants/${restaurantId}`)
+            .set('x-auth-token', token)
+        };
+
+        it('should return 401 if no token', async () => {
+            token = "";
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid token', async () => {
+            token = "1";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if invalid id', async () => {
+            restaurantId = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if restaurant not found', async () => {
+            restaurantId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if restaurant does not belong to user', async () => {
+            let otherUser = await createTestUser('owner');
+            token = otherUser.generateAuthToken();
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        it('should return updated restaurant', async () => {
+            const res = await exec();
+            expect(res.body).toHaveProperty('name');
+            expect(res.body).toHaveProperty('address');
+            expect(res.body).toHaveProperty('contactNumber');
+            expect(res.body).toHaveProperty('cuisines');
+            expect(res.body).toHaveProperty('openingHours');
+            expect(res.body).toHaveProperty('maxCapacity');
         });
     });
 });
