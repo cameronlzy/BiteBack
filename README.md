@@ -1,2 +1,0 @@
-# BiteBack
-BiteBack Orbital Repository

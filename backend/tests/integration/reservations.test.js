@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const { Restaurant, createTestRestaurant } = require('../../models/restaurant');
 const { DateTime } = require('luxon');
 const { OwnerProfile } = require('../../models/ownerProfile');
+const c = require('config');
+const { create } = require('lodash');
 
 describe.skip('reservation test', () => {
     let server;
@@ -18,7 +20,7 @@ describe.skip('reservation test', () => {
         await server.close();
     });
 
-    describe('POST /api/reservation', () => {
+    describe('POST /api/reservations', () => {
         let token;
         let user;
         let restaurant;
@@ -53,7 +55,7 @@ describe.skip('reservation test', () => {
 
         const exec = () => {
             return request(server)
-            .post('/api/reservation/')
+            .post('/api/reservations/')
             .set('x-auth-token', token)
             .send({
                 restaurant: restaurantId,
@@ -112,7 +114,7 @@ describe.skip('reservation test', () => {
         });
     });
 
-    describe('GET /api/reservation', () => {
+    describe('GET /api/reservations', () => {
         let token;
         let user;
         let userId;
@@ -156,7 +158,7 @@ describe.skip('reservation test', () => {
 
         const exec = () => {
             return request(server)
-            .get('/api/reservation/')
+            .get('/api/reservations/')
             .set('x-auth-token', token);
         };
 
@@ -195,7 +197,7 @@ describe.skip('reservation test', () => {
         });
     });
 
-    describe('GET /api/reservation/:id', () => {
+    describe('GET /api/reservations/:id', () => {
         let token;
         let user;
         let userId;
@@ -234,7 +236,7 @@ describe.skip('reservation test', () => {
 
         const exec = () => {
             return request(server)
-            .get(`/api/reservation/${reservationId}`)
+            .get(`/api/reservations/${reservationId}`)
             .set('x-auth-token', token);
         };
 
@@ -276,9 +278,8 @@ describe.skip('reservation test', () => {
         });
     });
 
-    describe('GET /api/reservation/restaurant/:id', () => {
+    describe('GET /api/reservations/restaurant/:id', () => {
         let token;
-        let user;
         let userId;
         let owner;
         let restaurant;
@@ -296,10 +297,7 @@ describe.skip('reservation test', () => {
             await Reservation.deleteMany({});
 
             // create a user
-            user = await createTestUser('customer');
-            await user.save();
-            userId = user._id;
-            userToken = user.generateAuthToken();
+            userId = new mongoose.Types.ObjectId();
 
             // create an owner
             owner = await createTestUser('owner');
@@ -307,7 +305,7 @@ describe.skip('reservation test', () => {
             token = owner.generateAuthToken();
 
             // create a restaurant
-            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+            restaurant = createTestRestaurant(owner._id);
             await restaurant.save();
             restaurantId = restaurant._id;
 
@@ -326,8 +324,8 @@ describe.skip('reservation test', () => {
             });
             await reservation2.save();
             startDate = DateTime.now().setZone('Asia/Singapore').startOf('day').toISODate();
-            endDate = new DateTime(Date.now()).setZone('Asia/Singapore').plus({weeks:5}).toISODate();
-            url = `/api/reservation/restaurant/${restaurantId}?startDate=${startDate}&endDate=${endDate}`;
+            endDate = new DateTime(Date.now()).setZone('Asia/Singapore').plus({weeks:2}).toISODate();
+            url = `/api/reservations/restaurant/${restaurantId}?startDate=${startDate}&endDate=${endDate}`;
         });
 
         const exec = () => {
@@ -349,47 +347,56 @@ describe.skip('reservation test', () => {
         });
 
         it('should return 400 if no startDate', async () => {
-            url = `/api/reservation/restaurant/${restaurantId}`;
+            url = `/api/reservations/restaurant/${restaurantId}`;
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
         it('should return 400 if invalid startDate', async () => {
-            url = `/api/reservation/restaurant/${restaurantId}?startDate=1`;
+            url = `/api/reservations/restaurant/${restaurantId}?startDate=1&endDate=${endDate}`;
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
         it('should return 403 if customer', async () => {
-            token = userToken;
+            let customer = await createTestUser('customer');
+            token = customer.generateAuthToken();
             const res = await exec();
             expect(res.status).toBe(403);
         });
 
         it('should return 400 if invalid Id', async () => {
             restaurantId = 1;
-            url = `/api/reservation/restaurant/${restaurantId}?startDate=${startDate}&endDate=${endDate}`;
+            url = `/api/reservations/restaurant/${restaurantId}?startDate=${startDate}&endDate=${endDate}`;
             const res = await exec(); 
             expect(res.status).toBe(400);
         });
 
         it('should return 404 if restaurant not found', async () => {
             restaurantId = new mongoose.Types.ObjectId();
-            url = `/api/reservation/restaurant/${restaurantId}?startDate=${startDate}&endDate=${endDate}`;
+            url = `/api/reservations/restaurant/${restaurantId}?startDate=${startDate}&endDate=${endDate}`;
             const res = await exec();
             expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if restaurant not owned by owner', async () => {
+            let anotherOwner = await createTestUser('owner');
+            token = anotherOwner.generateAuthToken();
+            const res = await exec();
+            expect(res.status).toBe(403);
         });
 
         it('should return 200 if valid token', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
+            expect(res.body.length).toBe(1);
         });
 
         it('should return 200 if valid token with no endDate', async () => {
-            url = `/api/reservation/restaurant/${restaurantId}?startDate=${startDate}`;
+            url = `/api/reservations/restaurant/${restaurantId}?startDate=${startDate}`;
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(res.body.length).toBe(1);
+            expect(res.body.length).toBe(2);
         });
 
         it('should return all reservations', async () => {
@@ -403,45 +410,61 @@ describe.skip('reservation test', () => {
         });
     });
 
-    describe('GET /api/reservation/restaurant/avail/:id', () => {
+    describe('GET /api/reservations/owner', () => {
         let token;
-        let user;
         let userId;
-        let restaurant;
-        let restaurantId;
-        let reservationDate;
-        let queryDateSG;
-        let pax;
+        let owner;
+        let reservationDates;
+        let reservations;
+        let restaurants;
         let url;
+        let startDate;
+        let endDate;
 
         beforeEach(async () => {
-            await Restaurant.deleteMany({});
             await User.deleteMany({});
             await Reservation.deleteMany({});
+            await Restaurant.deleteMany({});
 
             // create a user
-            user = await createTestUser('customer');
-            await user.save();
-            userId = user._id;
-            token = user.generateAuthToken();
+            userId = new mongoose.Types.ObjectId();
 
-            // create a restaurant
-            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
-            await restaurant.save();
-            restaurantId = restaurant._id;
+            // create an owner
+            owner = await createTestUser('owner');
+            await owner.save();
+            token = owner.generateAuthToken();
 
-            // create a reservation
-            reservationDate = new Date('2025-05-17T11:00'); // UTC date
-            queryDateSG = DateTime.fromJSDate(reservationDate, { zone: 'utc' }).setZone('Asia/Singapore').toISODate(); // SG date
-            pax = 10;
-            const reservation = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate, pax
-            });
-            await reservation.save();
+            // create 3 restaurants
+            let restaurant1 = await createTestRestaurant(owner._id);
+            await restaurant1.save();
+            let restaurant2 = await createTestRestaurant(owner._id);
+            await restaurant2.save();
+            let restaurant3 = await createTestRestaurant(owner._id);
+            await restaurant3.save();
 
-            // create url
-            url = `/api/reservation/restaurant/avail/${restaurantId}?date=${queryDateSG}`;
+            restaurants = [
+                restaurant1._id, restaurant2._id, restaurant3._id,
+            ];
+
+            // create 3 reservations (in UTC)
+            reservationDates = [
+                DateTime.now().endOf('day').toUTC().toJSDate(),
+                DateTime.now().plus({ weeks: 1 }).toUTC().toJSDate(),
+                DateTime.now().plus({ weeks: 5 }).toUTC().toJSDate(),
+            ];
+            reservations = [];
+            for (let step = 0; step < 3; step++) {
+                let reservation = new Reservation({
+                    user: userId, restaurant: restaurants[step],
+                    reservationDate: reservationDates[step], pax: step + 1
+                });
+                await reservation.save();
+                reservations.push(reservation);
+            }
+
+            startDate = DateTime.now().setZone('Asia/Singapore').startOf('day').toISODate();
+            endDate = new DateTime(Date.now()).setZone('Asia/Singapore').plus({weeks:2}).toISODate();
+            url = `/api/reservations/owner?startDate=${startDate}&endDate=${endDate}`;
         });
 
         const exec = () => {
@@ -462,59 +485,50 @@ describe.skip('reservation test', () => {
             expect(res.status).toBe(400);
         });
 
-        it('should return 400 if invalid id', async () => {
-            url = '/api/reservation/restaurant/avail/1'
+        it('should return 400 if no startDate', async () => {
+            url = `/api/reservations/owner`;
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
-        it('should return 400 if no date query', async () => {
-            url = `/api/reservation/restaurant/avail/${restaurant._id}`;
+        it('should return 403 if customer', async () => {
+            let customer = await createTestUser('customer');
+            token = customer.generateAuthToken();
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 400 if invalid startDate', async () => {
+            url = `/api/reservations/owner?startDate=1&endDate=${endDate}`;
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
-        it('should return 400 if invalid date', async () => {
-            url = `/api/reservation/restaurant/avail/${restaurant._id}?date=1`;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 404 if no restaurant found', async () => {
-            url = `/api/reservation/restaurant/avail/${user._id}?date=${queryDateSG}`;
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
-        it('should return 200 if valid token, restaurant closed', async () => {
-            const sunday = DateTime.fromISO('2025-05-18').setZone('Asia/Singapore').toISODate();
-            url = `/api/reservation/restaurant/avail/${restaurant._id}?date=${sunday}`;
+        it('should return 200 if valid token', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(res.body).toBe(-1);
+            expect(res.body.length).toBe(2);
         });
 
-        it('should return 200 if valid token, restaurant not closed', async () => {
+        it('should return 200 if valid token with no endDate', async () => {
+            url = `/api/reservations/owner?startDate=${startDate}`;
             const res = await exec();
             expect(res.status).toBe(200);
+            expect(res.body.length).toBe(3);
         });
 
-        it('should return an array of availability', async () => {
+        it('should return all reservations', async () => {
             const res = await exec();
-            expect(Array.isArray(res.body)).toBe(true);
-            res.body.forEach(slot => {
-                expect(slot).toHaveProperty('time');
-                expect(typeof slot.time).toBe('string');
-                expect(slot.time).toMatch(/^\d{2}:\d{2}$/);
-
-                expect(slot).toHaveProperty('available');
-                expect(typeof slot.available).toBe('number');
-                expect(slot.available).toBeGreaterThanOrEqual(0);
+            res.body.forEach(reservation => {
+                expect(reservation).toHaveProperty('user');
+                expect(reservation).toHaveProperty('restaurant');
+                expect(reservation).toHaveProperty('reservationDate');
+                expect(reservation).toHaveProperty('pax');
             });
         });
     });
 
-    describe('PUT /api/reservation/:id', () => {
+    describe('PUT /api/reservations/:id', () => {
         let token;
         let user;
         let userId;
@@ -557,7 +571,7 @@ describe.skip('reservation test', () => {
 
         const exec = () => {
             return request(server)
-            .put(`/api/reservation/${reservationId}`)
+            .put(`/api/reservations/${reservationId}`)
             .set('x-auth-token', token)
             .send({
                 newReservationDate, newPax
@@ -612,7 +626,7 @@ describe.skip('reservation test', () => {
         });
     });
 
-    describe('DELETE /api/reservation/:id', () => {
+    describe('DELETE /api/reservations/:id', () => {
         let token;
         let user;
         let userId;
@@ -651,7 +665,7 @@ describe.skip('reservation test', () => {
 
         const exec = () => {
             return request(server)
-            .delete(`/api/reservation/${reservationId}`)
+            .delete(`/api/reservations/${reservationId}`)
             .set('x-auth-token', token);
         };
 
