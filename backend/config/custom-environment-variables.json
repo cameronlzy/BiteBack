@@ -1,3 +1,4 @@
 {
-  "jwtPrivateKey": "biteback_jwtPrivateKey"
+  "jwtPrivateKey": "biteback_jwtPrivateKey",
+  "db": "biteback_db"
 }
