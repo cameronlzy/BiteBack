@@ -8,8 +8,8 @@ const { CustomerProfile, validateCustomer } = require('../models/customerProfile
 const { OwnerProfile, validateOwner } = require('../models/ownerProfile');
 const { createRestaurantArray } = require('../models/restaurant');
 const mongoose = require('mongoose');
-
-const router = express.Router();
+const wrapRoutes = require('../utils/wrapRoutes');
+const router = wrapRoutes(express.Router());
 
 router.get('/me', auth, async (req, res) => {
   const user = await User.findById(req.user._id)

@@ -3,11 +3,12 @@ const { Restaurant, createSlots } = require('../models/restaurant');
 const { Reservation, validateReservation, validateNewReservation } = require('../models/reservation');
 const express = require('express');
 const { dateFullOnly, dateAllowPartial } = require('../utils/dateUtil');
-const router = express.Router();
 const { DateTime } = require('luxon');
 const validateObjectId = require('../middleware/validateObjectId');
 const isOwner = require('../middleware/isOwner');
 const Joi = require('joi');
+const wrapRoutes = require('../utils/wrapRoutes');
+const router = wrapRoutes(express.Router());
 
 router.get('/owner', [auth, isOwner], async (req, res) => {
     // validate query

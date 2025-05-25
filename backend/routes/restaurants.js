@@ -2,13 +2,14 @@ const auth = require('../middleware/auth');
 const { Reservation, validateReservation, validateNewReservation } = require('../models/reservation');
 const express = require('express');
 const { dateAllowPartial } = require('../utils/dateUtil');
-const router = express.Router();
 const { DateTime } = require('luxon');
 const validateObjectId = require('../middleware/validateObjectId');
 const isOwner = require('../middleware/isOwner');
 const Joi = require('joi');
 const { Restaurant, validateRestaurant, createTestRestaurant, createSlots } = require('../models/restaurant');
 const _ = require('lodash');
+const wrapRoutes = require('../utils/wrapRoutes');
+const router = wrapRoutes(express.Router());
 
 router.get('/', async (req, res) => {
     const restaurants = await Restaurant.find().sort('name');
@@ -36,20 +37,15 @@ router.get('/:id/availability', [auth, validateObjectId], async (req, res) => {
     if (!restaurant) return res.status(404).send('Restaurant not found.');
 
     // get all reservations from restaurant at date
-    const SGTdate = new Date(SGTdateString);
-    const sgStartOfDay = DateTime.fromJSDate(SGTdate, { zone: "Asia/Singapore" })
-        .startOf("day")
-        .toUTC()
-        .toJSDate();
-    const sgEndOfDay = DateTime.fromJSDate(SGTdate, { zone: "Asia/Singapore" })
-        .endOf("day")
-        .toUTC()
-        .toJSDate();
+    const SGTdate = DateTime.fromISO(SGTdateString, { zone: "Asia/Singapore" });
+    const utcStartOfDay = SGTdate.startOf("day").toUTC().toJSDate();
+    const utcEndOfDay = SGTdate.endOf("day").toUTC().toJSDate();
+
     const reservationsAtDate = await Reservation.find({ 
-        restaurant: id, reservationDate: { $gte: sgStartOfDay, $lte: sgEndOfDay }
+        restaurant: id, reservationDate: { $gte: utcStartOfDay, $lte: utcEndOfDay }
     }).select({ reservationDate: 1, pax: 1, _id: 0 });
 
-    let timeSlots = createSlots(restaurant, SGTdate);
+    let timeSlots = createSlots(restaurant, SGTdate.toJSDate());
     if (!timeSlots) return res.status(200).send(-1);
 
     // convert reservationDate to slot time string in UTC
@@ -57,7 +53,7 @@ router.get('/:id/availability', [auth, validateObjectId], async (req, res) => {
     timeSlots.forEach(slot => availabilityMap[slot] = restaurant.maxCapacity );
     reservationsAtDate.forEach(({ reservationDate, pax }) => {
         const slotTime = DateTime.fromJSDate(reservationDate)
-            .toFormat("HH:mm");
+            .toUTC().toFormat("HH:mm");
 
         if (availabilityMap[slotTime]) availabilityMap[slotTime] -= pax;
     });

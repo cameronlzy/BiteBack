@@ -1,9 +1,16 @@
 const winston = require('winston');
-const infoLogger = require('./models/infoLogger');
+const logger = require('./startup/logging');
 const express = require('express');
 const app = express();
+const cors = require('cors');
 
-require('./startup/logging')();
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+  exposedHeaders: ['x-auth-token']
+}));
+
+require('./startup/logging');
 require('./startup/routes')(app);
 require('./startup/prod')(app);
 require('./startup/server')();
@@ -11,6 +18,6 @@ require('./startup/config')();
 require('./startup/validation')();
 
 const port = process.env.PORT || 3000;
-const server = app.listen(port, () => infoLogger.info(`Listening on port ${port}...`));
+const server = app.listen(port, () => logger.info(`Listening on port ${port}...`));
 
 module.exports = server;
