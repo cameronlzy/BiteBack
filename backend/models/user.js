@@ -61,8 +61,18 @@ async function createTestUser(role) {
   });
 }
 
+function validateLogin(req) {
+  const schema = Joi.object({
+    email: Joi.string().email(),
+    username: Joi.string(),
+    password: Joi.string().min(5).max(255).required()
+  }).xor('email', 'username');
+  return schema.validate(req);
+}
+
 const User = mongoose.model('User', userSchema);
 
 exports.User = User; 
 exports.userJoiSchema = userJoiSchema;
 exports.createTestUser = createTestUser;
+exports.validateLogin = validateLogin;

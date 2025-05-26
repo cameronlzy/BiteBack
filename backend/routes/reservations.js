@@ -120,6 +120,7 @@ router.post('/', auth, async (req, res) => {
         user: req.user._id,
         restaurant: req.body.restaurant,
         reservationDate: UTCDate,
+        remarks: req.body.remarks,
         pax: req.body.pax
     });
     await reservation.save();
@@ -153,8 +154,9 @@ router.put('/:id', [auth, validateObjectId], async (req, res) => {
 
     // update reservation
     reservation.set({
-        reservationDate: req.body.newReservationDate,
-        pax: req.body.newPax
+        reservationDate: req.body.reservationDate,
+        remarks: req.body.remarks,
+        pax: req.body.pax
     });
     await reservation.save();
 

@@ -30,6 +30,7 @@ describe.skip('reservation test', () => {
         let url;
         let startDate;
         let endDate;
+        let remarks;
 
         beforeEach(async () => {
             await User.deleteMany({});
@@ -45,11 +46,11 @@ describe.skip('reservation test', () => {
             token = owner.generateAuthToken();
 
             // create 3 restaurants
-            let restaurant1 = await createTestRestaurant(owner._id);
+            let restaurant1 = createTestRestaurant(owner._id);
             await restaurant1.save();
-            let restaurant2 = await createTestRestaurant(owner._id);
+            let restaurant2 = createTestRestaurant(owner._id);
             await restaurant2.save();
-            let restaurant3 = await createTestRestaurant(owner._id);
+            let restaurant3 = createTestRestaurant(owner._id);
             await restaurant3.save();
 
             restaurants = [
@@ -62,11 +63,12 @@ describe.skip('reservation test', () => {
                 DateTime.now().plus({ weeks: 1 }).toUTC().toJSDate(),
                 DateTime.now().plus({ weeks: 5 }).toUTC().toJSDate(),
             ];
+            remarks = '';
             reservations = [];
             for (let step = 0; step < 3; step++) {
                 let reservation = new Reservation({
                     user: userId, restaurant: restaurants[step],
-                    reservationDate: reservationDates[step], pax: step + 1
+                    reservationDate: reservationDates[step], remarks, pax: step + 1
                 });
                 await reservation.save();
                 reservations.push(reservation);
@@ -133,6 +135,7 @@ describe.skip('reservation test', () => {
                 expect(reservation).toHaveProperty('user');
                 expect(reservation).toHaveProperty('restaurant');
                 expect(reservation).toHaveProperty('reservationDate');
+                expect(reservation).toHaveProperty('remarks');
                 expect(reservation).toHaveProperty('pax');
             });
         });
@@ -150,6 +153,7 @@ describe.skip('reservation test', () => {
         let url;
         let startDate;
         let endDate;
+        let remarks;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -172,15 +176,16 @@ describe.skip('reservation test', () => {
             // create reservations (in UTC)
             reservationDate1 = DateTime.now().endOf('day').toUTC().toJSDate();
             reservationDate2 = DateTime.now().plus({ weeks: 4 }).toUTC().toJSDate();
+            remarks = '';
             pax = 10;
             const reservation1 = new Reservation({
                 user: userId, restaurant: restaurantId,
-                reservationDate: reservationDate1, pax
+                reservationDate: reservationDate1, remarks, pax
             });
             await reservation1.save();
             const reservation2 = new Reservation({
                 user: userId, restaurant: restaurantId,
-                reservationDate: reservationDate2, pax
+                reservationDate: reservationDate2, remarks, pax
             });
             await reservation2.save();
             startDate = DateTime.now().setZone('Asia/Singapore').startOf('day').toISODate();
@@ -265,6 +270,7 @@ describe.skip('reservation test', () => {
                 expect(reservation).toHaveProperty('user');
                 expect(reservation).toHaveProperty('restaurant');
                 expect(reservation).toHaveProperty('reservationDate');
+                expect(reservation).toHaveProperty('remarks');
                 expect(reservation).toHaveProperty('pax');
             });
         });
@@ -278,6 +284,7 @@ describe.skip('reservation test', () => {
         let restaurantId;
         let reservationDate1;
         let reservationDate2;
+        let remarks;
         let pax;
 
         beforeEach(async () => {
@@ -299,15 +306,16 @@ describe.skip('reservation test', () => {
             // create reservations
             reservationDate1 = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
             reservationDate2 = new DateTime(Date.now()).plus({weeks:4}).toJSDate(); // UTC
+            remarks = '';
             pax = 10;
             const reservation1 = new Reservation({
                 user: userId, restaurant: restaurantId,
-                reservationDate: reservationDate1, pax
+                reservationDate: reservationDate1, remarks, pax
             });
             await reservation1.save();
             const reservation2 = new Reservation({
                 user: userId, restaurant: restaurantId,
-                reservationDate: reservationDate2, pax
+                reservationDate: reservationDate2, remarks, pax
             });
             await reservation2.save();
         });
@@ -342,6 +350,7 @@ describe.skip('reservation test', () => {
                 expect(reservation).toHaveProperty('user');
                 expect(reservation).toHaveProperty('restaurant');
                 expect(reservation).toHaveProperty('reservationDate');
+                expect(reservation).toHaveProperty('remarks');
                 expect(reservation).toHaveProperty('pax');
             });
         });
@@ -359,6 +368,7 @@ describe.skip('reservation test', () => {
         let restaurant;
         let restaurantId;
         let reservationDate;
+        let remarks;
         let pax;
         let owner;
 
@@ -383,6 +393,7 @@ describe.skip('reservation test', () => {
 
             // setting up a reservation
             reservationDate = DateTime.now().setZone('Asia/Singapore').plus({days:1}).toJSDate(); // SG time
+            remarks = '';
             pax = 10;
         });
 
@@ -392,7 +403,7 @@ describe.skip('reservation test', () => {
             .set('x-auth-token', token)
             .send({
                 restaurant: restaurantId,
-                reservationDate,
+                reservationDate, remarks,
                 pax
             });
         };
@@ -438,6 +449,7 @@ describe.skip('reservation test', () => {
             expect(res.body).toHaveProperty('user');
             expect(res.body).toHaveProperty('restaurant');
             expect(res.body).toHaveProperty('reservationDate');
+            expect(res.body).toHaveProperty('remarks');
             expect(res.body).toHaveProperty('pax');
         });
 
@@ -454,6 +466,7 @@ describe.skip('reservation test', () => {
         let restaurant;
         let restaurantId;
         let reservationDate;
+        let remarks;
         let pax;
         let reservationId;
 
@@ -475,6 +488,7 @@ describe.skip('reservation test', () => {
 
             // create a reservation
             reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
+            remarks = '';
             pax = 10;
             const reservation = new Reservation({
                 user: userId, restaurant: restaurantId,
@@ -524,6 +538,7 @@ describe.skip('reservation test', () => {
             expect(res.body).toHaveProperty('user');
             expect(res.body).toHaveProperty('restaurant');
             expect(res.body).toHaveProperty('reservationDate');
+            expect(res.body).toHaveProperty('remarks');
             expect(res.body).toHaveProperty('pax');
         });
     });    
@@ -535,9 +550,11 @@ describe.skip('reservation test', () => {
         let restaurant;
         let restaurantId;
         let reservationDate;
+        let remarks;
         let pax;
         let reservationId;
         let newReservationDate;
+        let newRemarks;
         let newPax;
 
         beforeEach(async () => {
@@ -558,15 +575,17 @@ describe.skip('reservation test', () => {
 
             // create a reservation
             reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
+            remarks = '';
             pax = 10;
             const reservation = new Reservation({
-                user: userId, restaurant: restaurantId,
+                user: userId, restaurant: restaurantId, remarks,
                 reservationDate, pax
             });
             await reservation.save();
             reservationId = reservation._id;
-            newPax = 5;
             newReservationDate = new DateTime(Date.now()).plus({days:15}).setZone('Asia/Singapore').toJSDate(); // SGT
+            newRemarks = '';
+            newPax = 5;
         });
 
         const exec = () => {
@@ -574,7 +593,9 @@ describe.skip('reservation test', () => {
             .put(`/api/reservations/${reservationId}`)
             .set('x-auth-token', token)
             .send({
-                newReservationDate, newPax
+                reservationDate: newReservationDate, 
+                remarks: newRemarks,
+                pax: newPax
             });
         };
 
@@ -622,8 +643,10 @@ describe.skip('reservation test', () => {
 
         it('should return updated reservation', async () => {
             const res = await exec();
+            expect(res.body).toHaveProperty('user');
             expect(res.body).toHaveProperty('restaurant');
             expect(res.body).toHaveProperty('reservationDate');
+            expect(res.body).toHaveProperty('remarks');
             expect(res.body).toHaveProperty('pax');
         });
     });
@@ -635,6 +658,7 @@ describe.skip('reservation test', () => {
         let restaurant;
         let restaurantId;
         let reservationDate;
+        let remarks;
         let pax;
         let reservationId;
 
@@ -656,10 +680,11 @@ describe.skip('reservation test', () => {
 
             // create a reservation
             reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
+            remarks = '';
             pax = 10;
             const reservation = new Reservation({
                 user: userId, restaurant: restaurantId,
-                reservationDate, pax
+                reservationDate, remarks, pax
             });
             await reservation.save();
             reservationId = reservation._id;
@@ -711,6 +736,7 @@ describe.skip('reservation test', () => {
             const res = await exec();
             expect(res.body).toHaveProperty('restaurant');
             expect(res.body).toHaveProperty('reservationDate');
+            expect(res.body).toHaveProperty('remarks');
             expect(res.body).toHaveProperty('pax');
         });
     });

@@ -110,6 +110,218 @@ describe.skip('auth test', () => {
         });
     });
 
+    describe('PUT /api/auth/me - customer', () => {
+        let token;
+        let email;
+        let username;
+        let password = 'myPassword@123';
+        let name;
+        let contactNumber;
+        let favCuisines;
+        let user;
+        let profile;
+        let newContactNumber;
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+            await CustomerProfile.deleteMany({});
+
+            // creates user with password: myPassword@123
+            user = await createTestUser('customer');
+            email = user.email;
+            username = user.username;
+
+            // create customer profile
+            name = "test";
+            contactNumber = "87654321";
+            favCuisines = ['Chinese'];
+            profile = new CustomerProfile({
+                user: user._id,
+                name, contactNumber, username, favCuisines
+            });
+            await profile.save();
+
+            user.profile = profile._id;
+            await user.save();
+            token = user.generateAuthToken();
+
+            // update the customer
+            newContactNumber = "12345678";
+        });
+
+        const exec = () => {
+            return request(server)
+                .put('/api/auth/me')
+                .set('x-auth-token', token)
+                .send({
+                    email, username, password, name, 
+                    contactNumber: newContactNumber, favCuisines
+                });
+        };
+
+        it('should return 401 if no token', async () => {
+            token = "";
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid token', async () => {
+            token = "1";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if invalid request', async () => {
+            token = "1";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+         it('should return 404 if user not found', async () => {
+            let otherUser = await createTestUser('customer');
+            token = otherUser.generateAuthToken();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 400 if username already taken', async () => {
+            let otherUser = await createTestUser('customer');
+            await otherUser.save();
+            username = otherUser.username;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if profile not found', async () => {
+            user.profile = new mongoose.Types.ObjectId();
+            await user.save();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        it('should return updated user + profile', async () => {
+            const res = await exec();
+            expect(res.body).toHaveProperty('email');
+            expect(res.body).toHaveProperty('username');
+            expect(res.body).toHaveProperty('role');
+            expect(res.body).not.toHaveProperty('password');
+            expect(res.body.profile).toHaveProperty('name');
+            expect(res.body.profile).toHaveProperty('contactNumber');
+        });
+    });
+
+    describe('PUT /api/auth/me - owner', () => {
+        let token;
+        let email;
+        let username;
+        let password = 'myPassword@123';
+        let companyName;
+        let user;
+        let profile;
+        let newCompanyName;
+        let restaurant;
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // creates user with password: myPassword@123
+            user = await createTestUser('owner');
+            email = user.email;
+            username = user.username;
+
+            // create restaurant
+            restaurant = createTestRestaurant(user._id);
+            await restaurant.save();
+
+            // create owner profile
+            companyName = "company";
+            profile = new OwnerProfile({
+                user: user._id,
+                companyName,
+                restaurants: [restaurant._id]
+            });
+            await profile.save();
+
+            user.profile = profile._id;
+            await user.save();
+            token = user.generateAuthToken();
+
+            // update the customer
+            newCompanyName = "new name";
+        });
+
+        const exec = () => {
+            return request(server)
+                .put('/api/auth/me')
+                .set('x-auth-token', token)
+                .send({
+                    email, username, password, companyName: newCompanyName
+                });
+        };
+
+        it('should return 401 if no token', async () => {
+            token = "";
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid token', async () => {
+            token = "1";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if invalid request', async () => {
+            token = "1";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+         it('should return 404 if user not found', async () => {
+            let otherUser = await createTestUser('owner');
+            token = otherUser.generateAuthToken();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 400 if username already taken', async () => {
+            let otherUser = await createTestUser('owner');
+            await otherUser.save();
+            username = otherUser.username;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if profile not found', async () => {
+            user.profile = new mongoose.Types.ObjectId();
+            await user.save();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        it('should return updated user + profile', async () => {
+            const res = await exec();
+            expect(res.body).toHaveProperty('email');
+            expect(res.body).toHaveProperty('username');
+            expect(res.body).toHaveProperty('role');
+            expect(res.body).not.toHaveProperty('password');
+            expect(res.body.profile).toHaveProperty('companyName');
+            expect(res.body.profile).toHaveProperty('restaurants');
+        });
+    });
+
     describe('POST /api/auth/register - customer', () => {
         let email;
         let username;
@@ -179,6 +391,7 @@ describe.skip('auth test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            expect(res.body).not.toHaveProperty('password');
         });
 
         it('should return create a customer profile', async () => {
@@ -291,6 +504,7 @@ describe.skip('auth test', () => {
         it('should return username, email, role', async () => {
             const res = await exec();
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            expect(res.body).not.toHaveProperty('password');
         });
 
         it('should return create a owner profile', async () => {
@@ -413,6 +627,7 @@ describe.skip('auth test', () => {
         it('should return username, email, role', async () => {
             const res = await usernameLogin();
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            expect(res.body).not.toHaveProperty('password');
         });
     
         it('should return valid jwtToken', async () => {

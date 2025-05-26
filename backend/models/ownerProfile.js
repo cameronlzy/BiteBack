@@ -28,5 +28,14 @@ function validateOwnerProfile(profile) {
   return schema.validate(profile);
 }
 
+function validateNewOwnerProfile(profile) {
+  const schema = userJoiSchema.keys({
+    role: Joi.string().valid("owner").required(),
+    companyName: Joi.string().min(2).max(255).required(),
+  });
+  return schema.validate(profile);
+}
+
 exports.OwnerProfile = OwnerProfile;
 exports.validateOwner = validateOwnerProfile;
+exports.validateNewOwner = validateNewOwnerProfile;

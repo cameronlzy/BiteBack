@@ -1,11 +1,11 @@
 const auth = require('../middleware/auth');
-const { User } = require('../models/user');
+const { User, validateLogin } = require('../models/user');
 const express = require('express');
 const bcrypt = require('bcrypt');
 const Joi = require('joi');
 const _ = require('lodash');
 const { CustomerProfile, validateCustomer } = require('../models/customerProfile');
-const { OwnerProfile, validateOwner } = require('../models/ownerProfile');
+const { OwnerProfile, validateOwner, validateNewOwner } = require('../models/ownerProfile');
 const { createRestaurantArray } = require('../models/restaurant');
 const mongoose = require('mongoose');
 const wrapRoutes = require('../utils/wrapRoutes');
@@ -35,9 +35,211 @@ router.get('/me', auth, async (req, res) => {
   return res.send(user);
 });
 
+router.put('/me', auth, async (req, res) => {
+  if (req.user.role != 'owner' && req.user.role != 'customer') return res.status(400).send('Invalid role.');
+  if (isProdEnv) {
+    const session = await mongoose.startSession();
+	  session.startTransaction();
+    try {
+      if (req.user.role == 'customer') {
+        // validate request
+        req.body.role = 'customer';
+        const { error } = validateCustomer(req.body);
+        if (error) throw { status: 400, message: error.details[0].message };
+
+        // find user
+        const user = await User.findById(req.user._id).session(session);
+        if (!user) throw { status: 404, message: 'Customer not found.' };
+
+        // check if email or username already taken by someone else
+        const existingUser = await User.findOne({
+          _id: { $ne: req.user._id },
+          $or: [
+            { email: req.body.email },
+            { username: req.body.username }
+          ]
+        }).session(session);
+        if (existingUser) {
+          if (existingUser.email === req.body.email) {
+            throw { status: 400, message: 'Email is already taken.' };
+          }
+          if (existingUser.username === req.body.username) {
+            throw { status: 400, message: 'Username is already taken.' };
+          }
+        }
+
+        // update user
+        Object.assign(user, _.pick(req.body, ['email', 'username', 'password']));
+        await user.save({ session });
+
+        // find and update profile
+        const profile = await CustomerProfile.findByIdAndUpdate(
+          user.profile, 
+          { 
+            name: req.body.name, 
+            contactNumber: req.body.contactNumber, 
+            favCuisines: req.body.favCuisines
+          },
+          { new: true, runValidators: true, session }
+        );
+        if (!profile) throw { status: 404, message: 'Profile not found.' };
+
+        await session.commitTransaction();
+
+        // send back user
+        const { password, ...safeUser } = user.toObject();
+        safeUser.profile = profile;
+        return res.send(safeUser);
+      } else {
+        // validate request
+        req.body.role = 'owner';
+        const { error } = validateNewOwner(req.body);
+        if (error) throw { status: 400, message: error.details[0].message };
+
+        // find user
+        const user = await User.findById(req.user._id).session(session);
+        if (!user) throw { status: 404, message: 'Owner not found.' };
+
+        // check if email or username already taken by someone else
+        const existingUser = await User.findOne({
+          _id: { $ne: req.user._id },
+          $or: [
+            { email: req.body.email },
+            { username: req.body.username }
+          ]
+        }).session(session);
+        if (existingUser) {
+          if (existingUser.email === req.body.email) {
+            throw { status: 400, message: 'Email is already taken.' };
+          }
+          if (existingUser.username === req.body.username) {
+            throw { status: 400, message: 'Username is already taken.' };
+          }
+        }
+
+        // update user
+        Object.assign(user, _.pick(req.body, ['email', 'username', 'password']));
+        await user.save({ session });
+
+        // find and update profile
+        const profile = await OwnerProfile.findByIdAndUpdate(
+          user.profile, 
+          { companyName: req.body.companyName },
+          { new: true, runValidators: true, session }
+        );
+        if (!profile) throw { status: 404, message: 'Profile not found.' };
+
+        // send back user
+        const { password, ...safeUser } = user.toObject();
+        safeUser.profile = profile;
+        return res.send(safeUser);
+      }
+    } catch (err) {
+      await session.abortTransaction();
+      if (res.status) return res.status(err.status).send(err.message);
+
+      throw err;
+    } finally {
+      session.endSession();
+    }
+  } else {
+    if (req.user.role == 'customer') {
+        // validate request
+        req.body.role = 'customer';
+        const { error } = validateCustomer(req.body);
+        if (error) return res.status(400).send(error.details[0].message);
+
+        // find user
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).send('Customer not found.');
+
+        // check if email or username already taken by someone else
+        const existingUser = await User.findOne({
+          _id: { $ne: req.user._id },
+          $or: [
+            { email: req.body.email },
+            { username: req.body.username }
+          ]
+        });
+        if (existingUser) {
+          if (existingUser.email === req.body.email) {
+            return res.status(400).send('Email is already taken.');
+          }
+          if (existingUser.username === req.body.username) {
+            return res.status(400).send('Username is already taken.');
+          }
+        }
+
+        // update user
+        Object.assign(user, _.pick(req.body, ['email', 'username', 'password']));
+        await user.save();
+
+        // find and update profile
+        const profile = await CustomerProfile.findByIdAndUpdate(
+          user.profile, 
+          { 
+            name: req.body.name, 
+            contactNumber: req.body.contactNumber, 
+            favCuisines: req.body.favCuisines
+          },
+          { new: true, runValidators: true }
+        );
+        if (!profile) return res.status(404).send('Profile not found.');
+
+        // send back user
+        const { password, ...safeUser } = user.toObject();
+        safeUser.profile = profile;
+        return res.send(safeUser);
+    } else {
+      // validate request
+      req.body.role = 'owner';
+      const { error } = validateNewOwner(req.body);
+      if (error) return res.status(400).send(error.details[0].message);
+
+      // find user
+      const user = await User.findById(req.user._id);
+      if (!user) return res.status(404).send('Owner not found.');
+
+      // check if email or username already taken by someone else
+      const existingUser = await User.findOne({
+        _id: { $ne: req.user._id },
+        $or: [
+          { email: req.body.email },
+          { username: req.body.username }
+        ]
+      });
+      if (existingUser) {
+        if (existingUser.email === req.body.email) {
+          return res.status(400).send('Email is already taken.');
+        }
+        if (existingUser.username === req.body.username) {
+          return res.status(400).send('Username is already taken.');
+        }
+      }
+
+      // update user
+      Object.assign(user, _.pick(req.body, ['email', 'username', 'password']));
+      await user.save();
+
+      // find and update profile
+      const profile = await OwnerProfile.findByIdAndUpdate(
+        user.profile, 
+        { companyName: req.body.companyName },
+        { new: true, runValidators: true }
+      );
+      if (!profile) return res.status(404).send('Profile not found.');
+
+      // send back user
+      const { password, ...safeUser } = user.toObject();
+      safeUser.profile = profile;
+      return res.send(safeUser);
+    }
+  }
+});
+
 router.post('/login', async (req, res) => {
     // validate request
-    const { error } = validate(req.body); 
+    const { error } = validateLogin(req.body); 
     if (error) return res.status(400).send(error.details[0].message);
 
     // find user by email or username
@@ -58,7 +260,7 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  if (!req.body.role) return res.status(400).send('Invalid role specified.');
+  if (!req.body.role || (req.body.role != 'owner' && req.body.role != 'customer')) return res.status(400).send('Invalid role.');
   if (isProdEnv) {
     // prod
     const session = await mongoose.startSession();
@@ -109,8 +311,7 @@ router.post('/register', async (req, res) => {
 
         const token = user.generateAuthToken();
         return res.header('x-auth-token', token).send(_.pick(user, ['_id', 'email', 'username', 'role']));
-      }
-      if (req.body.role == "owner") {
+      } else {
         // validate request
         const { error } = validateOwner(req.body); 
         if (error) throw { status: 400, message: error.details[0].message };
@@ -220,9 +421,7 @@ router.post('/register', async (req, res) => {
 
       const token = user.generateAuthToken();
       return res.header('x-auth-token', token).send(_.pick(user, ['_id', 'email', 'username', 'role']));
-    }
-
-    if (req.body.role == "owner") {
+    } else {
       // validate request
       const { error } = validateOwner(req.body); 
       if (error) return res.status(400).send(error.details[0].message);
@@ -278,14 +477,5 @@ router.post('/register', async (req, res) => {
     }
   }
 });
-
-function validate(req) {
-  const schema = Joi.object({
-    email: Joi.string().email(),
-    username: Joi.string(),
-    password: Joi.string().min(5).max(255).required()
-  }).xor('email', 'username');
-  return schema.validate(req);
-}
 
 module.exports = router; 

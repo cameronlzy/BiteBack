@@ -134,8 +134,8 @@ let restaurantJoiSchema = Joi.object({
     })
   });
 
-function validateRestaurant(profile) {
-  return restaurantJoiSchema.validate(profile);
+function validateRestaurant(restaurant) {
+  return restaurantJoiSchema.validate(restaurant);
 }
 
 async function createRestaurantArray(arr, userId, session = null) {

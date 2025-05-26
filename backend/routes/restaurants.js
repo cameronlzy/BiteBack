@@ -160,7 +160,7 @@ router.delete('/:id', [auth, isOwner, validateObjectId], async (req, res) => {
             
             // updating owner profile
             await OwnerProfile.findByIdAndUpdate(user.profile._id,
-                { $pull: { restaurants: restaurant._id }}, { session }
+                { $pull: { restaurants: restaurant._id }}, { session, runValidators: true }
             );
 
             // delete restaurant
@@ -191,7 +191,7 @@ router.delete('/:id', [auth, isOwner, validateObjectId], async (req, res) => {
         
         // updating owner profile
         await OwnerProfile.findByIdAndUpdate(user.profile._id,
-            { $pull: { restaurants: restaurant._id } }
+            { $pull: { restaurants: restaurant._id } }, { runValidators: true }
         );
 
         // delete restaurant
