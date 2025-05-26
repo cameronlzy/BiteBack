@@ -6,20 +6,25 @@ const { DateTime } = require('luxon');
 const validateObjectId = require('../middleware/validateObjectId');
 const isOwner = require('../middleware/isOwner');
 const Joi = require('joi');
-const { Restaurant, validateRestaurant, createTestRestaurant, createSlots } = require('../models/restaurant');
+const { Restaurant, validateRestaurant, createTestRestaurant, createSlots, convertSGTOpeningHoursToUTC } = require('../models/restaurant');
 const _ = require('lodash');
+const mongoose = require('mongoose');
 const wrapRoutes = require('../utils/wrapRoutes');
+const { User } = require('../models/user');
+const { OwnerProfile } = require('../models/ownerProfile');
 const router = wrapRoutes(express.Router());
+
+const isProdEnv = process.env.NODE_ENV === 'production';
 
 router.get('/', async (req, res) => {
     const restaurants = await Restaurant.find().sort('name');
-    res.send(restaurants);
+    return res.send(restaurants);
 });
 
 router.get('/:id', validateObjectId, async (req, res) => {
     const restaurant = await Restaurant.findById(req.params.id);
     if (!restaurant) return res.status(404).send('The restaurant with the given ID was not found.');
-    res.send(restaurant);
+    return res.send(restaurant);
 });
 
 router.get('/:id/availability', [auth, validateObjectId], async (req, res) => {
@@ -69,11 +74,55 @@ router.post('/', [auth, isOwner], async (req, res) => {
     const { error } = validateRestaurant(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const restaurant = new Restaurant(_.pick(req.body, ['name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity', 'email', 'website']));
-    restaurant.owner = req.user._id;
-    await restaurant.save();
+    if (isProdEnv) {
+        // create session
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+            // create restaurant
+            const restaurant = new Restaurant(_.pick(req.body, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));
+            restaurant.owner = req.user._id;
+            restaurant.openingHours = convertSGTOpeningHoursToUTC(req.body.openingHours);
+            await restaurant.save({ session });
 
-    res.send(restaurant);
+            // update owner
+            const user = await User.findById(req.user._id).populate('profile').session(session);
+            if (!user) throw { status: 404, message: 'User not found' };
+            if (!user.profile) throw { status: 404, message: 'Owner Profile not found' };
+
+            // commit transaction
+            user.profile.restaurants.push(restaurant._id);
+            await user.profile.save({ session });
+
+            await session.commitTransaction();
+
+            return res.send(restaurant);
+        } catch (err) {
+            await session.abortTransaction();
+            if (err.status) return res.status(err.status).send(err.message);
+            
+            throw err;
+        } finally {
+            session.endSession();
+        }
+    } else {
+        // create restaurant
+        const restaurant = new Restaurant(_.pick(req.body, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));
+        restaurant.owner = req.user._id;
+        restaurant.openingHours = convertSGTOpeningHoursToUTC(req.body.openingHours);
+        await restaurant.save();
+
+        // update owner
+        const user = await User.findById(req.user._id).populate('profile');
+        if (!user) return res.status(404).send('User not found');
+
+        const ownerProfile = user.profile;
+        if (!ownerProfile) return res.status(404).send('Owner Profile not found.');
+
+        ownerProfile.restaurants.push(restaurant._id);
+        await ownerProfile.save();
+        return res.send(restaurant);
+    }
 });
 
 router.put('/:id', [auth, isOwner, validateObjectId], async (req, res) => {
@@ -88,17 +137,67 @@ router.put('/:id', [auth, isOwner, validateObjectId], async (req, res) => {
     
     // update restaurant
     Object.assign(restaurant, req.body);
+    restaurant.openingHours = convertSGTOpeningHoursToUTC(req.body.openingHours);
     await restaurant.save();
 
-    res.send(restaurant);
+    return res.send(restaurant);
 });
 
 router.delete('/:id', [auth, isOwner, validateObjectId], async (req, res) => {
-    const restaurant = await Restaurant.findById(req.params.id);
-    if (!restaurant) return res.status(404).send('Restaurant not found.');
-    if (restaurant.owner != req.user._id) return res.status(403).send('Restaurant does not belong to user.');
-    await Restaurant.deleteOne({ _id: req.params.id });
-    return res.send(restaurant);
+    if (isProdEnv) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+            // get ownerProfile 
+            const user = await User.findById(req.user._id).populate('profile').session(session);
+            if (!user) throw { status: 404, message: 'User not found.' };
+            if (!user.profile) throw { status: 404, message: 'Owner Profile not found.' };
+
+            // get restaurant
+            const restaurant = await Restaurant.findById(req.params.id).session(session);
+            if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
+            if (!restaurant.owner.equals(req.user._id)) throw { status: 403, message: 'Restaurant does not belong to user.' };
+            
+            // updating owner profile
+            await OwnerProfile.findByIdAndUpdate(user.profile._id,
+                { $pull: { restaurants: restaurant._id }}, { session }
+            );
+
+            // delete restaurant
+            await Restaurant.deleteOne({ _id: req.params.id }).session(session);
+
+            // commit transaction
+            await session.commitTransaction();
+
+            return res.send(restaurant);
+        } catch (err) {
+            await session.abortTransaction();
+            if (err.status) return res.status(err.status).send(err.message);
+
+            throw err;
+        } finally {
+            session.endSession();
+        }
+    } else {
+        // get ownerProfile 
+        const user = await User.findById(req.user._id).populate('profile');
+        if (!user) return res.status(404).send('User not found');
+        if (!user.profile) return res.status(404).send('Owner Profile not found.');
+
+        // get restaurant
+        const restaurant = await Restaurant.findById(req.params.id);
+        if (!restaurant) return res.status(404).send('Restaurant not found.');
+        if (!restaurant.owner.equals(req.user._id)) return res.status(403).send('Restaurant does not belong to user.');
+        
+        // updating owner profile
+        await OwnerProfile.findByIdAndUpdate(user.profile._id,
+            { $pull: { restaurants: restaurant._id } }
+        );
+
+        // delete restaurant
+        await Restaurant.deleteOne({ _id: req.params.id });
+        return res.send(restaurant);
+    }
 });
 
 module.exports = router; 

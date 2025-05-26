@@ -1,16 +1,15 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
-const { restaurantSchema, restaurantJoiSchema } = require('./restaurant');
 const { userJoiSchema } = require('./user');
 
 const ownerProfileSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   companyName: { type: String, required: true },
   restaurants: {
-    type: [restaurantSchema],
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' }],
     validate: {
       validator: function (arr) {
-        return arr.length > 0;
+        return Array.isArray(arr) && arr.length > 0;
       },
       message: 'At least one restaurant is required.'
     },
@@ -24,7 +23,7 @@ function validateOwnerProfile(profile) {
   const schema = userJoiSchema.keys({
     role: Joi.string().valid("owner").required(),
     companyName: Joi.string().min(2).max(255).required(),
-    restaurants: Joi.array().items(restaurantJoiSchema).min(1).required(),
+    restaurants: Joi.array().min(1).required(),
   });
   return schema.validate(profile);
 }

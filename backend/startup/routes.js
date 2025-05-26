@@ -9,5 +9,7 @@ module.exports = function(app) {
   app.use('/api/auth', auth);
   app.use('/api/reservations', reservations);
   app.use('/api/restaurants', restaurants);
+
+  // to log error
   app.use(error);
 }

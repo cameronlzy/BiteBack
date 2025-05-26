@@ -138,7 +138,7 @@ function validateRestaurant(profile) {
   return restaurantJoiSchema.validate(profile);
 }
 
-async function createRestaurantArray(arr, userId) {
+async function createRestaurantArray(arr, userId, session) {
   let restaurant;
   try {
     let output = [];
@@ -147,8 +147,8 @@ async function createRestaurantArray(arr, userId) {
       item.owner = userId;
       item.openingHours = convertSGTOpeningHoursToUTC(item.openingHours);
       restaurant = new Restaurant(item);
-      await restaurant.save();
-      output.push(new Restaurant(item));
+      await restaurant.save({ session });
+      output.push(restaurant._id);
     }
     return output;
   } catch (err) {
@@ -230,7 +230,7 @@ function convertSGTOpeningHoursToUTC(openingHours) {
   for (const day of daysOfWeek) {
     const hours = openingHours[day];
 
-    if (hours.toLowerCase() === 'closed') {
+    if (typeof hours === 'string' && hours.toLowerCase() === 'closed') {
       result[day] = 'Closed';
       continue;
     }
@@ -256,8 +256,6 @@ function convertSGTOpeningHoursToUTC(openingHours) {
 
 exports.Restaurant = Restaurant;
 exports.validateRestaurant = validateRestaurant;
-exports.restaurantSchema = restaurantSchema;
-exports.restaurantJoiSchema = restaurantJoiSchema;
 exports.createRestaurantArray = createRestaurantArray;
 exports.createTestRestaurant = createTestRestaurant;
 exports.createSlots = createSlots;

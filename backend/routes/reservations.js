@@ -158,7 +158,7 @@ router.put('/:id', [auth, validateObjectId], async (req, res) => {
     });
     await reservation.save();
 
-    res.send(reservation);
+    return res.send(reservation);
 });
 
 router.delete('/:id', [auth, validateObjectId], async (req, res) => {

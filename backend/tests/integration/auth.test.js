@@ -36,6 +36,8 @@ describe.skip('auth test', () => {
 
         beforeEach(async () => {
             await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
 
             email = "myEmail@gmail.com";
             username = "username";
@@ -84,21 +86,24 @@ describe.skip('auth test', () => {
         });
 
         it('should return 200 if valid token for owner', async () => {
-            await User.deleteMany({});
-            role = "owner";
-            roleProfile = "OwnerProfile";
+            let owner = await createTestUser('owner');
 
-            user = new User({
-                email,
-                username,
-                password: await bcrypt.hash(password, 10),
-                role,
-                roleProfile,
-                profile: new mongoose.Types.ObjectId(),
+            // creating restaurant
+            let restaurant = createTestRestaurant(owner._id);
+            await restaurant.save();
+
+            // creating an ownerProfile
+            let companyName = "name";
+            let ownerProfile = await OwnerProfile({
+                user: owner._id,
+                companyName, 
+                restaurants: [restaurant._id]
             });
+            await ownerProfile.save();
 
-            await user.save();
-            token = user.generateAuthToken();
+            owner.profile = ownerProfile._id;
+            await owner.save();
+            token = owner.generateAuthToken();
 
             const res = await exec();
             expect(res.status).toBe(200);

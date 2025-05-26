@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const { Restaurant, createTestRestaurant } = require('../../models/restaurant');
 const { DateTime } = require('luxon');
 const { create } = require('lodash');
+const { OwnerProfile } = require('../../models/ownerProfile');
 
 describe.skip('reservation test', () => {
     let server;
@@ -207,17 +208,44 @@ describe.skip('reservation test', () => {
         let cuisines;
         let openingHours;
         let maxCapacity;
+
         let owner;
+        let ownerProfile;
+        let companyName;
+
+        let email;
+        let username;
+        let password;
+        let role;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
             await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
 
             // create an owner
-            owner = await createTestUser('owner');
+            email = "myOwner@gmail.com";
+            username = "myOwner";
+            password = "myPassword@123";
+            role = "owner";
+            owner = await User({
+                email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
+            });
             token = owner.generateAuthToken();
 
-            // restaurant
+            // creating an ownerProfile
+            companyName = "name";
+            ownerProfile = await OwnerProfile({
+                user: owner._id,
+                companyName, 
+                restaurants: [new mongoose.Types.ObjectId()]
+            });
+            await ownerProfile.save();
+
+            owner.profile = ownerProfile._id;
+            await owner.save();
+
+            // creating a restaurant
             name = "restaurant";
             address = "new york";
             contactNumber = "87654321";
@@ -261,6 +289,12 @@ describe.skip('reservation test', () => {
             token = customer.generateAuthToken();
             const res = await exec();
             expect(res.status).toBe(403);
+        });
+
+        it('should return 404 if user does not exist', async () => {
+            await User.deleteMany({});
+            const res = await exec();
+            expect(res.status).toBe(404);
         });
 
         it('should return 200 if valid request', async () => {
@@ -389,14 +423,41 @@ describe.skip('reservation test', () => {
         let restaurantId;
         let token;
         let owner;
+        let email;
+        let username;
+        let password;
+        let role;
+        let companyName;
+        let ownerProfile;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
-            
+
             // create an owner
-            owner = await createTestUser('owner');
-            await owner.save();
+            email = "myOwner@gmail.com";
+            username = "myOwner";
+            password = "myPassword@123";
+            role = "owner";
+            owner = await User({
+                email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
+            });
             token = owner.generateAuthToken();
+
+            // creating a restaurant
+            restaurant = createTestRestaurant(owner._id);
+            await restaurant.save();
+
+            // creating an ownerProfile
+            companyName = "name";
+            ownerProfile = await OwnerProfile({
+                user: owner._id,
+                companyName, 
+                restaurants: [restaurant._id]
+            });
+            await ownerProfile.save();
+
+            owner.profile = ownerProfile._id;
+            await owner.save();
 
             // create restaurant
             restaurant = createTestRestaurant(owner._id);
@@ -428,6 +489,13 @@ describe.skip('reservation test', () => {
             expect(res.status).toBe(400);
         });
 
+        it('should return 404 if user does not exist', async () => {
+            let anotherOwner = await createTestUser('owner');
+            token = anotherOwner.generateAuthToken();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
         it('should return 404 if restaurant not found', async () => {
             restaurantId = new mongoose.Types.ObjectId();
             const res = await exec();
@@ -435,8 +503,18 @@ describe.skip('reservation test', () => {
         });
 
         it('should return 403 if restaurant does not belong to user', async () => {
-            let otherUser = await createTestUser('owner');
-            token = otherUser.generateAuthToken();
+            let otherOwner = await createTestUser('owner');
+
+            let otherOwnerProfile = await OwnerProfile({
+                user: otherOwner._id,
+                companyName, 
+                restaurants: [new mongoose.Types.ObjectId()]
+            });
+            await otherOwnerProfile.save();
+            otherOwner.profile = otherOwnerProfile._id;
+            await otherOwner.save();
+
+            token = otherOwner.generateAuthToken();
             const res = await exec();
             expect(res.status).toBe(403);
         });
