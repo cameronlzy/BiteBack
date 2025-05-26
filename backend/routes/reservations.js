@@ -72,7 +72,7 @@ router.get('/restaurant/:id', [auth, isOwner, validateObjectId], async (req, res
     if (!restaurant) return res.status(404).send('Restaurant not found.');
 
     // if restaurant does not owned by owner
-    if (restaurant.owner != req.user._id) return res.status(403).send('Restaurant Owner does not own this restaurant');
+    if (!restaurant.owner.equals(req.user._id)) return res.status(403).send('Restaurant Owner does not own this restaurant');
     
     // find all the reservations for restaurant
     let reservations;
@@ -112,7 +112,7 @@ router.post('/', auth, async (req, res) => {
     // if owner, can only reserve their own restaurants
     if (req.user.role == 'owner') {
         let restaurant = await Restaurant.findById(req.body.restaurant);
-        if (restaurant.owner != req.user._id) return res.status(403).send('Owners can only reserve their own restaurants.');
+        if (!restaurant.owner.equals(req.user._id)) return res.status(403).send('Owners can only reserve their own restaurants.');
     }
 
     // create reservation
@@ -149,7 +149,7 @@ router.put('/:id', [auth, validateObjectId], async (req, res) => {
     // look up reservation
     let reservation = await Reservation.findById(req.params.id);
     if (!reservation) return res.status(404).send('Reservation not found.');
-    if (reservation.user != req.user._id) return res.status(403).send('Reservation does not belong to user.');
+    if (!reservation.user.equals(req.user._id)) return res.status(403).send('Reservation does not belong to user.');
 
     // update reservation
     reservation.set({
@@ -164,7 +164,7 @@ router.put('/:id', [auth, validateObjectId], async (req, res) => {
 router.delete('/:id', [auth, validateObjectId], async (req, res) => {
     const reservation = await Reservation.findById(req.params.id);
     if (!reservation) return res.status(404).send('Reservation not found.');
-    if (reservation.user != req.user._id) return res.status(403).send('Reservation does not belong to user.');
+    if (!reservation.user.equals(req.user._id)) return res.status(403).send('Reservation does not belong to user.');
     await Reservation.deleteOne({ _id: req.params.id });
     return res.send(reservation);
 });

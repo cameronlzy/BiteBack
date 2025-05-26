@@ -138,7 +138,7 @@ function validateRestaurant(profile) {
   return restaurantJoiSchema.validate(profile);
 }
 
-async function createRestaurantArray(arr, userId, session) {
+async function createRestaurantArray(arr, userId, session = null) {
   let restaurant;
   try {
     let output = [];
@@ -147,7 +147,11 @@ async function createRestaurantArray(arr, userId, session) {
       item.owner = userId;
       item.openingHours = convertSGTOpeningHoursToUTC(item.openingHours);
       restaurant = new Restaurant(item);
-      await restaurant.save({ session });
+      if (session) {
+        await restaurant.save({ session });
+      } else {
+        await restaurant.save();
+      }
       output.push(restaurant._id);
     }
     return output;

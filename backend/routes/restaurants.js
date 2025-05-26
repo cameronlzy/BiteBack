@@ -133,7 +133,7 @@ router.put('/:id', [auth, isOwner, validateObjectId], async (req, res) => {
     // look up restaurant
     let restaurant = await Restaurant.findById(req.params.id);
     if (!restaurant) return res.status(404).send('The restaurant with the given ID was not found.');
-    if (restaurant.owner != req.user._id) return res.status(403).send('Restaurant does not belong to owner.');
+    if (!restaurant.owner.equals(req.user._id)) return res.status(403).send('Restaurant does not belong to owner.');
     
     // update restaurant
     Object.assign(restaurant, req.body);
