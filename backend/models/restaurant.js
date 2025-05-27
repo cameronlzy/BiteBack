@@ -102,7 +102,8 @@ const restaurantSchema = new mongoose.Schema({
       validator: v => validator.isURL(v, { protocols: ['http', 'https'], require_protocol: true }),
       message: 'Invalid URL'
     }
-  }
+  },
+  rating: { type: Number, min: 0, max: 5, required: true, default: 0 }
 });
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
@@ -228,26 +229,21 @@ function convertSGTOpeningHoursToUTC(openingHours) {
   const daysOfWeek = [
     'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
   ];
-
   const result = {};
 
   for (const day of daysOfWeek) {
     const hours = openingHours[day];
-
     if (typeof hours === 'string' && hours.toLowerCase() === 'closed') {
       result[day] = 'Closed';
       continue;
     }
-
     const [start, end] = hours.split('-');
 
     // using an arbitrary date
     const dateString = '2025-01-01';
-
     const startUTC = DateTime.fromISO(`${dateString}T${start}`, { zone: 'Asia/Singapore' })
       .toUTC()
       .toFormat('HH:mm');
-
     const endUTC = DateTime.fromISO(`${dateString}T${end}`, { zone: 'Asia/Singapore' })
       .toUTC()
       .toFormat('HH:mm');
@@ -259,6 +255,7 @@ function convertSGTOpeningHoursToUTC(openingHours) {
 }
 
 exports.Restaurant = Restaurant;
+exports.restaurantJoiSchema = restaurantJoiSchema;
 exports.validateRestaurant = validateRestaurant;
 exports.createRestaurantArray = createRestaurantArray;
 exports.createTestRestaurant = createTestRestaurant;

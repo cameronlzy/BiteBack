@@ -1,7 +1,7 @@
 const auth = require('../middleware/auth');
 const { Reservation, validateReservation, validateNewReservation } = require('../models/reservation');
 const express = require('express');
-const { dateAllowPartial } = require('../utils/dateUtil');
+const { dateAllowPartial, ISOdate } = require('../utils/dateUtil');
 const { DateTime } = require('luxon');
 const validateObjectId = require('../middleware/validateObjectId');
 const isOwner = require('../middleware/isOwner');
@@ -31,7 +31,7 @@ router.get('/:id/availability', [auth, validateObjectId], async (req, res) => {
     // validate query
     const id = req.params.id;
     const querySchema = Joi.object({ 
-        date: dateAllowPartial.required()
+        date: ISOdate.required()
     });
     const { error } = querySchema.validate(req.query);    
     if (error) return res.status(400).send(error.details[0].message);
@@ -163,6 +163,9 @@ router.delete('/:id', [auth, isOwner, validateObjectId], async (req, res) => {
                 { $pull: { restaurants: restaurant._id }}, { session, runValidators: true }
             );
 
+            // delete reservations from restaurant
+            await Reservation.deleteMany({ restaurant: req.params.id }).session(session);
+
             // delete restaurant
             await Restaurant.deleteOne({ _id: req.params.id }).session(session);
 
@@ -194,6 +197,9 @@ router.delete('/:id', [auth, isOwner, validateObjectId], async (req, res) => {
             { $pull: { restaurants: restaurant._id } }, { runValidators: true }
         );
 
+        // delete reservations from restaurant
+        await Reservation.deleteMany({ restaurant: req.params.id });
+        
         // delete restaurant
         await Restaurant.deleteOne({ _id: req.params.id });
         return res.send(restaurant);

@@ -402,6 +402,7 @@ describe.skip('auth test', () => {
             expect(user.profile).toHaveProperty('contactNumber');
             expect(user.profile).toHaveProperty('favCuisines'); 
             expect(user.profile).toHaveProperty('points');
+            expect(user.profile).toHaveProperty('dateJoined');
         });
     });
 
@@ -513,6 +514,7 @@ describe.skip('auth test', () => {
                 .populate('profile');
             expect(user.profile).toHaveProperty('companyName');
             expect(user.profile).toHaveProperty('restaurants');
+            expect(user.profile).toHaveProperty('dateJoined');
         });
     });
 

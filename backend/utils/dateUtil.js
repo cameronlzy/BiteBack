@@ -27,4 +27,14 @@ const dateAllowPartial = Joi.string().custom((value, helpers) => {
   return helpers.error('any.invalid');
 }, 'Date or DateTime validation');
 
-module.exports = { dateFullOnly, dateAllowPartial };
+// only ISO date string
+const ISOdate = Joi.string()
+  .isoDate()
+  .messages({
+    'string.base': 'Date must be a string.',
+    'string.isoDate': 'Date must be a valid ISO 8601 date string.',
+    'any.required': 'Date is required.'
+  });
+
+
+module.exports = { dateFullOnly, dateAllowPartial, ISOdate };

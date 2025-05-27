@@ -1,18 +1,17 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
 Joi.objectId = require('joi-objectid')(Joi);
-const { DateTime } = require('luxon');
 const { dateFullOnly } = require('../utils/dateUtil');
 
 const reservationSchema = new mongoose.Schema({
     user: { 
         type: mongoose.Schema.Types.ObjectId,
-        refPath: 'User',
+        ref: 'User',
         required: true,
     },
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
-        refPath: 'Restaurant',
+        ref: 'Restaurant',
         required: true,
     },
     reservationDate: {

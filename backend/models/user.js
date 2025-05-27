@@ -64,7 +64,7 @@ async function createTestUser(role) {
 function validateLogin(req) {
   const schema = Joi.object({
     email: Joi.string().email(),
-    username: Joi.string(),
+    username: Joi.string().min(3),
     password: Joi.string().min(5).max(255).required()
   }).xor('email', 'username');
   return schema.validate(req);

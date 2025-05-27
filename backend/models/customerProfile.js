@@ -58,7 +58,25 @@ const customerProfileSchema = new mongoose.Schema({
     ]
   },
   points: { type: Number, required: true, default: 0 },
+  totalBadges: {
+    type: [Number],
+    required: true,
+    validate: {
+      validator: function (arr) {
+        return (
+          Array.isArray(arr) &&
+          arr.length === 4 &&
+          arr.every(num => Number.isInteger(num) && num >= 0)
+        );
+      },
+      message: 'totalBadges must be an array of 4 non-negative integers.'
+    }, default: [0, 0, 0, 0]
+  }
+}, {
+  timestamps: { createdAt: 'dateJoined', updatedAt: false }
 });
+
+customerProfileSchema.path('dateJoined').immutable(true);
 
 const CustomerProfile = mongoose.model('CustomerProfile', customerProfileSchema);
 

@@ -4,10 +4,9 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const { Restaurant, createTestRestaurant } = require('../../models/restaurant');
 const { DateTime } = require('luxon');
-const { create } = require('lodash');
 const { OwnerProfile } = require('../../models/ownerProfile');
 
-describe.skip('reservation test', () => {
+describe.skip('restaurant test', () => {
     let server;
 
     beforeAll(() => {

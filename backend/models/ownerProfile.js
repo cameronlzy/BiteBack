@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Joi = require('joi');
+Joi.objectId = require('joi-objectid')(Joi);
 const { userJoiSchema } = require('./user');
+const { restaurantJoiSchema } = require('./restaurant');
 
 const ownerProfileSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
@@ -15,6 +17,7 @@ const ownerProfileSchema = new mongoose.Schema({
     },
     required: true
   },
+  dateJoined: { type: Date, required: true, default: Date.now() }
 });
 
 const OwnerProfile = mongoose.model('OwnerProfile', ownerProfileSchema);
@@ -23,7 +26,7 @@ function validateOwnerProfile(profile) {
   const schema = userJoiSchema.keys({
     role: Joi.string().valid("owner").required(),
     companyName: Joi.string().min(2).max(255).required(),
-    restaurants: Joi.array().min(1).required(),
+    restaurants: Joi.array().items(restaurantJoiSchema).min(1).required(),
   });
   return schema.validate(profile);
 }

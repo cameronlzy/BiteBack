@@ -69,7 +69,9 @@ router.put('/me', auth, async (req, res) => {
         }
 
         // update user
-        Object.assign(user, _.pick(req.body, ['email', 'username', 'password']));
+        Object.assign(user, _.pick(req.body, ['email', 'username']));
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
         await user.save({ session });
 
         // find and update profile
@@ -87,9 +89,10 @@ router.put('/me', auth, async (req, res) => {
         await session.commitTransaction();
 
         // send back user
+        const token = user.generateAuthToken();
         const { password, ...safeUser } = user.toObject();
         safeUser.profile = profile;
-        return res.send(safeUser);
+        return res.header('x-auth-token', token).send(safeUser);
       } else {
         // validate request
         req.body.role = 'owner';
@@ -118,7 +121,9 @@ router.put('/me', auth, async (req, res) => {
         }
 
         // update user
-        Object.assign(user, _.pick(req.body, ['email', 'username', 'password']));
+        Object.assign(user, _.pick(req.body, ['email', 'username']));
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
         await user.save({ session });
 
         // find and update profile
@@ -130,9 +135,10 @@ router.put('/me', auth, async (req, res) => {
         if (!profile) throw { status: 404, message: 'Profile not found.' };
 
         // send back user
+        const token = user.generateAuthToken();
         const { password, ...safeUser } = user.toObject();
         safeUser.profile = profile;
-        return res.send(safeUser);
+        return res.header('x-auth-token', token).send(safeUser);
       }
     } catch (err) {
       await session.abortTransaction();
@@ -171,7 +177,9 @@ router.put('/me', auth, async (req, res) => {
         }
 
         // update user
-        Object.assign(user, _.pick(req.body, ['email', 'username', 'password']));
+        Object.assign(user, _.pick(req.body, ['email', 'username']));
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
         await user.save();
 
         // find and update profile
@@ -187,9 +195,10 @@ router.put('/me', auth, async (req, res) => {
         if (!profile) return res.status(404).send('Profile not found.');
 
         // send back user
+        const token = user.generateAuthToken();
         const { password, ...safeUser } = user.toObject();
         safeUser.profile = profile;
-        return res.send(safeUser);
+        return res.header('x-auth-token', token).send(safeUser);
     } else {
       // validate request
       req.body.role = 'owner';
@@ -218,7 +227,9 @@ router.put('/me', auth, async (req, res) => {
       }
 
       // update user
-      Object.assign(user, _.pick(req.body, ['email', 'username', 'password']));
+      Object.assign(user, _.pick(req.body, ['email', 'username']));
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(user.password, salt);
       await user.save();
 
       // find and update profile
@@ -230,9 +241,10 @@ router.put('/me', auth, async (req, res) => {
       if (!profile) return res.status(404).send('Profile not found.');
 
       // send back user
+      const token = user.generateAuthToken();
       const { password, ...safeUser } = user.toObject();
       safeUser.profile = profile;
-      return res.send(safeUser);
+      return res.header('x-auth-token', token).send(safeUser);
     }
   }
 });
@@ -423,6 +435,7 @@ router.post('/register', async (req, res) => {
       return res.header('x-auth-token', token).send(_.pick(user, ['_id', 'email', 'username', 'role']));
     } else {
       // validate request
+      // console.log(req.body);
       const { error } = validateOwner(req.body); 
       if (error) return res.status(400).send(error.details[0].message);
 

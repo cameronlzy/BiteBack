@@ -2,7 +2,7 @@ const auth = require('../middleware/auth');
 const { Restaurant, createSlots } = require('../models/restaurant');
 const { Reservation, validateReservation, validateNewReservation } = require('../models/reservation');
 const express = require('express');
-const { dateFullOnly, dateAllowPartial } = require('../utils/dateUtil');
+const { dateFullOnly, dateAllowPartial, ISOdate } = require('../utils/dateUtil');
 const { DateTime } = require('luxon');
 const validateObjectId = require('../middleware/validateObjectId');
 const isOwner = require('../middleware/isOwner');
@@ -14,8 +14,8 @@ router.get('/owner', [auth, isOwner], async (req, res) => {
     // validate query
     const ownerId = req.user._id;
     const querySchema = Joi.object({
-        startDate: dateAllowPartial.required(),
-        endDate: dateAllowPartial
+        startDate: ISOdate.required(),
+        endDate: ISOdate
     });
     const { error } = querySchema.validate(req.query);    
     if (error) return res.status(400).send(error.details[0].message);
@@ -52,8 +52,8 @@ router.get('/restaurant/:id', [auth, isOwner, validateObjectId], async (req, res
     // validate query
     const restaurantId = req.params.id;
     const querySchema = Joi.object({
-        startDate: dateAllowPartial.required(),
-        endDate: dateAllowPartial
+        startDate: ISOdate.required(),
+        endDate: ISOdate
     });
     const { error } = querySchema.validate(req.query);    
     if (error) return res.status(400).send(error.details[0].message);
