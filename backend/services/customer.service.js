@@ -15,7 +15,7 @@ exports.getMe = async (userId) => {
     return { status: 200, body: user };
 };
 
-exports.getProfile = async (userId) => {
+exports.publicProfile = async (userId) => {
     // get user
     const user = await User.findById(userId);
     if (!user) return { status: 404, body: 'User not found.' };
@@ -28,13 +28,6 @@ exports.getProfile = async (userId) => {
 };
 
 exports.updateMe = async (data, authUser) => {
-    if (!['owner', 'customer'].includes(authUser.role)) throw { status: 400, body: 'Invalid role.' };
-    data.role = 'customer';
-
-    // validate request change validation for patch
-    const { error } = validateCustomer(data);
-    if (error) throw { status: 400, body: error.details[0].message };
-
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 

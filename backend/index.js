@@ -3,11 +3,14 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 
-app.use(cors({
-  origin: 'https://bite-back-indol.vercel.app',
+const corsOptions = {
+  origin: 'https://bite-back-cdw3ekse2-cameronlzys-projects.vercel.app',
   credentials: true,
-  exposedHeaders: ['x-auth-token']
-}));
+  exposedHeaders: ['x-auth-token'],
+};
+
+app.use(cors(corsOptions));
+app.options(/^\/.*$/, cors(corsOptions));
 
 require('./startup/logging');
 require('./startup/routes')(app);

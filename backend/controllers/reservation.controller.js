@@ -1,17 +1,20 @@
 const reservationService = require('../services/reservation.service');
 const Joi = require('joi');
 const { ISOdate } = require('../helpers/time.helper');
+const { validateReservation, validateNewReservation } = require('../validators/reservation.validator');
 
 exports.getReservationsByOwner = async (req, res) => {
-    const schema = Joi.object({ startDate: ISOdate.required(), endDate: ISOdate });
-    const { error } = schema.validate(req.query);
-    if (error) return res.status(400).send(error.details[0].message);
+  // validate query
+  const schema = Joi.object({ startDate: ISOdate.required(), endDate: ISOdate });
+  const { error } = schema.validate(req.query);
+  if (error) return res.status(400).send(error.details[0].message);
 
-    const data = await reservationService.getReservationsByOwner(req.user._id, req.query);
-    return res.status(data.status).send(data.body);
+  const data = await reservationService.getReservationsByOwner(req.user._id, req.query);
+  return res.status(data.status).send(data.body);
 };
 
 exports.getReservationsByRestaurant = async (req, res) => {
+  // validate query
   const schema = Joi.object({ startDate: ISOdate.required(), endDate: ISOdate });
   const { error } = schema.validate(req.query);
   if (error) return res.status(400).send(error.details[0].message);
@@ -31,11 +34,19 @@ exports.getSingleReservation = async (req, res) => {
 };
 
 exports.createReservation = async (req, res) => {
+  // validate request
+  const { error } = validateReservation(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
   const data = await reservationService.createReservation(req.user, req.body);
   return res.status(data.status).send(data.body);
 };
 
 exports.updateReservation = async (req, res) => {
+  // validate new reservation
+  const { error } = validateNewReservation(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
   const data = await reservationService.updateReservation(req.user._id, req.params.id, req.body);
   return res.status(data.status).send(data.body);
 };

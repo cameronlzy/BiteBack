@@ -3,10 +3,13 @@ const authController = require('../controllers/auth.controller');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const router = wrapRoutes(express.Router());
 
+// [Public] - Login via username or email + password
 router.post('/login', authController.login);
 
+// [Public] - Registration for owners
 router.post('/register/owner', authController.registerOwner);
 
+// [Public] - Registration for customers
 router.post('/register/customer', authController.registerCustomer);
 
 module.exports = router; 

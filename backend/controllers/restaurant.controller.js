@@ -4,12 +4,12 @@ const Joi = require('joi');
 const { ISOdate } = require('../helpers/time.helper');
 
 exports.getAllRestaurants = async (req, res) => {
-    const data = await restaurantService.getAll();
+    const data = await restaurantService.getAllRestaurants();
     return res.status(data.status).send(data.body)
 };
 
 exports.getRestaurantById = async (req, res) => {
-    const data = await restaurantService.getById(req.params.id);
+    const data = await restaurantService.getRestaurantById(req.params.id);
     return res.status(data.status).send(data.body);
 };
 
@@ -28,7 +28,7 @@ exports.createRestaurant = async (req, res) => {
     const { error } = validateRestaurant(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const data = await restaurantService.create(req.user, req.body);
+    const data = await restaurantService.createRestaurant(req.user, req.body);
     return res.status(data.status).send(data.body);
 };
 
@@ -37,11 +37,11 @@ exports.updateRestaurant = async (req, res) => {
     const { error } = validateRestaurant(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const data = await restaurantService.update(req.params.id, req.user, req.body);
+    const data = await restaurantService.updateRestaurant(req.params.id, req.user, req.body);
     return res.status(data.status).send(data.body);
 };
 
 exports.deleteRestaurant = async (req, res) => {
-    const data = await restaurantService.delete(req.params.id, req.user);
+    const data = await restaurantService.deleteRestaurant(req.params.id, req.user);
     return res.status(data.status).send(data.body);
 };

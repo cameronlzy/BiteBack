@@ -44,6 +44,10 @@ const convertToUTCEnd = (isoDate) => {
   return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).endOf('day').toUTC().toJSDate();
 };
 
+const convertToUTC = (isoDate) => {
+  return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).toUTC().toJSDate();
+};
+
 
 module.exports = { 
   dateFullOnly, 
@@ -51,4 +55,5 @@ module.exports = {
   ISOdate,
   convertToUTCStart,
   convertToUTCEnd,
+  convertToUTC,
 };

@@ -6,18 +6,22 @@ const isOwner = require('../middleware/isOwner');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const router = wrapRoutes(express.Router());
 
-const isProdEnv = process.env.NODE_ENV === 'production';
-
+// [Public] - Get all restaurants
 router.get('/', restaurantController.getAllRestaurants);
 
+// [Public] - Get restaurant by ID
 router.get('/:id', validateObjectId, restaurantController.getRestaurantById);
 
+// [Public] - Get availability of restaurant by date
 router.get('/:id/availability', [auth, validateObjectId], restaurantController.getAvailability);
 
+// [Owner] - Create new restaurant
 router.post('/', [auth, isOwner], restaurantController.createRestaurant);
 
+// [Owner] - Update restaurant
 router.put('/:id', [auth, isOwner, validateObjectId], restaurantController.updateRestaurant);
 
+// [Owner] - Delete restaurant
 router.delete('/:id', [auth, isOwner, validateObjectId], restaurantController.deleteRestaurant);
 
 module.exports = router; 

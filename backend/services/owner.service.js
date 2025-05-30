@@ -22,13 +22,6 @@ exports.getMe = async (userId) => {
 };
 
 exports.updateMe = async (data, authUser) => {
-    if (!['owner', 'customer'].includes(authUser.role)) throw { status: 400, body: 'Invalid role.' };
-    data.role = 'owner';
-
-    // validate request change validation for patch
-    const { error } = validateNewOwner(data);
-    if (error) throw { status: 400, body: error.details[0].message };
-
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 

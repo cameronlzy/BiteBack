@@ -3,12 +3,16 @@ const customerController = require('../controllers/customer.controller');
 const express = require('express');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const validateObjectId = require('../middleware/validateObjectId');
+const isCustomer = require('../middleware/isCustomer');
 const router = wrapRoutes(express.Router());
 
-router.get('/me', auth, customerController.getMe);
+// [Customer] - Get all information for private profile page
+router.get('/me', [auth, isCustomer], customerController.getMe);
 
-router.get('/:id', validateObjectId, customerController.getProfile);
+// [Public] - Get information for public profile page
+router.get('/:id', validateObjectId, customerController.publicProfile);
 
-router.put('/me', auth, customerController.updateMe);
+// [Customer] - Update customer information
+router.put('/me', [auth, isCustomer], customerController.updateMe);
 
 module.exports = router;

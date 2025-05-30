@@ -10,13 +10,13 @@ const _ = require('lodash');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
-exports.getAll = async () => {
+exports.getAllRestaurants = async () => {
   // find restaurants
   const restaurants = await Restaurant.find().sort('name');
   return { status: 200, body: restaurants };
 }
 
-exports.getById = async (id) => { 
+exports.getRestaurantById = async (id) => { 
   // find restaurant
   const restaurant = await Restaurant.findById(id);
   if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
@@ -54,7 +54,7 @@ exports.getAvailability = async (id, query) => {
   })) };
 };
 
-exports.create = async (authUser, data) => {
+exports.createRestaurant = async (authUser, data) => {
   const session = isProdEnv ? await mongoose.startSession() : null;
   if (session) session.startTransaction();
 
@@ -85,7 +85,7 @@ exports.create = async (authUser, data) => {
   }
 };
 
-exports.update = async (id, user, data) => {
+exports.updateRestaurant = async (id, user, data) => {
   // find restaurant
   let restaurant = await Restaurant.findById(id);
   if (!restaurant) return { status: 404, body: 'The restaurant with the given ID was not found.' };
@@ -98,7 +98,7 @@ exports.update = async (id, user, data) => {
   return { status: 200, body: restaurant };
 };
 
-exports.delete = async (id, authUser) => {
+exports.deleteRestaurant = async (id, authUser) => {
   const session = isProdEnv ? await mongoose.startSession() : null;
   if (session) session.startTransaction();
 

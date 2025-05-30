@@ -2,10 +2,7 @@ const User = require('../models/user.model');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const _ = require('lodash');
-const { validateLogin } = require('../validators/user.validator');
 const { generateAuthToken } = require('../services/user.service');
-const { validateCustomer } = require('../validators/customerProfile.validator');
-const { validateOwner } = require('../validators/ownerProfile.validator');
 const { createRestaurantArray } = require('../services/restaurant.service');
 const CustomerProfile = require('../models/customerProfile.model');
 const OwnerProfile = require('../models/ownerProfile.model');
@@ -13,9 +10,6 @@ const OwnerProfile = require('../models/ownerProfile.model');
 const isProdEnv = process.env.NODE_ENV === 'production';
 
 exports.login = async (credentials) => {
-    // validate request
-    validateLogin(credentials);
-
     // find user
     const user = await User.findOne(credentials.email
         ? { email: credentials.email }
@@ -33,12 +27,6 @@ exports.login = async (credentials) => {
 };
 
 exports.registerCustomer = async (data) => {
-    if (!['owner', 'customer'].includes(data.role)) throw { status: 400, body: 'Invalid role.' };
-    
-    // validate request
-    const { error } = validateCustomer(data);
-    if (error) throw { status: 400, body: error.details[0].message };
-
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
@@ -91,12 +79,6 @@ exports.registerCustomer = async (data) => {
 };
 
 exports.registerOwner = async (data) => {
-    if (!['owner', 'customer'].includes(data.role)) return { status: 400, body: 'Invalid role.' };
-    
-    // validate request
-    const { error } = validateOwner(data);
-    if (error) throw { status: 400, body: error.details[0].message };
-
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
