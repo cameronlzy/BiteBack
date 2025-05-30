@@ -5,7 +5,7 @@ const logger = require('../startup/logging');
 
 module.exports = function() {
   if (process.env.NODE_ENV !== 'test') {
-    const db = config.get('db');
+    const db = config.get('mongoURI');
     mongoose.connect(db)
       .then(() => logger.info(`Connected to ${db}...`));
   }

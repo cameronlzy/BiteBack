@@ -1,14 +1,15 @@
-const { Reservation } = require('../../models/reservation');
-const { User, createTestUser } = require('../../models/user');
+const Reservation = require('../../models/reservation.model');
+const User = require('../../models/user.model');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const { Restaurant, createTestRestaurant } = require('../../models/restaurant');
+const Restaurant = require('../../models/restaurant.model');
+const { createTestUser } = require('../factories/user.factory');
+const { createTestRestaurant } = require('../factories/restaurant.factory');
+const { generateAuthToken } = require('../../services/user.service');
 const { DateTime } = require('luxon');
-const { OwnerProfile } = require('../../models/ownerProfile');
-const c = require('config');
-const { create } = require('lodash');
+const OwnerProfile = require('../../models/ownerProfile.model');
 
-describe.skip('reservation test', () => {
+describe('reservation test', () => {
     let server;
 
     beforeAll(() => {
@@ -43,7 +44,7 @@ describe.skip('reservation test', () => {
             // create an owner
             owner = await createTestUser('owner');
             await owner.save();
-            token = owner.generateAuthToken();
+            token = generateAuthToken(owner);
 
             // create 3 restaurants
             let restaurant1 = createTestRestaurant(owner._id);
@@ -105,7 +106,7 @@ describe.skip('reservation test', () => {
 
         it('should return 403 if customer', async () => {
             let customer = await createTestUser('customer');
-            token = customer.generateAuthToken();
+            token = generateAuthToken(customer);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -166,7 +167,7 @@ describe.skip('reservation test', () => {
             // create an owner
             owner = await createTestUser('owner');
             await owner.save();
-            token = owner.generateAuthToken();
+            token = generateAuthToken(owner);
 
             // create a restaurant
             restaurant = createTestRestaurant(owner._id);
@@ -225,7 +226,7 @@ describe.skip('reservation test', () => {
 
         it('should return 403 if customer', async () => {
             let customer = await createTestUser('customer');
-            token = customer.generateAuthToken();
+            token = generateAuthToken(customer);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -246,7 +247,7 @@ describe.skip('reservation test', () => {
 
         it('should return 403 if restaurant not owned by owner', async () => {
             let anotherOwner = await createTestUser('owner');
-            token = anotherOwner.generateAuthToken();
+            token = generateAuthToken(anotherOwner);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -296,7 +297,7 @@ describe.skip('reservation test', () => {
             user = await createTestUser('customer');
             await user.save();
             userId = user._id;
-            token = user.generateAuthToken();
+            token = generateAuthToken(user);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -380,7 +381,7 @@ describe.skip('reservation test', () => {
             // create a user
             user = await createTestUser('customer');
             await user.save();
-            token = user.generateAuthToken();
+            token = generateAuthToken(user);
 
             // create an owner
             owner = await createTestUser('owner');
@@ -434,7 +435,7 @@ describe.skip('reservation test', () => {
 
         it('should return 403 if valid request, owner', async () => {
             owner = await createTestUser('owner');
-            token = owner.generateAuthToken();
+            token = generateAuthToken(owner);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -479,7 +480,7 @@ describe.skip('reservation test', () => {
             user = await createTestUser('customer');
             await user.save();
             userId = user._id;
-            token = user.generateAuthToken();
+            token = generateAuthToken(user);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -566,7 +567,7 @@ describe.skip('reservation test', () => {
             user = await createTestUser('customer');
             await user.save();
             userId = user._id;
-            token = user.generateAuthToken();
+            token = generateAuthToken(user);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -631,7 +632,7 @@ describe.skip('reservation test', () => {
 
         it('should return 403 if reservation does not belong to user', async () => {
             let otherUser = await createTestUser('customer');
-            token = otherUser.generateAuthToken();
+            token = generateAuthToken(otherUser);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -671,7 +672,7 @@ describe.skip('reservation test', () => {
             user = await createTestUser('customer');
             await user.save();
             userId = user._id;
-            token = user.generateAuthToken();
+            token = generateAuthToken(user);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -722,7 +723,7 @@ describe.skip('reservation test', () => {
 
         it('should return 403 if reservation does not belong to user', async () => {
             let otherUser = await createTestUser('customer');
-            token = otherUser.generateAuthToken();
+            token = generateAuthToken(otherUser);
             const res = await exec();
             expect(res.status).toBe(403);
         });

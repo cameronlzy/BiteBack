@@ -36,5 +36,19 @@ const ISOdate = Joi.string()
     'any.required': 'Date is required.'
   });
 
+const convertToUTCStart = (isoDate) => {
+  return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
+};
 
-module.exports = { dateFullOnly, dateAllowPartial, ISOdate };
+const convertToUTCEnd = (isoDate) => {
+  return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).endOf('day').toUTC().toJSDate();
+};
+
+
+module.exports = { 
+  dateFullOnly, 
+  dateAllowPartial, 
+  ISOdate,
+  convertToUTCStart,
+  convertToUTCEnd,
+};

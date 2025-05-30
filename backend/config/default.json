@@ -1,4 +1,4 @@
 {
 	"jwtPrivateKey": "",
-	"db": "mongodb://localhost:27017/biteback"
+	"mongoURI": "mongodb://localhost:27017/biteback"
 }

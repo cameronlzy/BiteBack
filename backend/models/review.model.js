@@ -1,7 +1,4 @@
 const mongoose = require('mongoose');
-const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
-const { dateAllowPartial, ISOdate } = require('../utils/dateUtil');
 
 const reviewSchema = new mongoose.Schema({
     customer: {
@@ -66,29 +63,12 @@ const reviewSchema = new mongoose.Schema({
         default: false
     }
 }, {
-    timestamps: { createdAt: true, updatedAt: false }
+    timestamps: { createdAt: true, updatedAt: false }, 
+    versionKey: false
 });
 
 reviewSchema.path('createdAt').immutable(true);
 
-function validateReview(review) {
-    const schema = Joi.object({
-        restaurant: Joi.objectId().required(),
-        rating: Joi.number().integer().min(0).max(5).required(),
-        reviewText: Joi.string().allow('').min(0).max(1000).required(),
-        dateVisited: ISOdate.required()
-    });
-    return schema.validate(review);
-}
-
-function validateReply(reply) {
-    const schema = Joi.object({
-        owner: Joi.objectId().required(),
-        replyText: Joi.string().min(0).max(1000).required()
-    });
-    return schema.validate(reply);
-}
-
 const Review = mongoose.model('Review', reviewSchema);
 
-module.exports = { Review, validateReview, validateReply };
+module.exports = Review;

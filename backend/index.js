@@ -1,11 +1,10 @@
-const winston = require('winston');
 const logger = require('./startup/logging');
 const express = require('express');
 const app = express();
 const cors = require('cors');
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://bite-back-indol.vercel.app',
   credentials: true,
   exposedHeaders: ['x-auth-token']
 }));

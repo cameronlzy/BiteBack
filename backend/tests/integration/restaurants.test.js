@@ -1,12 +1,15 @@
-const { Reservation } = require('../../models/reservation');
-const { User, createTestUser } = require('../../models/user');
+const Reservation = require('../../models/reservation.model');
+const User = require('../../models/user.model');
+const { createTestUser } = require('../factories/user.factory');
+const { createTestRestaurant } = require('../factories/restaurant.factory');
+const { generateAuthToken } = require('../../services/user.service');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const { Restaurant, createTestRestaurant } = require('../../models/restaurant');
+const Restaurant = require('../../models/restaurant.model');
 const { DateTime } = require('luxon');
-const { OwnerProfile } = require('../../models/ownerProfile');
+const OwnerProfile = require('../../models/ownerProfile.model');
 
-describe.skip('restaurant test', () => {
+describe('restaurant test', () => {
     let server;
 
     beforeAll(() => {
@@ -109,7 +112,7 @@ describe.skip('restaurant test', () => {
             user = await createTestUser('customer');
             await user.save();
             userId = user._id;
-            token = user.generateAuthToken();
+            token = generateAuthToken(user);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -230,7 +233,7 @@ describe.skip('restaurant test', () => {
             owner = await User({
                 email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
             });
-            token = owner.generateAuthToken();
+            token = generateAuthToken(owner);
 
             // creating an ownerProfile
             companyName = "name";
@@ -285,7 +288,7 @@ describe.skip('restaurant test', () => {
 
         it('should return 403 if customer', async () => {
             let customer = await createTestUser('customer');
-            token = customer.generateAuthToken();
+            token = generateAuthToken(customer);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -330,7 +333,7 @@ describe.skip('restaurant test', () => {
             // create an owner
             owner = await createTestUser('owner');
             await owner.save();
-            token = owner.generateAuthToken();
+            token = generateAuthToken(owner);
 
             // create restaurant
             restaurant = createTestRestaurant(owner._id);
@@ -396,7 +399,7 @@ describe.skip('restaurant test', () => {
 
         it('should return 403 if restaurant does not belong to user', async () => {
             let otherUser = await createTestUser('owner');
-            token = otherUser.generateAuthToken();
+            token = generateAuthToken(otherUser);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -440,7 +443,7 @@ describe.skip('restaurant test', () => {
             owner = await User({
                 email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
             });
-            token = owner.generateAuthToken();
+            token = generateAuthToken(owner);
 
             // creating a restaurant
             restaurant = createTestRestaurant(owner._id);
@@ -490,7 +493,7 @@ describe.skip('restaurant test', () => {
 
         it('should return 404 if user does not exist', async () => {
             let anotherOwner = await createTestUser('owner');
-            token = anotherOwner.generateAuthToken();
+            token = generateAuthToken(anotherOwner);
             const res = await exec();
             expect(res.status).toBe(404);
         });
@@ -513,7 +516,7 @@ describe.skip('restaurant test', () => {
             otherOwner.profile = otherOwnerProfile._id;
             await otherOwner.save();
 
-            token = otherOwner.generateAuthToken();
+            token = generateAuthToken(otherOwner);
             const res = await exec();
             expect(res.status).toBe(403);
         });

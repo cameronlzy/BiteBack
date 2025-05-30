@@ -1,4 +1,4 @@
-const { createSlots } = require('../../../models/restaurant');
+const { createSlots } = require('../../../helpers/restaurant.helper');
 
 describe.skip('restaurant methods', () => {
     it('should return an array of time intervals of the right length', () => {

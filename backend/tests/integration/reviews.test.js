@@ -1,12 +1,15 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { DateTime } = require('luxon');
-const { Review } = require('../../models/review');
-const { createTestUser } = require('../../models/user');
-const { createTestRestaurant, Restaurant } = require('../../models/restaurant');
-const { CustomerProfile } = require('../../models/customerProfile');
+const Review = require('../../models/review.model');
+const { createTestUser } = require('../factories/user.factory');
+const { createTestRestaurant } = require('../factories/restaurant.factory');
+const { generateAuthToken } = require('../../services/user.service');
+const User = require('../../models/user.model');
+const Restaurant = require('../../models/restaurant.model');
+const CustomerProfile = require('../../models/customerProfile.model');
 
-describe.skip('review test', () => {
+describe('review test', () => {
 	let server;
 	beforeAll(() => {
 		server = require('../../index');
@@ -120,7 +123,7 @@ describe.skip('review test', () => {
             contactNumber = "87654321";
             favCuisines = ['Chinese'];
             user = await createTestUser('customer');
-            token = user.generateAuthToken();
+            token = generateAuthToken(user);
             profile = new CustomerProfile({
                 user: user._id,
                 name, contactNumber, favCuisines
@@ -158,7 +161,7 @@ describe.skip('review test', () => {
 
         it('should return 403 if owner', async () => {
             let owner = await createTestUser('owner');
-            token = owner.generateAuthToken();
+            token = generateAuthToken(owner);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -198,6 +201,7 @@ describe.skip('review test', () => {
 
 		beforeEach(async () => {
 			// clear all
+            await User.deleteMany({});
 			await Review.deleteMany({});
             await CustomerProfile.deleteMany({});
             await Restaurant.deleteMany({});
@@ -211,7 +215,7 @@ describe.skip('review test', () => {
             contactNumber = "87654321";
             favCuisines = ['Chinese'];
             user = await createTestUser('customer');
-            token = user.generateAuthToken();
+            token = generateAuthToken(user);
 
             profile = new CustomerProfile({
                 user: user._id,
@@ -255,7 +259,7 @@ describe.skip('review test', () => {
 
         it('should return 403 if owner', async () => {
             let owner = await createTestUser('owner');
-            token = owner.generateAuthToken();
+            token = generateAuthToken(owner);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -268,7 +272,7 @@ describe.skip('review test', () => {
 
         it('should return 404 if user does not exist', async () => {
             let otherCustomer = await createTestUser('customer');
-            token = otherCustomer.generateAuthToken();
+            token = generateAuthToken(otherCustomer);
             const res = await exec();
             expect(res.status).toBe(404);
         });
@@ -276,7 +280,7 @@ describe.skip('review test', () => {
         it('should return 403 if review does not belong to user', async () => {
             let otherCustomer = await createTestUser('customer');
             await otherCustomer.save();
-            token = otherCustomer.generateAuthToken();
+            token = generateAuthToken(otherCustomer);
             const res = await exec();
             expect(res.status).toBe(403);
         });
