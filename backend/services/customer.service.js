@@ -1,29 +1,30 @@
 const User = require('../models/user.model');
+const CustomerProfile = require('../models/customerProfile.model');
+const { generateAuthToken } = require('./user.service');
+const mongoose = require('mongoose');
 const _ = require('lodash');
 const bcrypt = require('bcrypt');
-const { generateAuthToken } = require('./user.service');
-const { validateCustomer } = require('../validators/customerProfile.validator');
-const CustomerProfile = require('../models/customerProfile.model');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
 exports.getMe = async (userId) => {
     const user = await User.findById(userId)
         .populate('profile')
-        .select('-password');
+        .select('-password')
+        .lean();
     if (!user) return { status: 400, body: 'User not found.' };
     return { status: 200, body: user };
 };
 
 exports.publicProfile = async (userId) => {
     // get user
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).lean();
     if (!user) return { status: 404, body: 'User not found.' };
     if (user.role != 'customer') return { status: 400, body: 'ID does not belong to a customer.' };
 
     // get customer profile 
     const profile = await CustomerProfile.findById(user.profile)
-        .select('+totalBadges +dateJoined');
+        .select('+totalBadges +dateJoined').lean();
     return { status: 200, body: profile };
 };
 
@@ -43,7 +44,7 @@ exports.updateMe = async (data, authUser) => {
                 { email: data.email },
                 { username: data.username }
             ]
-        }).session(session);
+        }).session(session || null).lean();
         if (existingUser) {
             if (existingUser.email === data.email) {
                 throw { status: 400, body: 'Email is already taken.' };
@@ -56,7 +57,7 @@ exports.updateMe = async (data, authUser) => {
         // update user
         Object.assign(user, _.pick(data, ['email', 'username']));
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        user.password = await bcrypt.hash(data.password, salt);
         await user.save({ session });
 
         // find and update profile
@@ -68,7 +69,7 @@ exports.updateMe = async (data, authUser) => {
             favCuisines: data.favCuisines
           },
           { new: true, runValidators: true, session }
-        );
+        ).lean();
         if (!profile) throw { status: 404, body: 'Profile not found.' };
 
         if (session) await session.commitTransaction();

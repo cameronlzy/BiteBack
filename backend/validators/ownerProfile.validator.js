@@ -1,5 +1,4 @@
 const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
 const { userJoiSchema } = require('./user.validator');
 const { restaurantJoiSchema } = require('./restaurant.validator');
 

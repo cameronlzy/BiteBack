@@ -1,9 +1,9 @@
 const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
 const { generateAuthToken } = require('./user.service');
-const { validateNewOwner } = require('../validators/ownerProfile.validator');
 const _ = require('lodash');
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
@@ -16,7 +16,7 @@ exports.getMe = async (userId) => {
                 model: 'Restaurant'
             }
         })
-        .select('-password');
+        .select('-password').lean();
     if (!user) return { status: 400, body: 'Owner not found.' };
     return { status: 200, body: user };
 };
@@ -37,7 +37,7 @@ exports.updateMe = async (data, authUser) => {
                 { email: data.email },
                 { username: data.username }
             ]
-        }).session(session);
+        }).session(session).lean();
         if (existingUser) {
             if (existingUser.email === data.email) {
                 throw { status: 400, body: 'Email is already taken.' };
@@ -50,7 +50,7 @@ exports.updateMe = async (data, authUser) => {
         // update user
         Object.assign(user, _.pick(data, ['email', 'username']));
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        user.password = await bcrypt.hash(data.password, salt);
         await user.save({ session });
 
         // find and update profile
@@ -60,7 +60,7 @@ exports.updateMe = async (data, authUser) => {
             companyName: data.companyName,
           },
           { new: true, runValidators: true, session }
-        );
+        ).lean();
         if (!profile) throw { status: 404, body: 'Profile not found.' };
 
         if (session) await session.commitTransaction();

@@ -1,1 +1,9 @@
 .DS_Store
+backend/node_modules/
+backend/coverage/
+backend/logs/
+**/*.log
+**/.DS_Store
+**/.gitignore
+!.gitignore
+/config/local.json

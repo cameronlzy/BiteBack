@@ -1,11 +1,11 @@
 const User = require('../models/user.model');
+const CustomerProfile = require('../models/customerProfile.model');
+const OwnerProfile = require('../models/ownerProfile.model');
+const { generateAuthToken } = require('../services/user.service');
+const { createRestaurantArray } = require('../services/restaurant.service');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const _ = require('lodash');
-const { generateAuthToken } = require('../services/user.service');
-const { createRestaurantArray } = require('../services/restaurant.service');
-const CustomerProfile = require('../models/customerProfile.model');
-const OwnerProfile = require('../models/ownerProfile.model');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
@@ -14,7 +14,7 @@ exports.login = async (credentials) => {
     const user = await User.findOne(credentials.email
         ? { email: credentials.email }
         : { username: credentials.username }
-    );
+    ).lean();
 
     if (!user) return { status: 400, body: 'Invalid email or password.' };
 
@@ -37,7 +37,7 @@ exports.registerCustomer = async (data) => {
             { email: data.email },
             { username: data.username }
           ]
-        }).session(session || null);
+        }).session(session || null).lean();
         if (existingUser) {
             if (existingUser.email === data.email && existingUser.role === 'owner') {
                 throw { status: 400, body: 'Email already registered to a restaurant owner.' };
@@ -89,7 +89,7 @@ exports.registerOwner = async (data) => {
             { email: data.email },
             { username: data.username }
             ]
-        }).session(session || null);
+        }).session(session || null).lean();
         if (existingUser) {
             if (existingUser.email === data.email && existingUser.role === 'owner') {
                 throw { status: 400, body: 'Email already registered to a restaurant owner.' };

@@ -1,5 +1,4 @@
 const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
 const { ISOdate } = require('../helpers/time.helper');
 
 function validateReview(review) {

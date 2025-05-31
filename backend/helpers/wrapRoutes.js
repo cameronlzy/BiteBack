@@ -1,4 +1,4 @@
-const METHODS = ['get', 'post', 'put', 'delete', 'patch', 'all'];
+const METHODS = ['get', 'post', 'put', 'delete', 'patch', 'options', 'all'];
 
 const asyncWrapper = (handler) =>
   typeof handler === 'function' && handler.constructor.name === 'AsyncFunction'

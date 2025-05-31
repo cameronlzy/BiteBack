@@ -7,7 +7,7 @@ const User = require('../models/user.model');
 
 exports.getReviewsByRestaurant = async (restaurantId) => {
     // check if restaurant exists
-    const restaurant = await Restaurant.findById(restaurantId);
+    const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
     if (!restaurant) return { status: 404, body: 'Restaurant not found.' };
 
     // get reviews by restaurant
@@ -17,17 +17,18 @@ exports.getReviewsByRestaurant = async (restaurantId) => {
 
 exports.getReviewsByCustomer = async (userId) => {
     // check if customer exists
-    const user = await User.findById(userId).populate('profile');
+    const user = await User.findById(userId).select('profile').lean();
     if (!user) return { status: 404, body: 'User not found.' };
+    if (!user.profile) return { status: 404, body: 'Customer profile not found.' };
 
     // get reviews by customer
-    const reviews = await Review.find({ customer: user.profile._id });
+    const reviews = await Review.find({ customer: user.profile }).lean();
     return { status: 200, body: reviews };
 };
 
 exports.getReviewById = async (reviewId) => {
     // get review
-    const review = await Review.findById(reviewId);
+    const review = await Review.findById(reviewId).lean();
     if (!review) return { status: 404, body: 'Review not found.' };
     return { status: 200, body: review };
 };
@@ -35,21 +36,21 @@ exports.getReviewById = async (reviewId) => {
 exports.createReview = async (data, user) => {
     // create review
     const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
-    review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).toUTC().toJSDate();
+    review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
     review.customer = user.profile;
     review.username = user.username;
     await review.save();
     
-    return { status: 200, body: review };
+    return { status: 200, body: review.toObject() };
 };
 
 exports.deleteReview = async (reviewId, authUser) => {
     // get review
-    const review = await Review.findById(reviewId);
+    const review = await Review.findById(reviewId).lean();
     if (!review) return { status: 404, body: 'Review not found.' };
 
     // get user
-    const user = await User.findById(authUser._id);
+    const user = await User.findById(authUser._id).select('profile').lean();
     if (!user) return { status: 404, body: 'Customer not found.' };
 
     // check if review belongs to the logged-in customer

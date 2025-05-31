@@ -2,43 +2,40 @@ const Restaurant = require('../models/restaurant.model');
 const Reservation = require('../models/reservation.model');
 const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
-const mongoose = require('mongoose');
 const { validateRestaurant } = require('../validators/restaurant.validator');
 const { DateTime } = require('luxon');
+const reservationService = require('../services/reservation.service');
 const { createSlots, convertSGTOpeningHoursToUTC } = require('../helpers/restaurant.helper');
 const _ = require('lodash');
+const mongoose = require('mongoose');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
 exports.getAllRestaurants = async () => {
   // find restaurants
-  const restaurants = await Restaurant.find().sort('name');
+  const restaurants = await Restaurant.find().sort('name').lean();
   return { status: 200, body: restaurants };
 }
 
 exports.getRestaurantById = async (id) => { 
   // find restaurant
-  const restaurant = await Restaurant.findById(id);
+  const restaurant = await Restaurant.findById(id).lean();
   if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
   return { status: 200, body: restaurant };
 };
 
 exports.getAvailability = async (id, query) => {
-  const SGTdate = DateTime.fromISO(query.date, { zone: "Asia/Singapore" });
-  const [utcStart, utcEnd] = [SGTdate.startOf('day').toUTC().toJSDate(), SGTdate.endOf('day').toUTC().toJSDate()];
-  
   // find restaurant
-  const restaurant = await Restaurant.findById(id);
+  const restaurant = await Restaurant.findById(id).select('+_id').lean();
   if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
 
   // get reservations on query date
-  const reservations = await Reservation.find({
-      restaurant: id, reservationDate: { $gte: utcStart, $lte: utcEnd }
-  }).select({ reservationDate: 1, pax: 1 });
+  const reservations = await reservationService.getReservationsByRestaurantByDate(restaurant._id, query.date);
 
   // create time slots
-  const timeSlots = createSlots(restaurant, SGTdate.toJSDate());
-  if (!timeSlots) return { status: 200, body: -1 };
+  const SGTdate = DateTime.fromISO(query.date, { zone: 'Asia/Singapore' });
+  const timeSlots = createSlots(restaurant.openingHours, SGTdate);
+  if (Array.isArray(timeSlots) && timeSlots.length === 0) return { status: 200, body: -1 };
 
   // calculate availability for each slot
   const availabilityMap = {};
@@ -76,7 +73,7 @@ exports.createRestaurant = async (authUser, data) => {
 
     if (session) await session.commitTransaction();
 
-    return { status: 200, body: restaurant };
+    return { status: 200, body: restaurant.toObject() };
   } catch (err) {
     if (session) await session.abortTransaction();
     throw err;
@@ -95,7 +92,7 @@ exports.updateRestaurant = async (id, user, data) => {
   Object.assign(restaurant, data);
   restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
   await restaurant.save();
-  return { status: 200, body: restaurant };
+  return { status: 200, body: restaurant.toObject() };
 };
 
 exports.deleteRestaurant = async (id, authUser) => {
@@ -104,19 +101,20 @@ exports.deleteRestaurant = async (id, authUser) => {
 
   try {
     // get ownerProfile 
-    const user = await User.findById(authUser._id).populate('profile').session(session || null);
+    const user = await User.findById(authUser._id).session(session || null).lean();
     if (!user) throw { status: 404, body: 'User not found.' };
     if (!user.profile) throw { status: 404, body: 'Owner Profile not found.' };
 
     // get restaurant
-    const restaurant = await Restaurant.findById(id).session(session || null);
+    const restaurant = await Restaurant.findById(id).session(session || null).lean();
     if (!restaurant) throw { status: 404, body: 'Restaurant not found.' };
-    if (!restaurant.owner.equals(user._id)) throw { status: 403, body: 'Restaurant does not belong to user.' };
+    if (String(restaurant.owner) !== String(user._id)) throw { status: 403, body: 'Restaurant does not belong to user.' };
     
     // updating owner profile
-    await OwnerProfile.findByIdAndUpdate(user.profile._id,
+    const profile = await OwnerProfile.findByIdAndUpdate(user.profile,
         { $pull: { restaurants: restaurant._id }}, { session, runValidators: true }
     );
+    if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
 
     // delete reservations from restaurant
     await Reservation.deleteMany({ restaurant: id }).session(session || null);
