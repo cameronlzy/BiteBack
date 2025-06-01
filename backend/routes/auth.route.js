@@ -3,6 +3,9 @@ const authController = require('../controllers/auth.controller');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const router = wrapRoutes(express.Router());
 
+// [User] - Log out
+router.post('/logout', authController.logout);
+
 // [Public] - Login via username or email + password
 router.post('/login', authController.login);
 

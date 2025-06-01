@@ -4,6 +4,15 @@ const { validateCustomer } = require('../validators/customerProfile.validator');
 const { validateOwner } = require('../validators/ownerProfile.validator');
 const setAuthCookie = require('../helpers/setAuthCookie');
 
+exports.logout = async (req, res) => {
+    res.clearCookies('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    });
+    res.status(200).json({ message: 'Logged out successfully' });
+};
+
 exports.login = async (req, res) => {
     // validate request
     validateLogin(req.body);
