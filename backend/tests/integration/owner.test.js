@@ -3,6 +3,7 @@ const User = require('../../models/user.model');
 const Restaurant = require('../../models/reservation.model');
 const { createTestUser } = require('../factories/user.factory');
 const { createTestRestaurant } = require('../factories/restaurant.factory');
+const { createTestOwnerProfile } = require('../factories/ownerProfile.factory');
 const { generateAuthToken } = require('../../services/user.service');
 const { validateNewOwner } = require('../../validators/ownerProfile.validator');
 const bcrypt = require('bcrypt');
@@ -97,6 +98,7 @@ describe('owner test', () => {
             let companyName = "name";
             let ownerProfile = await OwnerProfile({
                 user: owner._id,
+                username,
                 companyName, 
                 restaurants: [restaurant._id]
             });
@@ -116,7 +118,6 @@ describe('owner test', () => {
         let email;
         let username;
         let password = 'myPassword@123';
-        let companyName;
         let user;
         let profile;
         let newCompanyName;
@@ -137,12 +138,7 @@ describe('owner test', () => {
             await restaurant.save();
 
             // create owner profile
-            companyName = "company";
-            profile = new OwnerProfile({
-                user: user._id,
-                companyName,
-                restaurants: [restaurant._id]
-            });
+            profile = createTestOwnerProfile(user);
             await profile.save();
 
             user.profile = profile._id;

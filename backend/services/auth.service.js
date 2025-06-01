@@ -51,7 +51,7 @@ exports.registerCustomer = async (data) => {
         }
 
         // create a customer profile
-        let customerProfile = new CustomerProfile(_.pick(data, ['name', 'contactNumber', 'favCuisines']));
+        let customerProfile = new CustomerProfile(_.pick(data, ['name', 'contactNumber', 'favCuisines', 'username']));
 
         // create new user
         let user = new User(_.pick(data, ['email', 'username', 'password', 'role']));
@@ -121,7 +121,7 @@ exports.registerOwner = async (data) => {
         }
 
         // create a owner profile
-        let ownerProfile = new OwnerProfile(_.pick(data, ['companyName']));
+        let ownerProfile = new OwnerProfile(_.pick(data, ['companyName', 'username']));
         ownerProfile.user = user._id;
         ownerProfile.restaurants = restaurants;
         await ownerProfile.save({ session });

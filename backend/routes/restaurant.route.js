@@ -18,6 +18,9 @@ router.get('/:id/availability', [auth, validateObjectId], restaurantController.g
 // [Owner] - Create new restaurant
 router.post('/', [auth, isOwner], restaurantController.createRestaurant);
 
+// [Onwer] - Upload images for their restaurant
+// router.post('/:id/images', [auth, isOwner], restaurantController.uploadImageToRestaurant);
+
 // [Owner] - Update restaurant
 router.put('/:id', [auth, isOwner, validateObjectId], restaurantController.updateRestaurant);
 

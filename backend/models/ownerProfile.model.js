@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const ownerProfileSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  username: { type: String, required: true },
   companyName: { type: String, required: true },
   restaurants: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' }],
@@ -12,9 +13,11 @@ const ownerProfileSchema = new mongoose.Schema({
       message: 'At least one restaurant is required.'
     },
     required: true
-  },
-  dateJoined: { type: Date, required: true, default: Date.now() }
-}, { versionKey: false });
+  }
+},{
+  timestamps: { createdAt: 'dateJoined', updatedAt: false }, 
+  versionKey: false
+});
 
 const OwnerProfile = mongoose.model('OwnerProfile', ownerProfileSchema);
 

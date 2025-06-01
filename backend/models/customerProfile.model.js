@@ -26,6 +26,7 @@ const cuisineList = [
 const customerProfileSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   name: { type: String, required: true },
+  username: { type: String, required: true },
   contactNumber: {
     type: String,
     required: true,

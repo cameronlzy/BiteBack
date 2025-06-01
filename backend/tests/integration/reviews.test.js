@@ -4,6 +4,7 @@ const { DateTime } = require('luxon');
 const Review = require('../../models/review.model');
 const { createTestUser } = require('../factories/user.factory');
 const { createTestRestaurant } = require('../factories/restaurant.factory');
+const { createTestCustomerProfile } = require('../factories/customerProfile.factory');
 const { generateAuthToken } = require('../../services/user.service');
 const User = require('../../models/user.model');
 const Restaurant = require('../../models/restaurant.model');
@@ -25,9 +26,6 @@ describe('review test', () => {
         let user;
         let restaurant;
         let profile;
-        let name;
-        let contactNumber;
-        let favCuisines;
         let rating;
         let reviewText;
         let dateVisited;
@@ -43,14 +41,8 @@ describe('review test', () => {
             await restaurant.save();
             
             // create customer 
-            name = "name";
-            contactNumber = "87654321";
-            favCuisines = ['Chinese'];
             user = await createTestUser('customer');
-            profile = new CustomerProfile({
-                user: user._id,
-                name, contactNumber, favCuisines
-            });
+            profile = createTestCustomerProfile(user);
             await profile.save();
 
             // create a review
@@ -101,9 +93,6 @@ describe('review test', () => {
         let user;
         let restaurant;
         let profile;
-        let name;
-        let contactNumber;
-        let favCuisines;
         let rating;
         let reviewText;
         let dateVisited;
@@ -119,16 +108,9 @@ describe('review test', () => {
             await restaurant.save();
             
             // create customer 
-            name = "name";
-            contactNumber = "87654321";
-            favCuisines = ['Chinese'];
             user = await createTestUser('customer');
             token = generateAuthToken(user);
-            profile = new CustomerProfile({
-                user: user._id,
-                name, contactNumber, favCuisines
-            });
-            Date.now().to
+            profile = createTestCustomerProfile(user);
             await profile.save();
 
             // create a review
@@ -217,10 +199,7 @@ describe('review test', () => {
             user = await createTestUser('customer');
             token = generateAuthToken(user);
 
-            profile = new CustomerProfile({
-                user: user._id,
-                name, contactNumber, favCuisines
-            });
+            profile = createTestCustomerProfile(user);
             await profile.save();
             user.profile = profile._id;
             await user.save();

@@ -57,7 +57,7 @@ exports.updateMe = async (data, authUser) => {
         const profile = await OwnerProfile.findByIdAndUpdate(
           user.profile, 
           { 
-            companyName: data.companyName,
+            companyName: data.companyName, username: data.username
           },
           { new: true, runValidators: true, session }
         ).lean();

@@ -1,7 +1,6 @@
 const _ = require('lodash');
 const { DateTime } = require('luxon');
 const Review = require('../models/review.model');
-const { validateReview } = require('../validators/review.validator');
 const Restaurant = require('../models/restaurant.model');
 const User = require('../models/user.model');
 
@@ -15,14 +14,9 @@ exports.getReviewsByRestaurant = async (restaurantId) => {
     return { status: 200, body: reviews };
 };
 
-exports.getReviewsByCustomer = async (userId) => {
-    // check if customer exists
-    const user = await User.findById(userId).select('profile').lean();
-    if (!user) return { status: 404, body: 'User not found.' };
-    if (!user.profile) return { status: 404, body: 'Customer profile not found.' };
-
+exports.getReviewsByCustomer = async (customerId) => {
     // get reviews by customer
-    const reviews = await Review.find({ customer: user.profile }).lean();
+    const reviews = await Review.find({ customer: customerId }).lean();
     return { status: 200, body: reviews };
 };
 

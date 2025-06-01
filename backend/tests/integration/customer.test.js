@@ -1,10 +1,12 @@
 const User = require('../../models/user.model');
 const CustomerProfile = require('../../models/customerProfile.model');
 const { createTestUser } = require('../factories/user.factory');
+const { createTestCustomerProfile } = require('../factories/customerProfile.factory');
 const { generateAuthToken } = require('../../services/user.service');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const { profile } = require('winston');
 
 describe('customer test', () => {
     let server;
@@ -90,14 +92,12 @@ describe('customer test', () => {
         let role;
         let roleProfile;
         let user;
-        let userId;
-        let name;
-        let contactNumber;
-        let favCuisines;
+        let customerId;
+        let profile;
 
         const exec = () => {
             return request(server)
-                .get(`/api/customers/${userId}`);
+                .get(`/api/customers/${customerId}`);
         };
 
         beforeEach(async () => {
@@ -124,33 +124,19 @@ describe('customer test', () => {
             });
 
             // create customer profile
-            name = "test";
-            contactNumber = "87654321";
-            favCuisines = ['Chinese'];
-            profile = new CustomerProfile({
-                user: user._id,
-                name, contactNumber, username, favCuisines
-            });
+            profile = createTestCustomerProfile(user);
             await profile.save();
+            customerId = profile._id;
 
             user.profile = profile._id;
             await user.save();
-            userId = user._id;
         });
 
-        it('should return 404 if no token', async () => {
+        it('should return 404 if customer not found', async () => {
             let otherCustomer = await createTestUser('customer');
-            userId = otherCustomer._id;
+            customerId = otherCustomer._id;
             const res = await exec();
             expect(res.status).toBe(404);
-        });
-
-        it('should return 400 if token belongs to owner', async () => {
-            let owner = await createTestUser('owner');
-            await owner.save();
-            userId = owner._id;
-            const res = await exec();
-            expect(res.status).toBe(400);
         });
 
         it('should return 200 if valid token', async () => {

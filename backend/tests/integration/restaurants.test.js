@@ -2,6 +2,7 @@ const Reservation = require('../../models/reservation.model');
 const User = require('../../models/user.model');
 const { createTestUser } = require('../factories/user.factory');
 const { createTestRestaurant } = require('../factories/restaurant.factory');
+const { createTestOwnerProfile } = require('../factories/ownerProfile.factory');
 const { generateAuthToken } = require('../../services/user.service');
 const request = require('supertest');
 const mongoose = require('mongoose');
@@ -237,11 +238,7 @@ describe('restaurant test', () => {
 
             // creating an ownerProfile
             companyName = "name";
-            ownerProfile = await OwnerProfile({
-                user: owner._id,
-                companyName, 
-                restaurants: [new mongoose.Types.ObjectId()]
-            });
+            ownerProfile = createTestOwnerProfile(owner);
             await ownerProfile.save();
 
             owner.profile = ownerProfile._id;
@@ -418,6 +415,8 @@ describe('restaurant test', () => {
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
 
             // create an owner
             email = "myOwner@gmail.com";
@@ -435,11 +434,7 @@ describe('restaurant test', () => {
 
             // creating an ownerProfile
             companyName = "name";
-            ownerProfile = await OwnerProfile({
-                user: owner._id,
-                companyName, 
-                restaurants: [restaurant._id]
-            });
+            ownerProfile = createTestOwnerProfile(owner);
             await ownerProfile.save();
 
             owner.profile = ownerProfile._id;
@@ -491,11 +486,7 @@ describe('restaurant test', () => {
         it('should return 403 if restaurant does not belong to user', async () => {
             let otherOwner = await createTestUser('owner');
 
-            let otherOwnerProfile = await OwnerProfile({
-                user: otherOwner._id,
-                companyName, 
-                restaurants: [new mongoose.Types.ObjectId()]
-            });
+            let otherOwnerProfile = createTestOwnerProfile(otherOwner);
             await otherOwnerProfile.save();
             otherOwner.profile = otherOwnerProfile._id;
             await otherOwner.save();

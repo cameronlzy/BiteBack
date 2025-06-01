@@ -16,16 +16,12 @@ exports.getMe = async (userId) => {
     return { status: 200, body: user };
 };
 
-exports.publicProfile = async (userId) => {
-    // get user
-    const user = await User.findById(userId).lean();
-    if (!user) return { status: 404, body: 'User not found.' };
-    if (user.role != 'customer') return { status: 400, body: 'ID does not belong to a customer.' };
+exports.publicProfile = async (customerId) => {
+    // get customer
+    const customer = await CustomerProfile.findById(customerId).select('+totalBadges +dateJoined +username').lean();
+    if (!customer) return { status: 404, body: 'Customer not found.' };
 
-    // get customer profile 
-    const profile = await CustomerProfile.findById(user.profile)
-        .select('+totalBadges +dateJoined').lean();
-    return { status: 200, body: profile };
+    return { status: 200, body: customer };
 };
 
 exports.updateMe = async (data, authUser) => {
