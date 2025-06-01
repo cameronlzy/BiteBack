@@ -3,10 +3,10 @@ const CustomerProfile = require('../../models/customerProfile.model');
 const { createTestUser } = require('../factories/user.factory');
 const { createTestCustomerProfile } = require('../factories/customerProfile.factory');
 const { generateAuthToken } = require('../../services/user.service');
+const setTokenCookie = require('../../helpers/setTokenCookie');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const { profile } = require('winston');
+const bcrypt = require('bcryptjs');
 
 describe('customer test', () => {
     let server;
@@ -27,11 +27,12 @@ describe('customer test', () => {
         let roleProfile;
         let token;
         let user;
+        let cookie;
 
         const exec = () => {
             return request(server)
                 .get('/api/customers/me')
-                .set('x-auth-token', token);
+                .set('Cookie', [cookie]);
         };
 
         beforeEach(async () => {
@@ -58,18 +59,27 @@ describe('customer test', () => {
 
             await user.save();
             token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
         });
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "invalid-token";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie("invalid-token");
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
+        });
+        
+        it('should return 403 if owner', async () => {
+            let owner = await createTestUser('owner');
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
         });
 
         it('should return 200 if valid token', async () => {
@@ -156,22 +166,24 @@ describe('customer test', () => {
         let token;
         let email;
         let username;
-        let password = 'myPassword@123';
+        let password;
         let name;
         let contactNumber;
         let favCuisines;
         let user;
         let profile;
         let newContactNumber;
+        let cookie;
 
         beforeEach(async () => {
             await User.deleteMany({});
             await CustomerProfile.deleteMany({});
 
-            // creates user with password: myPassword@123
+            // creates user with password: Password@123
             user = await createTestUser('customer');
             email = user.email;
             username = user.username;
+            password = "Password@123";
 
             // create customer profile
             name = "test";
@@ -186,6 +198,7 @@ describe('customer test', () => {
             user.profile = profile._id;
             await user.save();
             token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
 
             // update the customer
             newContactNumber = "12345678";
@@ -194,7 +207,7 @@ describe('customer test', () => {
         const exec = () => {
             return request(server)
                 .put('/api/customers/me')
-                .set('x-auth-token', token)
+                .set('Cookie', [cookie])
                 .send({
                     email, username, password, name, 
                     contactNumber: newContactNumber, favCuisines
@@ -202,19 +215,27 @@ describe('customer test', () => {
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 403 if owner', async () => {
+            let owner = createTestUser('owner');
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
         });
 
         it('should return 400 if invalid request', async () => {
-            token = "1";
+            password = 'weak';
             const res = await exec();
             expect(res.status).toBe(400);
         });
@@ -222,6 +243,7 @@ describe('customer test', () => {
          it('should return 404 if user not found', async () => {
             let otherUser = await createTestUser('customer');
             token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(404);
         });

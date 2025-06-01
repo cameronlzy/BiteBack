@@ -1,4 +1,5 @@
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const error = require('../middleware/error');
 const auth = require('../routes/auth.route');
 const reservations = require('../routes/reservation.route');
@@ -9,6 +10,7 @@ const owners = require('../routes/owner.route');
 
 module.exports = function(app) {
   app.use(express.json());
+  app.use(cookieParser());
   app.use('/api/auth', auth);
   app.use('/api/reservations', reservations);
   app.use('/api/restaurants', restaurants);

@@ -2,7 +2,7 @@ const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
 const { generateAuthToken } = require('./user.service');
 const _ = require('lodash');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 
 const isProdEnv = process.env.NODE_ENV === 'production';

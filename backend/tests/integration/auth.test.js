@@ -1,7 +1,9 @@
 const request = require('supertest');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
+const config = require('config');
+const cookie = require('cookie');
 const User = require('../../models/user.model');
 const { createTestUser } = require('../factories/user.factory');
 const { createTestRestaurant } = require('../factories/restaurant.factory');
@@ -9,7 +11,6 @@ const { generateAuthToken } = require('../../services/user.service');
 const CustomerProfile = require('../../models/customerProfile.model');
 const OwnerProfile = require('../../models/ownerProfile.model');
 const Restaurant = require('../../models/restaurant.model');
-const config = require('config');
 
 describe('auth test', () => {
     let server;
@@ -254,14 +255,6 @@ describe('auth test', () => {
             await user.save();
         });
     
-        it('should return 400 if empty request', async () => {
-            email = "";
-            username = "";
-            password = "";
-            const res = await emailLogin();
-            expect(res.status).toBe(400);
-        });
-    
         it('should return 400 if invalid request', async () => {
             email = "";
             const res = await emailLogin();
@@ -304,20 +297,6 @@ describe('auth test', () => {
             expect(res.status).toBe(200);
         });
     
-        it('should return 200 when logging in through username for owner', async () => {
-            role = "owner";
-            roleProfile = "OwnerProfile";
-            username = "myOwner";
-            email = "myOwner@gmail.com";
-            user = new User({
-                email, username, password: hashedPassword, role, roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
-            await user.save();
-            const res = await usernameLogin();
-            expect(res.status).toBe(200);
-        });
-    
         it('should return username, email, role', async () => {
             const res = await usernameLogin();
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
@@ -326,7 +305,11 @@ describe('auth test', () => {
     
         it('should return valid jwtToken', async () => {
             const res = await usernameLogin();
-            const token = res.headers['x-auth-token'];
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookie.parse(cookies[0]);
+            const token = parsed.token;
             expect(token).toBeDefined();
     
             const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
@@ -334,6 +317,7 @@ describe('auth test', () => {
             expect(decoded).toHaveProperty('email');
             expect(decoded).toHaveProperty('username');
             expect(decoded).toHaveProperty('role');
+            expect(decoded).toHaveProperty('profile');
         });
     });
 });

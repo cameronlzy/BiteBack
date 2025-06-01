@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 const Restaurant = require('../../models/restaurant.model');
 const { DateTime } = require('luxon');
 const OwnerProfile = require('../../models/ownerProfile.model');
+const setTokenCookie = require('../../helpers/setTokenCookie');
 
 describe('restaurant test', () => {
     let server;
@@ -94,7 +95,6 @@ describe('restaurant test', () => {
     });
 
     describe('GET /api/restaurants/:id/availability', () => {
-        let token;
         let user;
         let userId;
         let restaurant;
@@ -113,7 +113,6 @@ describe('restaurant test', () => {
             user = await createTestUser('customer');
             await user.save();
             userId = user._id;
-            token = generateAuthToken(user);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -136,21 +135,8 @@ describe('restaurant test', () => {
 
         const exec = () => {
             return request(server)
-            .get(url)
-            .set('x-auth-token', token);
+            .get(url);
         };
-
-        it('should return 401 if no token', async () => {
-            token = "";
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 400 if invalid token', async () => {
-            token = "1";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
 
         it('should return 400 if invalid id', async () => {
             url = `/api/restaurants/1/availability?date=${queryDateSG}`;
@@ -214,12 +200,12 @@ describe('restaurant test', () => {
 
         let owner;
         let ownerProfile;
-        let companyName;
 
         let email;
         let username;
         let password;
         let role;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -235,9 +221,9 @@ describe('restaurant test', () => {
                 email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
             });
             token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
 
             // creating an ownerProfile
-            companyName = "name";
             ownerProfile = createTestOwnerProfile(owner);
             await ownerProfile.save();
 
@@ -256,7 +242,7 @@ describe('restaurant test', () => {
         const exec = () => {
             return request(server)
             .post('/api/restaurants')
-            .set('x-auth-token', token)
+            .set('Cookie', [cookie])
             .send({
                 name, address, contactNumber, cuisines,
                 openingHours, maxCapacity
@@ -264,20 +250,21 @@ describe('restaurant test', () => {
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 403 if customer', async () => {
             let customer = await createTestUser('customer');
             token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -315,6 +302,7 @@ describe('restaurant test', () => {
         let openingHours;
         let maxCapacity;
         let owner;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -323,6 +311,7 @@ describe('restaurant test', () => {
             owner = await createTestUser('owner');
             await owner.save();
             token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
 
             // create restaurant
             restaurant = createTestRestaurant(owner._id);
@@ -341,7 +330,7 @@ describe('restaurant test', () => {
         const exec = () => {
             return request(server)
             .put(`/api/restaurants/${restaurantId}`)
-            .set('x-auth-token', token)
+            .set('Cookie', [cookie])
             .send({
                 name, address, contactNumber, cuisines,
                 openingHours, maxCapacity
@@ -349,15 +338,15 @@ describe('restaurant test', () => {
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid id', async () => {
@@ -381,6 +370,7 @@ describe('restaurant test', () => {
         it('should return 403 if restaurant does not belong to user', async () => {
             let otherUser = await createTestUser('owner');
             token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -410,8 +400,8 @@ describe('restaurant test', () => {
         let username;
         let password;
         let role;
-        let companyName;
         let ownerProfile;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -427,13 +417,13 @@ describe('restaurant test', () => {
                 email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
             });
             token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
 
             // creating a restaurant
             restaurant = createTestRestaurant(owner._id);
             await restaurant.save();
 
             // creating an ownerProfile
-            companyName = "name";
             ownerProfile = createTestOwnerProfile(owner);
             await ownerProfile.save();
 
@@ -449,19 +439,19 @@ describe('restaurant test', () => {
         const exec = () => {
             return request(server)
             .delete(`/api/restaurants/${restaurantId}`)
-            .set('x-auth-token', token)
+            .set('Cookie', [cookie]);
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid id', async () => {
@@ -471,8 +461,7 @@ describe('restaurant test', () => {
         });
 
         it('should return 404 if user does not exist', async () => {
-            let anotherOwner = await createTestUser('owner');
-            token = generateAuthToken(anotherOwner);
+            await User.deleteMany({});
             const res = await exec();
             expect(res.status).toBe(404);
         });
@@ -492,6 +481,7 @@ describe('restaurant test', () => {
             await otherOwner.save();
 
             token = generateAuthToken(otherOwner);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });

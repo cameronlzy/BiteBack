@@ -2,13 +2,15 @@ const authService = require('../services/auth.service');
 const { validateLogin } = require('../validators/user.validator');
 const { validateCustomer } = require('../validators/customerProfile.validator');
 const { validateOwner } = require('../validators/ownerProfile.validator');
+const setAuthCookie = require('../helpers/setAuthCookie');
 
 exports.login = async (req, res) => {
     // validate request
     validateLogin(req.body);
 
-    const data = await authService.login(req.body);
-    return res.header('x-auth-token', data.token).status(data.status).send(data.body);
+    const { token, body, status } = await authService.login(req.body);
+    if (token) setAuthCookie(res, token);
+    return res.status(status).json(body);
 };
 
 exports.registerCustomer = async (req, res) => {
@@ -16,8 +18,9 @@ exports.registerCustomer = async (req, res) => {
     const { error } = validateCustomer(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const data = await authService.registerCustomer(req.body);
-    return res.header('x-auth-token', data.token).status(data.status).send(data.body);
+    const {token, body, status } = await authService.registerCustomer(req.body);
+    if (token) setAuthCookie(res, token);
+    return res.status(status).json(body);
 };
 
 exports.registerOwner = async (req, res) => {
@@ -25,6 +28,7 @@ exports.registerOwner = async (req, res) => {
     const { error } = validateOwner(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const data = await authService.registerOwner(req.body);
-    return res.header('x-auth-token', data.token).status(data.status).send(data.body);
+    const { token, body, status } = await authService.registerOwner(req.body);
+    if (token) setAuthCookie(res, token);
+    return res.status(status).json(body);
 };

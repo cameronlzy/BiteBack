@@ -38,19 +38,8 @@ exports.createReview = async (data, user) => {
     return { status: 200, body: review.toObject() };
 };
 
-exports.deleteReview = async (reviewId, authUser) => {
-    // get review
-    const review = await Review.findById(reviewId).lean();
-    if (!review) return { status: 404, body: 'Review not found.' };
-
-    // get user
-    const user = await User.findById(authUser._id).select('profile').lean();
-    if (!user) return { status: 404, body: 'Customer not found.' };
-
-    // check if review belongs to the logged-in customer
-    if (!review.customer.equals(user.profile)) return { status: 403, body: 'Access denied. You can only delete your own reviews.' };
-
+exports.deleteReview = async (review) => {
     // delete the review
-    await Review.deleteOne({ _id: reviewId });
-    return { status: 200, body: review };
+    await Review.deleteOne({ _id: review._id });
+    return { status: 200, body: review.toObject() };
 };

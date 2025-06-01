@@ -1,8 +1,9 @@
 const auth = require('../middleware/auth');
+const isOwner = require('../middleware/isOwner');
+const authorizedRestaurantOwner = require('../middleware/authorizedRestaurantOwner');
 const express = require('express');
 const restaurantController = require('../controllers/restaurant.controller');
 const validateObjectId = require('../middleware/validateObjectId');
-const isOwner = require('../middleware/isOwner');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const router = wrapRoutes(express.Router());
 
@@ -13,7 +14,7 @@ router.get('/', restaurantController.getAllRestaurants);
 router.get('/:id', validateObjectId, restaurantController.getRestaurantById);
 
 // [Public] - Get availability of restaurant by date
-router.get('/:id/availability', [auth, validateObjectId], restaurantController.getAvailability);
+router.get('/:id/availability', validateObjectId, restaurantController.getAvailability);
 
 // [Owner] - Create new restaurant
 router.post('/', [auth, isOwner], restaurantController.createRestaurant);
@@ -22,9 +23,9 @@ router.post('/', [auth, isOwner], restaurantController.createRestaurant);
 // router.post('/:id/images', [auth, isOwner], restaurantController.uploadImageToRestaurant);
 
 // [Owner] - Update restaurant
-router.put('/:id', [auth, isOwner, validateObjectId], restaurantController.updateRestaurant);
+router.put('/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], restaurantController.updateRestaurant);
 
 // [Owner] - Delete restaurant
-router.delete('/:id', [auth, isOwner, validateObjectId], restaurantController.deleteRestaurant);
+router.delete('/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], restaurantController.deleteRestaurant);
 
 module.exports = router; 

@@ -17,16 +17,16 @@ exports.getAllRestaurants = async () => {
   return { status: 200, body: restaurants };
 }
 
-exports.getRestaurantById = async (id) => { 
+exports.getRestaurantById = async (restaurantId) => { 
   // find restaurant
-  const restaurant = await Restaurant.findById(id).lean();
+  const restaurant = await Restaurant.findById(restaurantId).lean();
   if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
   return { status: 200, body: restaurant };
 };
 
-exports.getAvailability = async (id, query) => {
+exports.getAvailability = async (restaurantId, query) => {
   // find restaurant
-  const restaurant = await Restaurant.findById(id).select('+_id').lean();
+  const restaurant = await Restaurant.findById(restaurantId).select('+_id').lean();
   if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
 
   // get reservations on query date
@@ -82,20 +82,15 @@ exports.createRestaurant = async (authUser, data) => {
   }
 };
 
-exports.updateRestaurant = async (id, user, data) => {
-  // find restaurant
-  let restaurant = await Restaurant.findById(id);
-  if (!restaurant) return { status: 404, body: 'The restaurant with the given ID was not found.' };
-  if (!restaurant.owner.equals(user._id)) return { status: 403, body: 'Restaurant does not belong to owner.' };
-
+exports.updateRestaurant = async (restaurant, update) => {
   // update restaurant
-  Object.assign(restaurant, data);
-  restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
+  Object.assign(restaurant, update);
+  restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
   await restaurant.save();
   return { status: 200, body: restaurant.toObject() };
 };
 
-exports.deleteRestaurant = async (id, authUser) => {
+exports.deleteRestaurant = async (restaurant, authUser) => {
   const session = isProdEnv ? await mongoose.startSession() : null;
   if (session) session.startTransaction();
 
@@ -104,11 +99,6 @@ exports.deleteRestaurant = async (id, authUser) => {
     const user = await User.findById(authUser._id).session(session || null).lean();
     if (!user) throw { status: 404, body: 'User not found.' };
     if (!user.profile) throw { status: 404, body: 'Owner Profile not found.' };
-
-    // get restaurant
-    const restaurant = await Restaurant.findById(id).session(session || null).lean();
-    if (!restaurant) throw { status: 404, body: 'Restaurant not found.' };
-    if (String(restaurant.owner) !== String(user._id)) throw { status: 403, body: 'Restaurant does not belong to user.' };
     
     // updating owner profile
     const profile = await OwnerProfile.findByIdAndUpdate(user.profile,
@@ -117,10 +107,10 @@ exports.deleteRestaurant = async (id, authUser) => {
     if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
 
     // delete reservations from restaurant
-    await Reservation.deleteMany({ restaurant: id }).session(session || null);
+    await Reservation.deleteMany({ restaurant: restaurant._id }).session(session || null);
 
     // delete restaurant
-    await Restaurant.deleteOne({ _id: id }).session(session || null);
+    await Restaurant.deleteOne({ _id: restaurant._id }).session(session || null);
 
     // commit transaction
     if (session) await session.commitTransaction();

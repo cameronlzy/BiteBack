@@ -9,8 +9,8 @@ exports.getReservationsByOwner = async (req, res) => {
   const { error } = schema.validate(req.query);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const data = await reservationService.getReservationsByOwner(req.user._id, req.query);
-  return res.status(data.status).send(data.body);
+  const { status, body } = await reservationService.getReservationsByOwner(req.user._id, req.query);
+  return res.status(status).json(body);
 };
 
 exports.getReservationsByRestaurant = async (req, res) => {
@@ -19,18 +19,18 @@ exports.getReservationsByRestaurant = async (req, res) => {
   const { error } = schema.validate(req.query);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const data = await reservationService.getReservationsByRestaurant(req.user, req.params.id, req.query);
-  return res.status(data.status).send(data.body);
+  const { status, body } = await reservationService.getReservationsByRestaurant(req.restaurant, req.query);
+  return res.status(status).json(body);
 };
 
 exports.getUserReservations = async (req, res) => {
-  const data = await reservationService.getUserReservations(req.user._id);
-  return res.status(data.status).send(data.body);
+  const { status, body } = await reservationService.getUserReservations(req.user._id);
+  return res.status(status).json(body);
 };
 
 exports.getSingleReservation = async (req, res) => {
-  const data = await reservationService.getSingleReservation(req.user._id, req.params.id);
-  return res.status(data.status).send(data.body);
+  const { status, body } = await reservationService.getSingleReservation(req.reservation);
+  return res.status(status).json(body);
 };
 
 exports.createReservation = async (req, res) => {
@@ -38,8 +38,8 @@ exports.createReservation = async (req, res) => {
   const { error } = validateReservation(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const data = await reservationService.createReservation(req.user, req.body);
-  return res.status(data.status).send(data.body);
+  const { status, body } = await reservationService.createReservation(req.user, req.body);
+  return res.status(status).json(body);
 };
 
 exports.updateReservation = async (req, res) => {
@@ -47,12 +47,12 @@ exports.updateReservation = async (req, res) => {
   const { error } = validateNewReservation(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const data = await reservationService.updateReservation(req.user._id, req.params.id, req.body);
-  return res.status(data.status).send(data.body);
+  const { status, body } = await reservationService.updateReservation(req.reservation, req.body);
+  return res.status(status).json(body);
 };
 
 exports.deleteReservation = async (req, res) => {
-  const data = await reservationService.deleteReservation(req.user._id, req.params.id);
-  return res.status(data.status).send(data.body);
+  const { status, body } = await reservationService.deleteReservation(req.reservation);
+  return res.status(status).json(body);
 };
 

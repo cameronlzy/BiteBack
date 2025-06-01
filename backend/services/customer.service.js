@@ -3,7 +3,7 @@ const CustomerProfile = require('../models/customerProfile.model');
 const { generateAuthToken } = require('./user.service');
 const mongoose = require('mongoose');
 const _ = require('lodash');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
@@ -18,7 +18,9 @@ exports.getMe = async (userId) => {
 
 exports.publicProfile = async (customerId) => {
     // get customer
-    const customer = await CustomerProfile.findById(customerId).select('+totalBadges +dateJoined +username').lean();
+    const customer = await CustomerProfile.findById(customerId)
+        .select('+totalBadges +dateJoined +username')
+        .lean();
     if (!customer) return { status: 404, body: 'Customer not found.' };
 
     return { status: 200, body: customer };

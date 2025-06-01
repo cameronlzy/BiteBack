@@ -7,7 +7,7 @@ const { createTestUser } = require('../factories/user.factory');
 const { createTestRestaurant } = require('../factories/restaurant.factory');
 const { generateAuthToken } = require('../../services/user.service');
 const { DateTime } = require('luxon');
-const OwnerProfile = require('../../models/ownerProfile.model');
+const setTokenCookie = require('../../helpers/setTokenCookie');
 
 describe('reservation test', () => {
     let server;
@@ -32,6 +32,7 @@ describe('reservation test', () => {
         let startDate;
         let endDate;
         let remarks;
+        let cookie;
 
         beforeEach(async () => {
             await User.deleteMany({});
@@ -45,6 +46,7 @@ describe('reservation test', () => {
             owner = await createTestUser('owner');
             await owner.save();
             token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
 
             // create 3 restaurants
             let restaurant1 = createTestRestaurant(owner._id);
@@ -83,19 +85,19 @@ describe('reservation test', () => {
         const exec = () => {
             return request(server)
             .get(url)
-            .set('x-auth-token', token);
+            .set('Cookie', [cookie]);
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 400 if no startDate', async () => {
@@ -107,6 +109,7 @@ describe('reservation test', () => {
         it('should return 403 if customer', async () => {
             let customer = await createTestUser('customer');
             token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -168,6 +171,7 @@ describe('reservation test', () => {
             owner = await createTestUser('owner');
             await owner.save();
             token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
 
             // create a restaurant
             restaurant = createTestRestaurant(owner._id);
@@ -197,19 +201,19 @@ describe('reservation test', () => {
         const exec = () => {
             return request(server)
             .get(url)
-            .set('x-auth-token', token);
+            .set('Cookie', [cookie]);
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 400 if no startDate', async () => {
@@ -227,6 +231,7 @@ describe('reservation test', () => {
         it('should return 403 if customer', async () => {
             let customer = await createTestUser('customer');
             token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -248,6 +253,7 @@ describe('reservation test', () => {
         it('should return 403 if restaurant not owned by owner', async () => {
             let anotherOwner = await createTestUser('owner');
             token = generateAuthToken(anotherOwner);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -287,6 +293,7 @@ describe('reservation test', () => {
         let reservationDate2;
         let remarks;
         let pax;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -298,6 +305,7 @@ describe('reservation test', () => {
             await user.save();
             userId = user._id;
             token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -324,19 +332,19 @@ describe('reservation test', () => {
         const exec = () => {
             return request(server)
             .get('/api/reservations/')
-            .set('x-auth-token', token);
+            .set('Cookie', [cookie]);
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 200 if valid token', async () => {
@@ -372,6 +380,7 @@ describe('reservation test', () => {
         let remarks;
         let pax;
         let owner;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -382,6 +391,7 @@ describe('reservation test', () => {
             user = await createTestUser('customer');
             await user.save();
             token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
 
             // create an owner
             owner = await createTestUser('owner');
@@ -401,7 +411,7 @@ describe('reservation test', () => {
         const exec = () => {
             return request(server)
             .post('/api/reservations/')
-            .set('x-auth-token', token)
+            .set('Cookie', [cookie])
             .send({
                 restaurant: restaurantId,
                 reservationDate, remarks,
@@ -410,15 +420,15 @@ describe('reservation test', () => {
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid date', async () => {
@@ -436,6 +446,7 @@ describe('reservation test', () => {
         it('should return 403 if valid request, owner', async () => {
             owner = await createTestUser('owner');
             token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -470,6 +481,7 @@ describe('reservation test', () => {
         let remarks;
         let pax;
         let reservationId;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -481,6 +493,7 @@ describe('reservation test', () => {
             await user.save();
             userId = user._id;
             token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -502,19 +515,19 @@ describe('reservation test', () => {
         const exec = () => {
             return request(server)
             .get(`/api/reservations/${reservationId}`)
-            .set('x-auth-token', token);
+            .set('Cookie', [cookie])
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid id', async () => {
@@ -557,6 +570,7 @@ describe('reservation test', () => {
         let newReservationDate;
         let newRemarks;
         let newPax;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -568,6 +582,7 @@ describe('reservation test', () => {
             await user.save();
             userId = user._id;
             token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -592,7 +607,7 @@ describe('reservation test', () => {
         const exec = () => {
             return request(server)
             .put(`/api/reservations/${reservationId}`)
-            .set('x-auth-token', token)
+            .set('Cookie', [cookie])
             .send({
                 reservationDate: newReservationDate, 
                 remarks: newRemarks,
@@ -601,15 +616,15 @@ describe('reservation test', () => {
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid token', async () => {
-            token = "1";
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid id', async () => {
@@ -633,6 +648,7 @@ describe('reservation test', () => {
         it('should return 403 if reservation does not belong to user', async () => {
             let otherUser = await createTestUser('customer');
             token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });
@@ -662,6 +678,7 @@ describe('reservation test', () => {
         let remarks;
         let pax;
         let reservationId;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -673,6 +690,7 @@ describe('reservation test', () => {
             await user.save();
             userId = user._id;
             token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -694,19 +712,19 @@ describe('reservation test', () => {
         const exec = () => {
             return request(server)
             .delete(`/api/reservations/${reservationId}`)
-            .set('x-auth-token', token);
+            .set('Cookie', [cookie]);
         };
 
         it('should return 401 if no token', async () => {
-            token = "";
+            cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
-            token = "1";
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
             const res = await exec();
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid id', async () => {
@@ -724,6 +742,7 @@ describe('reservation test', () => {
         it('should return 403 if reservation does not belong to user', async () => {
             let otherUser = await createTestUser('customer');
             token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
         });

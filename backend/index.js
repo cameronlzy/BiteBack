@@ -6,7 +6,8 @@ const app = express();
 const corsOptions = {
   origin: 'https://bite-back-indol.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  exposedHeaders: ['x-auth-token']
+  exposedHeaders: ['x-auth-token'],
+  credentials: true,
 };
 
 app.use(cors(corsOptions));

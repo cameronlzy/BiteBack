@@ -2,6 +2,7 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const isCustomer = require('../middleware/isCustomer');
 const validateObjectId = require('../middleware/validateObjectId');
+const authorizedReviewCustomer = require('../middleware/authorizedReviewCustomer');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const {
   getReviewsByRestaurant,
@@ -25,6 +26,6 @@ router.get('/:id', validateObjectId, getReviewById);
 router.post('/', [auth, isCustomer], createReview);
 
 // [Customer] - Delete a review (owned by the customer)
-router.delete('/:id', [auth, isCustomer], deleteReview);
+router.delete('/:id', [validateObjectId, auth, isCustomer, authorizedReviewCustomer], deleteReview);
 
 module.exports = router;

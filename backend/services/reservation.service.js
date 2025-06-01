@@ -19,18 +19,13 @@ exports.getReservationsByOwner = async (ownerId, query) => {
     return { status: 200, body: reservations };
 };
 
-exports.getReservationsByRestaurant = async (owner, restaurantId, query) => {
+exports.getReservationsByRestaurant = async (restaurant, query) => {
     const startDate = convertToUTCStart(query.startDate);
     const endDate = query.endDate ? convertToUTCEnd(query.endDate) : null;
 
-    // find restaurant
-    const restaurant = await Restaurant.findById(restaurantId).lean();
-    if (!restaurant) return { status: 404, body: 'Restaurant not found.' };
-    if (!restaurant.owner.equals(owner._id)) return { status: 403, body: 'Owner does not own this restaurant.' };
-
     // find all reservations for restaurant
     const reservations = await Reservation.find({
-        restaurant: restaurantId,
+        restaurant: restaurant._id,
         reservationDate: endDate ? { $gte: startDate, $lte: endDate } : { $gte: startDate }
     }).lean();
     return { status: 200, body: reservations };
@@ -46,17 +41,12 @@ exports.getUserReservations = async (userId) => {
     return { status: 200, body: reservations };
 };
 
-exports.getSingleReservation = async (userId, reservationId) => {
-    // get reservation
-    const reservation = await Reservation.findOne({
-        _id: reservationId,
-        user: userId,
-        reservationDate: { $gte: Date.now() }
-    }).lean();
-
-    if (!reservation) return { status: 404, body: 'Reservation not found or expired.' };
-
-    return { status: 200, body: reservation };
+exports.getSingleReservation = async (reservation) => {
+    // check if expired
+    if (reservation.reservationDate < Date.now()) {
+        return { status: 404, body: 'Reservation expired' };
+    }
+    return { status: 200, body: reservation.toObject() };
 };
 
 exports.createReservation = async (user, body) => {
@@ -91,12 +81,7 @@ exports.createReservation = async (user, body) => {
     return { status: 200, body: reservation.toObject() };
 };
 
-exports.updateReservation = async (userId, reservationId, update) => {
-    // find reservation
-    const reservation = await Reservation.findById(reservationId).populate('restaurant');
-    if (!reservation) return { status: 404, body: 'Reservation not found.' };
-    if (!reservation.user.equals(userId)) return { status: 403, body: 'Reservation does not belong to user.' };
-
+exports.updateReservation = async (reservation, update) => {
     // check availability
     const SGTdate = DateTime.fromISO(update.reservationDate, { zone: 'Asia/Singapore' });
     const UTCdate = SGTdate.toUTC();
@@ -120,15 +105,10 @@ exports.updateReservation = async (userId, reservationId, update) => {
     return { status: 200, body: reservation.toObject() };   
 };
 
-exports.deleteReservation = async (userId, reservationId) => {
-    // find reservation
-    const reservation = await Reservation.findById(reservationId).lean();
-    if (!reservation) return { status: 404, body: 'Reservation not found.' };
-    if (!reservation.user.equals(userId)) return { status: 403, body: 'Forbidden.' };
-
+exports.deleteReservation = async (reservation) => {
     // delete reservation
-    await Reservation.deleteOne({ _id: reservationId });
-    return { status: 200, body: reservation };
+    await Reservation.deleteOne({ _id: reservation._id });
+    return { status: 200, body: reservation.toObject() };
 };
 
 exports.getReservationsByRestaurantByDate = async (restaurantId, date) => {

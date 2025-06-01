@@ -4,7 +4,7 @@ const OwnerProfile = require('../models/ownerProfile.model');
 const { generateAuthToken } = require('../services/user.service');
 const { createRestaurantArray } = require('../services/restaurant.service');
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const _ = require('lodash');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
