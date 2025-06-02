@@ -16,6 +16,7 @@ import { DateTime } from "luxon"
 import { readableTimeSettings } from "@/utils/timeConverter"
 import ReviewSection from "./ReviewSection"
 import { Trash2 } from "lucide-react"
+import LoadingSpinner from "./common/LoadingSpinner"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -75,8 +76,7 @@ const Restaurant = ({ user }) => {
     }
   }
 
-  if (!restaurant)
-    return <p className="text-center mt-10">Loading restaurant...</p>
+  if (!restaurant) return <LoadingSpinner />
 
   const {
     _id: restid,
@@ -220,7 +220,7 @@ const Restaurant = ({ user }) => {
               <hr className="my-6 border-t border-gray-300" />
               <h4 className="text-lg font-semibold">Upcoming Reservations</h4>
               {!reservations ? (
-                <p className="text-gray-500">Loading reservations...</p>
+                <LoadingSpinner inline={true} size="sm" />
               ) : reservations.length === 0 ? (
                 <p className="text-gray-500">No upcoming reservations.</p>
               ) : (

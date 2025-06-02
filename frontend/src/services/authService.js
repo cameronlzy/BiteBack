@@ -8,7 +8,6 @@ function isValidEmail(email) {
 }
 
 async function login(user) {
-    console.log(user)
     const finalUser = isValidEmail(user.identifier) ? {
         email: user.identifier,
         password: user.password

@@ -40,6 +40,7 @@ import {
 } from "./ui/form"
 import { Input } from "./ui/input"
 import CustomDay from "./common/CustomDay"
+import LoadingSpinner from "./common/LoadingSpinner"
 
 const ReservationForm = ({ user }) => {
   const [showReservation, setShowReservation] = useState(false)
@@ -185,8 +186,7 @@ const ReservationForm = ({ user }) => {
   //   }
   // }, [selectedTime])
 
-  if (!restaurant)
-    return <p className="text-center mt-10">Loading restaurant...</p>
+  if (!restaurant) return <LoadingSpinner />
 
   const handleDateTimeChange = (date) => {
     if (date) {
@@ -399,7 +399,7 @@ const ReservationForm = ({ user }) => {
                           </div>
                         </motion.div>
                       ) : (
-                        <p> Loading Available Time Slots...</p>
+                        <LoadingSpinner inline={true} size="sm" />
                       )
                     ) : (
                       <p> Please Select Date to see Available Time Slots</p>

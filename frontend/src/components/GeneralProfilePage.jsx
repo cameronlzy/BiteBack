@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import CustomerReviews from "./CustomerReviews"
 import { getGeneralUserInfo } from "@/services/userService"
+import LoadingSpinner from "./common/LoadingSpinner"
 
 const GeneralProfilePage = ({ user }) => {
   // user details will be for following in the future
@@ -32,7 +33,7 @@ const GeneralProfilePage = ({ user }) => {
 
     fetchCustomer()
   }, [custId])
-  if (loading) return <div>Loading...</div>
+  if (loading) return <LoadingSpinner />
   return (
     <div className="container mx-auto p-4">
       <div className="text-center mb-4">

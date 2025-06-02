@@ -15,7 +15,6 @@ import {
   FormMessage,
   Form,
 } from "@/components/ui/form"
-import { Link, useNavigate } from "react-router-dom"
 const FormWithCard = ({
   title,
   description,
@@ -24,10 +23,6 @@ const FormWithCard = ({
   form,
   inputFields,
 }) => {
-  if (!form || !form.control) {
-    console.error("Form or form control is not defined")
-    return null
-  }
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader className="space-y-1">

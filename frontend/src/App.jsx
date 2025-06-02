@@ -96,7 +96,10 @@ function App() {
             />
           }
         >
-          <Route path="login" element={<LoginForm user={user} />} />
+          <Route
+            path="login"
+            element={<LoginForm user={user} loading={loading} />}
+          />
           <Route index element={<Home user={user} />} />
           <Route path="register" element={<RegisterForm user={user} />} />
           <Route

@@ -7,6 +7,7 @@ import { toast } from "react-toastify"
 import { readableTimeSettings } from "@/utils/timeConverter"
 import { DateTime } from "luxon"
 import { Link } from "react-router-dom"
+import LoadingSpinner from "./common/LoadingSpinner"
 
 const ReviewCard = ({ review, user, onDelete }) => {
   const [restaurant, setRestaurant] = useState(null)
@@ -23,8 +24,6 @@ const ReviewCard = ({ review, user, onDelete }) => {
     fetchRestaurant()
   }, [])
 
-  console.log(review)
-
   return (
     <Card key={review._id}>
       <CardHeader>
@@ -40,7 +39,7 @@ const ReviewCard = ({ review, user, onDelete }) => {
             {restaurant ? (
               <span className="italic">{restaurant.name}</span>
             ) : (
-              <span className="italic text-gray-400">Loading...</span>
+              <LoadingSpinner size="sm" inline={true} />
             )}
           </div>
           <div className="flex items-center gap-1">

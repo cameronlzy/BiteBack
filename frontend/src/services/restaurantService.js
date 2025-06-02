@@ -17,6 +17,7 @@ export async function getRestaurants() {
 }
 
 export async function getRestaurant(id) {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   const { data } = await http.get(getRestaurantUrl(id))
   if (data.openingHours) {
     data.openingHours = convertOpeningHoursToSGT(data.openingHours)
