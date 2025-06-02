@@ -1,0 +1,4 @@
+{
+  "jwtPrivateKey": "biteback_jwtPrivateKey",
+  "mongoURI": "biteback_db"
+}
