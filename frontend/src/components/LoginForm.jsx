@@ -1,62 +1,69 @@
-"use client"
-
-import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
-import Form from "./common/FormWithCard"
-import { Link, useNavigate } from "react-router-dom"
+import React from "react"
+import { Link, Navigate, useLocation } from "react-router-dom"
+import { safeJoiResolver } from "@/utils/safeJoiResolver"
+import { loginUserSchema } from "@/utils/schemas"
+import FormWithCard from "./common/FormWithCard"
+import auth from "@/services/authService"
 
-const formSchema = z.object({
-  username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
-  }),
-  password: z
-    .string()
-    .min(6, {
-      message: "Password must be at least 6 characters.",
-    })
-    .max(20, {
-      message: "Password must not be longer than 20 characters.",
-    }),
-})
-
-export default function LoginForm({ onLogin }) {
-  const navigate = useNavigate()
-  function onSubmit(values) {
-    // console.log(values)
-    // Perform login logic here
-    onLogin(values)
-    navigate("/", { replace: true })
-  }
-
+const LoginForm = ({ user }) => {
   const form = useForm({
-    resolver: zodResolver(formSchema),
+    resolver: safeJoiResolver(loginUserSchema),
     mode: "onChange",
     defaultValues: {
-      username: "",
+      identifier: "",
       password: "",
     },
   })
 
+  const location = useLocation()
+  const from = location.state?.from || "/"
+
+  if (user) return <Navigate to={from} replace />
+
+  async function onSubmit(user) {
+    try {
+      const data = await auth.login(user)
+      localStorage.setItem("role", data.role)
+      window.location = from
+      toast.success("Login Successful")
+    } catch (ex) {
+      if (ex.response?.status === 400) {
+        form.setError("identifier", {
+          type: "manual",
+          message: "Invalid email/username or password",
+        })
+      }
+    }
+  }
+
+  const inputFields = [
+    {
+      name: "identifier",
+      label: "Username or Email",
+      placeholder: "your username or email",
+    },
+    { name: "password", label: "Password", placeholder: "your password" },
+  ]
+
   return (
-    <div>
-      <Form
+    <React.Fragment>
+      <FormWithCard
         title="Login"
         description="Enter your credentials to login"
-        inputFields={[
-          { name: "username", label: "Username", placeholder: "your username" },
-          { name: "password", label: "Password", placeholder: "your password" },
-        ]}
+        inputFields={inputFields}
         buttonText="Login"
         onSubmit={onSubmit}
         form={form}
       />
       <p>
-        If you dont have an account, you can register{" "}
+        If you don't have an account, you can register{" "}
         <Link to="/register" className="underline-link">
           here
         </Link>
       </p>
-    </div>
+    </React.Fragment>
   )
 }
+
+export default LoginForm

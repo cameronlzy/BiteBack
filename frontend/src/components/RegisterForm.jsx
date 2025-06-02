@@ -1,90 +1,118 @@
-"use client"
+import { use, useEffect, useState } from "react"
+import CustomerForm from "@/components/CustomerForm"
+import OwnerForm from "@/components/OwnerForm"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
+import auth from "@/services/authService"
+import { saveCustomer, saveOwner } from "@/services/userService"
+import BackButton from "./common/BackButton"
+import { useLocation, useNavigate } from "react-router-dom"
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Link, useNavigate } from "react-router-dom"
-import Form from "./common/FormWithCard"
+const RegisterForm = ({ user }) => {
+  const [role, setRole] = useState(user?.role || "customer")
+  const [ownerForm, setOwnerForm] = useState(null)
+  const [customerForm, setCustomerForm] = useState(null)
 
-const formSchema = z
-  .object({
-    username: z.string().min(2, {
-      message: "Username must be at least 2 characters.",
-    }),
-    password: z
-      .string()
-      .min(6, {
-        message: "Password must be at least 6 characters.",
-      })
-      .max(20, {
-        message: "Password must not be longer than 20 characters.",
-      }),
-    confirmPassword: z
-      .string()
-      .min(6, {
-        message: "Password must be at least 6 characters.",
-      })
-      .max(20, {
-        message: "Password must not be longer than 20 characters.",
-      }),
-
-    email: z.string().email({
-      message: "Invalid email address",
-    }),
-  })
-  .superRefine(({ password, confirmPassword }, ctx) => {
-    if (password !== confirmPassword) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["confirmPassword"],
-        message: "Passwords do not match",
-      })
-    }
-  })
-
-const RegisterForm = ({ onRegister }) => {
   const navigate = useNavigate()
-  function onSubmit(values) {
-    // console.log(values)
-    // Perform login logic here
-    onRegister(values)
-    navigate("/", { replace: true })
+  const location = useLocation()
+  const from = location.state?.from || "/"
+  useEffect(() => {
+    if (user && location.pathname === "/register") {
+      navigate("/me/edit", { replace: true })
+    }
+  }, [user, location.pathname, navigate])
+  const deepClean = (obj) =>
+    Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, value]) => value !== "")
+        .map(([key, value]) => [
+          key,
+          value && typeof value === "object" && !Array.isArray(value)
+            ? deepClean(value)
+            : value,
+        ])
+    )
+
+  const handleRegister = async (userToSubmit) => {
+    let cleanedUser = Object.fromEntries(
+      Object.entries(userToSubmit).filter(([_, value]) => value !== "")
+    )
+
+    if (
+      cleanedUser.role === "owner" &&
+      Array.isArray(cleanedUser.restaurants)
+    ) {
+      cleanedUser.restaurants = cleanedUser.restaurants.map((restaurant) =>
+        deepClean(restaurant)
+      )
+    }
+
+    try {
+      const finalData = user ? { ...cleanedUser, _id: user._id } : cleanedUser
+      const response =
+        role === "owner"
+          ? await saveOwner(finalData)
+          : await saveCustomer(finalData)
+      await auth.login({
+        identifier: finalData.email,
+        password: finalData.password,
+      })
+      localStorage.setItem("role", role)
+      return response
+    } catch (ex) {
+      throw ex
+    }
   }
 
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      confirmPassword: "",
-      email: "",
-    },
-  })
   return (
-    <div>
-      <Form
-        title="Register"
-        description="Enter your credentials to register"
-        inputFields={[
-          { name: "username", label: "Username", placeholder: "your username" },
-          { name: "password", label: "Password", placeholder: "your password" },
-          {
-            name: "confirmPassword",
-            label: "Confirm Password",
-            placeholder: "confirm your password",
-          },
-          { name: "email", label: "Email", placeholder: "your email" },
-        ]}
-        buttonText="Register"
-        onSubmit={onSubmit}
-        form={form}
-      />
-      <p>
-        If you already have an account, you can login{" "}
-        <Link to="/login" className="underline-link">
-          here
-        </Link>
-      </p>
+    <div className="space-y-6 max-w-xl mx-auto">
+      <div className="space-y-2">
+        <BackButton from={from} />
+        <div className="space-y-2">
+          {user ? (
+            <p className="text-sm text-gray-600">
+              Editing profile as{" "}
+              <span className="font-semibold">{user.role}</span>
+            </p>
+          ) : (
+            <>
+              <label className="block text-sm font-medium text-gray-700">
+                Register As
+              </label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="customer">Customer</SelectItem>
+                  <SelectItem value="owner">Owner</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          )}
+        </div>
+      </div>
+
+      {role === "customer" ? (
+        <CustomerForm
+          onRegister={handleRegister}
+          setFormRef={setCustomerForm}
+          user={user}
+          from={from}
+        />
+      ) : (
+        <OwnerForm
+          onRegister={handleRegister}
+          setFormRef={setOwnerForm}
+          user={user}
+          from={from}
+        />
+      )}
     </div>
   )
 }

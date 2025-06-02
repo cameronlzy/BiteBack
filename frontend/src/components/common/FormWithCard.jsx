@@ -1,5 +1,3 @@
-"use client"
-
 import {
   Card,
   CardHeader,
@@ -49,7 +47,11 @@ const FormWithCard = ({
                     <FormItem>
                       <FormLabel>{label}</FormLabel>
                       <FormControl>
-                        <Input placeholder={placeholder} {...field} />
+                        <Input
+                          placeholder={placeholder}
+                          type={name === "password" ? "password" : "text"}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

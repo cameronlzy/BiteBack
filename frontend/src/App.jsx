@@ -1,60 +1,72 @@
-import { useEffect, useState } from "react"
-import reactLogo from "./assets/react.svg"
-import viteLogo from "/vite.svg"
+import { useEffect, useState, Fragment } from "react"
 import "./App.css"
 import LoginForm from "./components/LoginForm"
-import { Routes, Route, useParams } from "react-router-dom"
+import { Routes, Route } from "react-router-dom"
+import { jwtDecode } from "jwt-decode"
 import Home from "./components/Home"
 import RegisterForm from "./components/RegisterForm"
 import Restaurants from "./components/RestaurantsPage"
 import NavBar from "./components/NavBar"
-import { getRestaurants } from "./services/fakeRestaurantService"
 import Restaurant from "./components/Restaurant"
-import { get } from "react-hook-form"
-import ReservationPage from "./components/ReservationPage"
+import ReservationForm from "./components/ReservationForm"
+import NotFound from "./components/Not-Found"
+import { toast, ToastContainer } from "react-toastify"
+import ProtectedRoute from "@/components/common/ProtectedRoute"
+import ProfilePage from "./components/ProfilePage"
+import RestaurantForm from "./components/RestaurantForm"
+import SearchAndDiscovery from "./components/SearchAndDiscovery"
+import auth from "./services/authService"
+import GeneralProfilePage from "./components/GeneralProfilePage"
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [restaurants, setRestaurants] = useState([])
-  const [allRestaurants, setAllRestaurants] = useState(getRestaurants())
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setRestaurants(allRestaurants)
+    const msg = localStorage.getItem("toastMessage")
+    if (msg) {
+      toast.success(msg)
+      setTimeout(() => {
+        localStorage.removeItem("toastMessage")
+      }, 100)
+    }
+  }, [])
+  useEffect(() => {
+    const savedRole = localStorage.getItem("role")
+
+    if (!savedRole) {
+      setLoading(false)
+      return
+    }
+
+    const fetchUser = async () => {
+      try {
+        const user =
+          savedRole === "owner"
+            ? await auth.getOwnerInfo()
+            : await auth.getCustomerInfo()
+
+        setUser(user)
+      } catch (ex) {
+        if (ex.response?.status === 401) {
+          await auth.logout()
+          localStorage.removeItem("role")
+          toast("Please re-login")
+        } else {
+          setUser(null)
+          throw ex
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUser()
   }, [])
 
-  const handleSearch = (searchTerm) => {
-    const filtered = allRestaurants.filter((restaurant) =>
-      restaurant.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    setRestaurants(filtered)
-  }
-  const handleLogin = (user) => {
-    setLoggedIn(true)
-  }
-  const handleRegister = (user) => {
-    setLoggedIn(true)
-    console.log("success")
-  }
-
-  const handleDateTimeChange = (date) => {
-    // Call Backend API to get available dates for the selected restaurant
-    // Set Backend API response to state
-    console.log("Date Time changed to: ", date)
-  }
-  const RestaurantWrapper = (Class) => {
-    return (props) => {
-      const { id } = useParams()
-      const restaurant = allRestaurants.find((r) => String(r.id) === id)
-      return <Class restaurant={restaurant} {...props} />
-    }
-  }
-
-  const RestaurantWithData = RestaurantWrapper(Restaurant)
-  const ReservationWithData = RestaurantWrapper(ReservationPage)
-
   return (
-    <div className="container">
+    <Fragment>
+      <ToastContainer />
       <Routes>
         <Route
           path="/"
@@ -62,8 +74,13 @@ function App() {
             <NavBar
               name="BiteBack"
               links={
-                !loggedIn
+                !user
                   ? [
+                      {
+                        type: "link",
+                        path: "/restaurants",
+                        name: "Restaurants",
+                      },
                       { type: "link", path: "/login", name: "Login" },
                       { type: "link", path: "/register", name: "Register" },
                     ]
@@ -73,31 +90,94 @@ function App() {
                         path: "/restaurants",
                         name: "Restaurants",
                       },
+                      { type: "link", path: "/me", name: "Profile" },
                     ]
               }
             />
           }
         >
-          <Route path="login" element={<LoginForm onLogin={handleLogin} />} />
-          <Route index element={<Home />} />
+          <Route path="login" element={<LoginForm user={user} />} />
+          <Route index element={<Home user={user} />} />
+          <Route path="register" element={<RegisterForm user={user} />} />
           <Route
-            path="register"
-            element={<RegisterForm onRegister={handleRegister} />}
-          />
-          <Route
-            path="restaurants"
+            path="me/edit"
             element={
-              <Restaurants restaurants={restaurants} onChange={handleSearch} />
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<RegisterForm user={user} />}
+              />
             }
           />
-          <Route path="restaurants/:id" element={<RestaurantWithData />} />
+
+          <Route path="restaurants" element={<Restaurants />} />
+          <Route path="restaurants/:id" element={<Restaurant user={user} />} />
           <Route
-            path="reservation/:id"
-            element={<ReservationWithData onChange={handleDateTimeChange} />}
+            path="reservation/:restaurantId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                element={<ReservationForm user={user} />}
+                user={user}
+              />
+            }
           />
+          <Route
+            path="reservation/:restaurantId/edit/:reservationId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                element={<ReservationForm user={user} />}
+                user={user}
+              />
+            }
+          />
+          <Route
+            path="/me"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                element={<ProfilePage user={user} />}
+                user={user}
+              />
+            }
+          />
+          <Route
+            path="restaurants/edit/:restaurantId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                element={<RestaurantForm user={user} />}
+                user={user}
+              />
+            }
+          />
+          <Route
+            path="restaurants/new"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                element={<RestaurantForm user={user} />}
+                user={user}
+              />
+            }
+          />
+          <Route path="search-discovery" element={<SearchAndDiscovery />} />
+          <Route
+            path="user-details/:custId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<GeneralProfilePage user={user} />}
+              />
+            }
+          />
+          <Route path="not-found" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
-    </div>
+    </Fragment>
   )
 }
 
