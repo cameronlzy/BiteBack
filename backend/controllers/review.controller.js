@@ -1,0 +1,31 @@
+const reviewService = require('../services/review.service');
+const { validateReview } = require('../validators/review.validator');
+
+exports.getReviewsByRestaurant = async (req, res) => {
+    const { status, body } = await reviewService.getReviewsByRestaurant(req.params.id);
+    return res.status(status).json(body);
+};
+
+exports.getReviewsByCustomer = async (req, res) => {
+  const { status, body } = await reviewService.getReviewsByCustomer(req.params.id);
+  return res.status(status).json(body);
+};
+
+exports.getReviewById = async (req, res) => {
+  const { status, body } = await reviewService.getReviewById(req.params.id);
+  return res.status(status).json(body);
+};
+
+exports.createReview = async (req, res) => {
+  // validate request
+  const { error } = validateReview(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const { status, body } = await reviewService.createReview(req.body, req.user);
+  return res.status(status).json(body);
+};
+
+exports.deleteReview = async (req, res) => {
+  const { status, body } = await reviewService.deleteReview(req.review);
+  return res.status(status).json(body);
+};
