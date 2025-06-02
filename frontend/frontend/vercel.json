@@ -1,0 +1,17 @@
+{
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": "dist",
+  "env": {
+    "VITE_API_URL": "/api"
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://biteback1-555cc0fda71c.herokuapp.com/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
