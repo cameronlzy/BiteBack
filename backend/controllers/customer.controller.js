@@ -1,5 +1,5 @@
 const customerService = require('../services/customer.service');
-const { validateCustomer } = require('../validators/customerProfile.validator');
+const { validateCustomer, validatePatch } = require('../validators/customerProfile.validator');
 const setAuthCookie = require('../helpers/setAuthCookie');
 
 exports.getMe = async (req, res) => {
@@ -13,9 +13,8 @@ exports.publicProfile = async (req, res) => {
 };
 
 exports.updateMe = async (req, res) => {
-    req.body.role = 'customer';
-    // validate request change validation for patch
-    const { error } = validateCustomer(req.body);
+    // validate request
+    const { error } = validatePatch(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
     const { token, body, status } = await customerService.updateMe(req.body, req.user);

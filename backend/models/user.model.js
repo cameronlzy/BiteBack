@@ -23,7 +23,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['CustomerProfile', 'OwnerProfile'],
     required: true,
-  }
+  },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 }, { versionKey: false });
 
 const User = mongoose.model('User', userSchema);

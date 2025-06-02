@@ -1,5 +1,5 @@
 const restaurantService = require('../services/restaurant.service');
-const { validateRestaurant } = require('../validators/restaurant.validator');
+const { validateRestaurant, validatePatch } = require('../validators/restaurant.validator');
 const Joi = require('joi');
 const { ISOdate } = require('../helpers/time.helper');
 
@@ -34,7 +34,7 @@ exports.createRestaurant = async (req, res) => {
 
 exports.updateRestaurant = async (req, res) => {
     // validate request
-    const { error } = validateRestaurant(req.body);
+    const { error } = validatePatch(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
     const { status, body } = await restaurantService.updateRestaurant(req.restaurant, req.body);

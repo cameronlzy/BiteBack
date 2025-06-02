@@ -162,7 +162,7 @@ describe('customer test', () => {
         });
     });
 
-    describe('PUT /api/customers/me', () => {
+    describe('PATCH /api/customers/me', () => {
         let token;
         let email;
         let username;
@@ -206,7 +206,7 @@ describe('customer test', () => {
 
         const exec = () => {
             return request(server)
-                .put('/api/customers/me')
+                .patch('/api/customers/me')
                 .set('Cookie', [cookie])
                 .send({
                     email, username, password, name, 

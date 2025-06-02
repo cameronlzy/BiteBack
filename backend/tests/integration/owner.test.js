@@ -95,7 +95,7 @@ describe('owner test', () => {
         });
     });
 
-    describe('PUT /api/owners/me', () => {
+    describe('PATCH /api/owners/me', () => {
         let token;
         let email;
         let username;
@@ -136,7 +136,7 @@ describe('owner test', () => {
 
         const exec = () => {
             return request(server)
-                .put('/api/owners/me')
+                .patch('/api/owners/me')
                 .set('Cookie', [cookie])
                 .send({
                     email, username, password, companyName: newCompanyName

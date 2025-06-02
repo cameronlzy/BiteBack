@@ -21,9 +21,9 @@ function validateReservation(reservation) {
     return schema.validate(reservation);
 }
 
-function validateNewReservation(newReservation) {
+function validatePatch(update) {
     const schema = Joi.object({
-        reservationDate: dateFullOnly.required(),
+        reservationDate: dateFullOnly,
         remarks: Joi.string().allow('').custom((value, helpers) => {
             if (value.trim() === '') return value;
 
@@ -32,13 +32,13 @@ function validateNewReservation(newReservation) {
                 return helpers.message('Remarks must not exceed 50 words');
             }
             return value;
-        }).required(),
-        pax: Joi.number().integer().min(1).required(),
-    });
-    return schema.validate(newReservation);
+        }),
+        pax: Joi.number().integer().min(1),
+    }).min(1);
+    return schema.validate(update);
 }
 
 module.exports = {
     validateReservation, 
-    validateNewReservation,
+    validatePatch
 };

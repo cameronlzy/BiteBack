@@ -1,4 +1,8 @@
 {
+  "email": {
+    "user": "email_user",
+    "pass": "email_pass"
+  },
   "jwtPrivateKey": "biteback_jwtPrivateKey",
   "mongoURI": "biteback_db"
 }

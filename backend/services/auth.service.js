@@ -6,8 +6,54 @@ const { createRestaurantArray } = require('../services/restaurant.service');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const _ = require('lodash');
+const crypto = require('crypto');
+const config = require('config');
+const sendEmail = require('../helpers/sendEmail');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
+
+exports.forgotPassword = async (credentials) => {
+    // find user
+    const user = await User.findOne(credentials.email 
+        ? { email: credentials.email }
+        : { username: credentials.username }
+    ).lean();
+
+    if (!user) return { status: 400, body: 'User with this email/username does not exist' };
+    
+    const token = crypto.randomBytes(32).toString('hex');
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+    user.resetPasswordToken = hash;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
+    await user.save();
+
+    const resetLink = `${config.get('frontendURL')}/reset-password/${token}`;
+    await sendEmail(user.email, 'Password Reset', `Click to reset your password: ${resetLink}`);
+
+    return { status: 200, body: 'Password reset link sent to your email' };
+};
+
+exports.resetPassword = async (data, token) => {
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+        resetPasswordToken: hash,
+        resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) return res.status(400).send('Token is invalid or expired');
+
+    const { newPassword } = req.body;
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return { status: 200, body: 'Password has been reset' };
+};
 
 exports.login = async (credentials) => {
     // find user

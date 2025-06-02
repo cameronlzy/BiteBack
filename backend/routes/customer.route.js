@@ -13,6 +13,6 @@ router.get('/me', [auth, isCustomer], customerController.getMe);
 router.get('/:id', validateObjectId, customerController.publicProfile);
 
 // [Customer] - Update customer information
-router.put('/me', [auth, isCustomer], customerController.updateMe);
+router.patch('/me', [auth, isCustomer], customerController.updateMe);
 
 module.exports = router;

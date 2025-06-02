@@ -23,7 +23,7 @@ router.post('/', [auth, isOwner], restaurantController.createRestaurant);
 // router.post('/:id/images', [auth, isOwner], restaurantController.uploadImageToRestaurant);
 
 // [Owner] - Update restaurant
-router.put('/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], restaurantController.updateRestaurant);
+router.patch('/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], restaurantController.updateRestaurant);
 
 // [Owner] - Delete restaurant
 router.delete('/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], restaurantController.deleteRestaurant);

@@ -83,9 +83,15 @@ exports.createRestaurant = async (authUser, data) => {
 };
 
 exports.updateRestaurant = async (restaurant, update) => {
-  // update restaurant
-  Object.assign(restaurant, update);
-  restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
+  // selectively update only the fields that are defined
+  for (const key in update) {
+    if (key === 'openingHours') {
+      restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
+    } else if (update[key] !== undefined) {
+      restaurant[key] = update[key];
+    }
+  }
+  
   await restaurant.save();
   return { status: 200, body: restaurant.toObject() };
 };

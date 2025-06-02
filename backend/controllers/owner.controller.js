@@ -1,5 +1,5 @@
 const ownerService = require('../services/owner.service');
-const { validateNewOwner } = require('../validators/ownerProfile.validator');
+const { validateNewOwner, validatePatch } = require('../validators/ownerProfile.validator');
 const setAuthCookie = require('../helpers/setAuthCookie');
 
 exports.getMe = async (req, res) => {
@@ -8,9 +8,8 @@ exports.getMe = async (req, res) => {
 };
 
 exports.updateMe = async (req, res) => {
-    req.body.role = 'owner';
-    // validate request change validation for patch
-    const { error } = validateNewOwner(req.body);
+    // validate request
+    const { error } = validatePatch(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
     const { token, status, body } = await ownerService.updateMe(req.body, req.user);

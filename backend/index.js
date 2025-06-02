@@ -1,18 +1,10 @@
 const logger = require('./startup/logging');
 const express = require('express');
-const cors = require('cors');
 const app = express();
 
-const corsOptions = {
-  origin: 'https://bite-back-indol.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  exposedHeaders: ['x-auth-token'],
-  credentials: true,
-};
+app.enable('trust proxy');
 
-app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
-
+require('./startup/cors')(app);
 require('./startup/logging');
 require('./startup/config')();
 require('./startup/validation')();

@@ -557,7 +557,7 @@ describe('reservation test', () => {
         });
     });    
 
-    describe('PUT /api/reservations/:id', () => {
+    describe('PATCH /api/reservations/:id', () => {
         let token;
         let user;
         let userId;
@@ -606,7 +606,7 @@ describe('reservation test', () => {
 
         const exec = () => {
             return request(server)
-            .put(`/api/reservations/${reservationId}`)
+            .patch(`/api/reservations/${reservationId}`)
             .set('Cookie', [cookie])
             .send({
                 reservationDate: newReservationDate, 

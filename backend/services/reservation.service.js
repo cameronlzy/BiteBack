@@ -82,27 +82,51 @@ exports.createReservation = async (user, body) => {
 };
 
 exports.updateReservation = async (reservation, update) => {
-    // check availability
-    const SGTdate = DateTime.fromISO(update.reservationDate, { zone: 'Asia/Singapore' });
-    const UTCdate = SGTdate.toUTC();
-    const currentReservations = await Reservation.find({
-        restaurant: reservation.restaurant._id, reservationDate: { $gte: UTCdate.toJSDate(), $lte: UTCdate.plus({ minutes: reservation.restaurant.slotDuration }).toJSDate() }
-    }).select({ pax: 1 }).lean();
-    let bookedSlots = 0;
-    currentReservations.forEach(({ pax }) => {
-        bookedSlots += pax;
-    });
-    if (bookedSlots + update.pax > reservation.restaurant.maxCapacity) return { status: 409, body: 'Restaurant is fully booked at this time slot.' };
+    const isDateChanging = update.reservationDate !== undefined;
+    const isPaxChanging = update.pax !== undefined;
 
-    // update reservation
-    reservation.set({
-        reservationDate: convertToUTC(update.reservationDate),
-        remarks: update.remarks,
-        pax: update.pax
-    });
+    if (isDateChanging || isPaxChanging) {
+        const newDate = isDateChanging ? update.reservationDate : reservation.reservationDate.toISOString();
+        const newPax = isPaxChanging ? update.pax : reservation.pax;
+
+        const SGTdate = DateTime.fromISO(newDate, { zone: 'Asia/Singapore' });
+        const UTCdate = SGTdate.toUTC();
+
+        const restaurant = await Restaurant.findById(reservation.restaurant).select('+maxCapacity +slotDuration').lean();
+
+        const currentReservations = await Reservation.find({
+            restaurant: restaurant._id,
+            reservationDate: {
+                $gte: UTCdate.toJSDate(),
+                $lte: UTCdate.plus({ minutes: restaurant.slotDuration }).toJSDate()
+            }
+        }).select({ pax: 1 }).lean();
+
+        let bookedSlots = 0;
+        currentReservations.forEach(({ pax }) => {
+            bookedSlots += pax;
+        });
+
+        if (!isDateChanging) {
+            bookedSlots -= reservation.pax;
+        }
+        if (bookedSlots + newPax > restaurant.maxCapacity) {
+            return { status: 409, body: 'Restaurant is fully booked at this time slot.' };
+        }
+    }
+
+    if (update.reservationDate !== undefined) {
+        reservation.reservationDate = convertToUTC(update.reservationDate);
+    } 
+    if (update.remarks !== undefined) {
+        reservation.remarks = update.remarks;
+    }
+    if (update.pax !== undefined) {
+        reservation.pax = update.pax;
+    }
+
     await reservation.save();
-
-    return { status: 200, body: reservation.toObject() };   
+    return { status: 200, body: reservation.toObject() };
 };
 
 exports.deleteReservation = async (reservation) => {

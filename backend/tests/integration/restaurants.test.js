@@ -291,7 +291,7 @@ describe('restaurant test', () => {
         });
     });
 
-    describe('PUT /api/restaurants/:id', () => {
+    describe('PATCH /api/restaurants/:id', () => {
         let restaurant;
         let restaurantId;
         let token;
@@ -329,7 +329,7 @@ describe('restaurant test', () => {
 
         const exec = () => {
             return request(server)
-            .put(`/api/restaurants/${restaurantId}`)
+            .patch(`/api/restaurants/${restaurantId}`)
             .set('Cookie', [cookie])
             .send({
                 name, address, contactNumber, cuisines,
