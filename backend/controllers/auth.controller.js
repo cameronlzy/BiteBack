@@ -5,7 +5,7 @@ const { validateOwner } = require('../validators/ownerProfile.validator');
 const setAuthCookie = require('../helpers/setAuthCookie');
 
 exports.logout = async (req, res) => {
-    res.clearCookies('token', {
+    res.clearCookie('token', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
