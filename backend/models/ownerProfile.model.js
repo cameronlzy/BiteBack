@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const ownerProfileSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-  username: { type: String, required: true },
+  username: { type: String, minlength: 2, required: true },
   companyName: { type: String, required: true },
   restaurants: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' }],

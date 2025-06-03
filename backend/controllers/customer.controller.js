@@ -1,4 +1,5 @@
 const customerService = require('../services/customer.service');
+const authServices = require('../services/auth.service');
 const { validateCustomer, validatePatch } = require('../validators/customerProfile.validator');
 const setAuthCookie = require('../helpers/setAuthCookie');
 
@@ -21,3 +22,19 @@ exports.updateMe = async (req, res) => {
     if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 };
+
+exports.deleteMe = async (req, res) => {
+    const credentials = {
+        username: req.user.username,
+        password: req.body.password
+    };
+    // verify password
+    const authResult = await authServices.verifyUserCredentials(credentials)
+    if (authResult.status !== 200) {
+        return res.status(authResult.status).json(authResult.body);
+    }
+
+    // delete customer
+    const { status, body } = await customerService.deleteMe(authResult.body);
+    return res.status(status).json(body);
+}

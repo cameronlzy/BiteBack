@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const CustomerProfile = require('../models/customerProfile.model');
 const Review = require('../models/review.model');
+const Reservation = require('../models/reservation.model');
 const { generateAuthToken } = require('./user.service');
 const mongoose = require('mongoose');
 const _ = require('lodash');
@@ -90,6 +91,31 @@ exports.updateMe = async (update, authUser) => {
         const { password, ...safeUser } = user.toObject();
         safeUser.profile = user.profile.toObject();
         return { token, status: 200, body: safeUser };
+    } catch (err) {
+        if (session) await session.abortTransaction();
+        throw err;
+    } finally {
+        if (session) session.endSession();
+    }
+};
+
+exports.deleteMe = async (user) => {
+    const session = isProdEnv ? await mongoose.startSession() : null;
+    if (session) session.startTransaction();
+
+    try {
+        // delete reservations, reviews and profile
+        await Promise.all([
+            Reservation.deleteMany({ customer: user._id }).session(session || null),
+            Review.deleteMany({ customer: user.profile._id }).session(session || null),
+            CustomerProfile.findByIdAndDelete(user.profile._id).session(session || null)
+        ]);
+
+        // delete user
+        await user.deleteOne({ session });
+        
+        if (session) await session.commitTransaction();
+        return { status: 200, body: user.toObject() };
     } catch (err) {
         if (session) await session.abortTransaction();
         throw err;

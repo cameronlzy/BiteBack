@@ -2,6 +2,7 @@ const Restaurant = require('../models/restaurant.model');
 const Reservation = require('../models/reservation.model');
 const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
+const Review = require('../models/review.model');
 const { validateRestaurant } = require('../validators/restaurant.validator');
 const { DateTime } = require('luxon');
 const reservationService = require('../services/reservation.service');
@@ -112,11 +113,7 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
     );
     if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
 
-    // delete reservations from restaurant
-    await Reservation.deleteMany({ restaurant: restaurant._id }).session(session || null);
-
-    // delete restaurant
-    await Restaurant.deleteOne({ _id: restaurant._id }).session(session || null);
+    this.deleteRestaurantAndAssociations(restaurant, session);
 
     // commit transaction
     if (session) await session.commitTransaction();
@@ -130,6 +127,7 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
   }
 };
 
+// utility services
 exports.createRestaurantArray = async (arr, userId, session = null) => {
   let restaurant;
   try {
@@ -151,3 +149,14 @@ exports.createRestaurantArray = async (arr, userId, session = null) => {
     throw err;
   }
 }
+
+exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => {
+  const restaurantId = restaurant._id;
+  
+  // delete restaurants and it's associations
+  await Promise.all([
+    Reservation.deleteMany({ restaurant: restaurantId }).session(session),
+    Review.deleteMany({ restaurant: restaurantId }).session(session),
+    Restaurant.deleteOne({ _id: restaurantId }).session(session)
+  ]);
+};

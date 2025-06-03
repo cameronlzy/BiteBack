@@ -81,3 +81,37 @@ exports.updateMe = async (update, authUser) => {
         if (session) session.endSession();
     }
 };
+
+exports.deleteMe = async (user) => {
+    const session = isProdEnv ? await mongoose.startSession() : null;
+    if (session) session.startTransaction();
+
+    try {
+        // find restaurants owned by owner
+        const restaurants = await Restaurant.find({ owner: user._id }).session(session || null);
+
+        // delete each restaurant and its reservations + reviews
+        await Promise.all(
+            restaurants.map((restaurant) =>
+                deleteRestaurantAndAssociations(restaurant, session || null)
+            )
+        );
+
+        // delete reservations and profile
+        await Promise.all([
+            Reservation.deleteMany({ customer: user._id }).session(session || null),
+            OwnerProfile.findByIdAndDelete(user.profile._id).session(session || null)
+        ]);
+
+        // delete user
+        await user.deleteOne({ session });
+        
+        if (session) await session.commitTransaction();
+        return { status: 200, body: user.toObject() };
+    } catch (err) {
+        if (session) await session.abortTransaction();
+        throw err;
+    } finally {
+        if (session) session.endSession();
+    }
+};

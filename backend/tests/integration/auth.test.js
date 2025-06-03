@@ -1,5 +1,6 @@
 const request = require('supertest');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const config = require('config');
@@ -21,6 +22,101 @@ describe('auth test', () => {
     afterAll(async () => {
         await mongoose.connection.close();
         await server.close();
+    });
+
+    describe('POST /api/auth/forget-password', () => {
+        let email;
+        let user;
+        let username;
+    
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/forget-password')
+            .send({
+                email
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+            user = await createTestUser('customer');
+            user.email = "zhihui1306@gmail.com";
+            await user.save();
+            username = user.username;
+            email = user.email;
+        });
+
+        it('should return 400 if username/email does not belong to anyone', async () => {
+            email = "otherEmail@gamil.com"
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        // skip to avoid spamming emails
+        it.skip('should return 200 and send email when using username', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        // skip to avoid spamming emails
+        it.skip('should return 200 and send email when using username', async () => {
+            const exec = () => {
+                return request(server)
+                .post('/api/auth/forget-password')
+                .send({
+                    username
+                });
+            };
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+    });
+
+    describe('POST /api/auth/reset-password', () => {
+        let user;
+        let password;
+        let userId;
+        let token;
+        let hash;
+    
+        const exec = () => {
+            return request(server)
+            .post(`/api/auth/reset-password/${token}`)
+            .send({
+                password
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+            user = await createTestUser('customer');
+            userId = user._id;
+            password = "newPassword@123"
+
+            // create token
+            token = crypto.randomBytes(32).toString('hex');
+            hash = crypto.createHash('sha256').update(token).digest('hex');
+            user.resetPasswordToken = hash;
+            user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
+            await user.save();
+        });
+
+        it('should return 400 if username/email does not belong to anyone', async () => {
+            let otherToken = crypto.randomBytes(32).toString('hex');
+            let otherHash = crypto.createHash('sha256').update(otherToken).digest('hex');
+            token = otherToken;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200 and change the password', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            let updatedUser = await User.findById(userId).select('password').lean();
+            const isMatch = await bcrypt.compare('newPassword@123', updatedUser.password);
+            expect(isMatch).toBe(true);
+        });
     });
 
     describe('POST /api/auth/register/customer', () => {

@@ -17,7 +17,7 @@ exports.forgotPassword = async (credentials) => {
     const user = await User.findOne(credentials.email 
         ? { email: credentials.email }
         : { username: credentials.username }
-    ).lean();
+    );
 
     if (!user) return { status: 400, body: 'User with this email/username does not exist' };
     
@@ -28,7 +28,7 @@ exports.forgotPassword = async (credentials) => {
     user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    const resetLink = `${config.get('frontendURL')}/reset-password/${token}`;
+    const resetLink = `${config.get('frontendLink')}/reset-password/${token}`;
     await sendEmail(user.email, 'Password Reset', `Click to reset your password: ${resetLink}`);
 
     return { status: 200, body: 'Password reset link sent to your email' };
@@ -42,11 +42,11 @@ exports.resetPassword = async (data, token) => {
         resetPasswordExpires: { $gt: Date.now() },
     });
 
-    if (!user) return res.status(400).send('Token is invalid or expired');
+    if (!user) return { status: 400, body: 'Token is invalid or expired' };
 
-    const { newPassword } = req.body;
+    const { password } = data;
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    user.password = await bcrypt.hash(password, salt);
 
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
@@ -56,20 +56,11 @@ exports.resetPassword = async (data, token) => {
 };
 
 exports.login = async (credentials) => {
-    // find user
-    const user = await User.findOne(credentials.email
-        ? { email: credentials.email }
-        : { username: credentials.username }
-    ).lean();
-
-    if (!user) return { status: 400, body: 'Invalid email or password.' };
-
-    // check password
-    const validPassword = await bcrypt.compare(credentials.password, user.password);
-    if (!validPassword) return { status: 400, body: 'Invalid email or password.' };
-
-    const token = generateAuthToken(user);
-    return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role']) };
+    // find user and verify credentials
+    const { status, body } = await this.verifyUserCredentials(credentials);
+    if (status !== 200) return { status, body };
+    const token = generateAuthToken(body);
+    return { token, status: 200, body: _.pick(body, ['_id', 'email', 'username', 'role']) };
 };
 
 exports.registerCustomer = async (data) => {
@@ -187,4 +178,19 @@ exports.registerOwner = async (data) => {
     } finally {
         if (session) session.endSession();
     }
+};
+
+// utility services
+exports.verifyUserCredentials = async (credentials, session = null) => {
+    const user = await User.findOne(credentials.email
+        ? { email: credentials.email }
+        : { username: credentials.username }
+    ).session(session);
+
+    if (!user) return { status: 400, body: 'Invalid email, username or password' };
+
+    const isValid = await bcrypt.compare(credentials.password, user.password);
+    if (!isValid) return { status: 400, body: 'Invalid email, username or password' };
+
+    return { status: 200, body: user };
 };

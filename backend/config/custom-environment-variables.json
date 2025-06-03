@@ -4,5 +4,6 @@
     "pass": "email_pass"
   },
   "jwtPrivateKey": "biteback_jwtPrivateKey",
+  "frontendLink": "https://bite-back-indol.vercel.app",
   "mongoURI": "biteback_db"
 }

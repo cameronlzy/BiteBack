@@ -11,4 +11,7 @@ router.get('/me', [auth, isOwner], ownerController.getMe);
 // [Owner] - Update owner information
 router.patch('/me', [auth, isOwner], ownerController.updateMe);
 
+// [Owner] - Delete customer
+router.delete('/me', [auth, isOwner], ownerController.deleteMe);
+
 module.exports = router;
