@@ -20,11 +20,6 @@ describe('customer test', () => {
     });
 
     describe('GET /api/customers/me', () => {
-        let email;
-        let username;
-        let password;
-        let role;
-        let roleProfile;
         let token;
         let user;
         let cookie;
@@ -39,24 +34,7 @@ describe('customer test', () => {
             await User.deleteMany({});
             await CustomerProfile.deleteMany({});
 
-            email = "myEmail@gmail.com";
-            username = "username";
-            password = "myPassword@123";
-            role = "customer";
-            roleProfile = "CustomerProfile";
-
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-
-            user = new User({
-                email,
-                username,
-                password: hashedPassword,
-                role,
-                roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
-
+            user = await createTestUser('customer');
             await user.save();
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -96,11 +74,6 @@ describe('customer test', () => {
     });
 
     describe('GET /api/customers/:id', () => {
-        let email;
-        let username;
-        let password;
-        let role;
-        let roleProfile;
         let user;
         let customerId;
         let profile;
@@ -114,24 +87,8 @@ describe('customer test', () => {
             await User.deleteMany({});
             await CustomerProfile.deleteMany({});
 
-            email = "myEmail@gmail.com";
-            username = "username";
-            password = "myPassword@123";
-            role = "customer";
-            roleProfile = "CustomerProfile";
-
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-
             // create user
-            user = new User({
-                email,
-                username,
-                password: hashedPassword,
-                role,
-                roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
+            user = await createTestUser('customer');
 
             // create customer profile
             profile = createTestCustomerProfile(user);
@@ -276,6 +233,77 @@ describe('customer test', () => {
             expect(res.body).not.toHaveProperty('password');
             expect(res.body.profile).toHaveProperty('name');
             expect(res.body.profile).toHaveProperty('contactNumber');
+        });
+    });
+
+    describe('DELETE /api/customers/me', () => {
+        let token;
+        let user;
+        let userId;
+        let password;
+        let cookie;
+
+        const exec = () => {
+            return request(server)
+                .delete('/api/customers/me')
+                .set('Cookie', [cookie])
+                .send({
+                    password
+                });
+        };
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+
+            // creates a test user with password: Password@123
+            user = await createTestUser('customer');
+            await user.save();
+            userId = user._id;
+
+            password = "Password@123";
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+        });
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie("invalid-token");
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+        
+        it('should return 403 if owner', async () => {
+            let owner = await createTestUser('owner');
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 400 if incorrect password', async () => {
+            password = 'wrongPassword';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 200 if valid token and delete user', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            let dbUser = await User.findById(userId).lean();
+            expect(dbUser).toBeNull();
+        });
+
+        it('should return user details', async () => {
+            const res = await exec();
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining([
+                'email', 'username', 'role', 'profile'
+            ]));
         });
     });
 });

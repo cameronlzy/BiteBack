@@ -201,4 +201,75 @@ describe('owner test', () => {
             expect(res.body.profile).toHaveProperty('restaurants');
         });
     });
+
+    describe('DELETE /api/owners/me', () => {
+        let token;
+        let user;
+        let userId;
+        let password;
+        let cookie;
+
+        const exec = () => {
+            return request(server)
+                .delete('/api/owners/me')
+                .set('Cookie', [cookie])
+                .send({
+                    password
+                });
+        };
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+
+            // creates a test user with password: Password@123
+            user = await createTestUser('owner');
+            await user.save();
+            userId = user._id;
+
+            password = "Password@123";
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+        });
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie("invalid-token");
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+        
+        it('should return 403 if customer', async () => {
+            let owner = await createTestUser('customer');
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 400 if incorrect password', async () => {
+            password = 'wrongPassword';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 200 if valid token and delete user', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            let dbUser = await User.findById(userId).lean();
+            expect(dbUser).toBeNull();
+        });
+
+        it('should return user details', async () => {
+            const res = await exec();
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining([
+                'email', 'username', 'role', 'profile'
+            ]));
+        });
+    });
 });

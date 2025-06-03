@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
-const Review = require('../models/review.model');
+const Reservation = require('../models/reservation.model');
+const Restaurant = require('../models/restaurant.model');
 const { generateAuthToken } = require('./user.service');
 const _ = require('lodash');
 const bcrypt = require('bcryptjs');
