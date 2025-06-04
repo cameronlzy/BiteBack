@@ -5,7 +5,6 @@ const { createTestUser } = require('../factories/user.factory');
 const { createTestRestaurant } = require('../factories/restaurant.factory');
 const { createTestOwnerProfile } = require('../factories/ownerProfile.factory');
 const { generateAuthToken } = require('../../services/user.service');
-const { validateNewOwner } = require('../../validators/ownerProfile.validator');
 const setTokenCookie = require('../../helpers/setTokenCookie');
 const bcrypt = require('bcryptjs');
 const request = require('supertest');
@@ -89,9 +88,10 @@ describe('owner test', () => {
         it('should return 200 + user details', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining([
+            const requiredKeys = [
                 'email', 'username', 'role', 'profile'
-            ]));
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -193,9 +193,10 @@ describe('owner test', () => {
 
         it('should return updated user + profile', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('email');
-            expect(res.body).toHaveProperty('username');
-            expect(res.body).toHaveProperty('role');
+            const requiredKeys = [
+                'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
             expect(res.body.profile).toHaveProperty('companyName');
             expect(res.body.profile).toHaveProperty('restaurants');
@@ -267,9 +268,10 @@ describe('owner test', () => {
 
         it('should return user details', async () => {
             const res = await exec();
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining([
+            const requiredKeys = [
                 'email', 'username', 'role', 'profile'
-            ]));
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });

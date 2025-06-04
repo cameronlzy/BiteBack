@@ -13,7 +13,6 @@ function validateReview(review) {
 
 function validateReply(reply) {
     const schema = Joi.object({
-        owner: Joi.objectId().required(),
         replyText: Joi.string().min(0).max(1000).required()
     });
     return schema.validate(reply);

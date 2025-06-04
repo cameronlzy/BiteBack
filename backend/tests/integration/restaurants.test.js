@@ -86,12 +86,10 @@ describe('restaurant test', () => {
 
         it('should return a restaurant object', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('name');
-            expect(res.body).toHaveProperty('address');
-            expect(res.body).toHaveProperty('contactNumber');
-            expect(res.body).toHaveProperty('cuisines');
-            expect(res.body).toHaveProperty('openingHours');
-            expect(res.body).toHaveProperty('maxCapacity');
+            const requiredKeys = [
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -284,12 +282,10 @@ describe('restaurant test', () => {
 
         it('should return a restaurant object', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('name');
-            expect(res.body).toHaveProperty('address');
-            expect(res.body).toHaveProperty('contactNumber');
-            expect(res.body).toHaveProperty('cuisines');
-            expect(res.body).toHaveProperty('openingHours');
-            expect(res.body).toHaveProperty('maxCapacity');
+            const requiredKeys = [
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -438,12 +434,10 @@ describe('restaurant test', () => {
 
         it('should return updated restaurant', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('name');
-            expect(res.body).toHaveProperty('address');
-            expect(res.body).toHaveProperty('contactNumber');
-            expect(res.body).toHaveProperty('cuisines');
-            expect(res.body).toHaveProperty('openingHours');
-            expect(res.body).toHaveProperty('maxCapacity');
+            const requiredKeys = [
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -549,12 +543,10 @@ describe('restaurant test', () => {
 
         it('should return updated restaurant', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('name');
-            expect(res.body).toHaveProperty('address');
-            expect(res.body).toHaveProperty('contactNumber');
-            expect(res.body).toHaveProperty('cuisines');
-            expect(res.body).toHaveProperty('openingHours');
-            expect(res.body).toHaveProperty('maxCapacity');
+            const requiredKeys = [
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });

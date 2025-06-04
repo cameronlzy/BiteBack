@@ -25,7 +25,7 @@ exports.forgotPassword = async (credentials) => {
     const hash = crypto.createHash('sha256').update(token).digest('hex');
 
     user.resetPasswordToken = hash;
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
+    user.resetPasswordExpires = Date.now() + 30 * 60 * 1000;
     await user.save();
 
     const resetLink = `${config.get('frontendLink')}/reset-password/${token}`;

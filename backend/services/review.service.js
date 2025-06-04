@@ -38,8 +38,27 @@ exports.createReview = async (data, user) => {
     return { status: 200, body: review.toObject() };
 };
 
+exports.createReply = async (data, review, authUser) => {
+    // add reply to review
+    review.reply = {
+        owner: authUser._id,
+        replyText: data.replyText
+    };
+    await review.save();
+
+    return { status: 200, body: review.toObject() };
+};
+
 exports.deleteReview = async (review) => {
     // delete the review
     await Review.deleteOne({ _id: review._id });
+    return { status: 200, body: review.toObject() };
+};
+
+exports.deleteReply = async (review) => {
+    // delete reply
+    review.reply = undefined;
+    await review.save();
+
     return { status: 200, body: review.toObject() };
 };

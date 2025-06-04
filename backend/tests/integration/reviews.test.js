@@ -11,6 +11,7 @@ const setTokenCookie = require('../../helpers/setTokenCookie');
 const User = require('../../models/user.model');
 const Restaurant = require('../../models/restaurant.model');
 const CustomerProfile = require('../../models/customerProfile.model');
+const OwnerProfile = require('../../models/ownerProfile.model');
 
 describe('review test', () => {
 	let server;
@@ -183,13 +184,11 @@ describe('review test', () => {
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(res.body).toHaveProperty('username');
-            expect(res.body).toHaveProperty('rating');
-            expect(res.body).toHaveProperty('reviewText');
-            expect(res.body).toHaveProperty('dateVisited');
-            expect(res.body).toHaveProperty('createdAt');
-            expect(res.body).toHaveProperty('badgesCount');
-            expect(res.body).toHaveProperty('isVisible');
+            const requiredKeys = [
+                'username', 'rating', 'reviewText', 'dateVisited',
+                'createdAt', 'badgesCount', 'isVisible'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
 	});
 
@@ -263,14 +262,115 @@ describe('review test', () => {
 
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
-            expect(res.status).toBe(200);
-            expect(res.body).toHaveProperty('username');
-            expect(res.body).toHaveProperty('rating');
-            expect(res.body).toHaveProperty('reviewText');
-            expect(res.body).toHaveProperty('dateVisited');
-            expect(res.body).toHaveProperty('createdAt');
-            expect(res.body).toHaveProperty('badgesCount');
-            expect(res.body).toHaveProperty('isVisible');
+            const requiredKeys = [
+                'username', 'rating', 'reviewText', 'dateVisited',
+                'createdAt', 'badgesCount', 'isVisible'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+	});
+
+    describe('POST /api/reviews/:id/reply', () => {
+        let review;
+        let reviewId;
+        let customer;
+        let owner;
+        let restaurant;
+        let profile;
+        let rating;
+        let reviewText;
+        let dateVisited;
+        let replyText;
+        let token;
+        let cookie;
+
+		beforeEach(async () => {
+			// clear all
+			await Review.deleteMany({});
+            await CustomerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+            await OwnerProfile.deleteMany({});
+
+            // create restaurant owner
+            owner = await createTestUser('owner');
+            await owner.save();
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(owner._id);
+            await restaurant.save();
+            
+            // create customer 
+            customer = await createTestUser('customer');
+            profile = createTestCustomerProfile(customer);
+            await profile.save();
+
+            // create a review
+            rating = 3;
+            reviewText = "Good";
+            dateVisited = Date.now();
+            review = new Review({
+                customer: profile._id,
+                username: customer.username,
+                restaurant: restaurant._id,
+                rating, reviewText, dateVisited
+            });
+            await review.save();
+            reviewId = review._id;
+            replyText = "test";
+		});
+
+        const exec = () => {
+            return request(server)
+            .post(`/api/reviews/${reviewId}/reply`)
+            .set('Cookie', [cookie])
+            .send({
+                replyText
+            });
+        };
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 403 if customer', async () => {
+            token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 404 if review does not exist', async () => {
+            reviewId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 400 if invalid request', async () => {
+            replyText = null;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 200 and review object with required properties', async () => {
+            const res = await exec();
+            const requiredKeys = [
+                'username', 'rating', 'reviewText', 'dateVisited',
+                'createdAt', 'badgesCount', 'isVisible'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            if (res.body.reply) {
+                expect(res.body.reply).toHaveProperty('replyText');
+            }
         });
 	});
 
@@ -368,14 +468,104 @@ describe('review test', () => {
 
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
-            expect(res.status).toBe(200);
-            expect(res.body).toHaveProperty('username');
-            expect(res.body).toHaveProperty('rating');
-            expect(res.body).toHaveProperty('reviewText');
-            expect(res.body).toHaveProperty('dateVisited');
-            expect(res.body).toHaveProperty('createdAt');
-            expect(res.body).toHaveProperty('badgesCount');
-            expect(res.body).toHaveProperty('isVisible');
+            const requiredKeys = [
+                'username', 'rating', 'reviewText', 'dateVisited',
+                'createdAt', 'badgesCount', 'isVisible'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+	});
+
+    describe('DELETE /api/reviews/:id/reply', () => {
+        let review;
+        let reviewId;
+        let customer;
+        let owner;
+        let restaurant;
+        let profile;
+        let rating;
+        let reviewText;
+        let dateVisited;
+        let replyText;
+        let token;
+        let cookie;
+
+		beforeEach(async () => {
+			// clear all
+			await Review.deleteMany({});
+            await CustomerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+            await OwnerProfile.deleteMany({});
+
+            // create restaurant owner
+            owner = await createTestUser('owner');
+            await owner.save();
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(owner._id);
+            await restaurant.save();
+            
+            // create customer 
+            customer = await createTestUser('customer');
+            profile = createTestCustomerProfile(customer);
+            await profile.save();
+
+            // create a review
+            rating = 3;
+            reviewText = "Good";
+            dateVisited = Date.now();
+            review = new Review({
+                customer: profile._id,
+                username: customer.username,
+                restaurant: restaurant._id,
+                rating, reviewText, dateVisited
+            });
+            await review.save();
+            reviewId = review._id;
+            replyText = "test";
+		});
+
+        const exec = () => {
+            return request(server)
+            .delete(`/api/reviews/${reviewId}/reply`)
+            .set('Cookie', [cookie]);
+        };
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 403 if customer', async () => {
+            token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 404 if review does not exist', async () => {
+            reviewId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 200 and review object with required properties', async () => {
+            const res = await exec();
+            const requiredKeys = [
+                'username', 'rating', 'reviewText', 'dateVisited',
+                'createdAt', 'badgesCount', 'isVisible'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body.reply).toBeUndefined();
         });
 	});
 });

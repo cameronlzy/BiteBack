@@ -458,11 +458,10 @@ describe('reservation test', () => {
 
         it('should return 200 if valid request, customer', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('user');
-            expect(res.body).toHaveProperty('restaurant');
-            expect(res.body).toHaveProperty('reservationDate');
-            expect(res.body).toHaveProperty('remarks');
-            expect(res.body).toHaveProperty('pax');
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
 
         it('should return 200 if valid request, owner', async () => {
@@ -549,11 +548,10 @@ describe('reservation test', () => {
 
         it('should return reservation', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('user');
-            expect(res.body).toHaveProperty('restaurant');
-            expect(res.body).toHaveProperty('reservationDate');
-            expect(res.body).toHaveProperty('remarks');
-            expect(res.body).toHaveProperty('pax');
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });    
 
@@ -660,11 +658,10 @@ describe('reservation test', () => {
 
         it('should return updated reservation', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('user');
-            expect(res.body).toHaveProperty('restaurant');
-            expect(res.body).toHaveProperty('reservationDate');
-            expect(res.body).toHaveProperty('remarks');
-            expect(res.body).toHaveProperty('pax');
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -754,10 +751,10 @@ describe('reservation test', () => {
 
         it('should return deleted reservation', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('restaurant');
-            expect(res.body).toHaveProperty('reservationDate');
-            expect(res.body).toHaveProperty('remarks');
-            expect(res.body).toHaveProperty('pax');
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });

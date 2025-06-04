@@ -179,15 +179,13 @@ describe('auth test', () => {
             expect(res.status).toBe(400);
         });
     
-        it('should return 200 if valid request', async () => {
+        it('should return 200 + username, email, role', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-    
-        it('should return username, email, role', async () => {
-            const res = await exec();
-            expect(res.status).toBe(200);
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
         });
 
@@ -195,11 +193,14 @@ describe('auth test', () => {
             const res = await exec();
             const user = await User.findOne({ email: email })
                 .populate('profile');
-            expect(user.profile).toHaveProperty('name');
-            expect(user.profile).toHaveProperty('contactNumber');
-            expect(user.profile).toHaveProperty('favCuisines'); 
-            expect(user.profile).toHaveProperty('points');
-            expect(user.profile).toHaveProperty('dateJoined');
+            const requiredKeys = [
+                'name',
+                'contactNumber', 
+                'favCuisines',
+                'points',
+                'dateJoined'
+            ];
+            expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -286,14 +287,13 @@ describe('auth test', () => {
             expect(res.status).toBe(400);
         });
     
-        it('should return 200 if valid request', async () => {
+        it('should return 200 and username, email, role', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-    
-        it('should return username, email, role', async () => {
-            const res = await exec();
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
         });
 
@@ -301,9 +301,10 @@ describe('auth test', () => {
             const res = await exec();
             const user = await User.findOne({ email: email })
                 .populate('profile');
-            expect(user.profile).toHaveProperty('companyName');
-            expect(user.profile).toHaveProperty('restaurants');
-            expect(user.profile).toHaveProperty('dateJoined');
+            const requiredKeys = [
+                'companyName', 'restaurants', 'dateJoined'
+            ];
+            expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -395,7 +396,10 @@ describe('auth test', () => {
     
         it('should return username, email, role', async () => {
             const res = await usernameLogin();
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
         });
     
@@ -409,11 +413,11 @@ describe('auth test', () => {
             expect(token).toBeDefined();
     
             const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
-            
-            expect(decoded).toHaveProperty('email');
-            expect(decoded).toHaveProperty('username');
-            expect(decoded).toHaveProperty('role');
-            expect(decoded).toHaveProperty('profile');
+
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });

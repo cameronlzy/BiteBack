@@ -67,9 +67,10 @@ describe('customer test', () => {
 
         it('should return user details', async () => {
             const res = await exec();
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining([
+            const requiredKeys = [
                 'email', 'username', 'role', 'profile'
-            ]));
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -113,9 +114,10 @@ describe('customer test', () => {
 
         it('should return user details', async () => {
             const res = await exec();
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining([
+            const requiredKeys = [
                 'dateJoined', 'totalBadges'
-            ]));
+            ]
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -227,9 +229,10 @@ describe('customer test', () => {
 
         it('should return updated user + profile', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('email');
-            expect(res.body).toHaveProperty('username');
-            expect(res.body).toHaveProperty('role');
+            const requiredKeys = [
+                'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
             expect(res.body.profile).toHaveProperty('name');
             expect(res.body.profile).toHaveProperty('contactNumber');
@@ -301,9 +304,10 @@ describe('customer test', () => {
 
         it('should return user details', async () => {
             const res = await exec();
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining([
+            const requiredKeys = [
                 'email', 'username', 'role', 'profile'
-            ]));
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });
