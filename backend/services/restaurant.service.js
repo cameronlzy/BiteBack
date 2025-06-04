@@ -83,6 +83,19 @@ exports.createRestaurant = async (authUser, data) => {
   }
 };
 
+exports.addImagesToRestaurant = async (restaurantId, uploadedFiles) => {
+  const imageUrls = uploadedFiles.map(file => file.path);
+
+  const restaurant = await Restaurant.findById(restaurantId);
+  if (!restaurant) return { status: 404, body: 'Restaurant not found' };
+
+  // Append new images to the existing ones
+  restaurant.images.push(...imageUrls);
+
+  await restaurant.save();
+  return { status: 200, body: restaurant.toObject() };
+};
+
 exports.updateRestaurant = async (restaurant, update) => {
   // selectively update only the fields that are defined
   for (const key in update) {
@@ -113,7 +126,7 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
     );
     if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
 
-    this.deleteRestaurantAndAssociations(restaurant, session);
+    await this.deleteRestaurantAndAssociations(restaurant, session);
 
     // commit transaction
     if (session) await session.commitTransaction();
@@ -157,6 +170,6 @@ exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => 
   await Promise.all([
     Reservation.deleteMany({ restaurant: restaurantId }).session(session),
     Review.deleteMany({ restaurant: restaurantId }).session(session),
-    Restaurant.deleteOne({ _id: restaurantId }).session(session)
+    Restaurant.findByIdAndDelete(restaurantId).session(session)
   ]);
 };

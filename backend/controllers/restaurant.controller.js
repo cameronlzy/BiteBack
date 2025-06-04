@@ -32,6 +32,11 @@ exports.createRestaurant = async (req, res) => {
     return res.status(status).json(body);
 };
 
+exports.addImagesToRestaurant = async (req, res) => {
+    const { status, body } = await restaurantService.addImagesToRestaurant(req.params.id, req.files);
+    return res.status(status).json(body);
+};
+
 exports.updateRestaurant = async (req, res) => {
     // validate request
     const { error } = validatePatch(req.body);

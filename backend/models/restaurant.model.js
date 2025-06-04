@@ -104,6 +104,10 @@ const restaurantSchema = new mongoose.Schema({
       message: 'Invalid URL'
     }
   },
+  images: {
+    type: [String],
+    default: [],
+  },
   rating: { type: Number, min: 0, max: 5, required: true, default: 0 }
 }, { versionKey: false });
 

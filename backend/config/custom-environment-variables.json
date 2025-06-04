@@ -5,5 +5,10 @@
   },
   "jwtPrivateKey": "biteback_jwtPrivateKey",
   "frontendLink": "https://bite-back-indol.vercel.app",
-  "mongoURI": "biteback_db"
+  "mongoURI": "biteback_db",
+  "cloudinary": {
+		"cloudName": "cloudinary_cloud_name",
+		"apiKey": "cloudinary_api_key",
+		"apiSecret": "cloudinary_api_secret"
+	}
 }

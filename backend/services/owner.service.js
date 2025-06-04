@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
 const Reservation = require('../models/reservation.model');
 const Restaurant = require('../models/restaurant.model');
+const restaurantService = require('../services/restaurant.service');
 const { generateAuthToken } = require('./user.service');
 const _ = require('lodash');
 const bcrypt = require('bcryptjs');
@@ -94,7 +95,7 @@ exports.deleteMe = async (user) => {
         // delete each restaurant and its reservations + reviews
         await Promise.all(
             restaurants.map((restaurant) =>
-                deleteRestaurantAndAssociations(restaurant, session || null)
+                restaurantService.deleteRestaurantAndAssociations(restaurant, session || null)
             )
         );
 

@@ -1,14 +1,15 @@
 const Reservation = require('../../models/reservation.model');
 const User = require('../../models/user.model');
+const Restaurant = require('../../models/restaurant.model');
+const OwnerProfile = require('../../models/ownerProfile.model');
 const { createTestUser } = require('../factories/user.factory');
 const { createTestRestaurant } = require('../factories/restaurant.factory');
 const { createTestOwnerProfile } = require('../factories/ownerProfile.factory');
 const { generateAuthToken } = require('../../services/user.service');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const Restaurant = require('../../models/restaurant.model');
+const path = require('path');
 const { DateTime } = require('luxon');
-const OwnerProfile = require('../../models/ownerProfile.model');
 const setTokenCookie = require('../../helpers/setTokenCookie');
 
 describe('restaurant test', () => {
@@ -205,6 +206,7 @@ describe('restaurant test', () => {
         let username;
         let password;
         let role;
+        let token;
         let cookie;
 
         beforeEach(async () => {
@@ -288,6 +290,60 @@ describe('restaurant test', () => {
             expect(res.body).toHaveProperty('cuisines');
             expect(res.body).toHaveProperty('openingHours');
             expect(res.body).toHaveProperty('maxCapacity');
+        });
+    });
+
+    // skip to avoid sending test images to cloudinary
+    describe.skip('POST /api/restaurants/:id/images', () => {
+        let owner;
+        let ownerProfile;
+        let restaurant;
+        let restaurantId;
+        let token;
+        let cookie;
+        let filePath;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+
+            // create an owner
+            owner = await createTestUser('owner');
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+
+            // creating an ownerProfile
+            ownerProfile = createTestOwnerProfile(owner);
+            await ownerProfile.save();
+
+            owner.profile = ownerProfile._id;
+            await owner.save();
+
+            // creating a restaurant
+            restaurant = createTestRestaurant(owner._id);
+            await restaurant.save();
+            restaurantId = restaurant._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .post(`/api/restaurants/${restaurantId}/images`)
+            .set('Cookie', [cookie])
+            .attach('images', filePath);
+        };
+
+        it.skip('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('images');
+            expect(Array.isArray(res.body.images)).toBe(true);
+
+            const allStrings = res.body.images.every(url => typeof url === 'string');
+            expect(allStrings).toBe(true);
         });
     });
 
