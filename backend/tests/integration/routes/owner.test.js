@@ -1,11 +1,11 @@
-const OwnerProfile = require('../../models/ownerProfile.model');
-const User = require('../../models/user.model');
-const Restaurant = require('../../models/reservation.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestRestaurant } = require('../factories/restaurant.factory');
-const { createTestOwnerProfile } = require('../factories/ownerProfile.factory');
-const { generateAuthToken } = require('../../services/user.service');
-const setTokenCookie = require('../../helpers/setTokenCookie');
+const OwnerProfile = require('../../../models/ownerProfile.model');
+const User = require('../../../models/user.model');
+const Restaurant = require('../../../models/reservation.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
+const { createTestOwnerProfile } = require('../../factories/ownerProfile.factory');
+const { generateAuthToken } = require('../../../services/user.service');
+const setTokenCookie = require('../../../helpers/setTokenCookie');
 const bcrypt = require('bcryptjs');
 const request = require('supertest');
 const mongoose = require('mongoose');
@@ -13,7 +13,7 @@ const mongoose = require('mongoose');
 describe('owner test', () => {
     let server;
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {

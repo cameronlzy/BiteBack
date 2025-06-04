@@ -1,19 +1,19 @@
-const Reservation = require('../../models/reservation.model');
-const User = require('../../models/user.model');
+const Reservation = require('../../../models/reservation.model');
+const User = require('../../../models/user.model');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const Restaurant = require('../../models/restaurant.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestRestaurant } = require('../factories/restaurant.factory');
-const { generateAuthToken } = require('../../services/user.service');
+const Restaurant = require('../../../models/restaurant.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
+const { generateAuthToken } = require('../../../services/user.service');
 const { DateTime } = require('luxon');
-const setTokenCookie = require('../../helpers/setTokenCookie');
+const setTokenCookie = require('../../../helpers/setTokenCookie');
 
 describe('reservation test', () => {
     let server;
 
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {

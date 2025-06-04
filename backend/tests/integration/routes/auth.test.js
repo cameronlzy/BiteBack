@@ -5,18 +5,18 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const config = require('config');
 const cookie = require('cookie');
-const User = require('../../models/user.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestRestaurant } = require('../factories/restaurant.factory');
-const { generateAuthToken } = require('../../services/user.service');
-const CustomerProfile = require('../../models/customerProfile.model');
-const OwnerProfile = require('../../models/ownerProfile.model');
-const Restaurant = require('../../models/restaurant.model');
+const User = require('../../../models/user.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
+const { generateAuthToken } = require('../../../services/user.service');
+const CustomerProfile = require('../../../models/customerProfile.model');
+const OwnerProfile = require('../../../models/ownerProfile.model');
+const Restaurant = require('../../../models/restaurant.model');
 
 describe('auth test', () => {
     let server;
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {

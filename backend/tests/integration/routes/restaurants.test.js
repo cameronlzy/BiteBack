@@ -1,22 +1,22 @@
-const Reservation = require('../../models/reservation.model');
-const User = require('../../models/user.model');
-const Restaurant = require('../../models/restaurant.model');
-const OwnerProfile = require('../../models/ownerProfile.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestRestaurant } = require('../factories/restaurant.factory');
-const { createTestOwnerProfile } = require('../factories/ownerProfile.factory');
-const { generateAuthToken } = require('../../services/user.service');
+const Reservation = require('../../../models/reservation.model');
+const User = require('../../../models/user.model');
+const Restaurant = require('../../../models/restaurant.model');
+const OwnerProfile = require('../../../models/ownerProfile.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
+const { createTestOwnerProfile } = require('../../factories/ownerProfile.factory');
+const { generateAuthToken } = require('../../../services/user.service');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const path = require('path');
 const { DateTime } = require('luxon');
-const setTokenCookie = require('../../helpers/setTokenCookie');
+const setTokenCookie = require('../../../helpers/setTokenCookie');
 
 describe('restaurant test', () => {
     let server;
 
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {

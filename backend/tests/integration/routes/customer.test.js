@@ -1,9 +1,9 @@
-const User = require('../../models/user.model');
-const CustomerProfile = require('../../models/customerProfile.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestCustomerProfile } = require('../factories/customerProfile.factory');
-const { generateAuthToken } = require('../../services/user.service');
-const setTokenCookie = require('../../helpers/setTokenCookie');
+const User = require('../../../models/user.model');
+const CustomerProfile = require('../../../models/customerProfile.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestCustomerProfile } = require('../../factories/customerProfile.factory');
+const { generateAuthToken } = require('../../../services/user.service');
+const setTokenCookie = require('../../../helpers/setTokenCookie');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -11,7 +11,7 @@ const bcrypt = require('bcryptjs');
 describe('customer test', () => {
     let server;
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {

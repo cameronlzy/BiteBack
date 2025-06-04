@@ -27,20 +27,6 @@ const reviewSchema = new mongoose.Schema({
     dateVisited: {
         type: Date, required: true
     },
-    badgesCount: {
-        type: [Number],
-        required: true,
-        validate: {
-            validator: function (arr) {
-                return (
-                    Array.isArray(arr) &&
-                    arr.length === 4 &&
-                    arr.every(num => Number.isInteger(num) && num >= 0)
-                );
-            },
-            message: 'badgesCount must be an array of 4 non-negative integers.'
-        }, default: [0, 0, 0, 0]
-    },
     reply: {
         type: {
             owner: {

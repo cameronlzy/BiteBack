@@ -18,7 +18,15 @@ function validateReply(reply) {
     return schema.validate(reply);
 }
 
+function validateBadge(badge) {
+    const schema = Joi.object({
+        badgeIndex: Joi.number().integer().min(0).max(3).required()
+    });
+    return schema.validate(badge);
+}
+
 module.exports = {
     validateReview,
     validateReply,
+    validateBadge,
 };
