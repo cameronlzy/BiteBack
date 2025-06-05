@@ -42,7 +42,7 @@ const ReviewSection = ({ restaurant, user }) => {
 
   const handleShowForm = () => {
     if (!user && !showForm) {
-      toast("Please Log in First")
+      toast.info("Please Log in First")
       return navigate("/login", {
         state: { from: location.pathname },
         replace: true,

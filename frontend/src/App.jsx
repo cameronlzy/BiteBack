@@ -52,7 +52,7 @@ function App() {
         if (ex.response?.status === 401) {
           await auth.logout()
           localStorage.removeItem("role")
-          toast("Please re-login")
+          toast.info("Please re-login")
         } else {
           setUser(null)
           throw ex

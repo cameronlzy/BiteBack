@@ -27,7 +27,7 @@ const ForgotPassword = () => {
   const onSubmit = async (data) => {
     try {
       await auth.resetPasswordTrigger(data)
-      toast(
+      toast.info(
         "If an account exists, a reset link has been sent to the registered email. It may take a few minutes to appear"
       )
       navigate("/login", { replace: true })

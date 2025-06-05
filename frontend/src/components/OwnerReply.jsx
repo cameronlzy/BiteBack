@@ -11,9 +11,12 @@ import {
 import { postReviewReply, deleteReviewReply } from "@/services/reviewService"
 import { toast } from "react-toastify"
 import { Trash2 } from "lucide-react"
+import { DateTime } from "luxon"
+import { readableTimeSettings } from "@/utils/timeConverter"
 
 const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
   const isOwnedByUser = user?.role === "owner" && user._id === restaurant?.owner
+  console.log(review)
 
   const methods = useForm({
     defaultValues: {
@@ -54,9 +57,27 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
   return (
     <div className="mt-4">
       {review.reply && (
-        <div className="bg-gray-100 p-3 rounded">
-          <b className="text-gray-700">Owner Reply:</b>
-          <p className="mt-1 text-gray-800">{review.reply}</p>
+        <div className="relative bg-gray-100 p-4 rounded text-center h-20">
+          <b className="text-gray-700 block mb-1">Owner Reply:</b>
+          <p className="text-gray-800">{review.reply.replyText}</p>
+
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={onDelete}
+            disabled={isSubmitting}
+            className="absolute top-2 right-2"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+
+          <p className="absolute bottom-2 right-2 text-xs text-gray-500">
+            {DateTime.fromISO(review.reply.createdAt).toLocaleString({
+              ...readableTimeSettings,
+              hour: undefined,
+              minute: undefined,
+            })}
+          </p>
         </div>
       )}
 
@@ -66,33 +87,25 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-3 mt-3 border-t pt-4"
           >
-            <FormField
-              control={control}
-              name="replyText"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {review.reply ? "Edit Reply" : "Add Reply"}
-                  </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter reply..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {!review.reply && (
+              <FormField
+                control={control}
+                name="replyText"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Add Reply</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter reply..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <div className="flex gap-2">
-              <Button type="submit" disabled={isSubmitting}>
-                {review.reply ? "Update" : "Submit"}
-              </Button>
-              {review.reply && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={onDelete}
-                  disabled={isSubmitting}
-                >
-                  <Trash2 />
+              {!review.reply && (
+                <Button type="submit" disabled={isSubmitting}>
+                  Submit
                 </Button>
               )}
             </div>
