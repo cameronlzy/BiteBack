@@ -1,5 +1,7 @@
 const restaurantService = require('../services/restaurant.service');
-const { validateRestaurant, validatePatch } = require('../validators/restaurant.validator');
+const imageService = require('../services/image.service');
+const Restaurant = require('../models/restaurant.model');
+const { validateRestaurant, validatePatch, validateImages } = require('../validators/restaurant.validator');
 const Joi = require('joi');
 const { ISOdate } = require('../helpers/time.helper');
 
@@ -32,8 +34,17 @@ exports.createRestaurant = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.addImagesToRestaurant = async (req, res) => {
-    const { status, body } = await restaurantService.addImagesToRestaurant(req.params.id, req.files);
+exports.addRestaurantImages = async (req, res) => {
+    console.log(req.files);
+    const { status, body } = await imageService.addImages(Restaurant, req.restaurant._id, req.files, 'images');
+    return res.status(status).json(body);
+};
+
+exports.updateRestaurantImages = async (req, res) => {
+    const { error } = validateImages(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+    
+    const { status, body } = await restaurantService.updateRestaurantImages(req.restaurant, req.body.images);
     return res.status(status).json(body);
 };
 

@@ -1,7 +1,7 @@
 const auth = require('../middleware/auth');
 const isOwner = require('../middleware/isOwner');
 const authorizedRestaurantOwner = require('../middleware/authorizedRestaurantOwner');
-const parser = require('../middleware/cloudinaryUpload');
+const parser = require('../middleware/cloudinaryUpload')('restaurants');
 const express = require('express');
 const restaurantController = require('../controllers/restaurant.controller');
 const validateObjectId = require('../middleware/validateObjectId');
@@ -20,8 +20,11 @@ router.get('/:id/availability', validateObjectId, restaurantController.getAvaila
 // [Owner] - Create new restaurant
 router.post('/', [auth, isOwner], restaurantController.createRestaurant);
 
-// [Owner] - Upload images for their restaurant (only 1 image for now)
-router.post('/:id/images', [auth, isOwner, parser.array('images', 5)], restaurantController.addImagesToRestaurant);
+// [Owner] - Upload images for their restaurant
+router.post('/:id/images', [auth, isOwner, authorizedRestaurantOwner, parser.array('images', 5)], restaurantController.addRestaurantImages);
+
+// [Owner] - Delete images from restaurant
+router.put('/:id/images', [auth, isOwner, authorizedRestaurantOwner], restaurantController.updateRestaurantImages);
 
 // [Owner] - Update restaurant
 router.patch('/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], restaurantController.updateRestaurant);

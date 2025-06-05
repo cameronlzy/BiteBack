@@ -10,6 +10,7 @@ const reviewSerice = require('../services/review.service');
 const { createSlots, convertSGTOpeningHoursToUTC } = require('../helpers/restaurant.helper');
 const _ = require('lodash');
 const mongoose = require('mongoose');
+const { deleteImagesFromCloudinary } = require('./image.service');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
@@ -86,18 +87,39 @@ exports.createRestaurant = async (authUser, data) => {
   }
 };
 
-exports.addImagesToRestaurant = async (restaurantId, uploadedFiles) => {
-  const imageUrls = uploadedFiles.map(file => file.path);
+// exports.addRestaurantImages = async (restaurantId, uploadedFiles) => {
+//   const imageUrls = uploadedFiles.map(file => file.path);
 
-  const restaurant = await Restaurant.findById(restaurantId);
-  if (!restaurant) return { status: 404, body: 'Restaurant not found' };
+//   const restaurant = await Restaurant.findById(restaurantId);
+//   if (!restaurant) return { status: 404, body: 'Restaurant not found' };
 
-  // Append new images to the existing ones
-  restaurant.images.push(...imageUrls);
+//   // Append new images to the existing ones
+//   restaurant.images.push(...imageUrls);
 
+//   await restaurant.save();
+//   return { status: 200, body: restaurant.toObject() };
+// };
+
+exports.updateRestaurantImages = async (restaurant, newImageUrls) => {
+  const currentImage = restaurant.images || [];
+
+  // find images to delete
+  const toDelete = currentImage.filter(url => !newImageUrls.includes(url));
+
+  // delete removed images
+  console.log(toDelete);
+  if (toDelete.length > 0) {
+    const result = await deleteImagesFromCloudinary(toDelete);
+    console.log(result);
+  }
+  
+
+  // overwrite old array with new array
+  restaurant.images = newImageUrls;
   await restaurant.save();
+
   return { status: 200, body: restaurant.toObject() };
-};
+}
 
 exports.updateRestaurant = async (restaurant, update) => {
   // selectively update only the fields that are defined

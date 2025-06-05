@@ -11,6 +11,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const { DateTime } = require('luxon');
 const setTokenCookie = require('../../../helpers/setTokenCookie');
+const { rest } = require('lodash');
 
 describe('restaurant test', () => {
     let server;
@@ -324,7 +325,7 @@ describe('restaurant test', () => {
             restaurantId = restaurant._id;
 
             // image file path
-            filePath = path.join(__dirname, '../fixtures/test-image.jpg');
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
         });
 
         const exec = () => {
@@ -342,6 +343,68 @@ describe('restaurant test', () => {
 
             const allStrings = res.body.images.every(url => typeof url === 'string');
             expect(allStrings).toBe(true);
+        });
+    });
+
+    describe('PUT /api/restaurants/:id/images', () => {
+        let restaurant;
+        let token;
+        let cookie;
+        let imagesPayload;
+
+        beforeEach(async () => {
+            // create restaurant + user
+            const user = await createTestUser('owner');
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            restaurant = createTestRestaurant(user._id);
+            restaurant.images = [
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749107618/biteback/restaurants/icpacpiowpwwvsvieec8.jpg', // image 1 (to be deleted)
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749118205/biteback/restaurants/uxtab5rmjomf57ouznni.jpg', // image 2
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749107560/biteback/restaurants/aqm6h7qc3iei3gvjzala.png', // image 3 (to be next thumbnail)
+            ];
+
+            imagesPayload = [
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749107560/biteback/restaurants/aqm6h7qc3iei3gvjzala.png',
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749118205/biteback/restaurants/uxtab5rmjomf57ouznni.jpg',
+            ];
+            await restaurant.save();
+        });
+
+        const exec = () => {
+            return request(server)
+            .put(`/api/restaurants/${restaurant._id}/images`)
+            .set('Cookie', [cookie])
+            .send({ images: imagesPayload });
+        };
+
+        it('should return 400 if images is missing', async () => {
+            const res = await request(server)
+            .put(`/api/restaurants/${restaurant._id}/images`)
+            .set('Cookie', [cookie])
+            .send({});
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if images is not an array', async () => {
+            imagesPayload = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if any item is not a valid URL', async () => {
+            imagesPayload = ['not-a-url']
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it.skip('should return 200 for valid array of image URLs', async () => {
+            const res = await exec();
+
+            expect(res.status).toBe(200);
+            expect(res.body.images.length).toBe(2);
+            expect(res.body.images[0]).toBe('https://res.cloudinary.com/drmcljacy/image/upload/v1749107560/biteback/restaurants/aqm6h7qc3iei3gvjzala.png');
         });
     });
 

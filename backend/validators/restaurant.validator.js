@@ -94,4 +94,16 @@ function validatePatch(update) {
   return schema.validate(update);
 }
 
-module.exports = { validateRestaurant, restaurantJoiSchema, validatePatch };
+function validateImages(images) {
+  const schema = Joi.object({
+    images: Joi.array().items(Joi.string().uri()).required()
+  });
+  return schema.validate(images);
+}
+
+module.exports = { 
+  validateRestaurant,
+  restaurantJoiSchema, 
+  validatePatch,
+  validateImages,
+};

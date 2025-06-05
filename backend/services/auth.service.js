@@ -171,7 +171,9 @@ exports.registerOwner = async (data) => {
         if (session) await session.commitTransaction();
 
         const token = generateAuthToken(user);
-        return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role']) };
+        const safeUser = _.pick(user, ['_id', 'email', 'username', 'role']);
+        safeUser.restaurants = restaurants;
+        return { token, status: 200, body: safeUser };
     } catch (err) {
         if (session) await session.abortTransaction();
         throw err;
