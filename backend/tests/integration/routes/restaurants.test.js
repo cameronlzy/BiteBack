@@ -57,6 +57,8 @@ describe('restaurant test', () => {
                 expect(restaurant).toHaveProperty('cuisines');
                 expect(restaurant).toHaveProperty('openingHours');
                 expect(restaurant).toHaveProperty('maxCapacity');
+                expect(restaurant).toHaveProperty('averageRating');
+                expect(restaurant).toHaveProperty('reviewCount');
             });
         });
     });

@@ -5,6 +5,7 @@ const ReviewBadgeVote = require('../../../models/reviewBadgeVote.model');
 const reviewService = require('../../../services/review.service');
 const { createTestUser } = require('../../factories/user.factory');
 const { createTestCustomerProfile } = require('../../factories/customerProfile.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
 
 describe('review test', () => {
     let server;
@@ -16,7 +17,7 @@ describe('review test', () => {
         await server.close();
     });
 
-    describe('getBadgeCount service test', () => {
+    describe('getBadgesCount service test', () => {
         let reviews;
         let review1;
         let review2;
@@ -55,13 +56,13 @@ describe('review test', () => {
         });
 
         it('should return reviews with correct badgesCount', async () => {
-            const result = await reviewService.getBadgeCount(reviews);
+            const result = await reviewService.getBadgesCount(reviews);
             expect(result).toHaveLength(2);
             expect(result[0].badgesCount).toEqual([1, 1, 1, 0]);
         });
 
         it('should return [0, 0, 0, 0] for reviews with no badge votes', async () => {
-            const result = await reviewService.getBadgeCount(reviews);
+            const result = await reviewService.getBadgesCount(reviews);
             expect(result[1].badgesCount).toEqual([0, 0, 0, 0]);
         });
     });
@@ -83,7 +84,6 @@ describe('review test', () => {
             profile = createTestCustomerProfile(user);
             user.profile = profile._id;
 
-
             // create some votes
             await ReviewBadgeVote.create([
                 { review: reviews[0]._id, customer: profile._id, restaurant: new mongoose.Types.ObjectId(), badgeIndex: 0 },
@@ -102,6 +102,64 @@ describe('review test', () => {
             expect(result.find(r => r._id.equals(reviews[0]._id)).selectedBadge).toBe(0);
             expect(result.find(r => r._id.equals(reviews[1]._id)).selectedBadge).toBe(1);
             expect(result.find(r => ![reviews[0]._id.toString(), reviews[1]._id.toString()].includes(r._id.toString())).selectedBadge).toBe(null);
+        });
+    });
+
+    describe('getAverageRatingForRestaurants service test', () => {
+        let restaurant1;
+        let restaurant2;
+        let restaurants;
+
+        beforeEach(async () => {
+            await ReviewBadgeVote.deleteMany({});
+            await Review.deleteMany({});
+
+            // create restaurants
+            restaurant1 = createTestRestaurant();
+            restaurant2 = createTestRestaurant();
+            restaurants = [
+                restaurant1.toObject(), restaurant2.toObject(),
+            ];
+
+            // create reviews
+            await Review.create([
+                { 
+                    customer: new mongoose.Types.ObjectId(),
+                    username: "username",
+                    restaurant: restaurant1._id, 
+                    rating: 5, reviewText: "test", 
+                    dateVisited: Date.now() 
+                },
+                { 
+                    customer: new mongoose.Types.ObjectId(),
+                    username: "username",
+                    restaurant: restaurant1._id, 
+                    rating: 3, reviewText: "test", 
+                    dateVisited: Date.now() 
+                },
+                { 
+                    customer: new mongoose.Types.ObjectId(),
+                    username: "username",
+                    restaurant: restaurant2._id, 
+                    rating: 3, reviewText: "test", 
+                    dateVisited: Date.now() 
+                },
+            ]);
+        });
+
+        it('should return the correct average rating and review count', async () => {
+            const result = await reviewService.getAverageRatingsForRestaurants(restaurants);
+            expect(result[0].averageRating).toBe(4);
+            expect(result[0].reviewCount).toBe(2);
+            expect(result[1].averageRating).toBe(3);
+            expect(result[1].reviewCount).toBe(1);
+        });
+
+        it('should return the 0 for average rating and review count if no reviews', async () => {
+            restaurants = [ createTestRestaurant().toObject() ];
+            const result = await reviewService.getAverageRatingsForRestaurants(restaurants);
+            expect(result[0].averageRating).toBe(0);
+            expect(result[0].reviewCount).toBe(0);
         });
     });
 });

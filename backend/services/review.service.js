@@ -5,23 +5,39 @@ const Restaurant = require('../models/restaurant.model');
 const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
 const CustomerProfile = require('../models/customerProfile.model');
 
-exports.getReviewsByRestaurant = async (restaurantId) => {
+exports.getReviewsByRestaurant = async (restaurantId, authUser) => {
     // check if restaurant exists
     const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
     if (!restaurant) return { status: 404, body: 'Restaurant not found' };
 
     // get reviews by restaurant
-    const reviews = await Review.find({ restaurant: restaurant._id }).lean();
+    let reviews = await Review.find({ restaurant: restaurant._id }).lean();
+    if (Array.isArray(reviews) && reviews.length === 0) return { status: 200, body: reviews };
+
+    // get badges count
+    reviews = await this.getBadgesCount(reviews);
+
+    // get user badge votes
+    if (authUser) reviews = await this.getUserBadgeVotes(reviews, authUser);
+
     return { status: 200, body: reviews };
 };
 
-exports.getReviewsByCustomer = async (customerId) => {
+exports.getReviewsByCustomer = async (customerId, authUser) => {
     // find customer profile
     const customer = await CustomerProfile.findById(customerId);
     if (!customer) return { status: 404, body: 'Customer profile not found' };
 
     // get reviews by customer
-    const reviews = await Review.find({ customer: customerId }).lean();
+    let reviews = await Review.find({ customer: customerId }).lean();
+    if (Array.isArray(reviews) && reviews.length === 0) return { status: 200, body: reviews };
+
+    // get badges count
+    reviews = await this.getBadgesCount(reviews);
+
+    // get user badge votes
+    if (authUser) reviews = await this.getUserBadgeVotes(reviews, authUser);
+
     return { status: 200, body: reviews };
 };
 
@@ -114,8 +130,7 @@ exports.deleteBadge = async(reviewId, authUser) => {
 };
 
 // utlity services
-exports.getBadgeCount = async (reviews) => {
-    try {
+exports.getBadgesCount = async (reviews) => {
     const reviewIds = reviews.map((r) => r._id);
 
     // aggregtate badge votes
@@ -142,14 +157,9 @@ exports.getBadgeCount = async (reviews) => {
         ...r,
         badgesCount: badgeMap[r._id.toString()] || [0, 0, 0, 0]
     }));
-} catch (err) {
-    console.error('Error in getBadgeCount: ', err);
-    throw err;
-}
 }
 
 exports.getUserBadgeVotes = async (reviews, user) => {
-    try {
     const reviewIds = reviews.map(r => r._id);
 
     const votes = await ReviewBadgeVote.find({
@@ -166,9 +176,34 @@ exports.getUserBadgeVotes = async (reviews, user) => {
     ...r,
     selectedBadge: voteMap[r._id.toString()] ?? null
     }));
-} catch (err) {
-    console.error('Error in getUserBadgeVotes: ', err);
-    throw err;
-}
 };
 
+exports.getAverageRatingsForRestaurants = async (restaurants) => {
+    const restaurantIds = restaurants.map(r => r._id);
+
+    const ratings = await Review.aggregate([
+        { $match: { restaurant: { $in: restaurantIds } } },
+        {
+            $group: {
+            _id: '$restaurant',
+            averageRating: { $avg: '$rating' },
+            reviewCount: { $sum: 1 }
+            }
+        }
+    ]);
+
+    const ratingMap = {};
+    for (const { _id, averageRating, reviewCount } of ratings) {
+        ratingMap[_id.toString()] = {
+            averageRating: Math.round(averageRating * 10) / 10,
+            reviewCount
+        };
+    }
+
+    // attach to original restaurants
+    return restaurants.map(r => ({
+            ...r,
+            averageRating: ratingMap[r._id.toString()]?.averageRating || 0,
+            reviewCount: ratingMap[r._id.toString()]?.reviewCount || 0
+    }));
+};

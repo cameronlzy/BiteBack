@@ -2,25 +2,13 @@ const reviewService = require('../services/review.service');
 const { validateReview, validateReply, validateBadge } = require('../validators/review.validator');
 
 exports.getReviewsByRestaurant = async (req, res) => {
-    const { status, body } = await reviewService.getReviewsByRestaurant(req.params.id);
-    if (status !== 200) return res.status(status).json(body);
-    if (Array.isArray(body) && body.length === 0) return res.status(200).json([]);
-    let reviews = await reviewService.getBadgeCount(body);
-    if (req.user) {
-      reviews = await reviewService.getUserBadgeVotes(reviews, req.user);
-    }
-    return res.status(200).json(reviews);
+  const { status, body } = await reviewService.getReviewsByRestaurant(req.params.id, req.user);
+  return res.status(status).json(body);
 };
 
 exports.getReviewsByCustomer = async (req, res) => {
-  const { status, body } = await reviewService.getReviewsByCustomer(req.params.id);
-  if (status !== 200) return res.status(status).json(body);
-  if (Array.isArray(body) && body.length === 0) return res.status(200).json([]);
-  let reviews = await reviewService.getBadgeCount(body);
-  if (req.user) {
-    reviews = await reviewService.getUserBadgeVotes(reviews, req.user);
-  }
-  return res.status(200).json(reviews);
+  const { status, body } = await reviewService.getReviewsByCustomer(req.params.id, req.user);
+  return res.status(status).json(body);
 };
 
 exports.getReviewById = async (req, res) => {

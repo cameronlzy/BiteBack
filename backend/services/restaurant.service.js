@@ -6,6 +6,7 @@ const Review = require('../models/review.model');
 const { validateRestaurant } = require('../validators/restaurant.validator');
 const { DateTime } = require('luxon');
 const reservationService = require('../services/reservation.service');
+const reviewSerice = require('../services/review.service');
 const { createSlots, convertSGTOpeningHoursToUTC } = require('../helpers/restaurant.helper');
 const _ = require('lodash');
 const mongoose = require('mongoose');
@@ -14,7 +15,9 @@ const isProdEnv = process.env.NODE_ENV === 'production';
 
 exports.getAllRestaurants = async () => {
   // find restaurants
-  const restaurants = await Restaurant.find().sort('name').lean();
+  let restaurants = await Restaurant.find().sort('name').lean();
+  if (Array.isArray(restaurants) && restaurants.length === 0) return { status: 200, body: restaurants };
+  restaurants = await reviewSerice.getAverageRatingsForRestaurants(restaurants)
   return { status: 200, body: restaurants };
 }
 
