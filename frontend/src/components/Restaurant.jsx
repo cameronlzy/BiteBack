@@ -15,8 +15,13 @@ import { toast } from "react-toastify"
 import { DateTime } from "luxon"
 import { readableTimeSettings } from "@/utils/timeConverter"
 import ReviewSection from "./ReviewSection"
-import { Trash2 } from "lucide-react"
+import { Settings } from "lucide-react"
 import LoadingSpinner from "./common/LoadingSpinner"
+import { DropdownMenu, DropdownMenuItem } from "./ui/dropdown-menu"
+import {
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -72,7 +77,7 @@ const Restaurant = ({ user }) => {
     if (confirmed) {
       await deleteRestaurant(id)
       toast.success("Deleted!")
-      navigate("/restaurants", { replace: true })
+      window.location = "/restaurants"
     }
   }
 
@@ -83,7 +88,7 @@ const Restaurant = ({ user }) => {
     name,
     description,
     address,
-    imageUrl,
+    images,
     contactNumber,
     email,
     website,
@@ -91,29 +96,86 @@ const Restaurant = ({ user }) => {
     maxCapacity,
     openingHours,
   } = restaurant
+
   return (
     <div className="w-full max-w-4xl mx-auto mt-6 px-4">
       <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-md">
-        <img
-          src={
-            imageUrl
-              ? imageUrl
-              : "https://www.opentable.com/img/restimages/2038.jpg"
-          }
-          alt={name}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/40 flex items-end p-4">
-          <h1 className="text-3xl font-bold text-white ">{name}</h1>
-        </div>
-      </div>
-      {isOwnedByUser && (
-        <Button
-          className="mt-4"
-          onClick={() => navigate("/restaurants/edit/" + id)}
+        <Link
+          to={`/images/${encodeURIComponent(images?.[0])}`}
+          state={{ from: location.pathname }}
+          className="block w-full h-full"
         >
-          Edit Restaurant
-        </Button>
+          <img
+            src={
+              images && images.length > 0
+                ? images[0]
+                : "https://www.opentable.com/img/restimages/2038.jpg"
+            }
+            alt={name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40 flex items-end p-4">
+            <h1 className="text-3xl font-bold text-white">{name}</h1>
+          </div>
+        </Link>
+
+        {isOwnedByUser && (
+          <div className="absolute top-2 right-2 z-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="bg-white/20 hover:bg-white/30 text-white"
+                >
+                  <Settings className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align="end"
+                className="w-40 bg-white/50 backdrop-blur-sm shadow-lg rounded-md"
+              >
+                <DropdownMenuItem
+                  className="hover:bg-gray-100 text-gray-800"
+                  onClick={() => navigate("/restaurants/edit/" + id)}
+                >
+                  Edit Restaurant
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleRestaurantDelete(id)}
+                  className="text-red-600 hover:bg-red-50 focus:bg-red-100 focus:text-red-700 font-medium"
+                >
+                  Delete Restaurant
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </div>
+      {images?.length > 1 && (
+        <Card className="mt-6 shadow-sm">
+          <CardHeader className="h-0">
+            <CardTitle>Gallery</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2 flex-wrap">
+              {images.slice(1, 5).map((imgUrl, index) => (
+                <Link
+                  key={index}
+                  to={`/images/${encodeURIComponent(imgUrl)}`}
+                  state={{ from: location.pathname }}
+                >
+                  <img
+                    src={imgUrl}
+                    alt={`Gallery ${index + 1}`}
+                    className="w-35 h-35 object-cover rounded-md border hover:opacity-90 transition-opacity"
+                  />
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <Card className="mt-6 shadow-sm">
@@ -204,16 +266,7 @@ const Restaurant = ({ user }) => {
               </Button>
             </Link>
           </div>
-          {isOwnedByUser && (
-            <Button
-              className="text-red-600 hover:bg-red-100 transition-colors"
-              variant="ghost"
-              onClick={() => handleRestaurantDelete(id)}
-            >
-              <Trash2 className="w-5 h-5" />
-              Delete Restaurant
-            </Button>
-          )}
+
           <ReviewSection restaurant={restaurant} user={user} />
           {isOwnedByUser && (
             <CardContent className="space-y-4">

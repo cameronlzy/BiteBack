@@ -1,5 +1,9 @@
 import { useForm, FormProvider } from "react-hook-form"
-import { customerSchema, cuisineList } from "@/utils/schemas"
+import {
+  customerSchema,
+  cuisineList,
+  updateCustomerSchema,
+} from "@/utils/schemas"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import {
   Form,
@@ -14,19 +18,25 @@ import { Button } from "@/components/ui/button"
 import { MultiSelect } from "./common/MultiSelect"
 import { useEffect } from "react"
 import { toast } from "react-toastify"
+import LoadingSpinner from "./common/LoadingSpinner"
 
-const CustomerForm = ({ onRegister, setFormRef, user, from }) => {
+const CustomerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
+  if (isLoading) return <LoadingSpinner />
   const form = useForm({
-    resolver: safeJoiResolver(customerSchema),
+    resolver: safeJoiResolver(user ? updateCustomerSchema : customerSchema),
     defaultValues: {
       role: "customer",
       username: user?.username || "",
       email: user?.email || "",
-      password: "",
-      confirmPassword: "",
       name: user?.profile.name || "",
       contactNumber: user?.profile.contactNumber || "",
       favCuisines: user?.profile.favCuisines || [],
+      ...(user
+        ? {}
+        : {
+            password: "",
+            confirmPassword: "",
+          }),
     },
     mode: "onChange",
   })
@@ -59,15 +69,15 @@ const CustomerForm = ({ onRegister, setFormRef, user, from }) => {
   const inputFields = [
     { name: "username", label: "Username" },
     { name: "email", label: "Email" },
-    { name: "password", label: "Password", type: "password" },
-    {
+    !user && { name: "password", label: "Password", type: "password" },
+    !user && {
       name: "confirmPassword",
       label: "Confirm Password",
       type: "password",
     },
     { name: "name", label: "Name" },
     { name: "contactNumber", label: "Contact Number" },
-  ]
+  ].filter(Boolean)
 
   return (
     <FormProvider {...form}>
@@ -105,6 +115,14 @@ const CustomerForm = ({ onRegister, setFormRef, user, from }) => {
               </FormControl>
               <FormMessage />
             </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <input type="hidden" {...field} value="customer" />
           )}
         />
 

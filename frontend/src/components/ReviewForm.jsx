@@ -40,7 +40,6 @@ const ReviewForm = ({ restaurant, onSubmit }) => {
   const handleFormSubmit = async (data) => {
     try {
       await onSubmit(data)
-      form.reset()
     } catch (ex) {
       toast.error("Failed to submit review")
     }

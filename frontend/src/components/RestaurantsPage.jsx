@@ -21,7 +21,7 @@ const Restaurants = () => {
       try {
         const fetchedRestaurants = await getRestaurants()
         setAllRestaurants(fetchedRestaurants)
-        setRestaurants(fetchedRestaurants)
+        setSortedRestaurants(fetchedRestaurants)
       } catch (ex) {}
     }
     fetchRestaurants()
@@ -62,7 +62,7 @@ const Restaurants = () => {
       <div className="w-full py-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {sortedRestaurants.map(
-            ({ imageUrl, name, description, address, _id }) => (
+            ({ images, name, description, address, _id }) => (
               <Card
                 className="w-full h-auto p-4 rounded-xl shadow-md space-y-3"
                 key={_id}
@@ -70,8 +70,8 @@ const Restaurants = () => {
                 <div>
                   <img
                     src={
-                      imageUrl
-                        ? imageUrl
+                      images && images.length > 0
+                        ? images
                         : "https://www.opentable.com/img/restimages/2038.jpg"
                     }
                     alt={name}

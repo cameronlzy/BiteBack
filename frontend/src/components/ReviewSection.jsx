@@ -53,7 +53,8 @@ const ReviewSection = ({ restaurant, user }) => {
 
   const handleReviewSubmit = async (newReview) => {
     try {
-      const savedReview = await saveReview(newReview)
+      const savedReview = await saveReview(newReview, false)
+      savedReview.badgesCount = [0, 0, 0, 0]
       setReviews((prev) => [...prev, savedReview])
       setSortedReviews((prev) => [...prev, savedReview])
       setShowForm(false)

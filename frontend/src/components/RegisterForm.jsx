@@ -8,12 +8,14 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select"
-import auth from "@/services/authService"
-import { saveCustomer, saveOwner } from "@/services/userService"
+import { saveOwner, saveCustomer } from "@/services/userService"
 import BackButton from "./common/BackButton"
 import { useLocation, useNavigate } from "react-router-dom"
+import { objectComparator } from "@/utils/objectComparator"
+import { convertOpeningHoursToString } from "@/utils/timeConverter"
+import auth from "@/services/authService"
 
-const RegisterForm = ({ user }) => {
+const RegisterForm = ({ user, isLoading }) => {
   const [role, setRole] = useState(user?.role || "customer")
   const [ownerForm, setOwnerForm] = useState(null)
   const [customerForm, setCustomerForm] = useState(null)
@@ -47,21 +49,28 @@ const RegisterForm = ({ user }) => {
       cleanedUser.role === "owner" &&
       Array.isArray(cleanedUser.restaurants)
     ) {
-      cleanedUser.restaurants = cleanedUser.restaurants.map((restaurant) =>
-        deepClean(restaurant)
-      )
+      cleanedUser.restaurants = cleanedUser.restaurants.map((restaurant) => {
+        const rest = deepClean(restaurant)
+        rest.openingHours = convertOpeningHoursToString(rest.openingHours)
+        return rest
+      })
     }
 
     try {
       const finalData = user ? { ...cleanedUser, _id: user._id } : cleanedUser
+      const result = objectComparator(user, finalData)
+      if (user && Object.keys(result).length === 0) {
+        return
+      }
+
       const response =
         role === "owner"
-          ? await saveOwner(finalData)
-          : await saveCustomer(finalData)
-      await auth.login({
-        identifier: finalData.email,
-        password: finalData.password,
-      })
+          ? user
+            ? await saveOwner(result, true)
+            : await saveOwner(finalData, false)
+          : user
+          ? await saveCustomer(result, true)
+          : await saveCustomer(finalData, false)
       localStorage.setItem("role", role)
       return response
     } catch (ex) {
@@ -104,6 +113,7 @@ const RegisterForm = ({ user }) => {
           setFormRef={setCustomerForm}
           user={user}
           from={from}
+          isLoading={isLoading}
         />
       ) : (
         <OwnerForm
@@ -111,6 +121,7 @@ const RegisterForm = ({ user }) => {
           setFormRef={setOwnerForm}
           user={user}
           from={from}
+          isLoading={isLoading}
         />
       )}
     </div>

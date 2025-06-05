@@ -1,22 +1,25 @@
-import { useEffect, useState, Fragment } from "react"
 import "./App.css"
-import LoginForm from "./components/LoginForm"
+import { useEffect, useState, Fragment } from "react"
 import { Routes, Route } from "react-router-dom"
-import { jwtDecode } from "jwt-decode"
+import { toast, ToastContainer } from "react-toastify"
+import auth from "./services/authService"
+import { getCustomerInfo, getOwnerInfo } from "./services/userService"
 import Home from "./components/Home"
+import LoginForm from "./components/LoginForm"
 import RegisterForm from "./components/RegisterForm"
 import Restaurants from "./components/RestaurantsPage"
 import NavBar from "./components/NavBar"
 import Restaurant from "./components/Restaurant"
 import ReservationForm from "./components/ReservationForm"
 import NotFound from "./components/Not-Found"
-import { toast, ToastContainer } from "react-toastify"
 import ProtectedRoute from "@/components/common/ProtectedRoute"
 import ProfilePage from "./components/ProfilePage"
 import RestaurantForm from "./components/RestaurantForm"
 import SearchAndDiscovery from "./components/SearchAndDiscovery"
-import auth from "./services/authService"
 import GeneralProfilePage from "./components/GeneralProfilePage"
+import ForgotPassword from "./components/ForgotPassword"
+import ResetPassword from "./components/ResetPassword"
+import ImageShow from "./components/common/ImageShow"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -42,9 +45,7 @@ function App() {
     const fetchUser = async () => {
       try {
         const user =
-          savedRole === "owner"
-            ? await auth.getOwnerInfo()
-            : await auth.getCustomerInfo()
+          savedRole === "owner" ? await getOwnerInfo() : await getCustomerInfo()
 
         setUser(user)
       } catch (ex) {
@@ -108,7 +109,7 @@ function App() {
               <ProtectedRoute
                 loading={loading}
                 user={user}
-                element={<RegisterForm user={user} />}
+                element={<RegisterForm user={user} isLoading={loading} />}
               />
             }
           />
@@ -140,7 +141,7 @@ function App() {
             element={
               <ProtectedRoute
                 loading={loading}
-                element={<ProfilePage user={user} />}
+                element={<ProfilePage user={user} isLoading={loading} />}
                 user={user}
               />
             }
@@ -176,9 +177,22 @@ function App() {
               />
             }
           />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password/:token" element={<ResetPassword />} />
+          <Route
+            path="change-password"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<ResetPassword user={user} />}
+              />
+            }
+          />
           <Route path="not-found" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Route>
+        <Route path="images/:imageUrl" element={<ImageShow />} />
       </Routes>
     </Fragment>
   )

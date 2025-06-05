@@ -65,6 +65,9 @@ const LoginForm = ({ user, loading }) => {
           here
         </Link>
       </p>
+      <Link to="/forgot-password" className="underline-link">
+        Reset Password here
+      </Link>
     </React.Fragment>
   )
 }

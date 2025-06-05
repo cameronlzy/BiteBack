@@ -20,9 +20,29 @@ const passwordMessages = {
   "string.empty": "Password is required.",
   "any.required": "Password is required.",
 }
-
+const passwordSchema = passwordComplexity.required().messages(passwordMessages)
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$|^Closed$/
 const websitePattern = /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}([/?].*)?$/;
+
+const validIdentifier = Joi.string()
+    .required()
+    .custom((value, helpers) => {
+      const isEmail =
+        Joi.string()
+          .email({ tlds: { allow: false } })
+          .validate(value).error === undefined
+      const isUsername =
+        Joi.string().min(2).max(20).validate(value).error === undefined
+
+      if (isEmail || isUsername) return value
+
+      return helpers.error("any.invalid")
+    })
+    .messages({
+      "string.empty": "Username or Email is required.",
+      "any.required": "Username or Email is required.",
+      "any.invalid": "Must be a valid email or username (2–20 characters).",
+    })
 
 const dailyTimeSchema = Joi.string()
   .pattern(timePattern)
@@ -125,7 +145,7 @@ export const ownerSchema = Joi.object({
     "string.empty": "Email is required.",
     "any.required": "Email is required.",
   }),
-  password: passwordComplexity.required().messages(passwordMessages),
+  password: passwordSchema,
   confirmPassword: Joi.any().valid(Joi.ref("password")).required().messages({
     "any.only": "Passwords do not match.",
     "string.empty": "Confirm password is required.",
@@ -142,6 +162,7 @@ export const ownerSchema = Joi.object({
     "array.min": "Please add at least one restaurant.",
     "any.required": "Restaurants are required.",
   }),
+  images: Joi.array().items(Joi.string().pattern(websitePattern)).max(5).optional()
 })
 
 export const customerSchema = Joi.object({
@@ -156,7 +177,7 @@ export const customerSchema = Joi.object({
     "any.required": "Email is required.",
     "string.empty": "Email is required.",
   }),
-  password: passwordComplexity.required().messages(passwordMessages),
+  password: passwordSchema,
   confirmPassword: Joi.any().valid(Joi.ref("password")).required().messages({
     "any.only": "Passwords do not match.",
     "any.required": "Confirm password is required.",
@@ -180,26 +201,8 @@ export const customerSchema = Joi.object({
 })
 
 export const loginUserSchema = Joi.object({
-  identifier: Joi.string()
-    .required()
-    .custom((value, helpers) => {
-      const isEmail =
-        Joi.string()
-          .email({ tlds: { allow: false } })
-          .validate(value).error === undefined
-      const isUsername =
-        Joi.string().min(2).max(20).validate(value).error === undefined
-
-      if (isEmail || isUsername) return value
-
-      return helpers.error("any.invalid")
-    })
-    .messages({
-      "string.empty": "Username or Email is required.",
-      "any.required": "Username or Email is required.",
-      "any.invalid": "Must be a valid email or username (2–20 characters).",
-    }),
-  password: passwordComplexity.required().messages(passwordMessages),
+  identifier: validIdentifier,
+  password: passwordSchema,
 })
 
 export const reservationSchema = Joi.object({
@@ -247,5 +250,74 @@ export const reviewSchema =  Joi.object({
   })
 });
 
+export const identifierSchema = Joi.object({
+  identifier: validIdentifier
+})
+
+export const passwordResetSchema = Joi.object({
+  password: passwordSchema,
+  confirmPassword: Joi.any().valid(Joi.ref("password")).required().messages({
+    "any.only": "Passwords do not match.",
+    "any.required": "Confirm password is required.",
+  })
+})
+
+export const deleteAccountSchema = Joi.object({
+  password: passwordSchema
+})
+
+
+
+export const updateOwnerSchema = Joi.object({
+  username: Joi.string().min(2).max(20).required().messages({
+    "any.required": "Username is required.",
+    "string.empty": "Username is required.",
+    "string.min": "Username must be at least 2 characters.",
+    "string.max": "Username must not exceed 20 characters.",
+  }),
+  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+    "string.email": "Please enter a valid email address.",
+    "string.empty": "Email is required.",
+    "any.required": "Email is required.",
+  }),
+  // role: Joi.string().valid("owner").required(),
+  companyName: Joi.string().min(2).max(255).required().messages({
+    "string.min": "Company name must be at least 2 characters.",
+    "string.max": "Company name must not exceed 255 characters.",
+    "string.empty": "Company name is required.",
+    "any.required": "Company name is required.",
+  }),
+  images: Joi.array().items(Joi.string().pattern(websitePattern)).max(5).optional()
+}).unknown(true);
+
+export const updateCustomerSchema = Joi.object({
+  username: Joi.string().min(2).max(20).required().messages({
+    "string.min": "Username must be at least 2 characters.",
+    "string.max": "Username must not exceed 20 characters.",
+    "string.empty": "Username is required.",
+    "any.required": "Username is required.",
+  }),
+  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+    "string.email": "Please enter a valid email address.",
+    "any.required": "Email is required.",
+    "string.empty": "Email is required.",
+  }),
+  // role: Joi.string().valid("customer").required(),
+  name: Joi.string().min(2).max(20).required().messages({
+    "string.min": "Name must be at least 2 characters.",
+    "string.max": "Name must not exceed 20 characters.",
+    "string.empty": "Name is required.",
+    "any.required": "Name is required.",
+  }),
+  contactNumber: Joi.string().pattern(/^\d{8}$/).required().messages({
+    "string.pattern.base": "Contact number must be an 8-digit number.",
+    "string.empty": "Contact number is required.",
+    "any.required": "Contact number is required.",
+  }),
+  favCuisines: Joi.array().items(Joi.string().valid(...cuisineList)).min(1).required().messages({
+    "array.min": "Please select at least one favourite cuisine.",
+    "any.required": "Favourite cuisines are required.",
+  }),
+}).unknown(true);
 
 
