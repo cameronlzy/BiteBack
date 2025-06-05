@@ -14,7 +14,6 @@ exports.addImage = async(docModel, docId, uploadedFile, imageField = 'images') =
 
 exports.addImages = async (docModel, docId, uploadedFiles, imageField = 'images') => {
     const imageUrls = uploadedFiles.map(file => file.path);
-    console.log('Uploading these files to Cloudinary:', uploadedFiles.map(f => f.originalname));
 
     const doc = await docModel.findById(docId);
     if (!doc) return { status: 404, body: `${docModel.modelName} not found` };
@@ -50,7 +49,6 @@ exports.deleteImages = async (docModel, docId, imageUrlsToDelete, imageField = '
 exports.deleteImagesFromCloudinary = async (imageUrlsToDelete) => {
     const deleteResults = await Promise.allSettled(
     imageUrlsToDelete.map((url) => {
-      console.log(extractPublicIdFromUrl(url));
       const publicId = extractPublicIdFromUrl(url);
       return cloudinary.uploader.destroy(publicId);
     })

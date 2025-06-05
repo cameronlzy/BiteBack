@@ -107,10 +107,8 @@ exports.updateRestaurantImages = async (restaurant, newImageUrls) => {
   const toDelete = currentImage.filter(url => !newImageUrls.includes(url));
 
   // delete removed images
-  console.log(toDelete);
   if (toDelete.length > 0) {
     const result = await deleteImagesFromCloudinary(toDelete);
-    console.log(result);
   }
   
 

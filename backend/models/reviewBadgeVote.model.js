@@ -6,7 +6,7 @@ const reviewBadgeVoteSchema = new mongoose.Schema({
   restaurant: { type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: true },
   badgeIndex: { type: Number, required: true, min: 0, max: 3 },
   createdAt: { type: Date, default: Date.now }
-});
+}, { versionKey: false });
 
 reviewBadgeVoteSchema.index({ customer: 1, review: 1 }, { unique: true });
 

@@ -1,4 +1,6 @@
 const reviewService = require('../services/review.service');
+const imageService = require('../services/image.service');
+const Review = require('../models/review.model');
 const { validateReview, validateReply, validateBadge } = require('../validators/review.validator');
 
 exports.getReviewsByRestaurant = async (req, res) => {
@@ -40,6 +42,11 @@ exports.addBadge = async (req, res) => {
   if (error) return res.status(400).send(error.details[0].message);
 
   const { status, body } = await reviewService.addBadge(req.body, req.params.id, req.user);
+  return res.status(status).json(body);
+};
+
+exports.addReviewImages = async (req, res) => {
+  const { status, body } = await imageService.addImages(Review, req.review._id, req.files, 'images');
   return res.status(status).json(body);
 };
 

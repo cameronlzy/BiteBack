@@ -6,6 +6,7 @@ const validateObjectId = require('../middleware/validateObjectId');
 const optionalAuth = require('../middleware/optionalAuth');
 const authorizedReviewCustomer = require('../middleware/authorizedReviewCustomer');
 const authorizedReviewRestaurantOwner = require('../middleware/authorizedReviewRestaurantOwner');
+const parser = require('../middleware/cloudinaryUpload')('reviews');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const reviewController = require('../controllers/review.controller');
 const router = wrapRoutes(express.Router());
@@ -27,6 +28,9 @@ router.post('/:id/reply', [validateObjectId, auth, isOwner, authorizedReviewRest
 
 // [Customer] - Add or Update a badge vote on a review
 router.post('/:id/badges', [validateObjectId, auth, isCustomer], reviewController.addBadge);
+
+// [Customer] - Upload images for their restaurant
+router.post('/:id/images', [auth, isCustomer, authorizedReviewCustomer, parser.array('images', 5)], reviewController.addReviewImages);
 
 // [Customer] - Delete a review (owned by the customer)
 router.delete('/:id', [validateObjectId, auth, isCustomer, authorizedReviewCustomer], reviewController.deleteReview);

@@ -35,7 +35,6 @@ exports.createRestaurant = async (req, res) => {
 };
 
 exports.addRestaurantImages = async (req, res) => {
-    console.log(req.files);
     const { status, body } = await imageService.addImages(Restaurant, req.restaurant._id, req.files, 'images');
     return res.status(status).json(body);
 };

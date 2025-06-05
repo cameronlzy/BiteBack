@@ -49,7 +49,11 @@ const reviewSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
         default: false
-    }
+    },
+    images: {
+        type: [String],
+        default: [],
+    },
 }, {
     timestamps: { createdAt: true, updatedAt: false }, 
     versionKey: false
