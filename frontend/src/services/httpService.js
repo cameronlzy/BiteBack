@@ -23,5 +23,7 @@ export default {
     get: axios.get,
     post: axios.post,
     put: axios.put,
-    delete: axios.delete,
+    delete: (url, data) => axios.delete(url, { data }),
+    patch: axios.patch,
+    request: axios.request
 }

@@ -33,14 +33,11 @@ export async function getRestaurantReservations(id, startDate, endDate) {
 }
 
 
-export async function saveReservation(reservation) {
-    if(reservation._id) {
-        const result = {
-            reservationDate: reservation.reservationDate,
-            pax: reservation.pax,
-            remarks: reservation.remarks
-        }
-        const {data} = await http.put(getReservationUrl(reservation._id, false), result)
+export async function saveReservation(reservation, isUpdate) {
+    if(isUpdate) {
+        const body = {...reservation}
+        delete body._id
+        const {data} = await http.patch(getReservationUrl(reservation._id, false), body)
         return data
     } else {
         const {data} = await http.post(apiEndpoint, reservation)

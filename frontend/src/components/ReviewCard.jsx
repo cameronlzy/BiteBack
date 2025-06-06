@@ -1,15 +1,35 @@
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Star, Trash2 } from "lucide-react"
 import { Button } from "./ui/button"
-import { useState, useEffect } from "react"
 import { getRestaurant } from "@/services/restaurantService"
 import { toast } from "react-toastify"
 import { readableTimeSettings } from "@/utils/timeConverter"
 import { DateTime } from "luxon"
 import { Link } from "react-router-dom"
+import LoadingSpinner from "./common/LoadingSpinner"
+import ohnoImg from "@/assets/ohnobadge.png"
+import lovethisImg from "@/assets/lovethisbadge.png"
+import helpfulImg from "@/assets/helpfulbadge.png"
+import thanksImg from "@/assets/thanksbadge.png"
+import { addBadgeVote, removeBadgeVote } from "@/services/reviewService"
+import BadgeReactions from "./common/BadgeReactions"
+import OwnerReply from "./OwnerReply"
+import StarRating from "./common/StarRating"
 
-const ReviewCard = ({ review, user, onDelete }) => {
+const badges = [
+  { name: "helpful", image: helpfulImg },
+  { name: "thanks", image: thanksImg },
+  { name: "lovethis", image: lovethisImg },
+  { name: "ohno", image: ohnoImg },
+]
+
+const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
   const [restaurant, setRestaurant] = useState(null)
+  const [selectedBadgeIndex, setSelectedBadgeIndex] = useState(
+    review.selectedBadge ?? null
+  )
+  const [badgeCounts, setBadgeCounts] = useState([...review.badgesCount])
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -17,67 +37,124 @@ const ReviewCard = ({ review, user, onDelete }) => {
         const fetchedRestaurant = await getRestaurant(review.restaurant)
         setRestaurant(fetchedRestaurant)
       } catch (ex) {
-        toast.error("Failed to fetch restaurant:", ex)
+        toast.error("Failed to fetch restaurant")
       }
     }
     fetchRestaurant()
   }, [])
 
-  console.log(review)
+  const handleBadgeReact = async (reviewId, badgeIndex) => {
+    if (!user) {
+      toast.info("Please log in")
+      return
+    }
+    try {
+      const newCounts = [...badgeCounts]
+
+      if (selectedBadgeIndex === badgeIndex) {
+        await removeBadgeVote(reviewId)
+        newCounts[badgeIndex] = Math.max(0, newCounts[badgeIndex] - 1)
+        setSelectedBadgeIndex(null)
+      } else {
+        await addBadgeVote(reviewId, badgeIndex)
+        newCounts[badgeIndex] = (newCounts[badgeIndex] ?? 0) + 1
+
+        if (selectedBadgeIndex !== null) {
+          newCounts[selectedBadgeIndex] = Math.max(
+            0,
+            (newCounts[selectedBadgeIndex] ?? 1) - 1
+          )
+        }
+
+        setSelectedBadgeIndex(badgeIndex)
+      }
+
+      setBadgeCounts(newCounts)
+    } catch (ex) {
+      if (ex.response?.status === 403) {
+        toast.info("Owners not allowed to react to reviews")
+      } else {
+        toast.error("Failed to update reaction")
+      }
+    }
+  }
 
   return (
     <Card key={review._id}>
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <div>
-            <Link
-              to={`/user-details/${review.customer}`}
-              className="font-semibold text-blue-600 underline"
-            >
-              {review.username}
-            </Link>{" "}
-            reviewed{" "}
-            {restaurant ? (
-              <span className="italic">{restaurant.name}</span>
-            ) : (
-              <span className="italic text-gray-400">Loading...</span>
-            )}
+        <CardTitle className="flex justify-between items-start">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div>
+              <Link
+                to={`/user-details/${review.customer}`}
+                className="font-semibold text-blue-600 underline"
+              >
+                {review.username}
+              </Link>{" "}
+              {showRestaurant && (
+                <>
+                  reviewed{" "}
+                  {restaurant ? (
+                    <span className="italic">{restaurant.name}</span>
+                  ) : (
+                    <LoadingSpinner size="sm" inline={true} />
+                  )}
+                </>
+              )}
+            </div>
+            <p className="font-semibold text-sm text-gray-500">
+              {DateTime.fromISO(review.createdAt).toLocaleString({
+                ...readableTimeSettings,
+                hour: undefined,
+                minute: undefined,
+              })}
+            </p>
           </div>
-          <div className="flex items-center gap-1">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  review.rating >= i ? "text-yellow-500" : "text-gray-300"
-                }`}
-                fill={review.rating >= i ? "currentColor" : "none"}
-              />
-            ))}
+          <div>
+            <StarRating rating={review.rating} className="w-6 h-6" />
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2 text-sm text-gray-700">
         <div className="relative">
-          <p>
-            <b>Date Visited:</b>{" "}
+          <p className="text-left">{review.reviewText}</p>
+          <i className="block text-left text-gray-500 mt-2">
+            Visited on{" "}
             {DateTime.fromISO(review.dateVisited).toLocaleString({
               ...readableTimeSettings,
               hour: undefined,
               minute: undefined,
             })}
-          </p>
-          <p>
-            <b>Comments:</b> {review.reviewText}
-          </p>
-          <p>
-            <b>Date Posted:</b>{" "}
-            {DateTime.fromISO(review.createdAt).toLocaleString({
-              ...readableTimeSettings,
-              hour: undefined,
-              minute: undefined,
-            })}
-          </p>
+          </i>
+        </div>
+        {review.images && review.images.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {review.images.map((url, idx) => (
+              <Link
+                key={url}
+                to={`/images/${encodeURIComponent(url)}`}
+                state={{ from: location.pathname }}
+              >
+                <img
+                  src={url}
+                  alt={`review image ${idx + 1}`}
+                  className="w-20 h-20 object-cover rounded-md border border-gray-300 shadow-sm hover:opacity-90 transition-opacity"
+                />
+              </Link>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-between items-center">
+          <div>
+            <BadgeReactions
+              badges={badges}
+              badgeCounts={badgeCounts}
+              selectedBadgeIndex={selectedBadgeIndex}
+              onReact={(index) => handleBadgeReact(review._id, index)}
+            />
+          </div>
           {user &&
+            showRestaurant &&
             (user?.profile?._id === review.customer ||
               user._id === review.customer) && (
               <Button
@@ -90,9 +167,15 @@ const ReviewCard = ({ review, user, onDelete }) => {
               </Button>
             )}
         </div>
-        {/*  */}
 
-        {/* OwnerReplySection */}
+        <OwnerReply
+          review={review}
+          user={user}
+          restaurant={restaurant}
+          onReplyChange={(newReply) => {
+            review.reply = newReply
+          }}
+        />
       </CardContent>
     </Card>
   )

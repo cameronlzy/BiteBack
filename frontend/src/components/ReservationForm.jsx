@@ -40,6 +40,8 @@ import {
 } from "./ui/form"
 import { Input } from "./ui/input"
 import CustomDay from "./common/CustomDay"
+import LoadingSpinner from "./common/LoadingSpinner"
+import { objectComparator } from "@/utils/objectComparator"
 
 const ReservationForm = ({ user }) => {
   const [showReservation, setShowReservation] = useState(false)
@@ -79,9 +81,7 @@ const ReservationForm = ({ user }) => {
       try {
         const reservations = await getReservations()
         setExistingReservations(reservations)
-      } catch (ex) {
-        console.error("Failed to fetch reservations", ex)
-      }
+      } catch (ex) {}
     }
     fetchExistingReservations()
   }, [user])
@@ -149,8 +149,6 @@ const ReservationForm = ({ user }) => {
   useEffect(() => {
     if (!reservationDate || !restaurant) return
 
-    const formatted =
-      DateTime.fromJSDate(reservationDate).toFormat("yyyy-MM-dd")
     const fetchAvailability = async () => {
       const formatted =
         DateTime.fromJSDate(reservationDate).toFormat("yyyy-MM-dd")
@@ -179,14 +177,8 @@ const ReservationForm = ({ user }) => {
     }
     fetchAvailability()
   }, [reservationDate, restaurant])
-  // useEffect(() => {
-  //   if (capacityForSlot === 0) {
-  //     setValue("pax", undefined)
-  //   }
-  // }, [selectedTime])
 
-  if (!restaurant)
-    return <p className="text-center mt-10">Loading restaurant...</p>
+  if (!restaurant) return <LoadingSpinner />
 
   const handleDateTimeChange = (date) => {
     if (date) {
@@ -236,28 +228,28 @@ const ReservationForm = ({ user }) => {
 
   const onSubmit = async (data) => {
     try {
-      const finalReservation = reservationId
-        ? {
-            _id: reservationId,
-            restaurant: data.restaurantId,
-            pax: data.pax,
-            reservationDate: DateTime.fromJSDate(data.reservationDate)
-              .setZone("Asia/Singapore")
-              .toISO(),
-            user: user._id,
-            remarks: data.remarks || "",
-          }
-        : {
-            restaurant: data.restaurantId,
-            pax: data.pax,
-            reservationDate: DateTime.fromJSDate(data.reservationDate)
-              .setZone("Asia/Singapore")
-              .toISO(),
-            user: user._id,
-            remarks: data.remarks || "",
-          }
-
-      await saveReservation(finalReservation)
+      const finalReservation = {
+        restaurant: data.restaurantId,
+        pax: data.pax,
+        reservationDate: DateTime.fromJSDate(data.reservationDate)
+          .setZone("Asia/Singapore")
+          .toISO(),
+        user: user._id,
+        remarks: data.remarks || "",
+      }
+      const originalReservation = existingReservations.find(
+        (r) => r._id === reservationId
+      )
+      const result = objectComparator(originalReservation, finalReservation)
+      if (reservationId && Object.keys(result).length === 0) {
+        navigate(from, {
+          replace: true,
+        })
+      }
+      result._id = reservationId
+      reservationId
+        ? await saveReservation(result, true)
+        : await saveReservation(finalReservation, false)
       toast.success("Reserved successfully!")
       navigate(from, {
         replace: true,
@@ -399,7 +391,7 @@ const ReservationForm = ({ user }) => {
                           </div>
                         </motion.div>
                       ) : (
-                        <p> Loading Available Time Slots...</p>
+                        <LoadingSpinner inline={true} size="sm" />
                       )
                     ) : (
                       <p> Please Select Date to see Available Time Slots</p>

@@ -10,11 +10,13 @@ import { useConfirm } from "./common/ConfirmProvider"
 import CalendarReservations from "./CalendarReservations"
 import ListReservations from "./ListReservations"
 import { Button } from "@/components/ui/button"
+import LoadingSpinner from "./common/LoadingSpinner"
 
 const CustomerReservations = ({ user }) => {
   const [reservations, setReservations] = useState([])
   const [sortedReservations, setSortedReservations] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState("list")
 
   const location = useLocation()
@@ -35,8 +37,8 @@ const CustomerReservations = ({ user }) => {
 
       setReservations(merged)
       setSortedReservations(merged)
-    } catch (ex) {
-      console.error("Failed to fetch reservations", ex)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -74,8 +76,9 @@ const CustomerReservations = ({ user }) => {
           Switch to {viewMode === "list" ? "Calendar" : "List"} View
         </Button>
       </div>
-
-      {reservations.length === 0 ? (
+      {loading ? (
+        <LoadingSpinner size="md" />
+      ) : reservations.length === 0 ? (
         <p className="text-gray-500">No Current Reservations</p>
       ) : viewMode === "list" ? (
         <ListReservations

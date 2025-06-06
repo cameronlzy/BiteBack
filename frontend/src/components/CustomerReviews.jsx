@@ -70,6 +70,7 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
               currentRestaurant={review.restaurant}
               user={viewedCustomer}
               onDelete={handleReviewDelete}
+              showRestaurant={true}
             />
           ))}
         </>

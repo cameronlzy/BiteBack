@@ -7,7 +7,7 @@ const ProtectedRoute = ({ element, user, loading }) => {
 
   useEffect(() => {
     if (!user & !loading) {
-      toast("Please Log in First", { toastId: "auth-redirect" })
+      toast.info("Please Log in First", { toastId: "auth-redirect" })
     }
   }, [user])
 

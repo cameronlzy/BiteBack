@@ -8,7 +8,6 @@ function isValidEmail(email) {
 }
 
 async function login(user) {
-    console.log(user)
     const finalUser = isValidEmail(user.identifier) ? {
         email: user.identifier,
         password: user.password
@@ -21,24 +20,29 @@ async function login(user) {
 }
 
 
-async function getOwnerInfo() {
-  const response = await http.get(import.meta.env.VITE_API_URL + "/owners/me")
-  return response.data;
-}
-
-async function getCustomerInfo() {
-    const response = await http.get(import.meta.env.VITE_API_URL + "/customers/me")
-    return response.data
-}
-
 async function logout() {
     await http.post(apiEndpoint + "/logout", null)
     localStorage.removeItem("role")
 }
 
+async function resetPasswordTrigger(userDetails) {
+    const identifierObj = isValidEmail(userDetails.identifier) ? {
+        email: userDetails.identifier
+     } : {
+        username: userDetails.identifier
+     }
+     return await http.post(apiEndpoint + "/forget-password", identifierObj)
+}
+
+async function resetPasswordSubmit(token, newPasswordObj) {
+     return await http.post(apiEndpoint + `/reset-password/${token}`, newPasswordObj)
+}
+
+
+
 export default {
     logout,
     login,
-    getCustomerInfo,
-    getOwnerInfo,
+    resetPasswordSubmit,
+    resetPasswordTrigger,
 }

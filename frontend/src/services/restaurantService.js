@@ -17,6 +17,7 @@ export async function getRestaurants() {
 }
 
 export async function getRestaurant(id) {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   const { data } = await http.get(getRestaurantUrl(id))
   if (data.openingHours) {
     data.openingHours = convertOpeningHoursToSGT(data.openingHours)
@@ -40,7 +41,6 @@ export async function getRestaurantAvailability(restaurantId, date) {
     if (!Array.isArray(data)) return []
     return convertSlotTimesToSGT(data, date)
   } catch (err) {
-    console.error("Failed to get availability", err)
     return []
   }
 }
@@ -50,7 +50,7 @@ export function userOwnsRestaurant(restID, user) {
   return data
 }
 
-export async function saveRestaurant(restaurant) {
+export async function saveRestaurant(restaurant, isUpdate) {
     const body = { ...restaurant }
 
     if (body.openingHours && typeof body.openingHours === "object") {
@@ -58,14 +58,68 @@ export async function saveRestaurant(restaurant) {
     }
 
 
-    if(restaurant._id) {
-        delete body._id;
-        const { data } = await http.put(getRestaurantUrl(restaurant._id), body)
+    if(isUpdate) {
+      const result = {...body}
+        delete result._id
+        const { data } = await http.patch(getRestaurantUrl(restaurant._id), result)
         return data
     } else {
         const { data } = await http.post(apiEndpoint, body)
         return data
     }
+}
+
+export async function saveRestaurants(restaurants) {
+  const results = restaurants.map((r) => {
+  const cleaned = Object.fromEntries(
+    Object.entries(r).filter(([_, v]) => v !== "")
+  )
+
+  return {
+    ...cleaned,
+    openingHours: convertOpeningHoursToString(r.openingHours),
+  }
+})
+
+  const { data } = await http.post(apiEndpoint + "/bulk", {
+    restaurants: results
+})
+  return data
+}
+
+export async function uploadRestaurantImages(restaurantId, files) {
+  if (!restaurantId) throw new Error("Restaurant ID is required")
+  if (!files || files.length === 0) return []
+
+
+  const limitedFiles = files.slice(0, 5)
+
+  for (const file of limitedFiles) {
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error(`File "${file.name}" exceeds 5MB limit.`)
+    }
+    if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
+      throw new Error(`Unsupported format for "${file.name}".`)
+    }
+  }
+
+  const formData = new FormData()
+  limitedFiles.forEach((file) => formData.append("images", file))
+
+  const { data: imageUrls }  = await http.post(`${apiEndpoint}/${restaurantId}/images`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  })
+
+  return imageUrls 
+}
+
+export async function updateRestaurantImages(restaurantId, imageUrls) {
+  const { data } = await http.put(`${apiEndpoint}/${restaurantId}/images`, {
+    images: imageUrls,
+  })
+  return data
 }
 
 export async function deleteRestaurant(id) {

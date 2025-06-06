@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button"
 import { ChevronDown, ArrowUp, ArrowDown } from "lucide-react"
 
 const SortBy = ({ options, items, onSorted }) => {
+  const [selectedSort, setSelectedSort] = useState({
+    value: null,
+    direction: null,
+  })
   const [open, setOpen] = useState(false)
 
   const handleSort = (value, direction) => {
@@ -20,6 +24,7 @@ const SortBy = ({ options, items, onSorted }) => {
       return 0
     })
 
+    setSelectedSort({ value, direction })
     onSorted(sorted)
     setOpen(false)
   }
@@ -37,14 +42,24 @@ const SortBy = ({ options, items, onSorted }) => {
             <span className="text-sm">{label}</span>
             <div className="space-x-1">
               <Button
-                variant="ghost"
+                variant={
+                  selectedSort.value === value &&
+                  selectedSort.direction === "asc"
+                    ? "secondary"
+                    : "ghost"
+                }
                 size="icon"
                 onClick={() => handleSort(value, "asc")}
               >
                 <ArrowUp className="w-4 h-4" />
               </Button>
               <Button
-                variant="ghost"
+                variant={
+                  selectedSort.value === value &&
+                  selectedSort.direction === "desc"
+                    ? "secondary"
+                    : "ghost"
+                }
                 size="icon"
                 onClick={() => handleSort(value, "desc")}
               >

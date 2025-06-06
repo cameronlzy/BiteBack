@@ -13,16 +13,26 @@ import {
 } from "@/components/ui/form"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { cuisineList, restaurantSchema } from "@/utils/schemas"
-import { getRestaurant, saveRestaurant } from "@/services/restaurantService"
+import {
+  getRestaurant,
+  saveRestaurant,
+  updateRestaurantImages,
+  uploadRestaurantImages,
+} from "@/services/restaurantService"
 import { toast } from "react-toastify"
 import { MultiSelect } from "@/components/common/MultiSelect"
 import BackButton from "./common/BackButton"
 import ConfirmationPage from "./common/ConfirmationPage"
+import { objectComparator } from "@/utils/objectComparator"
+import ImageUpload from "./common/ImageUpload"
 
 const RestaurantForm = ({ user }) => {
   const { restaurantId } = useParams()
   const navigate = useNavigate()
+  const [existingRestaurant, setExistingRestaurant] = useState(null)
   const [confirming, setConfirming] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState([])
+  const [existingImageUrls, setExistingImageUrls] = useState([])
   const from = "/restaurants" + (restaurantId ? `/${restaurantId}` : "")
 
   const form = useForm({
@@ -60,92 +70,148 @@ const RestaurantForm = ({ user }) => {
 
   useEffect(() => {
     const fetchRestaurant = async () => {
-      if (user.role != "owner") {
-        toast.error("You do not have permission to create restaurants.", {
-          toastId: "unauthorised-restaurant-creaation",
-        })
-        navigate("/restaurants", { replace: true })
+      if (user.role !== "owner") {
+        toast.error("You do not have permission to create restaurants.")
+        return navigate("/restaurants", { replace: true })
       }
+
       if (!restaurantId) return
 
       try {
         const restaurant = await getRestaurant(restaurantId)
-        if (!restaurant) {
-          navigate("/not-found", { replace: true })
-          return
-        }
-        if (restaurant.owner !== user._id) {
-          toast.error("You do not have permission to edit this restaurant.", {
-            toastId: "unauthorised-restaurant-edit",
-          })
-          navigate("/restaurants", { replace: true })
-          return
+
+        if (!restaurant || restaurant.owner !== user._id) {
+          toast.error("Unauthorized to edit this restaurant.")
+          return navigate("/restaurants", { replace: true })
         }
 
-        const excludedKeys = new Set(["slotDuration", "owner", "__v"])
+        setExistingRestaurant(restaurant)
+        if (Array.isArray(restaurant.images)) {
+          setExistingImageUrls(restaurant.images)
+        }
+        const allowedKeys = new Set([
+          "name",
+          "address",
+          "contactNumber",
+          "maxCapacity",
+          "email",
+          "website",
+          "cuisines",
+          "openingHours",
+          "_id",
+        ])
 
-        Object.entries(restaurant).forEach(([key, value]) => {
-          if (excludedKeys.has(key)) return
+        Object.entries(restaurant).forEach(([key, val]) => {
+          if (!allowedKeys.has(key)) return
 
-          if (key === "openingHours") {
-            Object.entries(value).forEach(([day, hours]) =>
+          if (key === "openingHours" && typeof val === "object") {
+            Object.entries(val).forEach(([day, hours]) =>
               setValue(`openingHours.${day}`, hours)
             )
           } else if (key === "cuisines") {
-            setValue("cuisines", value, { shouldValidate: true })
+            setValue("cuisines", val)
           } else if (key === "_id") {
-            setValue("id", value, { shouldValidate: true })
+            setValue("id", val)
           } else {
-            setValue(key, value, { shouldValidate: true })
+            setValue(key, val)
           }
         })
       } catch (ex) {
-        console.error(
-          "❌ Failed to fetch restaurant:",
-          ex.response?.data || ex.message
-        )
+        toast.error("Failed to fetch restaurant")
         navigate("/not-found", { replace: true })
       }
     }
+
     fetchRestaurant()
-  }, [restaurantId, setValue, navigate])
+  }, [restaurantId])
+
+  useEffect(() => {
+    return () => selectedFiles.forEach((file) => URL.revokeObjectURL(file))
+  }, [selectedFiles])
+
+  useEffect(() => {
+    if (existingImageUrls.length > 0 && selectedFiles.length === 0) {
+      setSelectedFiles(existingImageUrls)
+    }
+  }, [existingImageUrls])
 
   const watchedOpeningHours = watch("openingHours")
 
   const handleFirstSubmit = async () => {
     const allClosed = Object.values(getValues("openingHours")).every(
-      (time) => time.toLowerCase() === "closed"
+      (val) => val.toLowerCase() === "closed"
     )
-
     if (allClosed) {
-      toast.error("At least one day must have valid opening hours.")
-      return
+      return toast.error("At least one day must be open")
     }
 
-    form.unregister("rating") // Eventually no need since wont get back rating
+    if (selectedFiles.length === 0) {
+      return toast.error("Please upload at least one image")
+    }
 
-    const valid = await trigger()
-    if (valid) setConfirming(true)
+    if (await trigger()) {
+      setConfirming(true)
+    }
   }
 
   const onSubmit = async (data) => {
-    const cleanedData = Object.fromEntries(
-      Object.entries(data).filter(([key, value]) => value !== "")
-    )
+    const { id, ...cleaned } = data
+
     try {
-      const { id, ...rest } = cleanedData
-      const restaurantToSave = restaurantId
-        ? { ...rest, _id: restaurantId }
-        : rest
-      await saveRestaurant(restaurantToSave)
+      const cleanedNoEmpty = Object.fromEntries(
+        Object.entries(cleaned).filter(([_, v]) => v !== "")
+      )
+
+      let changes = restaurantId
+        ? objectComparator(existingRestaurant, cleanedNoEmpty)
+        : cleanedNoEmpty
+
+      let finalRestaurantId = restaurantId || null
+
+      if (!restaurantId || Object.keys(changes).length > 0) {
+        const res = await saveRestaurant(
+          restaurantId ? { ...changes, _id: restaurantId } : changes,
+          !!restaurantId
+        )
+        if (!restaurantId) finalRestaurantId = res._id
+      }
+
+      if (selectedFiles.length > 0) {
+        const newFiles = selectedFiles.filter((f) => f instanceof File)
+        const keptUrls = selectedFiles.filter((f) => typeof f === "string")
+
+        let newImageUrls = []
+        if (newFiles.length > 0) {
+          newImageUrls = await uploadRestaurantImages(
+            finalRestaurantId,
+            newFiles
+          )
+          newImageUrls = newImageUrls.filter(
+            (url) => !existingImageUrls.includes(url)
+          )
+        }
+
+        const updatedUrls = [...keptUrls, ...newImageUrls]
+        await updateRestaurantImages(finalRestaurantId, updatedUrls)
+      }
+
       toast.success("Restaurant saved successfully!")
       navigate("/restaurants")
     } catch (ex) {
-      if (ex.response && ex.response.status === 403) {
-        toast.error("Not authorised to edit or create restaurant.")
-      }
+      // Custom rollback here
+      toast.error("Error saving restaurant")
+      console.error(ex)
     }
   }
+
+  const fields = [
+    { name: "name", label: "Restaurant Name" },
+    { name: "address", label: "Address" },
+    { name: "contactNumber", label: "Contact Number" },
+    { name: "maxCapacity", label: "Max Capacity" },
+    { name: "email", label: "Email" },
+    { name: "website", label: "Website" },
+  ]
 
   return (
     <FormProvider {...form}>
@@ -159,9 +225,9 @@ const RestaurantForm = ({ user }) => {
           setConfirming={setConfirming}
         />
         <AnimatePresence mode="wait">
-          {!confirming && (
+          {!confirming ? (
             <motion.div
-              key="restaurant-form"
+              key="form"
               initial={{ x: 100, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -100, opacity: 0 }}
@@ -170,87 +236,50 @@ const RestaurantForm = ({ user }) => {
               <h2 className="text-2xl font-bold mb-4">
                 {restaurantId ? "Edit" : "Create"} Restaurant
               </h2>
-
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="space-y-2 mb-4">
-                    <FormLabel>Restaurant Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. The Curry House" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              {fields.map(({ name, label }) => (
+                <FormField
+                  key={name}
+                  control={form.control}
+                  name={name}
+                  render={({ field }) => (
+                    <FormItem className="space-y-2 mb-4">
+                      <FormLabel>{label}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={label} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+              <ImageUpload
+                firstRequired={true}
+                message="First image is for thumbnail and subsequent 4 images are for the menu"
+                selectedFiles={selectedFiles}
+                setSelectedFiles={setSelectedFiles}
               />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem className="space-y-2 mb-4">
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 12 Orchard Road" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="contactNumber"
-                render={({ field }) => (
-                  <FormItem className="space-y-2 mb-4">
-                    <FormLabel>Contact Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 91234567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="maxCapacity"
-                render={({ field }) => (
-                  <FormItem className="space-y-2 mb-4">
-                    <FormLabel>Max Capacity</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g. 50" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormLabel className="font-bold mb-4">Opening Hours</FormLabel>
-              {Object.keys(watchedOpeningHours || {}).map((day) => {
-                const fieldName = `openingHours.${day}`
-                const label = day.charAt(0).toUpperCase() + day.slice(1)
-
-                return (
-                  <FormField
-                    key={day}
-                    control={form.control}
-                    name={fieldName}
-                    render={({ field }) => (
-                      <FormItem className="space-y-2 mb-4">
-                        <FormLabel className="text-sm text-gray-700">
-                          {label}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g. 10:00-22:00 or Closed"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )
-              })}
+              {Object.keys(watchedOpeningHours || {}).map((day) => (
+                <FormField
+                  key={day}
+                  control={form.control}
+                  name={`openingHours.${day}`}
+                  render={({ field }) => (
+                    <FormItem className="space-y-2 mb-4">
+                      <FormLabel>
+                        {day[0].toUpperCase() + day.slice(1)}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g. 10:00-22:00 or Closed"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
               <Controller
                 control={form.control}
                 name="cuisines"
@@ -261,47 +290,13 @@ const RestaurantForm = ({ user }) => {
                       <MultiSelect
                         options={cuisineList}
                         selected={field.value || []}
-                        onChange={(val) => field.onChange(val)}
+                        onChange={field.onChange}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem className="space-y-2 mb-4">
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g. contact@restaurant.com"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="website"
-                render={({ field }) => (
-                  <FormItem className="space-y-2 mb-4">
-                    <FormLabel>Website</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g. https://restaurant.com"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <Button
                 type="button"
                 className="w-full mt-4"
@@ -310,11 +305,9 @@ const RestaurantForm = ({ user }) => {
                 Verify Details
               </Button>
             </motion.div>
-          )}
-
-          {confirming && (
+          ) : (
             <motion.div
-              key="confirm-section"
+              key="confirm"
               initial={{ x: -100, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 100, opacity: 0 }}
@@ -334,10 +327,8 @@ const RestaurantForm = ({ user }) => {
                     getValues("openingHours") || {}
                   )
                     .map(
-                      ([day, time]) =>
-                        `${day.charAt(0).toUpperCase() + day.slice(1)}: ${
-                          time || "-"
-                        }`
+                      ([d, t]) =>
+                        `${d[0].toUpperCase() + d.slice(1)}: ${t || "-"}`
                     )
                     .join(" | "),
                 }}

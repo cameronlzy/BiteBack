@@ -1,4 +1,3 @@
-import React from "react"
 import CustomerReservations from "@/components/CustomerReservations"
 import OwnerRestaurants from "@/components/OwnerRestaurants"
 import authService from "@/services/authService"
@@ -12,9 +11,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useLocation, useNavigate } from "react-router-dom"
 import CustomerReviews from "./CustomerReviews"
-const ProfilePage = ({ user }) => {
+import DeleteAccountPopup from "./DeleteAccountPopup"
+import { useState } from "react"
+const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()
+  const [showDeletePopup, setShowDeletePopup] = useState(false)
   const handleLogout = async () => {
     await authService.logout()
     window.location = "/"
@@ -24,7 +26,7 @@ const ProfilePage = ({ user }) => {
     {
       content: "Reset Password",
       onClick: () => {
-        navigate("forgot-password", { replace: true })
+        navigate("/change-password", { replace: true })
       },
     },
     {
@@ -33,11 +35,15 @@ const ProfilePage = ({ user }) => {
         navigate("/me/edit", { state: { from: location.pathname } }),
     },
     { content: "Logout", onClick: handleLogout },
+    {
+      content: "Delete Account",
+      onClick: () => setShowDeletePopup(true),
+    },
   ]
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="relative mb-6">
-        <div className="absolute top-0 right-0 hidden sm:flex">
+        <div className="absolute top-0 right-0 flex">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -53,19 +59,13 @@ const ProfilePage = ({ user }) => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="flex sm:hidden justify-center gap-2 mt-2">
-          <Button
-            onClick={() =>
-              navigate("/me/edit", { state: { from: location.pathname } })
-            }
-            variant="ghost"
-          >
-            Edit
-          </Button>
-          <Button onClick={handleLogout} variant="ghost">
-            Logout
-          </Button>
-        </div>
+        {showDeletePopup && (
+          <DeleteAccountPopup
+            onClose={() => setShowDeletePopup(false)}
+            role={user.role}
+            isLoading={isLoading}
+          />
+        )}
         <div className="text-center mt-2">
           <h1 className="text-3xl font-bold">
             {user.role === "customer"
@@ -82,10 +82,10 @@ const ProfilePage = ({ user }) => {
       </div>
 
       {user.role === "customer" && (
-        <>
+        <div className="w-full">
           <CustomerReservations user={user} />
           <CustomerReviews viewedCustomer={user} user={user} />
-        </>
+        </div>
       )}
       {user.role === "owner" && (
         <>

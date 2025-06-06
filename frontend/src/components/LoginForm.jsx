@@ -5,8 +5,9 @@ import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { loginUserSchema } from "@/utils/schemas"
 import FormWithCard from "./common/FormWithCard"
 import auth from "@/services/authService"
+import LoadingSpinner from "./common/LoadingSpinner"
 
-const LoginForm = ({ user }) => {
+const LoginForm = ({ user, loading }) => {
   const form = useForm({
     resolver: safeJoiResolver(loginUserSchema),
     mode: "onChange",
@@ -18,6 +19,8 @@ const LoginForm = ({ user }) => {
 
   const location = useLocation()
   const from = location.state?.from || "/"
+
+  if (loading) return <LoadingSpinner />
 
   if (user) return <Navigate to={from} replace />
 
@@ -62,6 +65,9 @@ const LoginForm = ({ user }) => {
           here
         </Link>
       </p>
+      <Link to="/forgot-password" className="underline-link">
+        Reset Password here
+      </Link>
     </React.Fragment>
   )
 }
