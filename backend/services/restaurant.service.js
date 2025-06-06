@@ -117,19 +117,6 @@ exports.createRestaurantBulk = async (authUser, data) => {
   }
 };
 
-// exports.addRestaurantImages = async (restaurantId, uploadedFiles) => {
-//   const imageUrls = uploadedFiles.map(file => file.path);
-
-//   const restaurant = await Restaurant.findById(restaurantId);
-//   if (!restaurant) return { status: 404, body: 'Restaurant not found' };
-
-//   // Append new images to the existing ones
-//   restaurant.images.push(...imageUrls);
-
-//   await restaurant.save();
-//   return { status: 200, body: restaurant.toObject() };
-// };
-
 exports.updateRestaurantImages = async (restaurant, newImageUrls) => {
   const currentImage = restaurant.images || [];
 
@@ -146,7 +133,7 @@ exports.updateRestaurantImages = async (restaurant, newImageUrls) => {
   restaurant.images = newImageUrls;
   await restaurant.save();
 
-  return { status: 200, body: restaurant.toObject() };
+  return { status: 200, body: restaurant.toObject().images };
 }
 
 exports.updateRestaurant = async (restaurant, update) => {

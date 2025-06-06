@@ -47,7 +47,7 @@ exports.addBadge = async (req, res) => {
 
 exports.addReviewImages = async (req, res) => {
   const { status, body } = await imageService.addImages(Review, req.review._id, req.files, 'images');
-  return res.status(status).json(body);
+  return res.status(status).json(body.images);
 };
 
 exports.deleteReview = async (req, res) => {
