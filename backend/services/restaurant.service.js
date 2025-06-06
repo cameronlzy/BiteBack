@@ -18,8 +18,6 @@ const isProdEnv = process.env.NODE_ENV === 'production';
 exports.getAllRestaurants = async () => {
   // find restaurants
   let restaurants = await Restaurant.find().sort('name').lean();
-  if (Array.isArray(restaurants) && restaurants.length === 0) return { status: 200, body: restaurants };
-  restaurants = await reviewSerice.getAverageRatingsForRestaurants(restaurants)
   return { status: 200, body: restaurants };
 }
 
@@ -66,7 +64,7 @@ exports.createRestaurant = async (authUser, data) => {
     const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));
     restaurant.owner = authUser._id;
     restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
-    await restaurant.save({ session });
+    await restaurant.save(session ? { session } : undefined);
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session || null);
@@ -75,7 +73,7 @@ exports.createRestaurant = async (authUser, data) => {
 
     // commit transaction
     user.profile.restaurants.push(restaurant._id);
-    await user.profile.save({ session });
+    await user.profile.save(session ? { session } : undefined);
 
     if (session) await session.commitTransaction();
 
@@ -106,7 +104,7 @@ exports.createRestaurantBulk = async (authUser, data) => {
     if (!user) throw { status: 404, body: 'User not found' };
     if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
     user.profile.restaurants = restaurants;
-    await user.profile.save({ session });
+    await user.profile.save(session ? { session } : undefined);
 
     // commit transaction
     if (session) await session.commitTransaction();
@@ -206,11 +204,7 @@ exports.createRestaurantArray = async (arr, userId, session = null) => {
       item.owner = userId;
       item.openingHours = convertSGTOpeningHoursToUTC(item.openingHours);
       restaurant = new Restaurant(item);
-      if (session) {
-        await restaurant.save({ session });
-      } else {
-        await restaurant.save();
-      }
+      await restaurant.save(session ? { session } : undefined);
       output.push(restaurant._id);
     }
     return output;

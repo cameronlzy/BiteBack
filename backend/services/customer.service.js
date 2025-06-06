@@ -67,14 +67,14 @@ exports.updateMe = async (update, authUser) => {
             const salt = await bcrypt.genSalt(10);
             user.password = await bcrypt.hash(update.password, salt);
         }
-        await user.save({ session });
+        await user.save(session ? { session } : undefined);
 
         // selectively update profile fields
         if (update.name !== undefined) user.profile.name = update.name;
         if (update.contactNumber !== undefined) user.profile.contactNumber = update.contactNumber;
         if (update.favCuisines !== undefined) user.profile.favCuisines = update.favCuisines;
 
-        await user.profile.save({ session });
+        await user.profile.save(session ? { session } : undefined);
 
         // update reviews
         if (update.username !== undefined) {

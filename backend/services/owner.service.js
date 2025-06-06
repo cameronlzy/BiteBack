@@ -62,12 +62,12 @@ exports.updateMe = async (update, authUser) => {
             const salt = await bcrypt.genSalt(10);
             user.password = await bcrypt.hash(update.password, salt);
         }
-        await user.save({ session });
+        await user.save(session ? { session } : undefined);
 
         // selectively update profile fields
         if (update.companyName !== undefined) user.profile.companyName = update.companyName;
 
-        await user.profile.save({ session });
+        await user.profile.save(session ? { session } : undefined);
 
         if (session) await session.commitTransaction();
 

@@ -92,14 +92,14 @@ exports.registerCustomer = async (data) => {
         // create new user
         let user = new User(_.pick(data, ['email', 'username', 'password', 'role']));
         customerProfile.user = user._id;
-        await customerProfile.save({ session });
+        await customerProfile.save(session ? { session } : undefined);
 
         // hash password and add references
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
         user.roleProfile = 'CustomerProfile';
         user.profile = customerProfile._id;
-        await user.save({ session });
+        await user.save(session ? { session } : undefined);
 
         // commit transaction
         if (session) await session.commitTransaction();
@@ -150,11 +150,11 @@ exports.registerOwner = async (data) => {
         // create a owner profile
         let ownerProfile = new OwnerProfile(_.pick(data, ['companyName', 'username']));
         ownerProfile.user = user._id;
-        await ownerProfile.save({ session });
+        await ownerProfile.save(session ? { session } : undefined);
 
         // reupdate user.profile
         user.profile = ownerProfile._id;
-        await user.save({ session });
+        await user.save(session ? { session } : undefined);
 
         // commit transaction
         if (session) await session.commitTransaction();

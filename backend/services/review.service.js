@@ -52,14 +52,29 @@ exports.getReviewById = async (reviewId) => {
 };
 
 exports.createReview = async (data, user) => {
-    // create review
-    const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
-    review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
-    review.customer = user.profile;
-    review.username = user.username;
-    await review.save();
-    
-    return { status: 200, body: review.toObject() };
+    const session = isProdEnv ? await mongoose.startSession() : null;
+    if (session) session.startTransaction();
+
+    try {
+        // create review
+        const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
+        review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
+        review.customer = user.profile;
+        review.username = user.username;
+        await review.save(session ? { session } : undefined);
+
+        // update restaurant ratings
+        await this.updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
+        
+        if (session) await session.commitTransaction();
+
+        return { status: 200, body: review.toObject() };
+    } catch (err) {
+        if (session) await session.abortTransaction();
+        throw err;
+    } finally {
+        if (session) session.endSession();
+    }
 };
 
 exports.createReply = async (data, review, authUser) => {
@@ -109,7 +124,8 @@ exports.deleteReview = async (review) => {
         // delete the review + votes
         await Promise.all([
             Review.deleteOne({ _id: review._id }).session(session || null),
-            ReviewBadgeVote.deleteMany({ review: review._id }).session(session || null)
+            ReviewBadgeVote.deleteMany({ review: review._id }).session(session || null),
+            await this.updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session)
         ]);
 
         if (session) await session.commitTransaction();
@@ -224,4 +240,28 @@ exports.getAverageRatingsForRestaurants = async (restaurants) => {
             averageRating: ratingMap[r._id.toString()]?.averageRating || 0,
             reviewCount: ratingMap[r._id.toString()]?.reviewCount || 0
     }));
+};
+
+exports.updateRatingForRestaurant = async (restaurantId, ratingChange, countChange, session = null) => {
+    // get restaurant
+    const restaurant = await Restaurant.findById(restaurantId);
+
+    // recalculate
+    let { averageRating = 0, reviewCount = 0 } = restaurant;
+
+    if (countChange < 0 && reviewCount <= 1) {
+        averageRating = 0;
+        reviewCount = 0;
+    } else {
+        averageRating = ((averageRating * reviewCount) + ratingChange) / (reviewCount + countChange);
+        reviewCount += countChange;
+    }
+
+    // round to 3 dp
+    averageRating = Math.round(averageRating * 1000) / 1000;
+
+    restaurant.averageRating = averageRating;
+    restaurant.reviewCount = reviewCount;
+
+    await restaurant.save(session ? { session } : undefined);
 };
