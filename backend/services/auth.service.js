@@ -2,7 +2,6 @@ const User = require('../models/user.model');
 const CustomerProfile = require('../models/customerProfile.model');
 const OwnerProfile = require('../models/ownerProfile.model');
 const { generateAuthToken } = require('../services/user.service');
-const { createRestaurantArray } = require('../services/restaurant.service');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const _ = require('lodash');
@@ -139,7 +138,6 @@ exports.registerOwner = async (data) => {
             }
         }
 
-
         // create new user
         let user = new User(_.pick(data, ['email', 'username', 'password', 'role']));
 
@@ -149,18 +147,9 @@ exports.registerOwner = async (data) => {
         user.roleProfile = 'OwnerProfile';
         user.profile = new mongoose.Types.ObjectId();
 
-        // create restaurant array
-        let restaurants;
-        try {
-            restaurants = await createRestaurantArray(data.restaurants, user._id, session);
-        } catch (err) {
-            throw { status: 400, body: 'Incorrect restaurant information.' };
-        }
-
         // create a owner profile
         let ownerProfile = new OwnerProfile(_.pick(data, ['companyName', 'username']));
         ownerProfile.user = user._id;
-        ownerProfile.restaurants = restaurants;
         await ownerProfile.save({ session });
 
         // reupdate user.profile
@@ -172,7 +161,6 @@ exports.registerOwner = async (data) => {
 
         const token = generateAuthToken(user);
         const safeUser = _.pick(user, ['_id', 'email', 'username', 'role']);
-        safeUser.restaurants = restaurants;
         return { token, status: 200, body: safeUser };
     } catch (err) {
         if (session) await session.abortTransaction();

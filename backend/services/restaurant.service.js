@@ -3,6 +3,7 @@ const Reservation = require('../models/reservation.model');
 const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
 const Review = require('../models/review.model');
+const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
 const { validateRestaurant } = require('../validators/restaurant.validator');
 const { DateTime } = require('luxon');
 const reservationService = require('../services/reservation.service');
@@ -79,6 +80,38 @@ exports.createRestaurant = async (authUser, data) => {
     if (session) await session.commitTransaction();
 
     return { status: 200, body: restaurant.toObject() };
+  } catch (err) {
+    if (session) await session.abortTransaction();
+    throw err;
+  } finally {
+    if (session) session.endSession();
+  }
+};
+
+exports.createRestaurantBulk = async (authUser, data) => {
+  const session = isProdEnv ? await mongoose.startSession() : null;
+  if (session) session.startTransaction();
+
+  try {
+    // create restaurants
+    let restaurants;
+    try {
+      restaurants = await this.createRestaurantArray(data, authUser._id, session);
+    } catch (err) {
+      throw { status: 400, body: 'Incorrect restaurant information' };
+    }
+
+    // update owner
+    const user = await User.findById(authUser._id).populate('profile').session(session || null);
+    if (!user) throw { status: 404, body: 'User not found' };
+    if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
+    user.profile.restaurants = restaurants;
+    await user.profile.save({ session });
+
+    // commit transaction
+    if (session) await session.commitTransaction();
+
+    return { status: 200, body: restaurants };
   } catch (err) {
     if (session) await session.abortTransaction();
     throw err;
@@ -193,6 +226,7 @@ exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => 
   await Promise.all([
     Reservation.deleteMany({ restaurant: restaurantId }).session(session),
     Review.deleteMany({ restaurant: restaurantId }).session(session),
-    Restaurant.findByIdAndDelete(restaurantId).session(session)
+    Restaurant.findByIdAndDelete(restaurantId).session(session),
+    ReviewBadgeVote.deleteMany({ restaurant: restaurantId }).session(session)
   ]);
 };

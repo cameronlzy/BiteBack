@@ -1,13 +1,11 @@
 const Joi = require('joi');
 const { userJoiSchema } = require('./user.validator');
-const { restaurantJoiSchema } = require('./restaurant.validator');
 const passwordComplexity = require('joi-password-complexity');
 
 function validateOwnerProfile(profile) {
   const schema = userJoiSchema.keys({
     role: Joi.string().valid("owner").required(),
     companyName: Joi.string().min(2).max(255).required(),
-    restaurants: Joi.array().items(restaurantJoiSchema).min(1).required(),
   });
   return schema.validate(profile);
 }

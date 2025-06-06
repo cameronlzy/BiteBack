@@ -6,13 +6,7 @@ const ownerProfileSchema = new mongoose.Schema({
   companyName: { type: String, required: true },
   restaurants: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' }],
-    validate: {
-      validator: function (arr) {
-        return Array.isArray(arr) && arr.length > 0;
-      },
-      message: 'At least one restaurant is required.'
-    },
-    required: true
+    default: [],
   }
 },{
   timestamps: { createdAt: 'dateJoined', updatedAt: false }, 

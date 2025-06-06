@@ -1,7 +1,7 @@
 const restaurantService = require('../services/restaurant.service');
 const imageService = require('../services/image.service');
 const Restaurant = require('../models/restaurant.model');
-const { validateRestaurant, validatePatch, validateImages } = require('../validators/restaurant.validator');
+const { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages } = require('../validators/restaurant.validator');
 const Joi = require('joi');
 const { ISOdate } = require('../helpers/time.helper');
 
@@ -31,6 +31,15 @@ exports.createRestaurant = async (req, res) => {
     if (error) return res.status(400).send(error.details[0].message);
 
     const { status, body } = await restaurantService.createRestaurant(req.user, req.body);
+    return res.status(status).json(body);
+};
+
+exports.createRestaurantBulk = async (req, res) => {
+    // validate request
+    const { error } = validateRestaurantBulk(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const { status, body } = await restaurantService.createRestaurantBulk(req.user, req.body.restaurants);
     return res.status(status).json(body);
 };
 

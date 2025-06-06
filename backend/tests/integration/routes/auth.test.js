@@ -209,34 +209,13 @@ describe('auth test', () => {
         let username;
         let password;
         let role;
-
         let companyName;
-        let restaurantName;
-        let address;
-        let contactNumber;
-        let cuisines;
-        let openingHours;
-        let maxCapacity;
-        let restaurantEmail;
-        let website;
     
         const exec = () => {
             return request(server)
             .post('/api/auth/register/owner')
             .send({
-                email, username, password, role, companyName,
-                restaurants: [
-                    {
-                        name: restaurantName,
-                        address,
-                        contactNumber,
-                        cuisines,
-                        openingHours,
-                        maxCapacity,
-                        email: restaurantEmail,
-                        website
-                    }
-                ]
+                email, username, password, role, companyName
             });
         };
     
@@ -244,16 +223,6 @@ describe('auth test', () => {
             await User.deleteMany({});
             await OwnerProfile.deleteMany({});
             await Restaurant.deleteMany({});
-
-            // creating a restaurant
-            restaurantName = "restaurant";
-            address = "new york";
-            contactNumber = "87654321";
-            cuisines = ["Chinese"];
-            openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
-            maxCapacity = 50;
-            restaurantEmail = `restaurant@gmail.com`;
-            website = "https://www.restaurant.com";
 
             // creating a owner
             email = "myOwner@gmail.com";

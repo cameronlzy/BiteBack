@@ -4,6 +4,9 @@ const Review = require('../models/review.model');
 const Restaurant = require('../models/restaurant.model');
 const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
 const CustomerProfile = require('../models/customerProfile.model');
+const mongoose = require('mongoose');
+
+const isProdEnv = process.env.NODE_ENV === 'production';
 
 exports.getReviewsByRestaurant = async (restaurantId, authUser) => {
     // check if restaurant exists
@@ -99,9 +102,24 @@ exports.addBadge = async(data, reviewId, authUser) => {
 };
 
 exports.deleteReview = async (review) => {
-    // delete the review
-    await Review.deleteOne({ _id: review._id });
-    return { status: 200, body: review.toObject() };
+    const session = isProdEnv ? await mongoose.startSession() : null;
+    if (session) session.startTransaction();
+
+    try {
+        // delete the review + votes
+        await Promise.all([
+            Review.deleteOne({ _id: review._id }).session(session || null),
+            ReviewBadgeVote.deleteMany({ review: review._id }).session(session || null)
+        ]);
+
+        if (session) await session.commitTransaction();
+        return { status: 200, body: review.toObject() };
+    } catch (err) {
+        if (session) await session.abortTransaction();
+        throw err;
+    } finally {
+        if (session) session.endSession();
+    }
 };
 
 exports.deleteReply = async (review) => {

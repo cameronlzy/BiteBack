@@ -11,7 +11,6 @@ const mongoose = require('mongoose');
 const path = require('path');
 const { DateTime } = require('luxon');
 const setTokenCookie = require('../../../helpers/setTokenCookie');
-const { rest } = require('lodash');
 
 describe('restaurant test', () => {
     let server;
@@ -289,6 +288,109 @@ describe('restaurant test', () => {
                 'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/restaurants/bulk', () => {
+        let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1;
+        let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2;
+        let cookie;
+        let token;
+        let user;
+        let profile;
+
+        beforeEach(async () => { 
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // creating restaurant 1
+            restaurantName1 = "restaurant1";
+            address1 = "new york";
+            contactNumber1 = "87654321";
+            cuisines1 = ["Chinese"];
+            openingHours1 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
+            maxCapacity1 = 50;
+            restaurantEmail1 = `restaurant@gmail.com`;
+            website1 = "https://www.restaurant.com";
+
+            // creating restaurant 2
+            restaurantName2 = "restaurant2";
+            address2 = "new york";
+            contactNumber2 = "12345678";
+            cuisines2 = ["Japanese"];
+            openingHours2 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
+            maxCapacity2 = 30;
+
+            // creating a owner
+            user = await createTestUser('owner');
+            profile = createTestOwnerProfile(user);
+            await profile.save();
+            user.profile = profile._id;
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+        });
+
+        const exec = () => {
+            return request(server)
+            .post('/api/restaurants/bulk')
+            .set('Cookie', [cookie])
+            .send({
+                restaurants: [
+                    {
+                        name: restaurantName1,
+                        address: address1,
+                        contactNumber: contactNumber1,
+                        cuisines: cuisines1,
+                        openingHours: openingHours1,
+                        maxCapacity: maxCapacity1,
+                        email: restaurantEmail1,
+                        website: website1
+                    },
+                    {
+                        name: restaurantName2,
+                        address: address2,
+                        contactNumber: contactNumber2,
+                        cuisines: cuisines2,
+                        openingHours: openingHours2,
+                        maxCapacity: maxCapacity2,
+                    }
+                ]
+            });
+        };
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 403 if customer', async () => {
+            let customer = await createTestUser('customer');
+            token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 404 if user does not exist', async () => {
+            await User.deleteMany({});
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 200 and array of restaurantID if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body.every(id => typeof id === 'string')).toBe(true);
         });
     });
 

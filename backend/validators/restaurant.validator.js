@@ -73,6 +73,13 @@ function validateRestaurant(restaurant) {
   return restaurantJoiSchema.validate(restaurant);
 }
 
+function validateRestaurantBulk(restaurants) {
+  const schema = Joi.object({
+    restaurants: Joi.array().items(restaurantJoiSchema).required(),
+  });
+  return schema.validate(restaurants);
+}
+
 function validatePatch(update) {
   const schema = Joi.object({
     name: Joi.string().min(2).max(20),
@@ -103,6 +110,7 @@ function validateImages(images) {
 
 module.exports = { 
   validateRestaurant,
+  validateRestaurantBulk,
   restaurantJoiSchema, 
   validatePatch,
   validateImages,

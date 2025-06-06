@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const CustomerProfile = require('../models/customerProfile.model');
 const Review = require('../models/review.model');
 const Reservation = require('../models/reservation.model');
+const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
 const { generateAuthToken } = require('./user.service');
 const mongoose = require('mongoose');
 const _ = require('lodash');
@@ -108,6 +109,7 @@ exports.deleteMe = async (user) => {
         await Promise.all([
             Reservation.deleteMany({ customer: user._id }).session(session || null),
             Review.deleteMany({ customer: user.profile._id }).session(session || null),
+            ReviewBadgeVote.deleteMany({ customer: user.profile._id }).session(session || null),
             CustomerProfile.findByIdAndDelete(user.profile._id).session(session || null)
         ]);
 

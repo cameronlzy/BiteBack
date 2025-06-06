@@ -20,6 +20,9 @@ router.get('/:id/availability', validateObjectId, restaurantController.getAvaila
 // [Owner] - Create new restaurant
 router.post('/', [auth, isOwner], restaurantController.createRestaurant);
 
+// [Owner] - Create multiple restaurants (for registration)
+router.post('/bulk', [auth, isOwner], restaurantController.createRestaurantBulk);
+
 // [Owner] - Upload images for their restaurant
 router.post('/:id/images', [auth, isOwner, authorizedRestaurantOwner, parser.array('images', 5)], restaurantController.addRestaurantImages);
 
