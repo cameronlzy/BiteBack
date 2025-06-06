@@ -2,7 +2,7 @@ const User = require('../models/user.model');
 const CustomerProfile = require('../models/customerProfile.model');
 const Review = require('../models/review.model');
 const Reservation = require('../models/reservation.model');
-const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
+const reviewService = require('../services/review.service');
 const { generateAuthToken } = require('./user.service');
 const mongoose = require('mongoose');
 const _ = require('lodash');
@@ -105,12 +105,20 @@ exports.deleteMe = async (user) => {
     if (session) session.startTransaction();
 
     try {
-        // delete reservations, reviews and profile
+        // find reviews by customer
+        const reviews = await Review.find({ customer: user.profile }).session(session || null);
+
+        // delete each review
+        await Promise.all(
+            reviews.map((review) =>
+                reviewService.deleteReviewAndAssociations(review, session || null)
+            )
+        );
+
+        // delete reservations and profile
         await Promise.all([
             Reservation.deleteMany({ customer: user._id }).session(session || null),
-            Review.deleteMany({ customer: user.profile._id }).session(session || null),
-            ReviewBadgeVote.deleteMany({ customer: user.profile._id }).session(session || null),
-            CustomerProfile.findByIdAndDelete(user.profile._id).session(session || null)
+            CustomerProfile.findByIdAndDelete(user.profile).session(session || null)
         ]);
 
         // delete user

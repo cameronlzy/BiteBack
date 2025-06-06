@@ -56,7 +56,7 @@ exports.resetPassword = async (data, token) => {
 
 exports.login = async (credentials) => {
     // find user and verify credentials
-    const { status, body } = await this.verifyUserCredentials(credentials);
+    const { status, body } = await exports.verifyUserCredentials(credentials);
     if (status !== 200) return { status, body };
     const token = generateAuthToken(body);
     return { token, status: 200, body: _.pick(body, ['_id', 'email', 'username', 'role']) };

@@ -5,6 +5,7 @@ const Restaurant = require('../models/restaurant.model');
 const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
 const CustomerProfile = require('../models/customerProfile.model');
 const mongoose = require('mongoose');
+const { deleteImagesFromDocument } = require('./image.service');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
@@ -18,10 +19,10 @@ exports.getReviewsByRestaurant = async (restaurantId, authUser) => {
     if (Array.isArray(reviews) && reviews.length === 0) return { status: 200, body: reviews };
 
     // get badges count
-    reviews = await this.getBadgesCount(reviews);
+    reviews = await exports.getBadgesCount(reviews);
 
     // get user badge votes
-    if (authUser) reviews = await this.getUserBadgeVotes(reviews, authUser);
+    if (authUser) reviews = await exports.getUserBadgeVotes(reviews, authUser);
 
     return { status: 200, body: reviews };
 };
@@ -36,10 +37,10 @@ exports.getReviewsByCustomer = async (customerId, authUser) => {
     if (Array.isArray(reviews) && reviews.length === 0) return { status: 200, body: reviews };
 
     // get badges count
-    reviews = await this.getBadgesCount(reviews);
+    reviews = await exports.getBadgesCount(reviews);
 
     // get user badge votes
-    if (authUser) reviews = await this.getUserBadgeVotes(reviews, authUser);
+    if (authUser) reviews = await exports.getUserBadgeVotes(reviews, authUser);
 
     return { status: 200, body: reviews };
 };
@@ -64,7 +65,7 @@ exports.createReview = async (data, user) => {
         await review.save(session ? { session } : undefined);
 
         // update restaurant ratings
-        await this.updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
+        await exports.updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
         
         if (session) await session.commitTransaction();
 
@@ -121,12 +122,8 @@ exports.deleteReview = async (review) => {
     if (session) session.startTransaction();
 
     try {
-        // delete the review + votes
-        await Promise.all([
-            Review.deleteOne({ _id: review._id }).session(session || null),
-            ReviewBadgeVote.deleteMany({ review: review._id }).session(session || null),
-            await this.updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session)
-        ]);
+        // delete the review and associations
+        await exports.deleteReviewAndAssociations(review, session);
 
         if (session) await session.commitTransaction();
         return { status: 200, body: review.toObject() };
@@ -264,4 +261,18 @@ exports.updateRatingForRestaurant = async (restaurantId, ratingChange, countChan
     restaurant.reviewCount = reviewCount;
 
     await restaurant.save(session ? { session } : undefined);
+};
+
+exports.deleteReviewAndAssociations = async (review, session = null) => {
+    // delete images
+    await deleteImagesFromDocument(review, 'images');
+
+    // delete reviews and it's associations
+    await Promise.all([
+        ReviewBadgeVote.deleteMany({ review: review._id }).session(session),
+        exports.updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session)
+    ]);
+
+    // delete review after children deleted
+    await Review.deleteOne({ _id: review._id }).session(session);
 };

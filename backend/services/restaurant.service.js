@@ -4,14 +4,13 @@ const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
 const Review = require('../models/review.model');
 const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
-const { validateRestaurant } = require('../validators/restaurant.validator');
 const { DateTime } = require('luxon');
 const reservationService = require('../services/reservation.service');
 const reviewSerice = require('../services/review.service');
 const { createSlots, convertSGTOpeningHoursToUTC } = require('../helpers/restaurant.helper');
 const _ = require('lodash');
 const mongoose = require('mongoose');
-const { deleteImagesFromCloudinary } = require('./image.service');
+const { deleteImagesFromCloudinary, deleteImagesFromDocument } = require('./image.service');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
@@ -94,7 +93,7 @@ exports.createRestaurantBulk = async (authUser, data) => {
     // create restaurants
     let restaurants;
     try {
-      restaurants = await this.createRestaurantArray(data, authUser._id, session);
+      restaurants = await exports.createRestaurantArray(data, authUser._id, session);
     } catch (err) {
       throw { status: 400, body: 'Incorrect restaurant information' };
     }
@@ -180,7 +179,7 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
     );
     if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
 
-    await this.deleteRestaurantAndAssociations(restaurant, session);
+    await exports.deleteRestaurantAndAssociations(restaurant, session);
 
     // commit transaction
     if (session) await session.commitTransaction();
@@ -200,7 +199,6 @@ exports.createRestaurantArray = async (arr, userId, session = null) => {
   try {
     let output = [];
     for (let item of arr) {
-      validateRestaurant(item);
       item.owner = userId;
       item.openingHours = convertSGTOpeningHoursToUTC(item.openingHours);
       restaurant = new Restaurant(item);
@@ -214,13 +212,16 @@ exports.createRestaurantArray = async (arr, userId, session = null) => {
 }
 
 exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => {
-  const restaurantId = restaurant._id;
+  // delete images
+  await deleteImagesFromDocument(restaurant, 'images');
   
   // delete restaurants and it's associations
   await Promise.all([
-    Reservation.deleteMany({ restaurant: restaurantId }).session(session),
-    Review.deleteMany({ restaurant: restaurantId }).session(session),
-    Restaurant.findByIdAndDelete(restaurantId).session(session),
-    ReviewBadgeVote.deleteMany({ restaurant: restaurantId }).session(session)
+    Reservation.deleteMany({ restaurant: restaurant._id }).session(session),
+    Review.deleteMany({ restaurant: restaurant._id }).session(session),
+    ReviewBadgeVote.deleteMany({ restaurant: restaurant._id }).session(session)
   ]);
+
+  // delete restaurant after children deleted
+  await Restaurant.findByIdAndDelete(restaurant._id).session(session);
 };

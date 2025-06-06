@@ -516,6 +516,7 @@ describe('review test', () => {
         let rating;
         let reviewText;
         let dateVisited;
+        let images;
         let token;
         let cookie;
 
@@ -548,11 +549,12 @@ describe('review test', () => {
             rating = 3;
             reviewText = "Good";
             dateVisited = Date.now();
+            images = [];
             review = new Review({
                 customer: profile._id,
                 username: user.username,
                 restaurant: restaurant._id,
-                rating, reviewText, dateVisited
+                rating, reviewText, dateVisited, images
             });
             await review.save();
             reviewId = review._id;
