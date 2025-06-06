@@ -24,7 +24,7 @@ router.get('/:id', [validateObjectId, auth, authorizedReservationUser], reservat
 router.post('/', auth, reservationController.createReservation);
 
 // [User] - Update reservation
-router.put('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.updateReservation);
+router.patch('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.updateReservation);
 
 // [User] - Delete reservation
 router.delete('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.deleteReservation);

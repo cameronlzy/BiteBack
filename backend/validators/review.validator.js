@@ -13,13 +13,20 @@ function validateReview(review) {
 
 function validateReply(reply) {
     const schema = Joi.object({
-        owner: Joi.objectId().required(),
-        replyText: Joi.string().min(0).max(1000).required()
+        replyText: Joi.string().min(1).max(1000).required()
     });
     return schema.validate(reply);
+}
+
+function validateBadge(badge) {
+    const schema = Joi.object({
+        badgeIndex: Joi.number().integer().min(0).max(3).required()
+    });
+    return schema.validate(badge);
 }
 
 module.exports = {
     validateReview,
     validateReply,
+    validateBadge,
 };

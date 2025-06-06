@@ -1,7 +1,7 @@
 const reservationService = require('../services/reservation.service');
 const Joi = require('joi');
 const { ISOdate } = require('../helpers/time.helper');
-const { validateReservation, validateNewReservation } = require('../validators/reservation.validator');
+const { validateReservation, validatePatch } = require('../validators/reservation.validator');
 
 exports.getReservationsByOwner = async (req, res) => {
   // validate query
@@ -44,7 +44,7 @@ exports.createReservation = async (req, res) => {
 
 exports.updateReservation = async (req, res) => {
   // validate new reservation
-  const { error } = validateNewReservation(req.body);
+  const { error } = validatePatch(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
   const { status, body } = await reservationService.updateReservation(req.reservation, req.body);

@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
       message: 'Invalid email'
     }
   },
-  username: { type: String, minlength: 3, required: true, unique: true },
+  username: { type: String, minlength: 2, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['customer', 'owner'], required: true },
   profile: {
@@ -23,7 +23,9 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['CustomerProfile', 'OwnerProfile'],
     required: true,
-  }
+  },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 }, { versionKey: false });
 
 const User = mongoose.model('User', userSchema);

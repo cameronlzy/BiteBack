@@ -1,5 +1,8 @@
 const User = require('../models/user.model');
 const CustomerProfile = require('../models/customerProfile.model');
+const Review = require('../models/review.model');
+const Reservation = require('../models/reservation.model');
+const reviewService = require('../services/review.service');
 const { generateAuthToken } = require('./user.service');
 const mongoose = require('mongoose');
 const _ = require('lodash');
@@ -26,57 +29,103 @@ exports.publicProfile = async (customerId) => {
     return { status: 200, body: customer };
 };
 
-exports.updateMe = async (data, authUser) => {
+exports.updateMe = async (update, authUser) => {
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
     try {
         // find user
-        const user = await User.findById(authUser._id).session(session || null);
-        if (!user) throw { status: 404, body: 'Customer not found.' };
+        const user = await User.findById(authUser._id).populate('profile').session(session || null);
+        if (!user) throw { status: 404, body: 'Customer not found' };
+        if (!user.profile) throw { status: 404, body: 'Profile not found' };
 
-        // check if email or username already taken
-        const existingUser = await User.findOne({
-            _id: { $ne: authUser._id },
-            $or: [
-                { email: data.email },
-                { username: data.username }
-            ]
-        }).session(session || null).lean();
-        if (existingUser) {
-            if (existingUser.email === data.email) {
-                throw { status: 400, body: 'Email is already taken.' };
-            }
-            if (existingUser.username === data.username) {
-                throw { status: 400, body: 'Username is already taken.' };
+        // check if email or username being updated and is already taken
+        const uniqueCheck = [];
+        if (update.email !== undefined) uniqueCheck.push({ email: update.email });
+        if (update.username !== undefined) uniqueCheck.push({ username: update.username });
+
+        if (uniqueCheck.length) {
+            const existingUser = await User.findOne({
+                _id: { $ne: authUser._id },
+                $or: uniqueCheck,
+            }).session(session || null).lean();
+
+            if (existingUser) {
+                if (existingUser.email === update.email) {
+                    throw { status: 400, body: 'Email is already taken.' };
+                }
+                if (existingUser.username === update.username) {
+                    throw { status: 400, body: 'Username is already taken.' };
+                }
             }
         }
 
-        // update user
-        Object.assign(user, _.pick(data, ['email', 'username']));
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(data.password, salt);
-        await user.save({ session });
+        // update user fields selectively
+        if (update.email !== undefined) user.email = update.email;
+        if (update.username !== undefined) user.username = update.username;
+        if (update.password !== undefined) {
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(update.password, salt);
+        }
+        await user.save(session ? { session } : undefined);
 
-        // find and update profile
-        const profile = await CustomerProfile.findByIdAndUpdate(
-          user.profile, 
-          { 
-            name: data.name, 
-            contactNumber: data.contactNumber, 
-            favCuisines: data.favCuisines
-          },
-          { new: true, runValidators: true, session }
-        ).lean();
-        if (!profile) throw { status: 404, body: 'Profile not found.' };
+        // selectively update profile fields
+        if (update.name !== undefined) user.profile.name = update.name;
+        if (update.contactNumber !== undefined) user.profile.contactNumber = update.contactNumber;
+        if (update.favCuisines !== undefined) user.profile.favCuisines = update.favCuisines;
+
+        await user.profile.save(session ? { session } : undefined);
+
+        // update reviews
+        if (update.username !== undefined) {
+            await Review.updateMany(
+                { customer: user.profile._id },
+                { $set: { username: update.username }},
+                { session }
+            );
+        }
 
         if (session) await session.commitTransaction();
 
         // send back user
         const token = generateAuthToken(user);
         const { password, ...safeUser } = user.toObject();
-        safeUser.profile = profile;
+        safeUser.profile = user.profile.toObject();
         return { token, status: 200, body: safeUser };
+    } catch (err) {
+        if (session) await session.abortTransaction();
+        throw err;
+    } finally {
+        if (session) session.endSession();
+    }
+};
+
+exports.deleteMe = async (user) => {
+    const session = isProdEnv ? await mongoose.startSession() : null;
+    if (session) session.startTransaction();
+
+    try {
+        // find reviews by customer
+        const reviews = await Review.find({ customer: user.profile }).session(session || null);
+
+        // delete each review
+        await Promise.all(
+            reviews.map((review) =>
+                reviewService.deleteReviewAndAssociations(review, session || null)
+            )
+        );
+
+        // delete reservations and profile
+        await Promise.all([
+            Reservation.deleteMany({ customer: user._id }).session(session || null),
+            CustomerProfile.findByIdAndDelete(user.profile).session(session || null)
+        ]);
+
+        // delete user
+        await user.deleteOne({ session });
+        
+        if (session) await session.commitTransaction();
+        return { status: 200, body: user.toObject() };
     } catch (err) {
         if (session) await session.abortTransaction();
         throw err;

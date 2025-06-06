@@ -2,18 +2,21 @@ const Restaurant = require('../models/restaurant.model');
 const Reservation = require('../models/reservation.model');
 const User = require('../models/user.model');
 const OwnerProfile = require('../models/ownerProfile.model');
-const { validateRestaurant } = require('../validators/restaurant.validator');
+const Review = require('../models/review.model');
+const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
 const { DateTime } = require('luxon');
 const reservationService = require('../services/reservation.service');
+const reviewSerice = require('../services/review.service');
 const { createSlots, convertSGTOpeningHoursToUTC } = require('../helpers/restaurant.helper');
 const _ = require('lodash');
 const mongoose = require('mongoose');
+const { deleteImagesFromCloudinary, deleteImagesFromDocument } = require('./image.service');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
 exports.getAllRestaurants = async () => {
   // find restaurants
-  const restaurants = await Restaurant.find().sort('name').lean();
+  let restaurants = await Restaurant.find().sort('name').lean();
   return { status: 200, body: restaurants };
 }
 
@@ -60,7 +63,7 @@ exports.createRestaurant = async (authUser, data) => {
     const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));
     restaurant.owner = authUser._id;
     restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
-    await restaurant.save({ session });
+    await restaurant.save(session ? { session } : undefined);
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session || null);
@@ -69,7 +72,7 @@ exports.createRestaurant = async (authUser, data) => {
 
     // commit transaction
     user.profile.restaurants.push(restaurant._id);
-    await user.profile.save({ session });
+    await user.profile.save(session ? { session } : undefined);
 
     if (session) await session.commitTransaction();
 
@@ -82,10 +85,67 @@ exports.createRestaurant = async (authUser, data) => {
   }
 };
 
+exports.createRestaurantBulk = async (authUser, data) => {
+  const session = isProdEnv ? await mongoose.startSession() : null;
+  if (session) session.startTransaction();
+
+  try {
+    // create restaurants
+    let restaurants;
+    try {
+      restaurants = await exports.createRestaurantArray(data, authUser._id, session);
+    } catch (err) {
+      throw { status: 400, body: 'Incorrect restaurant information' };
+    }
+
+    // update owner
+    const user = await User.findById(authUser._id).populate('profile').session(session || null);
+    if (!user) throw { status: 404, body: 'User not found' };
+    if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
+    user.profile.restaurants = restaurants;
+    await user.profile.save(session ? { session } : undefined);
+
+    // commit transaction
+    if (session) await session.commitTransaction();
+
+    return { status: 200, body: restaurants };
+  } catch (err) {
+    if (session) await session.abortTransaction();
+    throw err;
+  } finally {
+    if (session) session.endSession();
+  }
+};
+
+exports.updateRestaurantImages = async (restaurant, newImageUrls) => {
+  const currentImage = restaurant.images || [];
+
+  // find images to delete
+  const toDelete = currentImage.filter(url => !newImageUrls.includes(url));
+
+  // delete removed images
+  if (toDelete.length > 0) {
+    const result = await deleteImagesFromCloudinary(toDelete);
+  }
+  
+
+  // overwrite old array with new array
+  restaurant.images = newImageUrls;
+  await restaurant.save();
+
+  return { status: 200, body: restaurant.toObject().images };
+}
+
 exports.updateRestaurant = async (restaurant, update) => {
-  // update restaurant
-  Object.assign(restaurant, update);
-  restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
+  // selectively update only the fields that are defined
+  for (const key in update) {
+    if (key === 'openingHours') {
+      restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
+    } else if (update[key] !== undefined) {
+      restaurant[key] = update[key];
+    }
+  }
+  
   await restaurant.save();
   return { status: 200, body: restaurant.toObject() };
 };
@@ -106,11 +166,7 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
     );
     if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
 
-    // delete reservations from restaurant
-    await Reservation.deleteMany({ restaurant: restaurant._id }).session(session || null);
-
-    // delete restaurant
-    await Restaurant.deleteOne({ _id: restaurant._id }).session(session || null);
+    await exports.deleteRestaurantAndAssociations(restaurant, session);
 
     // commit transaction
     if (session) await session.commitTransaction();
@@ -124,20 +180,16 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
   }
 };
 
+// utility services
 exports.createRestaurantArray = async (arr, userId, session = null) => {
   let restaurant;
   try {
     let output = [];
     for (let item of arr) {
-      validateRestaurant(item);
       item.owner = userId;
       item.openingHours = convertSGTOpeningHoursToUTC(item.openingHours);
       restaurant = new Restaurant(item);
-      if (session) {
-        await restaurant.save({ session });
-      } else {
-        await restaurant.save();
-      }
+      await restaurant.save(session ? { session } : undefined);
       output.push(restaurant._id);
     }
     return output;
@@ -145,3 +197,18 @@ exports.createRestaurantArray = async (arr, userId, session = null) => {
     throw err;
   }
 }
+
+exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => {
+  // delete images
+  await deleteImagesFromDocument(restaurant, 'images');
+  
+  // delete restaurants and it's associations
+  await Promise.all([
+    Reservation.deleteMany({ restaurant: restaurant._id }).session(session),
+    Review.deleteMany({ restaurant: restaurant._id }).session(session),
+    ReviewBadgeVote.deleteMany({ restaurant: restaurant._id }).session(session)
+  ]);
+
+  // delete restaurant after children deleted
+  await Restaurant.findByIdAndDelete(restaurant._id).session(session);
+};

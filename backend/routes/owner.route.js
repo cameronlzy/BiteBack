@@ -9,6 +9,9 @@ const router = wrapRoutes(express.Router());
 router.get('/me', [auth, isOwner], ownerController.getMe);
 
 // [Owner] - Update owner information
-router.put('/me', [auth, isOwner], ownerController.updateMe);
+router.patch('/me', [auth, isOwner], ownerController.updateMe);
+
+// [Owner] - Delete customer
+router.delete('/me', [auth, isOwner], ownerController.deleteMe);
 
 module.exports = router;

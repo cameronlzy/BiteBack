@@ -1,21 +1,22 @@
-const Reservation = require('../../models/reservation.model');
-const User = require('../../models/user.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestRestaurant } = require('../factories/restaurant.factory');
-const { createTestOwnerProfile } = require('../factories/ownerProfile.factory');
-const { generateAuthToken } = require('../../services/user.service');
+const Reservation = require('../../../models/reservation.model');
+const User = require('../../../models/user.model');
+const Restaurant = require('../../../models/restaurant.model');
+const OwnerProfile = require('../../../models/ownerProfile.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
+const { createTestOwnerProfile } = require('../../factories/ownerProfile.factory');
+const { generateAuthToken } = require('../../../services/user.service');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const Restaurant = require('../../models/restaurant.model');
+const path = require('path');
 const { DateTime } = require('luxon');
-const OwnerProfile = require('../../models/ownerProfile.model');
-const setTokenCookie = require('../../helpers/setTokenCookie');
+const setTokenCookie = require('../../../helpers/setTokenCookie');
 
 describe('restaurant test', () => {
     let server;
 
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {
@@ -56,6 +57,8 @@ describe('restaurant test', () => {
                 expect(restaurant).toHaveProperty('cuisines');
                 expect(restaurant).toHaveProperty('openingHours');
                 expect(restaurant).toHaveProperty('maxCapacity');
+                expect(restaurant).toHaveProperty('averageRating');
+                expect(restaurant).toHaveProperty('reviewCount');
             });
         });
     });
@@ -85,12 +88,10 @@ describe('restaurant test', () => {
 
         it('should return a restaurant object', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('name');
-            expect(res.body).toHaveProperty('address');
-            expect(res.body).toHaveProperty('contactNumber');
-            expect(res.body).toHaveProperty('cuisines');
-            expect(res.body).toHaveProperty('openingHours');
-            expect(res.body).toHaveProperty('maxCapacity');
+            const requiredKeys = [
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -205,6 +206,7 @@ describe('restaurant test', () => {
         let username;
         let password;
         let role;
+        let token;
         let cookie;
 
         beforeEach(async () => {
@@ -282,16 +284,233 @@ describe('restaurant test', () => {
 
         it('should return a restaurant object', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('name');
-            expect(res.body).toHaveProperty('address');
-            expect(res.body).toHaveProperty('contactNumber');
-            expect(res.body).toHaveProperty('cuisines');
-            expect(res.body).toHaveProperty('openingHours');
-            expect(res.body).toHaveProperty('maxCapacity');
+            const requiredKeys = [
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
-    describe('PUT /api/restaurants/:id', () => {
+    describe('POST /api/restaurants/bulk', () => {
+        let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1;
+        let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2;
+        let cookie;
+        let token;
+        let user;
+        let profile;
+
+        beforeEach(async () => { 
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // creating restaurant 1
+            restaurantName1 = "restaurant1";
+            address1 = "new york";
+            contactNumber1 = "87654321";
+            cuisines1 = ["Chinese"];
+            openingHours1 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
+            maxCapacity1 = 50;
+            restaurantEmail1 = `restaurant@gmail.com`;
+            website1 = "https://www.restaurant.com";
+
+            // creating restaurant 2
+            restaurantName2 = "restaurant2";
+            address2 = "new york";
+            contactNumber2 = "12345678";
+            cuisines2 = ["Japanese"];
+            openingHours2 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
+            maxCapacity2 = 30;
+
+            // creating a owner
+            user = await createTestUser('owner');
+            profile = createTestOwnerProfile(user);
+            await profile.save();
+            user.profile = profile._id;
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+        });
+
+        const exec = () => {
+            return request(server)
+            .post('/api/restaurants/bulk')
+            .set('Cookie', [cookie])
+            .send({
+                restaurants: [
+                    {
+                        name: restaurantName1,
+                        address: address1,
+                        contactNumber: contactNumber1,
+                        cuisines: cuisines1,
+                        openingHours: openingHours1,
+                        maxCapacity: maxCapacity1,
+                        email: restaurantEmail1,
+                        website: website1
+                    },
+                    {
+                        name: restaurantName2,
+                        address: address2,
+                        contactNumber: contactNumber2,
+                        cuisines: cuisines2,
+                        openingHours: openingHours2,
+                        maxCapacity: maxCapacity2,
+                    }
+                ]
+            });
+        };
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 403 if customer', async () => {
+            let customer = await createTestUser('customer');
+            token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 404 if user does not exist', async () => {
+            await User.deleteMany({});
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 200 and array of restaurantID if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body.every(id => typeof id === 'string')).toBe(true);
+        });
+    });
+
+    // skip to avoid sending test images to cloudinary
+    describe.skip('POST /api/restaurants/:id/images', () => {
+        let owner;
+        let ownerProfile;
+        let restaurant;
+        let restaurantId;
+        let token;
+        let cookie;
+        let filePath;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+
+            // create an owner
+            owner = await createTestUser('owner');
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+
+            // creating an ownerProfile
+            ownerProfile = createTestOwnerProfile(owner);
+            await ownerProfile.save();
+
+            owner.profile = ownerProfile._id;
+            await owner.save();
+
+            // creating a restaurant
+            restaurant = createTestRestaurant(owner._id);
+            await restaurant.save();
+            restaurantId = restaurant._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .post(`/api/restaurants/${restaurantId}/images`)
+            .set('Cookie', [cookie])
+            .attach('images', filePath);
+        };
+
+        it.skip('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('images');
+            expect(Array.isArray(res.body.images)).toBe(true);
+
+            const allStrings = res.body.images.every(url => typeof url === 'string');
+            expect(allStrings).toBe(true);
+        });
+    });
+
+    describe('PUT /api/restaurants/:id/images', () => {
+        let restaurant;
+        let token;
+        let cookie;
+        let imagesPayload;
+
+        beforeEach(async () => {
+            // create restaurant + user
+            const user = await createTestUser('owner');
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            restaurant = createTestRestaurant(user._id);
+            restaurant.images = [
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749107618/biteback/restaurants/icpacpiowpwwvsvieec8.jpg', // image 1 (to be deleted)
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749118205/biteback/restaurants/uxtab5rmjomf57ouznni.jpg', // image 2
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749107560/biteback/restaurants/aqm6h7qc3iei3gvjzala.png', // image 3 (to be next thumbnail)
+            ];
+
+            imagesPayload = [
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749107560/biteback/restaurants/aqm6h7qc3iei3gvjzala.png',
+                'https://res.cloudinary.com/drmcljacy/image/upload/v1749118205/biteback/restaurants/uxtab5rmjomf57ouznni.jpg',
+            ];
+            await restaurant.save();
+        });
+
+        const exec = () => {
+            return request(server)
+            .put(`/api/restaurants/${restaurant._id}/images`)
+            .set('Cookie', [cookie])
+            .send({ images: imagesPayload });
+        };
+
+        it('should return 400 if images is missing', async () => {
+            const res = await request(server)
+            .put(`/api/restaurants/${restaurant._id}/images`)
+            .set('Cookie', [cookie])
+            .send({});
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if images is not an array', async () => {
+            imagesPayload = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if any item is not a valid URL', async () => {
+            imagesPayload = ['not-a-url']
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it.skip('should return 200 for valid array of image URLs', async () => {
+            const res = await exec();
+
+            expect(res.status).toBe(200);
+            expect(res.body.images.length).toBe(2);
+            expect(res.body.images[0]).toBe('https://res.cloudinary.com/drmcljacy/image/upload/v1749107560/biteback/restaurants/aqm6h7qc3iei3gvjzala.png');
+        });
+    });
+
+    describe('PATCH /api/restaurants/:id', () => {
         let restaurant;
         let restaurantId;
         let token;
@@ -329,7 +548,7 @@ describe('restaurant test', () => {
 
         const exec = () => {
             return request(server)
-            .put(`/api/restaurants/${restaurantId}`)
+            .patch(`/api/restaurants/${restaurantId}`)
             .set('Cookie', [cookie])
             .send({
                 name, address, contactNumber, cuisines,
@@ -382,12 +601,10 @@ describe('restaurant test', () => {
 
         it('should return updated restaurant', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('name');
-            expect(res.body).toHaveProperty('address');
-            expect(res.body).toHaveProperty('contactNumber');
-            expect(res.body).toHaveProperty('cuisines');
-            expect(res.body).toHaveProperty('openingHours');
-            expect(res.body).toHaveProperty('maxCapacity');
+            const requiredKeys = [
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -493,12 +710,10 @@ describe('restaurant test', () => {
 
         it('should return updated restaurant', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('name');
-            expect(res.body).toHaveProperty('address');
-            expect(res.body).toHaveProperty('contactNumber');
-            expect(res.body).toHaveProperty('cuisines');
-            expect(res.body).toHaveProperty('openingHours');
-            expect(res.body).toHaveProperty('maxCapacity');
+            const requiredKeys = [
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });

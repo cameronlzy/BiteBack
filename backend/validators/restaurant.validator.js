@@ -51,26 +51,67 @@ const openingHoursSchema = Joi.string()
 
 
 const restaurantJoiSchema = Joi.object({
-    name: Joi.string().min(2).max(20).required(),
-    address: Joi.string().min(2).max(255).required(),
-    contactNumber: Joi.string()
-      .pattern(/^\d{8}$/)
-      .required()
-      .messages({
-      "string.pattern.base": "Contact number must be an 8-digit number.",
-      "string.empty": `"contactNumber" is required`
-    }),
-    cuisines: Joi.array().items(Joi.string().valid(...cuisineList)).min(1).required(),
-    openingHours: openingHoursSchema.required(),
-    maxCapacity: Joi.number().integer().min(0).max(1000).required(),
-    email: Joi.string().email().optional(),
-    website: Joi.string().uri().optional().messages({
-      "string.uri": "Invalid website URL",
-    })
+  name: Joi.string().min(2).max(20).required(),
+  address: Joi.string().min(2).max(255).required(),
+  contactNumber: Joi.string()
+    .pattern(/^\d{8}$/)
+    .required()
+    .messages({
+    "string.pattern.base": "Contact number must be an 8-digit number.",
+    "string.empty": `"contactNumber" is required`
+  }),
+  cuisines: Joi.array().items(Joi.string().valid(...cuisineList)).min(1).required(),
+  openingHours: openingHoursSchema.required(),
+  maxCapacity: Joi.number().integer().min(0).max(1000).required(),
+  email: Joi.string().email().optional(),
+  website: Joi.string().uri().optional().messages({
+    "string.uri": "Invalid website URL",
+  })
 });
 
 function validateRestaurant(restaurant) {
   return restaurantJoiSchema.validate(restaurant);
 }
 
-module.exports = { validateRestaurant, restaurantJoiSchema };
+function validateRestaurantBulk(restaurants) {
+  const schema = Joi.object({
+    restaurants: Joi.array().items(restaurantJoiSchema).required(),
+  });
+  return schema.validate(restaurants);
+}
+
+function validatePatch(update) {
+  const schema = Joi.object({
+    name: Joi.string().min(2).max(20),
+    address: Joi.string().min(2).max(255),
+    contactNumber: Joi.string()
+      .pattern(/^\d{8}$/)
+      .messages({
+      "string.pattern.base": "Contact number must be an 8-digit number.",
+      "string.empty": `"contactNumber" is required`
+    }),
+    cuisines: Joi.array().items(Joi.string().valid(...cuisineList)).min(1),
+    openingHours: openingHoursSchema,
+    maxCapacity: Joi.number().integer().min(0).max(1000),
+    email: Joi.string().email().optional(),
+    website: Joi.string().uri().optional().messages({
+      "string.uri": "Invalid website URL",
+    })
+  }).min(1);
+  return schema.validate(update);
+}
+
+function validateImages(images) {
+  const schema = Joi.object({
+    images: Joi.array().items(Joi.string().uri()).required()
+  });
+  return schema.validate(images);
+}
+
+module.exports = { 
+  validateRestaurant,
+  validateRestaurantBulk,
+  restaurantJoiSchema, 
+  validatePatch,
+  validateImages,
+};

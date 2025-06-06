@@ -2,28 +2,64 @@ const User = require('../models/user.model');
 const CustomerProfile = require('../models/customerProfile.model');
 const OwnerProfile = require('../models/ownerProfile.model');
 const { generateAuthToken } = require('../services/user.service');
-const { createRestaurantArray } = require('../services/restaurant.service');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const _ = require('lodash');
+const crypto = require('crypto');
+const config = require('config');
+const sendEmail = require('../helpers/sendEmail');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
-exports.login = async (credentials) => {
+exports.forgotPassword = async (credentials) => {
     // find user
-    const user = await User.findOne(credentials.email
+    const user = await User.findOne(credentials.email 
         ? { email: credentials.email }
         : { username: credentials.username }
-    ).lean();
+    );
 
-    if (!user) return { status: 400, body: 'Invalid email or password.' };
+    if (!user) return { status: 400, body: 'User with this email/username does not exist' };
+    
+    const token = crypto.randomBytes(32).toString('hex');
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
 
-    // check password
-    const validPassword = await bcrypt.compare(credentials.password, user.password);
-    if (!validPassword) return { status: 400, body: 'Invalid email or password.' };
+    user.resetPasswordToken = hash;
+    user.resetPasswordExpires = Date.now() + 30 * 60 * 1000;
+    await user.save();
 
-    const token = generateAuthToken(user);
-    return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role']) };
+    const resetLink = `${config.get('frontendLink')}/reset-password/${token}`;
+    await sendEmail(user.email, 'Password Reset', `Click to reset your password: ${resetLink}`);
+
+    return { status: 200, body: 'Password reset link sent to your email' };
+};
+
+exports.resetPassword = async (data, token) => {
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+        resetPasswordToken: hash,
+        resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) return { status: 400, body: 'Token is invalid or expired' };
+
+    const { password } = data;
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return { status: 200, body: 'Password has been reset' };
+};
+
+exports.login = async (credentials) => {
+    // find user and verify credentials
+    const { status, body } = await exports.verifyUserCredentials(credentials);
+    if (status !== 200) return { status, body };
+    const token = generateAuthToken(body);
+    return { token, status: 200, body: _.pick(body, ['_id', 'email', 'username', 'role']) };
 };
 
 exports.registerCustomer = async (data) => {
@@ -56,14 +92,14 @@ exports.registerCustomer = async (data) => {
         // create new user
         let user = new User(_.pick(data, ['email', 'username', 'password', 'role']));
         customerProfile.user = user._id;
-        await customerProfile.save({ session });
+        await customerProfile.save(session ? { session } : undefined);
 
         // hash password and add references
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
         user.roleProfile = 'CustomerProfile';
         user.profile = customerProfile._id;
-        await user.save({ session });
+        await user.save(session ? { session } : undefined);
 
         // commit transaction
         if (session) await session.commitTransaction();
@@ -102,7 +138,6 @@ exports.registerOwner = async (data) => {
             }
         }
 
-
         // create new user
         let user = new User(_.pick(data, ['email', 'username', 'password', 'role']));
 
@@ -112,33 +147,40 @@ exports.registerOwner = async (data) => {
         user.roleProfile = 'OwnerProfile';
         user.profile = new mongoose.Types.ObjectId();
 
-        // create restaurant array
-        let restaurants;
-        try {
-            restaurants = await createRestaurantArray(data.restaurants, user._id, session);
-        } catch (err) {
-            throw { status: 400, body: 'Incorrect restaurant information.' };
-        }
-
         // create a owner profile
         let ownerProfile = new OwnerProfile(_.pick(data, ['companyName', 'username']));
         ownerProfile.user = user._id;
-        ownerProfile.restaurants = restaurants;
-        await ownerProfile.save({ session });
+        await ownerProfile.save(session ? { session } : undefined);
 
         // reupdate user.profile
         user.profile = ownerProfile._id;
-        await user.save({ session });
+        await user.save(session ? { session } : undefined);
 
         // commit transaction
         if (session) await session.commitTransaction();
 
         const token = generateAuthToken(user);
-        return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role']) };
+        const safeUser = _.pick(user, ['_id', 'email', 'username', 'role']);
+        return { token, status: 200, body: safeUser };
     } catch (err) {
         if (session) await session.abortTransaction();
         throw err;
     } finally {
         if (session) session.endSession();
     }
+};
+
+// utility services
+exports.verifyUserCredentials = async (credentials, session = null) => {
+    const user = await User.findOne(credentials.email
+        ? { email: credentials.email }
+        : { username: credentials.username }
+    ).session(session);
+
+    if (!user) return { status: 400, body: 'Invalid email, username or password' };
+
+    const isValid = await bcrypt.compare(credentials.password, user.password);
+    if (!isValid) return { status: 400, body: 'Invalid email, username or password' };
+
+    return { status: 200, body: user };
 };

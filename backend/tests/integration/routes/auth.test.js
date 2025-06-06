@@ -1,26 +1,122 @@
 const request = require('supertest');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const config = require('config');
 const cookie = require('cookie');
-const User = require('../../models/user.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestRestaurant } = require('../factories/restaurant.factory');
-const { generateAuthToken } = require('../../services/user.service');
-const CustomerProfile = require('../../models/customerProfile.model');
-const OwnerProfile = require('../../models/ownerProfile.model');
-const Restaurant = require('../../models/restaurant.model');
+const User = require('../../../models/user.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
+const { generateAuthToken } = require('../../../services/user.service');
+const CustomerProfile = require('../../../models/customerProfile.model');
+const OwnerProfile = require('../../../models/ownerProfile.model');
+const Restaurant = require('../../../models/restaurant.model');
 
 describe('auth test', () => {
     let server;
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {
         await mongoose.connection.close();
         await server.close();
+    });
+
+    describe('POST /api/auth/forget-password', () => {
+        let email;
+        let user;
+        let username;
+    
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/forget-password')
+            .send({
+                email
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+            user = await createTestUser('customer');
+            user.email = "zhihui1306@gmail.com";
+            await user.save();
+            username = user.username;
+            email = user.email;
+        });
+
+        it('should return 400 if username/email does not belong to anyone', async () => {
+            email = "otherEmail@gamil.com"
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        // skip to avoid spamming emails
+        it.skip('should return 200 and send email when using username', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        // skip to avoid spamming emails
+        it.skip('should return 200 and send email when using username', async () => {
+            const exec = () => {
+                return request(server)
+                .post('/api/auth/forget-password')
+                .send({
+                    username
+                });
+            };
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+    });
+
+    describe('POST /api/auth/reset-password', () => {
+        let user;
+        let password;
+        let userId;
+        let token;
+        let hash;
+    
+        const exec = () => {
+            return request(server)
+            .post(`/api/auth/reset-password/${token}`)
+            .send({
+                password
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+            user = await createTestUser('customer');
+            userId = user._id;
+            password = "newPassword@123"
+
+            // create token
+            token = crypto.randomBytes(32).toString('hex');
+            hash = crypto.createHash('sha256').update(token).digest('hex');
+            user.resetPasswordToken = hash;
+            user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
+            await user.save();
+        });
+
+        it('should return 400 if username/email does not belong to anyone', async () => {
+            let otherToken = crypto.randomBytes(32).toString('hex');
+            let otherHash = crypto.createHash('sha256').update(otherToken).digest('hex');
+            token = otherToken;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200 and change the password', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            let updatedUser = await User.findById(userId).select('password').lean();
+            const isMatch = await bcrypt.compare('newPassword@123', updatedUser.password);
+            expect(isMatch).toBe(true);
+        });
     });
 
     describe('POST /api/auth/register/customer', () => {
@@ -83,15 +179,13 @@ describe('auth test', () => {
             expect(res.status).toBe(400);
         });
     
-        it('should return 200 if valid request', async () => {
+        it('should return 200 + username, email, role', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-    
-        it('should return username, email, role', async () => {
-            const res = await exec();
-            expect(res.status).toBe(200);
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
         });
 
@@ -99,11 +193,14 @@ describe('auth test', () => {
             const res = await exec();
             const user = await User.findOne({ email: email })
                 .populate('profile');
-            expect(user.profile).toHaveProperty('name');
-            expect(user.profile).toHaveProperty('contactNumber');
-            expect(user.profile).toHaveProperty('favCuisines'); 
-            expect(user.profile).toHaveProperty('points');
-            expect(user.profile).toHaveProperty('dateJoined');
+            const requiredKeys = [
+                'name',
+                'contactNumber', 
+                'favCuisines',
+                'points',
+                'dateJoined'
+            ];
+            expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -112,34 +209,13 @@ describe('auth test', () => {
         let username;
         let password;
         let role;
-
         let companyName;
-        let restaurantName;
-        let address;
-        let contactNumber;
-        let cuisines;
-        let openingHours;
-        let maxCapacity;
-        let restaurantEmail;
-        let website;
     
         const exec = () => {
             return request(server)
             .post('/api/auth/register/owner')
             .send({
-                email, username, password, role, companyName,
-                restaurants: [
-                    {
-                        name: restaurantName,
-                        address,
-                        contactNumber,
-                        cuisines,
-                        openingHours,
-                        maxCapacity,
-                        email: restaurantEmail,
-                        website
-                    }
-                ]
+                email, username, password, role, companyName
             });
         };
     
@@ -147,16 +223,6 @@ describe('auth test', () => {
             await User.deleteMany({});
             await OwnerProfile.deleteMany({});
             await Restaurant.deleteMany({});
-
-            // creating a restaurant
-            restaurantName = "restaurant";
-            address = "new york";
-            contactNumber = "87654321";
-            cuisines = ["Chinese"];
-            openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
-            maxCapacity = 50;
-            restaurantEmail = `restaurant@gmail.com`;
-            website = "https://www.restaurant.com";
 
             // creating a owner
             email = "myOwner@gmail.com";
@@ -190,14 +256,13 @@ describe('auth test', () => {
             expect(res.status).toBe(400);
         });
     
-        it('should return 200 if valid request', async () => {
+        it('should return 200 and username, email, role', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-    
-        it('should return username, email, role', async () => {
-            const res = await exec();
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
         });
 
@@ -205,9 +270,10 @@ describe('auth test', () => {
             const res = await exec();
             const user = await User.findOne({ email: email })
                 .populate('profile');
-            expect(user.profile).toHaveProperty('companyName');
-            expect(user.profile).toHaveProperty('restaurants');
-            expect(user.profile).toHaveProperty('dateJoined');
+            const requiredKeys = [
+                'companyName', 'restaurants', 'dateJoined'
+            ];
+            expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -299,7 +365,10 @@ describe('auth test', () => {
     
         it('should return username, email, role', async () => {
             const res = await usernameLogin();
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(['_id', 'email', 'username', 'role']));
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
         });
     
@@ -313,11 +382,11 @@ describe('auth test', () => {
             expect(token).toBeDefined();
     
             const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
-            
-            expect(decoded).toHaveProperty('email');
-            expect(decoded).toHaveProperty('username');
-            expect(decoded).toHaveProperty('role');
-            expect(decoded).toHaveProperty('profile');
+
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });
