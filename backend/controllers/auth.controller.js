@@ -1,8 +1,23 @@
 const authService = require('../services/auth.service');
-const { validateLogin } = require('../validators/user.validator');
+const { validateLogin, validateCredentials } = require('../validators/user.validator');
 const { validateCustomer } = require('../validators/customerProfile.validator');
 const { validateOwner } = require('../validators/ownerProfile.validator');
 const setAuthCookie = require('../helpers/setAuthCookie');
+
+exports.forgotPassword = async (req, res) => {
+    // validate request
+    validateCredentials(req.body);
+    
+    const { status, body } = await authService.forgotPassword(req.body);
+    return res.status(status).json(body);
+};
+
+exports.resetPassword = async (req, res) => {
+    // add validation
+
+    const { status, body } = await authService.resetPassword(req.body, req.params.token);
+    return res.status(status).json(body);
+};
 
 exports.logout = async (req, res) => {
     res.clearCookie('token', {

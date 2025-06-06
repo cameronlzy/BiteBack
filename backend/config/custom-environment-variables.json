@@ -1,4 +1,14 @@
 {
+  "email": {
+    "user": "email_user",
+    "pass": "email_pass"
+  },
   "jwtPrivateKey": "biteback_jwtPrivateKey",
-  "mongoURI": "biteback_db"
+  "frontendLink": "https://bite-back-indol.vercel.app",
+  "mongoURI": "biteback_db",
+  "cloudinary": {
+		"cloudName": "cloudinary_cloud_name",
+		"apiKey": "cloudinary_api_key",
+		"apiSecret": "cloudinary_api_secret"
+	}
 }

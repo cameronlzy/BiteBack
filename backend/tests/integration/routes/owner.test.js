@@ -1,12 +1,11 @@
-const OwnerProfile = require('../../models/ownerProfile.model');
-const User = require('../../models/user.model');
-const Restaurant = require('../../models/reservation.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestRestaurant } = require('../factories/restaurant.factory');
-const { createTestOwnerProfile } = require('../factories/ownerProfile.factory');
-const { generateAuthToken } = require('../../services/user.service');
-const { validateNewOwner } = require('../../validators/ownerProfile.validator');
-const setTokenCookie = require('../../helpers/setTokenCookie');
+const OwnerProfile = require('../../../models/ownerProfile.model');
+const User = require('../../../models/user.model');
+const Restaurant = require('../../../models/reservation.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
+const { createTestOwnerProfile } = require('../../factories/ownerProfile.factory');
+const { generateAuthToken } = require('../../../services/user.service');
+const setTokenCookie = require('../../../helpers/setTokenCookie');
 const bcrypt = require('bcryptjs');
 const request = require('supertest');
 const mongoose = require('mongoose');
@@ -14,7 +13,7 @@ const mongoose = require('mongoose');
 describe('owner test', () => {
     let server;
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {
@@ -89,13 +88,14 @@ describe('owner test', () => {
         it('should return 200 + user details', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining([
+            const requiredKeys = [
                 'email', 'username', 'role', 'profile'
-            ]));
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
-    describe('PUT /api/owners/me', () => {
+    describe('PATCH /api/owners/me', () => {
         let token;
         let email;
         let username;
@@ -136,7 +136,7 @@ describe('owner test', () => {
 
         const exec = () => {
             return request(server)
-                .put('/api/owners/me')
+                .patch('/api/owners/me')
                 .set('Cookie', [cookie])
                 .send({
                     email, username, password, companyName: newCompanyName
@@ -193,12 +193,85 @@ describe('owner test', () => {
 
         it('should return updated user + profile', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('email');
-            expect(res.body).toHaveProperty('username');
-            expect(res.body).toHaveProperty('role');
+            const requiredKeys = [
+                'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
             expect(res.body.profile).toHaveProperty('companyName');
             expect(res.body.profile).toHaveProperty('restaurants');
+        });
+    });
+
+    describe('DELETE /api/owners/me', () => {
+        let token;
+        let user;
+        let userId;
+        let password;
+        let cookie;
+
+        const exec = () => {
+            return request(server)
+                .delete('/api/owners/me')
+                .set('Cookie', [cookie])
+                .send({
+                    password
+                });
+        };
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+
+            // creates a test user with password: Password@123
+            user = await createTestUser('owner');
+            await user.save();
+            userId = user._id;
+
+            password = "Password@123";
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+        });
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie("invalid-token");
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+        
+        it('should return 403 if customer', async () => {
+            let owner = await createTestUser('customer');
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 400 if incorrect password', async () => {
+            password = 'wrongPassword';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 200 if valid token and delete user', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            let dbUser = await User.findById(userId).lean();
+            expect(dbUser).toBeNull();
+        });
+
+        it('should return user details', async () => {
+            const res = await exec();
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });

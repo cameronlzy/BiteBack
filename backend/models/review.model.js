@@ -6,7 +6,7 @@ const reviewSchema = new mongoose.Schema({
         ref: 'CustomerProfile',
         required: true
     },
-    username: { type: String, minlength: 3, required: true },
+    username: { type: String, minlength: 2, required: true },
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Restaurant',
@@ -20,26 +20,11 @@ const reviewSchema = new mongoose.Schema({
     },
     reviewText: {
         type: String,
-        required: true,
         maxlength: 1000,
         default: ''
     },
     dateVisited: {
         type: Date, required: true
-    },
-    badgesCount: {
-        type: [Number],
-        required: true,
-        validate: {
-            validator: function (arr) {
-                return (
-                    Array.isArray(arr) &&
-                    arr.length === 4 &&
-                    arr.every(num => Number.isInteger(num) && num >= 0)
-                );
-            },
-            message: 'badgesCount must be an array of 4 non-negative integers.'
-        }, default: [0, 0, 0, 0]
     },
     reply: {
         type: {
@@ -52,6 +37,10 @@ const reviewSchema = new mongoose.Schema({
                 type: String,
                 required: true,
                 maxlength: 1000
+            },
+            createdAt: {
+                type: Date, 
+                default: Date.now
             }
         },
         default: undefined
@@ -60,7 +49,11 @@ const reviewSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
         default: false
-    }
+    },
+    images: {
+        type: [String],
+        default: [],
+    },
 }, {
     timestamps: { createdAt: true, updatedAt: false }, 
     versionKey: false

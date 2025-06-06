@@ -3,6 +3,12 @@ const authController = require('../controllers/auth.controller');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const router = wrapRoutes(express.Router());
 
+// [Public] - Generate token for password reset
+router.post('/forget-password', authController.forgotPassword);
+
+// [Public] - Validates token to reset password
+router.post('/reset-password/:token', authController.resetPassword);
+
 // [Public] - Log out
 router.post('/logout', authController.logout);
 

@@ -1,19 +1,19 @@
-const Reservation = require('../../models/reservation.model');
-const User = require('../../models/user.model');
+const Reservation = require('../../../models/reservation.model');
+const User = require('../../../models/user.model');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const Restaurant = require('../../models/restaurant.model');
-const { createTestUser } = require('../factories/user.factory');
-const { createTestRestaurant } = require('../factories/restaurant.factory');
-const { generateAuthToken } = require('../../services/user.service');
+const Restaurant = require('../../../models/restaurant.model');
+const { createTestUser } = require('../../factories/user.factory');
+const { createTestRestaurant } = require('../../factories/restaurant.factory');
+const { generateAuthToken } = require('../../../services/user.service');
 const { DateTime } = require('luxon');
-const setTokenCookie = require('../../helpers/setTokenCookie');
+const setTokenCookie = require('../../../helpers/setTokenCookie');
 
 describe('reservation test', () => {
     let server;
 
     beforeAll(() => {
-        server = require('../../index');
+        server = require('../../../index');
     });
 
     afterAll(async () => {
@@ -458,11 +458,10 @@ describe('reservation test', () => {
 
         it('should return 200 if valid request, customer', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('user');
-            expect(res.body).toHaveProperty('restaurant');
-            expect(res.body).toHaveProperty('reservationDate');
-            expect(res.body).toHaveProperty('remarks');
-            expect(res.body).toHaveProperty('pax');
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
 
         it('should return 200 if valid request, owner', async () => {
@@ -549,15 +548,14 @@ describe('reservation test', () => {
 
         it('should return reservation', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('user');
-            expect(res.body).toHaveProperty('restaurant');
-            expect(res.body).toHaveProperty('reservationDate');
-            expect(res.body).toHaveProperty('remarks');
-            expect(res.body).toHaveProperty('pax');
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });    
 
-    describe('PUT /api/reservations/:id', () => {
+    describe('PATCH /api/reservations/:id', () => {
         let token;
         let user;
         let userId;
@@ -606,7 +604,7 @@ describe('reservation test', () => {
 
         const exec = () => {
             return request(server)
-            .put(`/api/reservations/${reservationId}`)
+            .patch(`/api/reservations/${reservationId}`)
             .set('Cookie', [cookie])
             .send({
                 reservationDate: newReservationDate, 
@@ -660,11 +658,10 @@ describe('reservation test', () => {
 
         it('should return updated reservation', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('user');
-            expect(res.body).toHaveProperty('restaurant');
-            expect(res.body).toHaveProperty('reservationDate');
-            expect(res.body).toHaveProperty('remarks');
-            expect(res.body).toHaveProperty('pax');
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -754,10 +751,10 @@ describe('reservation test', () => {
 
         it('should return deleted reservation', async () => {
             const res = await exec();
-            expect(res.body).toHaveProperty('restaurant');
-            expect(res.body).toHaveProperty('reservationDate');
-            expect(res.body).toHaveProperty('remarks');
-            expect(res.body).toHaveProperty('pax');
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 });

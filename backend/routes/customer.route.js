@@ -13,6 +13,9 @@ router.get('/me', [auth, isCustomer], customerController.getMe);
 router.get('/:id', validateObjectId, customerController.publicProfile);
 
 // [Customer] - Update customer information
-router.put('/me', [auth, isCustomer], customerController.updateMe);
+router.patch('/me', [auth, isCustomer], customerController.updateMe);
+
+// [Customer] - Delete customer
+router.delete('/me', [auth, isCustomer], customerController.deleteMe);
 
 module.exports = router;

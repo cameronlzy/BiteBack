@@ -1,23 +1,21 @@
 const logger = require('./startup/logging');
 const express = require('express');
-const cors = require('cors');
 const app = express();
 
-const corsOptions = {
-  origin: 'https://bite-back-indol.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  exposedHeaders: ['x-auth-token'],
-  credentials: true,
-};
+process.on('uncaughtException', err => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', err => {
+  console.error('UNHANDLED REJECTION:', err);
+});
 
-app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
+app.enable('trust proxy');
 
-require('./startup/logging');
 require('./startup/config')();
+require('./startup/cors')(app);
 require('./startup/validation')();
-require('./startup/prod')(app);
 require('./startup/routes')(app);
+require('./startup/prod')(app);
 require('./startup/server')();
 
 const port = process.env.PORT || 3000;
