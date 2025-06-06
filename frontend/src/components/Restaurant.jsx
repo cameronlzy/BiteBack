@@ -22,6 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu"
+import StarRating from "./common/StarRating"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -113,9 +114,34 @@ const Restaurant = ({ user }) => {
             }
             alt={name}
             className="w-full h-full object-cover"
+            onError={(ex) => {
+              ex.target.onerror = null
+              ex.target.src =
+                "https://www.opentable.com/img/restimages/2038.jpg"
+            }}
           />
-          <div className="absolute inset-0 bg-black/40 flex items-end p-4">
-            <h1 className="text-3xl font-bold text-white">{name}</h1>
+          <div className="absolute inset-0 bg-black/40 p-4 flex flex-col justify-end items-start space-y-2">
+            <h1 className="text-3xl font-bold text-white text-left">{name}</h1>
+            <div className="flex items-center gap-2">
+              <div className="bg-white/20 px-2 py-1 rounded flex items-center">
+                <StarRating rating={restaurant?.averageRating} />
+                <span className="ml-2 text-sm text-white font-medium">
+                  {restaurant?.averageRating.toFixed(1)} (
+                  {restaurant?.reviewCount} reviews)
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 text-sm text-white font-medium">
+              {cuisines.slice(0, 3).map((cuisine) => (
+                <span
+                  key={cuisine}
+                  className="bg-white/20 px-2 py-1 rounded backdrop-blur-sm"
+                >
+                  {cuisine}
+                </span>
+              ))}
+            </div>
           </div>
         </Link>
 
@@ -214,10 +240,6 @@ const Restaurant = ({ user }) => {
                 )}
               </div>
               <div>
-                <strong className="block text-gray-900">Cuisines:</strong>
-                {cuisines?.length > 0 ? cuisines.join(", ") : "-"}
-              </div>
-              <div>
                 <strong className="block text-gray-900">Max Capacity:</strong>
                 {maxCapacity}
               </div>
@@ -267,7 +289,11 @@ const Restaurant = ({ user }) => {
             </Link>
           </div>
 
-          <ReviewSection restaurant={restaurant} user={user} />
+          <ReviewSection
+            restaurant={restaurant}
+            user={user}
+            showRestaurant={false}
+          />
           {isOwnedByUser && (
             <CardContent className="space-y-4">
               <hr className="my-6 border-t border-gray-300" />

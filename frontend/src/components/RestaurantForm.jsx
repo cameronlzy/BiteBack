@@ -16,6 +16,7 @@ import { cuisineList, restaurantSchema } from "@/utils/schemas"
 import {
   getRestaurant,
   saveRestaurant,
+  updateRestaurantImages,
   uploadRestaurantImages,
 } from "@/services/restaurantService"
 import { toast } from "react-toastify"
@@ -31,6 +32,7 @@ const RestaurantForm = ({ user }) => {
   const [existingRestaurant, setExistingRestaurant] = useState(null)
   const [confirming, setConfirming] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState([])
+  const [existingImageUrls, setExistingImageUrls] = useState([])
   const from = "/restaurants" + (restaurantId ? `/${restaurantId}` : "")
 
   const form = useForm({
@@ -72,18 +74,37 @@ const RestaurantForm = ({ user }) => {
         toast.error("You do not have permission to create restaurants.")
         return navigate("/restaurants", { replace: true })
       }
+
       if (!restaurantId) return
+
       try {
         const restaurant = await getRestaurant(restaurantId)
+
         if (!restaurant || restaurant.owner !== user._id) {
           toast.error("Unauthorized to edit this restaurant.")
           return navigate("/restaurants", { replace: true })
         }
+
         setExistingRestaurant(restaurant)
-        const excluded = new Set(["slotDuration", "owner", "__v"])
+        if (Array.isArray(restaurant.images)) {
+          setExistingImageUrls(restaurant.images)
+        }
+        const allowedKeys = new Set([
+          "name",
+          "address",
+          "contactNumber",
+          "maxCapacity",
+          "email",
+          "website",
+          "cuisines",
+          "openingHours",
+          "_id",
+        ])
+
         Object.entries(restaurant).forEach(([key, val]) => {
-          if (excluded.has(key)) return
-          if (key === "openingHours") {
+          if (!allowedKeys.has(key)) return
+
+          if (key === "openingHours" && typeof val === "object") {
             Object.entries(val).forEach(([day, hours]) =>
               setValue(`openingHours.${day}`, hours)
             )
@@ -100,12 +121,19 @@ const RestaurantForm = ({ user }) => {
         navigate("/not-found", { replace: true })
       }
     }
+
     fetchRestaurant()
   }, [restaurantId])
 
   useEffect(() => {
     return () => selectedFiles.forEach((file) => URL.revokeObjectURL(file))
   }, [selectedFiles])
+
+  useEffect(() => {
+    if (existingImageUrls.length > 0 && selectedFiles.length === 0) {
+      setSelectedFiles(existingImageUrls)
+    }
+  }, [existingImageUrls])
 
   const watchedOpeningHours = watch("openingHours")
 
@@ -138,29 +166,41 @@ const RestaurantForm = ({ user }) => {
         ? objectComparator(existingRestaurant, cleanedNoEmpty)
         : cleanedNoEmpty
 
-      if (restaurantId && Object.keys(changes).length === 0)
-        return navigate("/restaurants")
+      let finalRestaurantId = restaurantId || null
 
-      let finalRestaurantId = restaurantId
-
-      if (!restaurantId) {
-        const res = await saveRestaurant(changes, false)
-        finalRestaurantId = res._id
+      if (!restaurantId || Object.keys(changes).length > 0) {
+        const res = await saveRestaurant(
+          restaurantId ? { ...changes, _id: restaurantId } : changes,
+          !!restaurantId
+        )
+        if (!restaurantId) finalRestaurantId = res._id
       }
 
       if (selectedFiles.length > 0) {
-        const uploadRes = await uploadRestaurantImages(
-          finalRestaurantId,
-          selectedFiles
-        )
-      } else if (restaurantId) {
-        await saveRestaurant({ ...changes, _id: finalRestaurantId }, true)
+        const newFiles = selectedFiles.filter((f) => f instanceof File)
+        const keptUrls = selectedFiles.filter((f) => typeof f === "string")
+
+        let newImageUrls = []
+        if (newFiles.length > 0) {
+          newImageUrls = await uploadRestaurantImages(
+            finalRestaurantId,
+            newFiles
+          )
+          newImageUrls = newImageUrls.filter(
+            (url) => !existingImageUrls.includes(url)
+          )
+        }
+
+        const updatedUrls = [...keptUrls, ...newImageUrls]
+        await updateRestaurantImages(finalRestaurantId, updatedUrls)
       }
 
       toast.success("Restaurant saved successfully!")
       navigate("/restaurants")
     } catch (ex) {
+      // Custom rollback here
       toast.error("Error saving restaurant")
+      console.error(ex)
     }
   }
 

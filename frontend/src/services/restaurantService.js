@@ -41,7 +41,6 @@ export async function getRestaurantAvailability(restaurantId, date) {
     if (!Array.isArray(data)) return []
     return convertSlotTimesToSGT(data, date)
   } catch (err) {
-    console.error("Failed to get availability", err)
     return []
   }
 }
@@ -70,6 +69,24 @@ export async function saveRestaurant(restaurant, isUpdate) {
     }
 }
 
+export async function saveRestaurants(restaurants) {
+  const results = restaurants.map((r) => {
+  const cleaned = Object.fromEntries(
+    Object.entries(r).filter(([_, v]) => v !== "")
+  )
+
+  return {
+    ...cleaned,
+    openingHours: convertOpeningHoursToString(r.openingHours),
+  }
+})
+
+  const { data } = await http.post(apiEndpoint + "/bulk", {
+    restaurants: results
+})
+  return data
+}
+
 export async function uploadRestaurantImages(restaurantId, files) {
   if (!restaurantId) throw new Error("Restaurant ID is required")
   if (!files || files.length === 0) return []
@@ -89,16 +106,21 @@ export async function uploadRestaurantImages(restaurantId, files) {
   const formData = new FormData()
   limitedFiles.forEach((file) => formData.append("images", file))
 
-  const { data } = await http.post(`${apiEndpoint}/${restaurantId}/images`, formData, {
+  const { data: imageUrls }  = await http.post(`${apiEndpoint}/${restaurantId}/images`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
   })
 
-  return data.imageUrls 
+  return imageUrls 
 }
 
-
+export async function updateRestaurantImages(restaurantId, imageUrls) {
+  const { data } = await http.put(`${apiEndpoint}/${restaurantId}/images`, {
+    images: imageUrls,
+  })
+  return data
+}
 
 export async function deleteRestaurant(id) {
     const { data } = await http.delete(getRestaurantUrl(id))

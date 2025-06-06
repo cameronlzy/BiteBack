@@ -17,16 +17,40 @@ export async function getReviewsByCustomer(customerId) {
     return data
 }
 
-export async function saveReview(review, isUpdate) {
-    if(isUpdate) {
-        const result = {...review}
-        delete result._id
-        const { data } = await http.patch(apiEndpoint + review._id, result)
-        return data
-    } else {
-        const { data } = await http.post(apiEndpoint, review)
-        return data
+export async function saveReview(review) {
+    const { data } = await http.post(apiEndpoint, review)
+    return data
+}
+
+export async function uploadReviewImages(reviewId, files) {
+  if (!reviewId) throw new Error("Review ID is required")
+  if (!files || files.length === 0) return []
+
+  const limitedFiles = files.slice(0, 5)
+
+  for (const file of limitedFiles) {
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error(`File "${file.name}" exceeds 5MB limit.`)
     }
+    if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
+      throw new Error(`Unsupported format for "${file.name}".`)
+    }
+  }
+
+  const formData = new FormData()
+  limitedFiles.forEach((file) => formData.append("images", file))
+
+  const { data: imageUrls } = await http.post(
+    `${apiEndpoint}/${reviewId}/images`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  )
+
+  return imageUrls
 }
 
 export async function addBadgeVote(reviewId, badgeIndex) {

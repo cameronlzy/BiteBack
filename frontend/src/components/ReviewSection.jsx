@@ -12,7 +12,7 @@ import ReviewCard from "./ReviewCard"
 import { Button } from "./ui/button"
 import SortBy from "./common/SortBy"
 
-const ReviewSection = ({ restaurant, user }) => {
+const ReviewSection = ({ restaurant, user, showRestaurant }) => {
   const [reviews, setReviews] = useState([])
   const [sortedReviews, setSortedReviews] = useState([])
   const [showForm, setShowForm] = useState(false)
@@ -53,15 +53,13 @@ const ReviewSection = ({ restaurant, user }) => {
 
   const handleReviewSubmit = async (newReview) => {
     try {
-      const savedReview = await saveReview(newReview, false)
+      const savedReview = await saveReview(newReview)
       savedReview.badgesCount = [0, 0, 0, 0]
-      setReviews((prev) => [...prev, savedReview])
-      setSortedReviews((prev) => [...prev, savedReview])
       setShowForm(false)
-      toast.success("Review submitted successfully.")
+      return savedReview
     } catch (ex) {
       if (ex.response && ex.response.status === 403) {
-        toast.error("You must be logged in as a customer to leave a review.")
+        toast.info("You must be logged in as a customer to leave a review.")
       }
     }
   }
@@ -91,7 +89,12 @@ const ReviewSection = ({ restaurant, user }) => {
               showForm ? "max-h-[1000px] opacity-100 mt-4" : "max-h-0 opacity-0"
             }`}
           >
-            <ReviewForm restaurant={restaurant} onSubmit={handleReviewSubmit} />
+            <ReviewForm
+              restaurant={restaurant}
+              onSubmit={handleReviewSubmit}
+              setReviews={setReviews}
+              setSortedReviews={setSortedReviews}
+            />
           </div>
         </div>
       )}
@@ -110,6 +113,7 @@ const ReviewSection = ({ restaurant, user }) => {
           currentRestaurant={restaurant}
           user={user}
           onDelete={handleReviewDelete}
+          showRestaurant={showRestaurant}
         />
       ))}
     </Fragment>

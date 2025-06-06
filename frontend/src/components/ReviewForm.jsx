@@ -14,8 +14,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import StarRatingInput from "@/components/common/StarRatingInput"
 import { Input } from "./ui/input"
+import { useState } from "react"
+import ImageUpload from "./common/ImageUpload"
+import { uploadReviewImages } from "@/services/reviewService"
 
-const ReviewForm = ({ restaurant, onSubmit }) => {
+const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
+  const [selectedFiles, setSelectedFiles] = useState([])
   const form = useForm({
     resolver: safeJoiResolver(reviewSchema),
     mode: "onSubmit",
@@ -28,18 +32,25 @@ const ReviewForm = ({ restaurant, onSubmit }) => {
   })
 
   const {
-    setValue,
     handleSubmit,
-    watch,
     formState: { errors },
   } = form
 
-  const dateVisitedRaw = watch("dateVisited")
-  const dateVisited = dateVisitedRaw ? new Date(dateVisitedRaw) : undefined
-
   const handleFormSubmit = async (data) => {
     try {
-      await onSubmit(data)
+      const res = await onSubmit(data)
+      const reviewId = res._id
+      let images
+      if (selectedFiles.length > 0) {
+        images = await uploadReviewImages(reviewId, selectedFiles)
+      }
+      res.images = images
+      if (setReviews && setSortedReviews) {
+        setReviews((prev) => [...prev, res])
+        setSortedReviews((prev) => [...prev, res])
+      }
+      toast.success("Review uploaded successfully")
+      form.reset()
     } catch (ex) {
       toast.error("Failed to submit review")
     }
@@ -109,6 +120,13 @@ const ReviewForm = ({ restaurant, onSubmit }) => {
               <FormMessage />
             </FormItem>
           )}
+        />
+
+        <ImageUpload
+          firstRequired={false}
+          message="Upload images of your experience (Optional) "
+          selectedFiles={selectedFiles}
+          setSelectedFiles={setSelectedFiles}
         />
 
         <Button type="submit" className="w-full">

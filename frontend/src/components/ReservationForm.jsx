@@ -81,9 +81,7 @@ const ReservationForm = ({ user }) => {
       try {
         const reservations = await getReservations()
         setExistingReservations(reservations)
-      } catch (ex) {
-        console.error("Failed to fetch reservations", ex)
-      }
+      } catch (ex) {}
     }
     fetchExistingReservations()
   }, [user])

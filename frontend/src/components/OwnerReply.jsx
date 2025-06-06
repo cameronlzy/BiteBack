@@ -16,7 +16,6 @@ import { readableTimeSettings } from "@/utils/timeConverter"
 
 const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
   const isOwnedByUser = user?.role === "owner" && user._id === restaurant?.owner
-  console.log(review)
 
   const methods = useForm({
     defaultValues: {
@@ -38,7 +37,6 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
       toast.success("Reply posted!")
     } catch (err) {
       toast.error("Failed to post reply")
-      console.error(err)
     }
   }
 
@@ -50,7 +48,6 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
       toast.success("Reply deleted")
     } catch (err) {
       toast.error("Failed to delete reply")
-      console.error(err)
     }
   }
 
@@ -61,16 +58,17 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
           <b className="text-gray-700 block mb-1">Owner Reply:</b>
           <p className="text-gray-800">{review.reply.replyText}</p>
 
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={onDelete}
-            disabled={isSubmitting}
-            className="absolute top-2 right-2"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-
+          {review.reply.owner === user?._id && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onDelete}
+              disabled={isSubmitting}
+              className="absolute top-2 right-2"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
           <p className="absolute bottom-2 right-2 text-xs text-gray-500">
             {DateTime.fromISO(review.reply.createdAt).toLocaleString({
               ...readableTimeSettings,

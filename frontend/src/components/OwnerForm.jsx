@@ -15,7 +15,10 @@ import OpeningHoursSelect from "./OpeningHoursSelect"
 import { toast } from "react-toastify"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { cuisineList, ownerSchema, updateOwnerSchema } from "@/utils/schemas"
-import { uploadRestaurantImages } from "@/services/restaurantService"
+import {
+  saveRestaurants,
+  uploadRestaurantImages,
+} from "@/services/restaurantService"
 import ImageUpload from "./common/ImageUpload"
 import LoadingSpinner from "./common/LoadingSpinner"
 
@@ -96,9 +99,8 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
 
   const onSubmit = async (data) => {
     try {
-      const { confirmPassword, ...finalData } = data
+      const { confirmPassword, restaurants, ...ownerData } = data
       const isUpdate = !!user
-      if (isUpdate) delete finalData.restaurants
 
       if (!isUpdate) {
         const missingImageIndex = selectedFilesArray.findIndex(
@@ -112,16 +114,19 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
         }
       }
 
-      const result = await onRegister(finalData)
-      if (!isUpdate && result?.data?.restaurants?.length > 0) {
-        for (let i = 0; i < result.data.restaurants.length; i++) {
-          const restaurantId = result.data.restaurants[i]
+      await onRegister(ownerData)
+
+      if (!isUpdate) {
+        const savedRestaurantIds = await saveRestaurants(restaurants)
+        for (let i = 0; i < savedRestaurantIds.length; i++) {
+          const restaurantId = savedRestaurantIds[i]
           const files = selectedFilesArray[i] || []
+
           if (files.length > 0) {
             try {
               await uploadRestaurantImages(restaurantId, files)
-            } catch (e) {
-              toast.error(`Image upload failed for restaurant #${i + 1}`)
+            } catch (ex) {
+              toast.error(`Image upload failed for Restaurant #${i + 1}`)
             }
           }
         }
