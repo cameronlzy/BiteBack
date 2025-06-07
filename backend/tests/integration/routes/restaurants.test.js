@@ -341,6 +341,7 @@ describe('restaurant test', () => {
         let address;
         let contactNumber;
         let cuisines;
+        let tags;
         let openingHours;
         let maxCapacity;
 
@@ -384,6 +385,7 @@ describe('restaurant test', () => {
             cuisines = ["Chinese"];
             openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
             maxCapacity = 50;
+            tags = ["Live Music"];
         });
 
         const exec = () => {
@@ -392,7 +394,7 @@ describe('restaurant test', () => {
             .set('Cookie', [cookie])
             .send({
                 name, address, contactNumber, cuisines,
-                openingHours, maxCapacity
+                openingHours, maxCapacity, tags
             });
         };
 
@@ -430,20 +432,21 @@ describe('restaurant test', () => {
         it('should return a restaurant object', async () => {
             const res = await exec();
             const requiredKeys = [
-                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity', 'location'
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity', 'location', 'tags'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
     // skip to avoid sending requests to mapBox
-    describe.skip('POST /api/restaurants/bulk', () => {
+    describe('POST /api/restaurants/bulk', () => {
         let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1;
         let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2;
         let cookie;
         let token;
         let user;
         let profile;
+        let tags;
 
         beforeEach(async () => { 
             await User.deleteMany({});
@@ -459,6 +462,7 @@ describe('restaurant test', () => {
             maxCapacity1 = 50;
             restaurantEmail1 = `restaurant@gmail.com`;
             website1 = "https://www.restaurant.com";
+            tags = ["Live Music"];
 
             // creating restaurant 2
             restaurantName2 = "restaurant2";
@@ -492,7 +496,7 @@ describe('restaurant test', () => {
                         openingHours: openingHours1,
                         maxCapacity: maxCapacity1,
                         email: restaurantEmail1,
-                        website: website1
+                        website: website1, tags
                     },
                     {
                         name: restaurantName2,
@@ -500,7 +504,7 @@ describe('restaurant test', () => {
                         contactNumber: contactNumber2,
                         cuisines: cuisines2,
                         openingHours: openingHours2,
-                        maxCapacity: maxCapacity2,
+                        maxCapacity: maxCapacity2, tags
                     }
                 ]
             });

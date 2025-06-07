@@ -13,6 +13,7 @@ function createTestRestaurant(owner) {
     let website = "https://www.restaurant.com";
     let maxCapacity = 50;
     let location = { type: 'Point', coordinates: [103.856895, 1.306698]};
+    let tags = ['Live Music'];
     return new Restaurant({
         owner,
         name: restaurantName,
@@ -22,7 +23,7 @@ function createTestRestaurant(owner) {
         openingHours,
         maxCapacity,
         email: restaurantEmail,
-        website, location
+        website, location, tags
     });
 }
 

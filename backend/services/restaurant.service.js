@@ -62,6 +62,12 @@ exports.discoverRestaurants = async (filters) => {
     }
   });
 
+  // sort by distance ascending
+  if (location) pipeline.push({ $sort: { distance: 1 } });
+
+  // set limit
+  pipeline.push({ $limit: 20 });
+
   // fetch matching restaurants
   let restaurants = await Restaurant.aggregate(pipeline);
   // filter open now
@@ -232,7 +238,7 @@ exports.createRestaurantHelper = async (authUser, data, session = null) => {
   const { longitude, latitude } = await geocodeAddress(fullAddress);
 
   // create restaurant
-  const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));
+  const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website', 'tags']));
   restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
   restaurant.owner = authUser._id;
   restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);

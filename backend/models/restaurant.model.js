@@ -24,6 +24,22 @@ const cuisineList = [
   'Halal'
 ];
 
+const tagList = [
+  // Features
+  "Free Wi-Fi",
+  "Outdoor Seating",
+  "Live Music",
+  "Pet Friendly",
+  "Wheelchair Accessible",
+
+  // Dietary
+  "Vegan Options",
+  "Gluten-Free Available",
+  "Halal Certified",
+  "Low Carb",
+  "Nut-Free"
+];
+
 const openingHoursRegex =
   /^(x|([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)(\|(x|([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)){6}$/;
 
@@ -121,7 +137,18 @@ const restaurantSchema = new mongoose.Schema({
     default: [],
   },
   averageRating: { type: Number, min: 0, max: 5, default: 0 },
-  reviewCount: { type: Number, min: 0, default: 0 }
+  reviewCount: { type: Number, min: 0, default: 0 },
+  tags: { 
+    type: [String],
+    validate: [
+      {
+        validator: function (arr) {
+        return arr.every(cuisine => tagList.includes(cuisine));
+      },
+        message: 'One or more cuisines are invalid.'
+      }
+    ], default: [],
+   }
 }, { versionKey: false });
 
 restaurantSchema.index({ location: '2dsphere' });

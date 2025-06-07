@@ -23,6 +23,22 @@ const cuisineList = [
   'Halal'
 ];
 
+const tagList = [
+  // Features
+  "Free Wi-Fi",
+  "Outdoor Seating",
+  "Live Music",
+  "Pet Friendly",
+  "Wheelchair Accessible",
+
+  // Dietary
+  "Vegan Options",
+  "Gluten-Free Available",
+  "Halal Certified",
+  "Low Carb",
+  "Nut-Free"
+];
+
 const openingHoursRegex =
   /^(x|([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)(\|(x|([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)){6}$/;
 
@@ -66,7 +82,8 @@ const restaurantJoiSchema = Joi.object({
   email: Joi.string().email().optional(),
   website: Joi.string().uri().optional().messages({
     "string.uri": "Invalid website URL",
-  })
+  }),
+  tags: Joi.array().items(Joi.string().valid(...tagList)).required(),
 });
 
 function validateRestaurant(restaurant) {
@@ -111,7 +128,7 @@ function validateImages(images) {
 function validateDiscover(filters) {
   const schema = Joi.object({
     cuisines: Joi.string(),
-    minRating: Joi.number().integer().min(0).max(5),
+    minRating: Joi.number().min(0).max(5).precision(1),
     lat: Joi.number(),
     lng: Joi.number(),
     radius: Joi.number().integer(),
