@@ -11,6 +11,7 @@ const { createSlots, convertSGTOpeningHoursToUTC } = require('../helpers/restaur
 const _ = require('lodash');
 const mongoose = require('mongoose');
 const { deleteImagesFromCloudinary, deleteImagesFromDocument } = require('./image.service');
+const geocodeAddress = require('../helpers/geocode');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
@@ -59,11 +60,7 @@ exports.createRestaurant = async (authUser, data) => {
   if (session) session.startTransaction();
 
   try {
-    // create restaurant
-    const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));
-    restaurant.owner = authUser._id;
-    restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
-    await restaurant.save(session ? { session } : undefined);
+    const restaurant = await exports.createRestaurantHelper(authUser, data, session);
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session || null);
@@ -91,24 +88,23 @@ exports.createRestaurantBulk = async (authUser, data) => {
 
   try {
     // create restaurants
-    let restaurants;
-    try {
-      restaurants = await exports.createRestaurantArray(data, authUser._id, session);
-    } catch (err) {
-      throw { status: 400, body: 'Incorrect restaurant information' };
+    const restaurantIds = [];
+    for (const item of data) {
+      const restaurant = await exports.createRestaurantHelper(authUser, item, session);
+      restaurantIds.push(restaurant._id);
     }
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session || null);
     if (!user) throw { status: 404, body: 'User not found' };
     if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
-    user.profile.restaurants = restaurants;
+    user.profile.restaurants = restaurantIds;
     await user.profile.save(session ? { session } : undefined);
 
     // commit transaction
     if (session) await session.commitTransaction();
 
-    return { status: 200, body: restaurants };
+    return { status: 200, body: restaurantIds };
   } catch (err) {
     if (session) await session.abortTransaction();
     throw err;
@@ -181,21 +177,17 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
 };
 
 // utility services
-exports.createRestaurantArray = async (arr, userId, session = null) => {
-  let restaurant;
-  try {
-    let output = [];
-    for (let item of arr) {
-      item.owner = userId;
-      item.openingHours = convertSGTOpeningHoursToUTC(item.openingHours);
-      restaurant = new Restaurant(item);
-      await restaurant.save(session ? { session } : undefined);
-      output.push(restaurant._id);
-    }
-    return output;
-  } catch (err) {
-    throw err;
-  }
+exports.createRestaurantHelper = async (authUser, data, session = null) => {
+  // get longitude and latitude
+  const { longitude, latitude } = await geocodeAddress(data.address);
+
+  // create restaurant
+  const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));
+  restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
+  restaurant.owner = authUser._id;
+  restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
+  await restaurant.save(session ? { session } : undefined);
+  return restaurant;
 }
 
 exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => {

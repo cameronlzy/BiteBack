@@ -191,7 +191,8 @@ describe('restaurant test', () => {
         });
     });
 
-    describe('POST /api/restaurants', () => {
+    // skip to avoid sending requests to mapBox
+    describe.skip('POST /api/restaurants', () => {
         let name;
         let address;
         let contactNumber;
@@ -234,7 +235,7 @@ describe('restaurant test', () => {
 
             // creating a restaurant
             name = "restaurant";
-            address = "new york";
+            address = "Blk 30 Kelantan Lane #12-01D, Singapore 208652";
             contactNumber = "87654321";
             cuisines = ["Chinese"];
             openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
@@ -279,19 +280,21 @@ describe('restaurant test', () => {
 
         it('should return 200 if valid request', async () => {
             const res = await exec();
+            console.log(res.body);
             expect(res.status).toBe(200);
         });
 
         it('should return a restaurant object', async () => {
             const res = await exec();
             const requiredKeys = [
-                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity', 'location'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
-    describe('POST /api/restaurants/bulk', () => {
+    // skip to avoid sending requests to mapBox
+    describe.skip('POST /api/restaurants/bulk', () => {
         let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1;
         let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2;
         let cookie;
@@ -306,7 +309,7 @@ describe('restaurant test', () => {
 
             // creating restaurant 1
             restaurantName1 = "restaurant1";
-            address1 = "new york";
+            address1 = "Blk 30 Kelantan Lane #12-01D, Singapore 208652";
             contactNumber1 = "87654321";
             cuisines1 = ["Chinese"];
             openingHours1 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
@@ -316,7 +319,7 @@ describe('restaurant test', () => {
 
             // creating restaurant 2
             restaurantName2 = "restaurant2";
-            address2 = "new york";
+            address2 = "Blk 48 Dakota Crescent, Singapore 390048";
             contactNumber2 = "12345678";
             cuisines2 = ["Japanese"];
             openingHours2 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";

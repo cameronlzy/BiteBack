@@ -58,6 +58,18 @@ const openingHoursSchema = {
 const restaurantSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+      required: true,
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
+  },
   address: {type: String, minLength: 2, maxLength: 255, required: true },
   contactNumber: {
     type: String,
@@ -111,6 +123,8 @@ const restaurantSchema = new mongoose.Schema({
   averageRating: { type: Number, min: 0, max: 5, default: 0 },
   reviewCount: { type: Number, min: 0, default: 0 }
 }, { versionKey: false });
+
+restaurantSchema.index({ location: '2dsphere' });
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 
