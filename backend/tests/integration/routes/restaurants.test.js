@@ -63,6 +63,150 @@ describe('restaurant test', () => {
         });
     });
 
+    describe('GET /api/restaurants/discover', () => {
+        let url;
+        let locations;
+        let cuisines;
+        let openingHours;
+        let ratings;
+        let restaurant;
+        const queryLat = 1.45069144403824;
+        const queryLng = 103.79996778334721;
+        const nearCoords = [103.79996778334721, 1.45069144403824]; // currentLocation
+        const midCoords = [103.77055853873995, 1.4778911115333417]; // ~4.5 km 
+        const farCoords = [103.85, 1.29];                          // ~18 km 
+        
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+
+            // create 4 locations
+            locations = [
+                {
+                    type: 'Point', 
+                    coordinates: nearCoords,
+                },
+                {
+                    type: 'Point', 
+                    coordinates: nearCoords,
+                },
+                {
+                    type: 'Point', 
+                    coordinates: midCoords,
+                },
+                {
+                    type: 'Point', 
+                    coordinates: farCoords,
+                },
+            ];
+
+            // create 4 cuisines
+            cuisines = [
+                ['Chinese'],
+                ['Japanese'],
+                ['Chinese'],
+                ['Chinese'],
+            ];
+
+            // create 4 openingHours
+            openingHours = [
+                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
+                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
+                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
+                'x|x|x|x|x|x|x',
+            ];
+
+            // create 4 ratings
+            ratings = [4.5, 5.0, 1.5, 3.5];
+
+            // create 4 restaurants
+            for (let step = 0; step < 4; step++) {
+                restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+                restaurant.location = locations[step];
+                restaurant.cuisines = cuisines[step];
+                restaurant.averageRating = ratings[step];
+                restaurant.openingHours = openingHours[step];
+                await restaurant.save();
+            }
+        });
+
+        const exec = () => {
+            return request(server)
+            .get(url);
+        };
+
+        it('should return only restaurants with Chinese cuisine and rating >= 2', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=2`;
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(2); // Chinese + valid rating (rest 1 + 4)
+            res.body.forEach(r => {
+                expect(r.cuisines).toContain('Chinese');
+                expect(r.averageRating).toBeGreaterThanOrEqual(2);
+            });
+        });
+
+        it('should return only restaurants currently open', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=2&openNow=true`;
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(1); // Only restaurant 1
+            expect(res.body[0].cuisines).toContain('Chinese');
+        });
+
+        it('should include closed restaurants when openNow=false', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=2&openNow=false`;
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(2); // Restaurant 1 + 4
+        });
+
+        it('should return 0 if no restaurants match the rating filter', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=5`;
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(0);
+        });
+
+        it('should support multiple cuisines in query', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese,Japanese&minRating=2`;
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(3); // Rest 1, 2, 4
+        });
+
+        it('should return only restaurants within 100m radius', async () => {
+            const radius = 100;
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=2&lat=${queryLat}&lng=${queryLng}&radius=${radius}&openNow=true`;
+            const res = await exec();
+
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(1);
+            expect(res.body[0].location.coordinates).toEqual(nearCoords);
+        });
+
+        it('should return restaurants within 5km radius', async () => {
+            const radius = 5000;
+            url = `/api/restaurants/discover?cuisines=Chinese&lat=${queryLat}&lng=${queryLng}&radius=${radius}`;
+            const res = await exec();
+
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(2);
+            const resultCoords = res.body.map(r => r.location.coordinates);
+            expect(resultCoords).toEqual(
+                expect.arrayContaining([nearCoords, midCoords])
+            );
+        });
+
+        it('should return all restaurants within a very large radius', async () => {
+            const radius = 20000;
+            url = `/api/restaurants/discover?cuisines=Chinese&lat=${queryLat}&lng=${queryLng}&radius=${radius}`;
+            const res = await exec();
+
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(3);
+        });
+    });
+
     describe('GET /api/restaurants/:id', () => {
         let restaurant;
         let restaurantId;
@@ -235,7 +379,7 @@ describe('restaurant test', () => {
 
             // creating a restaurant
             name = "restaurant";
-            address = "Blk 30 Kelantan Lane #12-01D, Singapore 208652";
+            address = "Blk 30 Kelantan Lane #12-01D, S208652";
             contactNumber = "87654321";
             cuisines = ["Chinese"];
             openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
@@ -280,7 +424,6 @@ describe('restaurant test', () => {
 
         it('should return 200 if valid request', async () => {
             const res = await exec();
-            console.log(res.body);
             expect(res.status).toBe(200);
         });
 
@@ -309,7 +452,7 @@ describe('restaurant test', () => {
 
             // creating restaurant 1
             restaurantName1 = "restaurant1";
-            address1 = "Blk 30 Kelantan Lane #12-01D, Singapore 208652";
+            address1 = "Blk 30 Kelantan Lane #12-01D, S208652";
             contactNumber1 = "87654321";
             cuisines1 = ["Chinese"];
             openingHours1 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
@@ -319,7 +462,7 @@ describe('restaurant test', () => {
 
             // creating restaurant 2
             restaurantName2 = "restaurant2";
-            address2 = "Blk 48 Dakota Crescent, Singapore 390048";
+            address2 = "Blk 48 Dakota Crescent, S390048";
             contactNumber2 = "12345678";
             cuisines2 = ["Japanese"];
             openingHours2 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";

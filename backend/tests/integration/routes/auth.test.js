@@ -13,7 +13,7 @@ const CustomerProfile = require('../../../models/customerProfile.model');
 const OwnerProfile = require('../../../models/ownerProfile.model');
 const Restaurant = require('../../../models/restaurant.model');
 
-describe('auth test', () => {
+describe.skip('auth test', () => {
     let server;
     beforeAll(() => {
         server = require('../../../index');

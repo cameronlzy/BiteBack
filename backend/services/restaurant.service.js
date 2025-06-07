@@ -6,8 +6,7 @@ const Review = require('../models/review.model');
 const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
 const { DateTime } = require('luxon');
 const reservationService = require('../services/reservation.service');
-const reviewSerice = require('../services/review.service');
-const { createSlots, convertSGTOpeningHoursToUTC } = require('../helpers/restaurant.helper');
+const { createSlots, convertSGTOpeningHoursToUTC, filterOpenRestaurants } = require('../helpers/restaurant.helper');
 const _ = require('lodash');
 const mongoose = require('mongoose');
 const { deleteImagesFromCloudinary, deleteImagesFromDocument } = require('./image.service');
@@ -20,6 +19,56 @@ exports.getAllRestaurants = async () => {
   let restaurants = await Restaurant.find().sort('name').lean();
   return { status: 200, body: restaurants };
 }
+
+exports.discoverRestaurants = async (filters) => {
+  const {
+    cuisines,
+    minRating = 0,
+    location,
+    radius = 3000,
+    openNow = false
+  } = filters;
+
+  const pipeline = [];
+
+  // filter by location and calculate the distance from user
+  if (location) {
+    pipeline.push({
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [location.lng, location.lat]
+        },
+        distanceField: 'distance',
+        maxDistance: radius,
+        spherical: true
+      }
+    });
+  }
+
+  // filter by cuisines 
+  if (cuisines) {
+    pipeline.push({
+      $match: {
+        cuisines: { $in: cuisines }
+      }
+    });
+  }
+
+  // filter by minimum rating
+  pipeline.push({
+    $match: {
+      averageRating: { $gte: minRating }
+    }
+  });
+
+  // fetch matching restaurants
+  let restaurants = await Restaurant.aggregate(pipeline);
+  // filter open now
+  if (openNow) restaurants = filterOpenRestaurants(restaurants);
+
+  return { status: 200, body: restaurants }
+};
 
 exports.getRestaurantById = async (restaurantId) => { 
   // find restaurant
@@ -179,7 +228,8 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
 // utility services
 exports.createRestaurantHelper = async (authUser, data, session = null) => {
   // get longitude and latitude
-  const { longitude, latitude } = await geocodeAddress(data.address);
+  const fullAddress = data.address.replace(/S(\d{6})$/i, 'Singapore $1');
+  const { longitude, latitude } = await geocodeAddress(fullAddress);
 
   // create restaurant
   const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));

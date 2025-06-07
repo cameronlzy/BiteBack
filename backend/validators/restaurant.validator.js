@@ -108,10 +108,23 @@ function validateImages(images) {
   return schema.validate(images);
 }
 
+function validateDiscover(filters) {
+  const schema = Joi.object({
+    cuisines: Joi.string(),
+    minRating: Joi.number().integer().min(0).max(5),
+    lat: Joi.number(),
+    lng: Joi.number(),
+    radius: Joi.number().integer(),
+    openNow: Joi.boolean(),
+  }).min(1);
+  return schema.validate(filters);
+}
+
 module.exports = { 
   validateRestaurant,
   validateRestaurantBulk,
   restaurantJoiSchema, 
   validatePatch,
   validateImages,
+  validateDiscover,
 };

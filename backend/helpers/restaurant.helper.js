@@ -1,6 +1,6 @@
 const { DateTime } = require('luxon');
 
-function convertSGTOpeningHoursToUTC(openingHoursString) {
+exports.convertSGTOpeningHoursToUTC = (openingHoursString) => {
   const days = openingHoursString.split('|');
 
   const converted = days.map(entry => {
@@ -17,7 +17,7 @@ function convertSGTOpeningHoursToUTC(openingHoursString) {
   return converted.join('|');
 }
 
-function createSlots(openingHoursString, sgtDateTime, slotDuration = 60) {
+exports.createSlots = (openingHoursString, sgtDateTime, slotDuration = 60) => {
   const openingHours = openingHoursString.split('|');
   const date = sgtDateTime;
   const weekdayIndex = sgtDateTime.weekday - 1; 
@@ -43,4 +43,24 @@ function createSlots(openingHoursString, sgtDateTime, slotDuration = 60) {
   return slots;
 }
 
-module.exports = { convertSGTOpeningHoursToUTC, createSlots };
+exports.filterOpenRestaurants = (restaurants) => {
+  const nowUTC = DateTime.utc();
+  const currentDay = nowUTC.weekday % 7;
+
+  return restaurants.filter((restaurant) => {
+    const days = restaurant.openingHours.split('|');
+    const hoursToday = days[currentDay];
+    if (!hoursToday || hoursToday.toLowerCase() === 'x') return false;
+
+    const [startStr, endStr] = hoursToday.split('-');
+    if (!startStr || !endStr) return false;
+
+    const [startHour, startMin] = startStr.split(':').map(Number);
+    const [endHour, endMin] = endStr.split(':').map(Number);
+
+    const start = nowUTC.set({ hour: startHour, minute: startMin, second: 0 });
+    const end = nowUTC.set({ hour: endHour, minute: endMin, second: 59 });
+
+    return nowUTC >= start && nowUTC <= end;
+  });
+};
