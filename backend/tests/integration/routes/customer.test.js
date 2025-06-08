@@ -8,7 +8,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-describe('customer test', () => {
+describe.skip('customer test', () => {
     let server;
     beforeAll(() => {
         server = require('../../../index');

@@ -8,10 +8,10 @@ const validateObjectId = require('../middleware/validateObjectId');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const router = wrapRoutes(express.Router());
 
-// [Public] - Get all restaurants
-router.get('/', restaurantController.getAllRestaurants);
+// [Public] - Search route with filters
+router.get('/', restaurantController.searchRestaurants);
 
-// [Public] - Search and Discovery route
+// [Public] - Discovery route
 router.get('/discover', restaurantController.discoverRestaurants);
 
 // [Public] - Get restaurant by ID

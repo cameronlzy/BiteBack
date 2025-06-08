@@ -6,7 +6,7 @@ const logger = require('../startup/logging');
 module.exports = function() {
   if (process.env.NODE_ENV !== 'test') {
     const db = config.get('mongoURI');
-    mongoose.connect(db)
+    mongoose.connect(db, { autoIndex: false })
       .then(() => logger.info(`Connected to ${db}...`));
   }
 }

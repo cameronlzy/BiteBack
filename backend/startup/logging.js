@@ -1,13 +1,16 @@
 const winston = require('winston');
 require('winston-mongodb');
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
+const transports = [];
+
+transports.push(
+  new winston.transports.Console({
+    format: winston.format.simple(),
+  })
+);
+
+if (process.env.NODE_ENV !== 'production') {
+  transports.push(
     new winston.transports.File({
       filename: 'logs/info.log',
       level: 'info',
@@ -15,15 +18,31 @@ const logger = winston.createLogger({
     new winston.transports.File({
       filename: 'logs/error.log',
       level: 'error',
-    }),
-    new winston.transports.Console({
-      format: winston.format.simple(),
-    }),
-  ],
+    })
+  );
+}
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports,
 });
 
-winston.exceptions.handle(
-  new winston.transports.File({ filename: 'logs/uncaughtExceptions.log' })
-);
+if (process.env.NODE_ENV !== 'production') {
+  winston.exceptions.handle(
+    new winston.transports.File({
+      filename: 'logs/uncaughtExceptions.log',
+    })
+  );
+} else {
+  winston.exceptions.handle(
+    new winston.transports.Console({
+      format: winston.format.simple(),
+    })
+  );
+}
 
 module.exports = logger;

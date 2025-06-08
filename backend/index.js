@@ -18,6 +18,8 @@ require('./startup/routes')(app);
 require('./startup/prod')(app);
 require('./startup/server')();
 
+app.use('/', require('./routes/status.route'));
+
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => logger.info(`Listening on port ${port}...`));
 

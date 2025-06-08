@@ -20,8 +20,7 @@ const cuisineList = [
   'Hawker',
   'Fusion',
   'Seafood',
-  'Vegetarian',
-  'Halal'
+  'Fast Food',
 ];
 
 const tagList = [
@@ -152,6 +151,7 @@ const restaurantSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 restaurantSchema.index({ location: '2dsphere' });
+restaurantSchema.index({ owner: 1 });
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 

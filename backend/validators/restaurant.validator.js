@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { sortBy } = require('lodash');
 
 const cuisineList = [
   'Chinese',
@@ -19,8 +20,7 @@ const cuisineList = [
   'Hawker',
   'Fusion',
   'Seafood',
-  'Vegetarian',
-  'Halal'
+  'Fast Food',
 ];
 
 const tagList = [
@@ -113,7 +113,8 @@ function validatePatch(update) {
     email: Joi.string().email().optional(),
     website: Joi.string().uri().optional().messages({
       "string.uri": "Invalid website URL",
-    })
+    }),
+    tags: Joi.array().items(Joi.string().valid(...tagList)),
   }).min(1);
   return schema.validate(update);
 }
@@ -133,7 +134,19 @@ function validateDiscover(filters) {
     lng: Joi.number(),
     radius: Joi.number().integer(),
     openNow: Joi.boolean(),
+    tags: Joi.string()
   }).min(1);
+  return schema.validate(filters);
+}
+
+function validateSearch(filters) {
+  const schema = Joi.object({
+    search: Joi.string(),
+    page: Joi.number().integer().min(1),
+    limit: Joi.number().integer().min(1),
+    sortBy: Joi.string().valid('averageRating', 'name', 'reviewCount'),
+    order: Joi.string().valid('desc', 'asc'),
+  });
   return schema.validate(filters);
 }
 
@@ -144,4 +157,5 @@ module.exports = {
   validatePatch,
   validateImages,
   validateDiscover,
+  validateSearch,
 };

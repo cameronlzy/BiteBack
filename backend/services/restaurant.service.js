@@ -14,10 +14,78 @@ const geocodeAddress = require('../helpers/geocode');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
-exports.getAllRestaurants = async () => {
-  // find restaurants
-  let restaurants = await Restaurant.find().sort('name').lean();
-  return { status: 200, body: restaurants };
+exports.searchRestaurants = async (filters) => {
+  const {
+    search,
+    page = 1,
+    limit = 8,
+    sortBy = 'averageRating',
+    order = 'desc',
+  } = filters;
+
+  const skip = (page - 1) * limit;
+  const sortOrder = order === 'desc' ? -1 : 1;
+
+  const searchStage = search
+    ? !isProdEnv
+      ? { $match: { name: { $regex: search, $options: 'i' } } }
+      : {
+        $search: {
+          index: 'default',
+          text: {
+            query: search,
+            path: ['name', 'tags', 'cuisines'],
+            fuzzy: {
+              maxEdits: 1,
+              prefixLength: 1,
+            },
+          },
+        },
+      }
+    : null;
+
+  const basePipeline = [];
+
+  if (searchStage) basePipeline.push(searchStage);
+
+  // create pipeline to get totalCount
+  const countPipeline = [...basePipeline, { $count: 'total' }];
+
+  // pagination
+  basePipeline.push(
+    { $sort: { [sortBy]: sortOrder } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        averageRating: 1,
+        reviewCount: 1,
+        cuisines: 1,
+        tags: 1,
+        address: 1,
+        images: [{ $arrayElemAt: ["$images", 0] }],
+      },
+    }
+  );
+
+  const [restaurants, countResult] = await Promise.all([
+    Restaurant.aggregate(basePipeline),
+    Restaurant.aggregate(countPipeline),
+  ]);
+
+  const totalCount = countResult[0]?.total || 0;
+  return { 
+    status: 200, 
+    body: {
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+      restaurants
+    }
+  };
 }
 
 exports.discoverRestaurants = async (filters) => {
@@ -26,7 +94,8 @@ exports.discoverRestaurants = async (filters) => {
     minRating = 0,
     location,
     radius = 3000,
-    openNow = false
+    openNow = false,
+    tags
   } = filters;
 
   const pipeline = [];
@@ -51,6 +120,15 @@ exports.discoverRestaurants = async (filters) => {
     pipeline.push({
       $match: {
         cuisines: { $in: cuisines }
+      }
+    });
+  }
+
+  // filter by tags
+  if (tags) {
+    pipeline.push({
+      $match: {
+        tags: { $in: tags }
       }
     });
   }
@@ -192,6 +270,12 @@ exports.updateRestaurant = async (restaurant, update) => {
   for (const key in update) {
     if (key === 'openingHours') {
       restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
+    } else if (key === 'address') {
+      // get longitude and latitude
+      const fullAddress = update[key].replace(/S(\d{6})$/i, 'Singapore $1');
+      const { longitude, latitude } = await geocodeAddress(fullAddress);
+      restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
+      restaurant.address = update[key];
     } else if (update[key] !== undefined) {
       restaurant[key] = update[key];
     }
