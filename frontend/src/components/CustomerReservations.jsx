@@ -69,9 +69,9 @@ const CustomerReservations = ({ user }) => {
         <Button
           className="text-sm px-3 py-1"
           variant="outline"
-          onClick={() =>
+          onClick={() => {
             setViewMode((prev) => (prev === "list" ? "calendar" : "list"))
-          }
+          }}
         >
           Switch to {viewMode === "list" ? "Calendar" : "List"} View
         </Button>

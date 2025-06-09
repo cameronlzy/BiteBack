@@ -1,3 +1,4 @@
+import { sanitizeStrings } from '@/utils/stringSanitizer'
 import http from './httpService'
 
 const customerApiEndpoint = import.meta.env.VITE_API_URL + "/customers"
@@ -5,19 +6,20 @@ const ownerApiEndpoint = import.meta.env.VITE_API_URL + "/owners"
 
 
 export async function saveCustomer(customer, isUpdate) {
+     const sanitized = sanitizeStrings(customer)
    if(isUpdate) {
-        return await http.patch(customerApiEndpoint + "/me", customer) 
+        return await http.patch(customerApiEndpoint + "/me", sanitized) 
    } else {
-        return await http.post(import.meta.env.VITE_API_URL + "/auth/register/customer", customer)
+        return await http.post(import.meta.env.VITE_API_URL + "/auth/register/customer", sanitized)
    }
 }
 
 export async function saveOwner(owner, isUpdate) {
-
+    const sanitized = sanitizeStrings(owner)
     if(isUpdate) {
-        return await http.patch(ownerApiEndpoint + "/me", owner) 
+        return await http.patch(ownerApiEndpoint + "/me", sanitized) 
    } else {
-        return await http.post(import.meta.env.VITE_API_URL + "/auth/register/owner", owner)
+        return await http.post(import.meta.env.VITE_API_URL + "/auth/register/owner", sanitized)
    }
 }
 

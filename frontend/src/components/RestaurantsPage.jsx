@@ -1,137 +1,172 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card"
-import { MapPin } from "lucide-react"
-import SearchBar from "./SearchBar"
-import { Link } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { getRestaurants } from "@/services/restaurantService"
+import SearchBar from "./SearchBar"
 import SortBy from "./common/SortBy"
-import StarRating from "./common/StarRating"
+import RestaurantCard from "./common/RestaurantCard"
+import Pagination from "./common/Pagination"
+import { Link } from "react-router-dom"
+import { Button } from "./ui/button"
+import { Utensils } from "lucide-react"
+import { toast } from "react-toastify"
 
 const Restaurants = () => {
-  const [allRestaurants, setAllRestaurants] = useState([])
-  const [filterTerm, setFilterTerm] = useState("")
-  const [sortedRestaurants, setSortedRestaurants] = useState([])
+  const [restaurants, setRestaurants] = useState([])
+  const [params, setParams] = useState({
+    search: null,
+    sortBy: null,
+    order: null,
+    page: 1,
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [triggeredSearch, setTriggeredSearch] = useState(false)
+  const [searchInput, setSearchInput] = useState("")
+  const [totalPages, setTotalPages] = useState(1)
+  const [restored, setRestored] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
+
   useEffect(() => {
-    const fetchRestaurants = async () => {
-      try {
-        const fetchedRestaurants = await getRestaurants()
-        setAllRestaurants(fetchedRestaurants)
-        setSortedRestaurants(fetchedRestaurants)
-      } catch (ex) {}
+    if (!restored) return
+
+    sessionStorage.setItem(
+      "restaurantState",
+      JSON.stringify({
+        params,
+        restaurants,
+        searchInput,
+        totalPages,
+        totalCount,
+      })
+    )
+  }, [params, restaurants, searchInput, totalPages, totalCount, restored])
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("restaurantState")
+    if (saved) {
+      const { params, restaurants, searchInput, totalPages, totalCount } =
+        JSON.parse(saved)
+      setParams(params)
+      setRestaurants(restaurants)
+      setSearchInput(searchInput)
+      setTotalPages(totalPages)
+      setTotalCount(totalCount)
+    } else {
+      setParams({
+        search: null,
+        sortBy: null,
+        order: null,
+        page: 1,
+      })
     }
-    fetchRestaurants()
+
+    setRestored(true)
   }, [])
 
   useEffect(() => {
-    const filtered = allRestaurants.filter((restaurant) =>
-      restaurant.name.toLowerCase().includes(filterTerm.toLowerCase())
-    )
-    setSortedRestaurants(filtered)
-  }, [allRestaurants, filterTerm])
+    const fetchData = async () => {
+      if (!restored) return
 
-  const handleSearch = (searchTerm) => {
-    setFilterTerm(searchTerm)
+      try {
+        const cleanParams = {
+          ...params,
+          search:
+            typeof params.search === "string" && params.search.trim() === ""
+              ? null
+              : params.search,
+        }
+
+        const data = await getRestaurants(cleanParams)
+        setRestaurants(data.restaurants)
+        setTotalPages(data.totalPages)
+        setTotalCount(data.totalCount)
+      } catch (err) {
+        toast.error("Failed to fetch restaurants")
+      } finally {
+        if (triggeredSearch) {
+          setIsSubmitting(false)
+          setTriggeredSearch(false)
+        }
+      }
+    }
+    fetchData()
+  }, [params, restored])
+  const handleSearchSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setTriggeredSearch(true)
+    setParams((prev) => ({
+      ...prev,
+      search: searchInput.trim() === "" ? null : searchInput.trim(),
+      page: 1,
+    }))
+  }
+
+  const handleSort = ({ value, direction }) => {
+    setParams((prev) => ({
+      ...prev,
+      sortBy: value,
+      order: direction,
+      page: 1,
+    }))
+  }
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return
+    setParams((prev) => ({
+      ...prev,
+      page: newPage,
+    }))
   }
 
   const options = [
     { label: "Name", value: "name" },
-    { label: "Address", value: "address" },
-    // { label: "Rating", value: "rating" },
+    { label: "Rating", value: "averageRating" },
+    { label: "Number of Reviews", value: "reviewCount" },
   ]
 
   return (
     <div className="w-full px-4">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        Top Visited Restaurants
-      </h2>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
-        <div className="flex-1">
-          <SearchBar name="Search" onChange={handleSearch} />
-        </div>
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">Restaurants</h2>
+
+      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4 mb-4 px-4">
+        <Link to="/search-discovery">
+          <Button variant="outline" className="rounded-full">
+            <Utensils className="w-4 h-4" />
+            Discover
+          </Button>
+        </Link>
+
+        <SearchBar
+          name="Search"
+          value={searchInput}
+          onChange={setSearchInput}
+          onSubmit={handleSearchSubmit}
+          isSubmitting={isSubmitting}
+        />
+
         <SortBy
           options={options}
-          items={sortedRestaurants}
-          onSorted={setSortedRestaurants}
+          items={restaurants}
+          backendHandle={true}
+          onSorted={handleSort}
         />
       </div>
-      <div className="w-full py-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {sortedRestaurants.map(
-            ({
-              images,
-              name,
-              cuisines,
-              address,
-              _id,
-              averageRating,
-              reviewCount,
-            }) => (
-              <Card
-                className="w-full h-auto p-4 rounded-xl shadow-md space-y-3"
-                key={_id}
-              >
-                <div>
-                  <img
-                    src={
-                      images && images.length > 0
-                        ? images[0]
-                        : "https://www.opentable.com/img/restimages/2038.jpg"
-                    }
-                    alt={name}
-                    className="w-full h-36 object-cover rounded-lg border border-gray-200 shadow-sm"
-                    onError={(e) => {
-                      e.target.onerror = null
-                      e.target.src =
-                        "https://www.opentable.com/img/restimages/2038.jpg"
-                    }}
-                  />
-                </div>
 
-                <div className="text-center sm:text-left space-y-2 w-full break-words">
-                  <CardTitle className="text-2xl font-bold">
-                    <Link
-                      to={`${_id}`}
-                      className="text-black hover:text-gray-700 hover:underline transition-colors"
-                    >
-                      {name}
-                    </Link>
-                  </CardTitle>
-                  <div className="flex flex-wrap gap-2 text-xs text-black font-medium">
-                    {cuisines.slice(0, 3).map((cuisine) => (
-                      <span
-                        key={cuisine}
-                        className="bg-gray-100 px-2 py-1 rounded backdrop-blur-sm"
-                      >
-                        {cuisine}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-center sm:justify-start text-sm text-gray-700">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {address}
-                  </div>
-                  <div className="flex items-center justify-center sm:justify-start">
-                    <StarRating rating={averageRating} />
-                    <span className="ml-2 text-sm text-gray-600">
-                      <b>{averageRating?.toFixed(1)}</b> (
-                      {reviewCount === 1
-                        ? `${reviewCount || 0} review`
-                        : `${reviewCount || 0} reviews`}
-                      )
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            )
-          )}
-        </div>
+      <div className="max-w-4xl mx-auto py-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {restaurants.map((restaurant) => (
+          <RestaurantCard
+            key={restaurant._id}
+            {...restaurant}
+            currentTag={searchInput}
+          />
+        ))}
       </div>
+
+      <Pagination
+        currentPage={params.page}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        onPageChange={handlePageChange}
+      />
     </div>
   )
 }

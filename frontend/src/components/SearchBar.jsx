@@ -1,18 +1,28 @@
 import { Search } from "lucide-react"
 import { Input } from "./ui/input"
+import SearchSubmit from "./common/SearchSubmit"
 
-const SearchBar = ({ name, onChange }) => {
+const SearchBar = ({ name, value, onChange, onSubmit, isSubmitting }) => {
   return (
-    <div key={name} className="flex items-center border rounded-sm px-2 py-1">
-      <Search className="w-4 h-4 ml-1 mr-2 text-gray-500" />
+    <form
+      onSubmit={onSubmit}
+      className="flex items-center w-full max-w-none border rounded-sm px-2 py-1 space-x-2"
+    >
+      <Search className="w-4 h-4 text-gray-500 ml-1" />
       <Input
-        key={name}
         type="text"
         placeholder={name}
-        className="border border-gray-300 rounded-sm px-2 py-1"
+        value={value || ""}
         onChange={(e) => onChange(e.target.value)}
+        className="flex-grow border-none focus:ring-0 focus:outline-none"
       />
-    </div>
+      <SearchSubmit
+        type="submit"
+        size="sm"
+        className="ml-1"
+        condition={isSubmitting}
+      />
+    </form>
   )
 }
 

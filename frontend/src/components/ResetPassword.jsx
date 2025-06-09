@@ -1,8 +1,8 @@
 import { useForm, FormProvider } from "react-hook-form"
-import { passwordResetSchema } from "../utils/schemas"
+import { passwordResetSchema, passwordChangeSchema } from "../utils/schemas"
 import auth from "../services/authService"
 import { toast } from "react-toastify"
-import { useNavigate, useParams } from "react-router-dom"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { Button } from "./ui/button"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import {
@@ -14,16 +14,27 @@ import {
 } from "./ui/form"
 import { Input } from "./ui/input"
 import { changePassword } from "@/services/userService"
+import BackButton from "./common/BackButton"
 
 const ResetPassword = ({ user }) => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location?.state?.from || "/"
   const { token } = useParams()
   const form = useForm({
-    resolver: safeJoiResolver(passwordResetSchema),
-    defaultValues: {
-      password: "",
-      confirmPassword: "",
-    },
+    resolver: safeJoiResolver(
+      user ? passwordChangeSchema : passwordResetSchema
+    ),
+    defaultValues: user
+      ? {
+          oldPassword: "",
+          password: "",
+          confirmPassword: "",
+        }
+      : {
+          password: "",
+          confirmPassword: "",
+        },
     mode: "onChange",
   })
 
@@ -36,57 +47,94 @@ const ResetPassword = ({ user }) => {
       toast.success("Password Reset Successfully")
       navigate("/me", { replace: true })
     } catch (ex) {
-      if (ex.response?.status === 401 || ex.response?.status === 400) {
+      if (ex.response?.status === 401 && token) {
         form.setError("password", {
           type: "manual",
           message: "Not a valid reset password link or Link has expired",
         })
       }
+      if (user && ex.response?.status === 400) {
+        form.setError("oldPassword", {
+          type: "manual",
+          message: "Old Password is incorrect",
+        })
+      }
     }
   }
   return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <h1 className="text-2xl font-bold">
-          {user ? "Change Password" : "Reset Password"}
-        </h1>
-        <FormField
-          key="password"
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>New Password</FormLabel>
-              <FormControl>
-                <Input {...field} type="password" placeholder="New Password" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+    <div>
+      <BackButton from={from} />
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <h1 className="text-2xl font-bold">
+            {user ? "Change Password" : "Reset Password"}
+          </h1>
+          {user && (
+            <FormField
+              key="oldPassword"
+              control={form.control}
+              name="oldPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Old Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="password"
+                      placeholder="Old Password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           )}
-        />
-        <FormField
-          key="confirmPassword"
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  type="password"
-                  placeholder="Confirm Password"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full">
-          Reset Password
-        </Button>
-      </form>
-    </FormProvider>
+          <FormField
+            key="password"
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>New Password</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="password"
+                    placeholder="New Password"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            key="confirmPassword"
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="password"
+                    placeholder="Confirm Password"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={form.formState.isSubmitting}
+          >
+            Reset Password
+          </Button>
+        </form>
+      </FormProvider>
+    </div>
   )
 }
 

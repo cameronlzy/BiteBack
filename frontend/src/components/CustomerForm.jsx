@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { MultiSelect } from "./common/MultiSelect"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "react-toastify"
 import LoadingSpinner from "./common/LoadingSpinner"
 
@@ -126,7 +126,11 @@ const CustomerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
           )}
         />
 
-        <Button type="submit" className="w-full">
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={form.formState.isSubmitting}
+        >
           {user ? "Update Profile" : "Register"}
         </Button>
       </form>

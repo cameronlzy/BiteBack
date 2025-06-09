@@ -1,3 +1,4 @@
+import { sanitizeStrings } from "@/utils/stringSanitizer"
 import http from "./httpService"
 import { toSGT } from "@/utils/timeConverter"
 
@@ -34,13 +35,14 @@ export async function getRestaurantReservations(id, startDate, endDate) {
 
 
 export async function saveReservation(reservation, isUpdate) {
+  const sanitized = sanitizeStrings(reservation)
     if(isUpdate) {
-        const body = {...reservation}
+        const body = {...sanitized}
         delete body._id
         const {data} = await http.patch(getReservationUrl(reservation._id, false), body)
         return data
     } else {
-        const {data} = await http.post(apiEndpoint, reservation)
+        const {data} = await http.post(apiEndpoint, sanitized)
         return data
     }
 }

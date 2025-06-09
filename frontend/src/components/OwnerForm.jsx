@@ -1,4 +1,9 @@
-import { useForm, useFieldArray, FormProvider } from "react-hook-form"
+import {
+  useForm,
+  useFieldArray,
+  FormProvider,
+  Controller,
+} from "react-hook-form"
 import { useEffect, useState } from "react"
 import {
   Form,
@@ -14,16 +19,23 @@ import { MultiSelect } from "./common/MultiSelect"
 import OpeningHoursSelect from "./OpeningHoursSelect"
 import { toast } from "react-toastify"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
-import { cuisineList, ownerSchema, updateOwnerSchema } from "@/utils/schemas"
+import {
+  cuisineList,
+  ownerSchema,
+  tagList,
+  updateOwnerSchema,
+} from "@/utils/schemas"
 import {
   saveRestaurants,
   uploadRestaurantImages,
 } from "@/services/restaurantService"
 import ImageUpload from "./common/ImageUpload"
-import LoadingSpinner from "./common/LoadingSpinner"
 
-const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
+const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
   const [selectedFilesArray, setSelectedFilesArray] = useState([[]])
+
+  const featureList = tagList.slice(0, 5)
+  const dietaryList = tagList.slice(5)
 
   const baseFields = [
     { name: "username", label: "Username" },
@@ -39,7 +51,10 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
 
   const restaurantFields = [
     { name: "name", label: "Restaurant Name" },
-    { name: "address", label: "Address" },
+    { name: "blockNumber", label: "Block / House Number" },
+    { name: "streetName", label: "Street Name" },
+    { name: "unitNumber", label: "Unit Number (optional)" },
+    { name: "postalCode", label: "Postal Code" },
     { name: "contactNumber", label: "Contact Number" },
     { name: "maxCapacity", label: "Max Capacity" },
     { name: "email", label: "Email" },
@@ -61,9 +76,15 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
             restaurants: [
               {
                 name: "",
+                blockNumber: "",
+                streetName: "",
+                unitNumber: "",
+                postalCode: "",
                 address: "",
                 contactNumber: "",
                 cuisines: [],
+                features: [],
+                dietary: [],
                 maxCapacity: "",
                 openingHours: {
                   monday: "",
@@ -76,6 +97,7 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
                 },
                 email: "",
                 website: "",
+                isBlock: true,
               },
             ],
           }),
@@ -114,10 +136,38 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
         }
       }
 
+      const processedRestaurants = restaurants.map((rest) => {
+        const {
+          blockNumber,
+          streetName,
+          unitNumber,
+          postalCode,
+          isBlock,
+          ...restData
+        } = rest
+        const hasUnit = !!unitNumber?.trim()
+        const trimmedBlock = blockNumber.trim()
+        const trimmedStreet = streetName.trim()
+        const trimmedUnit = unitNumber?.trim()
+        const trimmedPostal = postalCode.trim()
+
+        const address = `${
+          isBlock ? "Blk " : ""
+        }${trimmedBlock} ${trimmedStreet}${
+          trimmedUnit ? " " + trimmedUnit : ""
+        }, S${trimmedPostal}`
+        const tags = [...(rest.features || []), ...(rest.dietary || [])]
+        return {
+          ...restData,
+          address,
+          tags,
+        }
+      })
+
       await onRegister(ownerData)
 
       if (!isUpdate) {
-        const savedRestaurantIds = await saveRestaurants(restaurants)
+        const savedRestaurantIds = await saveRestaurants(processedRestaurants)
         for (let i = 0; i < savedRestaurantIds.length; i++) {
           const restaurantId = savedRestaurantIds[i]
           const files = selectedFilesArray[i] || []
@@ -184,6 +234,41 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
                   )}
                 </div>
 
+                <Controller
+                  control={form.control}
+                  name={`restaurants.${index}.isBlock`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address Type</FormLabel>
+                      <FormControl>
+                        <div className="flex space-x-4">
+                          <label className="flex items-center space-x-2 text-sm text-gray-700">
+                            <input
+                              type="radio"
+                              value="true"
+                              checked={field.value === true}
+                              onChange={() => field.onChange(true)}
+                              className="accent-black"
+                            />
+                            <span>Block</span>
+                          </label>
+                          <label className="flex items-center space-x-2 text-sm text-gray-700">
+                            <input
+                              type="radio"
+                              value="false"
+                              checked={field.value === false}
+                              onChange={() => field.onChange(false)}
+                              className="accent-black"
+                            />
+                            <span>House</span>
+                          </label>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {restaurantFields.map(({ name, label }) => (
                   <FormField
                     key={name}
@@ -219,6 +304,42 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name={`restaurants.${index}.features`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Features Provided</FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={featureList}
+                          selected={field.value || []}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`restaurants.${index}.dietary`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dietary Requirements</FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={dietaryList}
+                          selected={field.value || []}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <ImageUpload
                   index={index}
                   firstRequired={true}
@@ -247,9 +368,14 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
               onClick={() => {
                 append({
                   name: "",
+                  blockNumber: "",
+                  streetName: "",
+                  unitNumber: "",
+                  postalCode: "",
                   address: "",
                   contactNumber: "",
                   cuisines: [],
+                  tags: [],
                   maxCapacity: "",
                   openingHours: {
                     monday: "",
@@ -262,6 +388,7 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
                   },
                   email: "",
                   website: "",
+                  isBlock: true,
                 })
                 setSelectedFilesArray((prev) => [...prev, []])
               }}
@@ -271,7 +398,7 @@ const OwnerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
           </>
         )}
 
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={form?.isSubmitting}>
           {user ? "Update Profile" : "Register"}
         </Button>
       </form>

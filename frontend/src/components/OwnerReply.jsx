@@ -19,7 +19,7 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
 
   const methods = useForm({
     defaultValues: {
-      replyText: review.reply ?? "",
+      replyText: review.reply?.replyText ?? "",
     },
   })
 
@@ -35,8 +35,10 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
       const updatedReview = await postReviewReply(review._id, replyText)
       onReplyChange(updatedReview.reply)
       toast.success("Reply posted!")
-    } catch (err) {
+    } catch (ex) {
+      console.log(ex)
       toast.error("Failed to post reply")
+      throw ex
     }
   }
 
@@ -46,39 +48,45 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
       onReplyChange(null)
       reset({ replyText: "" })
       toast.success("Reply deleted")
-    } catch (err) {
+    } catch (ex) {
       toast.error("Failed to delete reply")
+      throw ex
     }
   }
 
   return (
     <div className="mt-4">
       {review.reply && (
-        <div className="relative bg-gray-100 p-4 rounded text-center h-20">
-          <b className="text-gray-700 block mb-1">Owner Reply:</b>
-          <p className="text-gray-800">{review.reply.replyText}</p>
+        <div className="bg-gray-100 p-4 rounded">
+          <b className="text-gray-700 block mb-1 text-center">Owner Reply:</b>
 
-          {review.reply.owner === user?._id && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={onDelete}
-              disabled={isSubmitting}
-              className="absolute top-2 right-2"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
-          <p className="absolute bottom-2 right-2 text-xs text-gray-500">
-            {DateTime.fromISO(review.reply.createdAt).toLocaleString({
-              ...readableTimeSettings,
-              hour: undefined,
-              minute: undefined,
-            })}
-          </p>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <p className="text-gray-800">{review.reply.replyText}</p>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-xs text-gray-500">
+              <span>
+                {DateTime.fromISO(review.reply.createdAt).toLocaleString({
+                  ...readableTimeSettings,
+                  hour: undefined,
+                  minute: undefined,
+                })}
+              </span>
+
+              {review.reply.owner === user?._id && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={onDelete}
+                  disabled={isSubmitting}
+                  size="sm"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       )}
-
       {isOwnedByUser && (
         <FormProvider {...methods}>
           <form

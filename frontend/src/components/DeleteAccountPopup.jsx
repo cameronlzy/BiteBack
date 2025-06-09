@@ -85,7 +85,11 @@ const DeleteAccountPopup = ({ onClose, role, isLoading }) => {
                   <Button type="button" variant="ghost" onClick={onClose}>
                     Cancel
                   </Button>
-                  <Button type="submit" variant="destructive">
+                  <Button
+                    type="submit"
+                    variant="destructive"
+                    disabled={form.formState.isSubmitting}
+                  >
                     Confirm Delete
                   </Button>
                 </div>
