@@ -20,8 +20,23 @@ const cuisineList = [
   'Hawker',
   'Fusion',
   'Seafood',
-  'Vegetarian',
-  'Halal'
+  'Fast Food',
+];
+
+const tagList = [
+  // Features
+  "Free Wi-Fi",
+  "Outdoor Seating",
+  "Live Music",
+  "Pet Friendly",
+  "Wheelchair Accessible",
+
+  // Dietary
+  "Vegan Options",
+  "Gluten-Free Available",
+  "Halal Certified",
+  "Low Carb",
+  "Nut-Free"
 ];
 
 const openingHoursRegex =
@@ -58,6 +73,18 @@ const openingHoursSchema = {
 const restaurantSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+      required: true,
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
+  },
   address: {type: String, minLength: 2, maxLength: 255, required: true },
   contactNumber: {
     type: String,
@@ -109,8 +136,78 @@ const restaurantSchema = new mongoose.Schema({
     default: [],
   },
   averageRating: { type: Number, min: 0, max: 5, default: 0 },
-  reviewCount: { type: Number, min: 0, default: 0 }
+  reviewCount: { type: Number, min: 0, default: 0 },
+  tags: { 
+    type: [String],
+    validate: [
+      {
+        validator: function (arr) {
+        return arr.every(cuisine => tagList.includes(cuisine));
+      },
+        message: 'One or more cuisines are invalid.'
+      }
+    ], default: [],
+   }, 
+   searchKeywords: [String],
 }, { versionKey: false });
+
+restaurantSchema.pre('save', function (next) {
+  const nameTokens = this.name.toLowerCase().split(' ');
+  const tagTokens = (this.tags || []).map(tag => tag.toLowerCase());
+  const cuisineTokens = (this.cuisines || []).map(c => c.toLowerCase());
+
+  this.searchKeywords = [...nameTokens, ...tagTokens, ...cuisineTokens];
+  next();
+});
+
+function handleSearchKeywordsUpdate() {
+  return async function (next) {
+    const update = this.getUpdate();
+    if (!update) return next();
+
+    const isSet = !!update.$set;
+    const updatedFields = isSet ? update.$set : update;
+
+    // If any of name, tags, cuisines are updated, recompute keywords
+    const fieldsToUpdate = ['name', 'tags', 'cuisines'];
+    const isUpdating = fieldsToUpdate.some(f => updatedFields.hasOwnProperty(f));
+
+    if (!isUpdating) return next();
+
+    // get current doc
+    const docToUpdate = await this.model.findOne(this.getQuery()).lean();
+
+    const nameTokens = updatedFields.name
+      ? updatedFields.name.toLowerCase().split(' ')
+      : docToUpdate?.name.toLowerCase().split(' ') || [];
+
+    const tagTokens = updatedFields.tags
+      ? updatedFields.tags.map(t => t.toLowerCase())
+      : (docToUpdate?.tags || []).map(t => t.toLowerCase());
+
+    const cuisineTokens = updatedFields.cuisines
+      ? updatedFields.cuisines.map(c => c.toLowerCase())
+      : (docToUpdate?.cuisines || []).map(c => c.toLowerCase());
+
+    const searchKeywords = [...nameTokens, ...tagTokens, ...cuisineTokens];
+
+    if (isSet) {
+      update.$set.searchKeywords = searchKeywords;
+    } else {
+      update.searchKeywords = searchKeywords;
+    }
+
+    next();
+  };
+}
+
+restaurantSchema.pre('findOneAndUpdate', handleSearchKeywordsUpdate());
+restaurantSchema.pre('updateOne', handleSearchKeywordsUpdate());
+restaurantSchema.pre('updateMany', handleSearchKeywordsUpdate());
+
+restaurantSchema.index({ location: '2dsphere' });
+restaurantSchema.index({ owner: 1 });
+restaurantSchema.index({ searchKeywords: 1 });
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 

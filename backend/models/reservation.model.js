@@ -36,6 +36,9 @@ const reservationSchema = new mongoose.Schema({
     status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'pending' }
 }, { versionKey: false });
 
+reservationSchema.index({ user: 1 });
+reservationSchema.index({ restaurant: 1 });
+
 const Reservation = mongoose.model('Reservation', reservationSchema);
 
 module.exports = Reservation;

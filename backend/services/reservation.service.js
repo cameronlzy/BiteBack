@@ -49,16 +49,16 @@ exports.getSingleReservation = async (reservation) => {
     return { status: 200, body: reservation.toObject() };
 };
 
-exports.createReservation = async (user, body) => {
+exports.createReservation = async (user, data) => {
     // get restaurant
-    const restaurant = await Restaurant.findById(body.restaurant).lean();
+    const restaurant = await Restaurant.findById(data.restaurant).lean();
     if (!restaurant) return { status: 404, body: 'Restaurant not found.' };
 
     // if owner, can only reserve their own restaurants
     if (user.role === 'owner' && !restaurant.owner.equals(user._id)) return { status: 403, body: 'Owners can only reserve their own restaurants.' };
 
     // check availability
-    const SGTdate = DateTime.fromISO(body.reservationDate, { zone: 'Asia/Singapore' });
+    const SGTdate = DateTime.fromISO(data.reservationDate, { zone: 'Asia/Singapore' });
     const UTCdate = SGTdate.toUTC();
     const currentReservations = await Reservation.find({
         restaurant: restaurant._id, reservationDate: { $gte: UTCdate.toJSDate(), $lte: UTCdate.plus({ minutes: restaurant.slotDuration }).toJSDate() }
@@ -67,15 +67,15 @@ exports.createReservation = async (user, body) => {
     currentReservations.forEach(({ pax }) => {
         bookedSlots += pax;
     });
-    if (bookedSlots + body.pax > restaurant.maxCapacity) return { status: 409, body: 'Restaurant is fully booked at this time slot.' };
+    if (bookedSlots + data.pax > restaurant.maxCapacity) return { status: 409, body: 'Restaurant is fully booked at this time slot.' };
 
     // create reservation
     const reservation = new Reservation({
         user: user._id,
-        restaurant: body.restaurant,
-        reservationDate: convertToUTC(body.reservationDate),
-        remarks: body.remarks,
-        pax: body.pax
+        restaurant: data.restaurant,
+        reservationDate: convertToUTC(data.reservationDate),
+        remarks: data.remarks,
+        pax: data.pax
     });
     await reservation.save();
     return { status: 200, body: reservation.toObject() };

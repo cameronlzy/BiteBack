@@ -6,19 +6,149 @@ const Review = require('../models/review.model');
 const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
 const { DateTime } = require('luxon');
 const reservationService = require('../services/reservation.service');
-const reviewSerice = require('../services/review.service');
-const { createSlots, convertSGTOpeningHoursToUTC } = require('../helpers/restaurant.helper');
+const { createSlots, convertSGTOpeningHoursToUTC, filterOpenRestaurants } = require('../helpers/restaurant.helper');
 const _ = require('lodash');
 const mongoose = require('mongoose');
 const { deleteImagesFromCloudinary, deleteImagesFromDocument } = require('./image.service');
+const geocodeAddress = require('../helpers/geocode');
+const { escapeRegex } = require('../helpers/regex.helper');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
-exports.getAllRestaurants = async () => {
-  // find restaurants
-  let restaurants = await Restaurant.find().sort('name').lean();
-  return { status: 200, body: restaurants };
+exports.searchRestaurants = async (filters) => {
+  const {
+    search,
+    page = 1,
+    limit = 8,
+    sortBy = 'averageRating',
+    order = 'desc',
+  } = filters;
+
+  const skip = (page - 1) * limit;
+  const sortOrder = order === 'desc' ? -1 : 1;
+  const basePipeline = [];
+
+  if (search) {
+    const regex = new RegExp(escapeRegex(search), 'i');
+    const regexMatchStage = {
+      $match: {
+        $or: [
+          { name: regex },
+          { tags: regex },
+          { cuisines: regex },
+          { searchKeywords: { $elemMatch: { $regex: regex } } }
+        ]
+      }
+    };
+    const searchStage = search ? regexMatchStage : null;
+    basePipeline.push(searchStage);
+  }
+
+  // create pipeline to get totalCount
+  const countPipeline = [...basePipeline, { $count: 'total' }];
+
+  // pagination
+  basePipeline.push(
+    { $sort: { [sortBy]: sortOrder } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        averageRating: 1,
+        reviewCount: 1,
+        cuisines: 1,
+        tags: 1,
+        address: 1,
+        images: [{ $arrayElemAt: ["$images", 0] }],
+      },
+    }
+  );
+
+  const [restaurants, countResult] = await Promise.all([
+    Restaurant.aggregate(basePipeline),
+    Restaurant.aggregate(countPipeline),
+  ]);
+
+  const totalCount = countResult[0]?.total || 0;
+  return { 
+    status: 200, 
+    body: {
+      totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+      restaurants
+    }
+  };
 }
+
+exports.discoverRestaurants = async (filters) => {
+  const {
+    cuisines,
+    minRating = 0,
+    location,
+    radius = 3000,
+    openNow = false,
+    tags
+  } = filters;
+
+  const pipeline = [];
+
+  // filter by location and calculate the distance from user
+  if (location) {
+    pipeline.push({
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [location.lng, location.lat]
+        },
+        distanceField: 'distance',
+        maxDistance: radius,
+        spherical: true
+      }
+    });
+  }
+
+  // filter by cuisines 
+  if (cuisines) {
+    pipeline.push({
+      $match: {
+        cuisines: { $in: cuisines }
+      }
+    });
+  }
+
+  // filter by tags
+  if (tags) {
+    pipeline.push({
+      $match: {
+        tags: { $in: tags }
+      }
+    });
+  }
+
+  // filter by minimum rating
+  pipeline.push({
+    $match: {
+      averageRating: { $gte: minRating }
+    }
+  });
+
+  // sort by distance ascending
+  if (location) pipeline.push({ $sort: { distance: 1 } });
+
+  // set limit
+  pipeline.push({ $limit: 20 });
+
+  // fetch matching restaurants
+  let restaurants = await Restaurant.aggregate(pipeline);
+  // filter open now
+  if (openNow) restaurants = filterOpenRestaurants(restaurants);
+
+  return { status: 200, body: restaurants }
+};
 
 exports.getRestaurantById = async (restaurantId) => { 
   // find restaurant
@@ -59,11 +189,7 @@ exports.createRestaurant = async (authUser, data) => {
   if (session) session.startTransaction();
 
   try {
-    // create restaurant
-    const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website']));
-    restaurant.owner = authUser._id;
-    restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
-    await restaurant.save(session ? { session } : undefined);
+    const restaurant = await exports.createRestaurantHelper(authUser, data, session);
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session || null);
@@ -91,24 +217,23 @@ exports.createRestaurantBulk = async (authUser, data) => {
 
   try {
     // create restaurants
-    let restaurants;
-    try {
-      restaurants = await exports.createRestaurantArray(data, authUser._id, session);
-    } catch (err) {
-      throw { status: 400, body: 'Incorrect restaurant information' };
+    const restaurantIds = [];
+    for (const item of data) {
+      const restaurant = await exports.createRestaurantHelper(authUser, item, session);
+      restaurantIds.push(restaurant._id);
     }
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session || null);
     if (!user) throw { status: 404, body: 'User not found' };
     if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
-    user.profile.restaurants = restaurants;
+    user.profile.restaurants = restaurantIds;
     await user.profile.save(session ? { session } : undefined);
 
     // commit transaction
     if (session) await session.commitTransaction();
 
-    return { status: 200, body: restaurants };
+    return { status: 200, body: restaurantIds };
   } catch (err) {
     if (session) await session.abortTransaction();
     throw err;
@@ -141,6 +266,12 @@ exports.updateRestaurant = async (restaurant, update) => {
   for (const key in update) {
     if (key === 'openingHours') {
       restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
+    } else if (key === 'address') {
+      // get longitude and latitude
+      const fullAddress = update[key].replace(/S(\d{6})$/i, 'Singapore $1');
+      const { longitude, latitude } = await geocodeAddress(fullAddress);
+      restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
+      restaurant.address = update[key];
     } else if (update[key] !== undefined) {
       restaurant[key] = update[key];
     }
@@ -181,21 +312,18 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
 };
 
 // utility services
-exports.createRestaurantArray = async (arr, userId, session = null) => {
-  let restaurant;
-  try {
-    let output = [];
-    for (let item of arr) {
-      item.owner = userId;
-      item.openingHours = convertSGTOpeningHoursToUTC(item.openingHours);
-      restaurant = new Restaurant(item);
-      await restaurant.save(session ? { session } : undefined);
-      output.push(restaurant._id);
-    }
-    return output;
-  } catch (err) {
-    throw err;
-  }
+exports.createRestaurantHelper = async (authUser, data, session = null) => {
+  // get longitude and latitude
+  const fullAddress = data.address.replace(/S(\d{6})$/i, 'Singapore $1');
+  const { longitude, latitude } = await geocodeAddress(fullAddress);
+
+  // create restaurant
+  const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website', 'tags']));
+  restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
+  restaurant.owner = authUser._id;
+  restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
+  await restaurant.save(session ? { session } : undefined);
+  return restaurant;
 }
 
 exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => {

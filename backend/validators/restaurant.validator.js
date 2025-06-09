@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { sortBy } = require('lodash');
 
 const cuisineList = [
   'Chinese',
@@ -19,8 +20,23 @@ const cuisineList = [
   'Hawker',
   'Fusion',
   'Seafood',
-  'Vegetarian',
-  'Halal'
+  'Fast Food',
+];
+
+const tagList = [
+  // Features
+  "Free Wi-Fi",
+  "Outdoor Seating",
+  "Live Music",
+  "Pet Friendly",
+  "Wheelchair Accessible",
+
+  // Dietary
+  "Vegan Options",
+  "Gluten-Free Available",
+  "Halal Certified",
+  "Low Carb",
+  "Nut-Free"
 ];
 
 const openingHoursRegex =
@@ -66,7 +82,8 @@ const restaurantJoiSchema = Joi.object({
   email: Joi.string().email().optional(),
   website: Joi.string().uri().optional().messages({
     "string.uri": "Invalid website URL",
-  })
+  }),
+  tags: Joi.array().items(Joi.string().valid(...tagList)).required(),
 });
 
 function validateRestaurant(restaurant) {
@@ -96,7 +113,8 @@ function validatePatch(update) {
     email: Joi.string().email().optional(),
     website: Joi.string().uri().optional().messages({
       "string.uri": "Invalid website URL",
-    })
+    }),
+    tags: Joi.array().items(Joi.string().valid(...tagList)),
   }).min(1);
   return schema.validate(update);
 }
@@ -108,10 +126,36 @@ function validateImages(images) {
   return schema.validate(images);
 }
 
+function validateDiscover(filters) {
+  const schema = Joi.object({
+    cuisines: Joi.string(),
+    minRating: Joi.number().min(0).max(5).precision(1),
+    lat: Joi.number(),
+    lng: Joi.number(),
+    radius: Joi.number().integer(),
+    openNow: Joi.boolean(),
+    tags: Joi.string()
+  }).min(1);
+  return schema.validate(filters);
+}
+
+function validateSearch(filters) {
+  const schema = Joi.object({
+    search: Joi.string(),
+    page: Joi.number().integer().min(1),
+    limit: Joi.number().integer().min(1),
+    sortBy: Joi.string().valid('averageRating', 'name', 'reviewCount'),
+    order: Joi.string().valid('desc', 'asc'),
+  });
+  return schema.validate(filters);
+}
+
 module.exports = { 
   validateRestaurant,
   validateRestaurantBulk,
   restaurantJoiSchema, 
   validatePatch,
   validateImages,
+  validateDiscover,
+  validateSearch,
 };

@@ -26,40 +26,245 @@ describe('restaurant test', () => {
 
     describe('GET /api/restaurants', () => {
         let restaurant;
+        let names;
+        let counts;
+        let ratings;
+        let cuisines;
+        let url;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
 
-            // create 3 restaurants
-            for (let step = 0; step < 3; step++) {
+            // create 2 names
+            names = ['Alpha', 'Zebra'];
+
+            // create 2 ratings
+            ratings = [4.5, 2.0];
+
+            // create 2 reviewCounts
+            counts = [10, 100];
+
+            // create 2 cuisines
+            cuisines = [
+                ['Chinese'], ['Western']
+            ];
+
+            // create 2 restaurants
+            for (let i = 0; i < 2; i++) {
                 restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+                restaurant.averageRating = ratings[i];
+                restaurant.reviewCount = counts[i];
+                restaurant.name = names[i];
+                restaurant.cuisines = cuisines[i];
+                await restaurant.save();
+            }
+            url = '/api/restaurants';
+        });
+
+        const exec = () => {
+            return request(server)
+            .get(url);
+        };
+
+        it('should return an array of restaurants', async () => {
+        const res = await exec();
+            expect(res.status).toBe(200);
+            expect(Array.isArray(res.body.restaurants)).toBe(true);
+            expect(res.body.restaurants.length).toBe(2);
+
+            res.body.restaurants.forEach((restaurant) => {
+                expect(restaurant).toHaveProperty('name');
+                expect(restaurant).toHaveProperty('cuisines');
+                expect(restaurant).toHaveProperty('averageRating');
+                expect(restaurant).toHaveProperty('reviewCount');
+                expect(restaurant).toHaveProperty('tags');
+                expect(restaurant).toHaveProperty('address');
+                expect(restaurant).toHaveProperty('images');
+            });
+        });
+    
+        it('should sort by name ascending', async () => {
+            url = '/api/restaurants?sortBy=name&order=asc';
+            const res = await exec();
+
+            const namesSorted = [...names].sort();
+            expect(res.body.restaurants.map(r => r.name)).toEqual(namesSorted);
+        });
+
+        it('should sort by name descending', async () => {
+            url = '/api/restaurants?sortBy=name&order=desc';
+            const res = await exec();
+
+            const namesSorted = [...names].sort().reverse();
+            expect(res.body.restaurants.map(r => r.name)).toEqual(namesSorted);
+        });
+
+        it('should sort by averageRating descending', async () => {
+            url = '/api/restaurants?sortBy=averageRating&order=desc';
+            const res = await exec();
+
+            const sorted = [...ratings].sort((a, b) => b - a);
+            expect(res.body.restaurants.map(r => r.averageRating)).toEqual(sorted);
+        });
+
+        it('should sort by reviewCount ascending', async () => {
+            url = '/api/restaurants?sortBy=reviewCount&order=asc';
+            const res = await exec();
+
+            const sorted = [...counts].sort((a, b) => a - b);
+            expect(res.body.restaurants.map(r => r.reviewCount)).toEqual(sorted);
+        });
+
+        it('should return only restaurants matching search query', async () => {
+            url = '/api/restaurants?search=Zebra';
+            const res = await exec();
+
+            expect(res.body.restaurants.length).toBe(1);
+            expect(res.body.restaurants[0].name).toBe('Zebra');
+        });
+    });
+
+    describe('GET /api/restaurants/discover', () => {
+        let url;
+        let locations;
+        let cuisines;
+        let openingHours;
+        let ratings;
+        let restaurant;
+        const queryLat = 1.45069144403824;
+        const queryLng = 103.79996778334721;
+        const nearCoords = [103.79996778334721, 1.45069144403824]; // currentLocation
+        const midCoords = [103.77055853873995, 1.4778911115333417]; // ~4.5 km 
+        const farCoords = [103.85, 1.29];                          // ~18 km 
+        
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+
+            // create 4 locations
+            locations = [
+                {
+                    type: 'Point', 
+                    coordinates: nearCoords,
+                },
+                {
+                    type: 'Point', 
+                    coordinates: nearCoords,
+                },
+                {
+                    type: 'Point', 
+                    coordinates: midCoords,
+                },
+                {
+                    type: 'Point', 
+                    coordinates: farCoords,
+                },
+            ];
+
+            // create 4 cuisines
+            cuisines = [
+                ['Chinese'],
+                ['Japanese'],
+                ['Chinese'],
+                ['Chinese'],
+            ];
+
+            // create 4 openingHours
+            openingHours = [
+                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
+                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
+                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
+                'x|x|x|x|x|x|x',
+            ];
+
+            // create 4 ratings
+            ratings = [4.5, 5.0, 1.5, 3.5];
+
+            // create 4 restaurants
+            for (let step = 0; step < 4; step++) {
+                restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+                restaurant.location = locations[step];
+                restaurant.cuisines = cuisines[step];
+                restaurant.averageRating = ratings[step];
+                restaurant.openingHours = openingHours[step];
                 await restaurant.save();
             }
         });
 
         const exec = () => {
             return request(server)
-            .get('/api/restaurants');
+            .get(url);
         };
 
-        it('should return 200 if valid request', async () => {
+        it('should return only restaurants with Chinese cuisine and rating >= 2', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=2`;
             const res = await exec();
             expect(res.status).toBe(200);
+            expect(res.body.length).toBe(2); // Chinese + valid rating (rest 1 + 4)
+            res.body.forEach(r => {
+                expect(r.cuisines).toContain('Chinese');
+                expect(r.averageRating).toBeGreaterThanOrEqual(2);
+            });
         });
 
-        it('should return an array of restaurants', async () => {
+        it('should return only restaurants currently open', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=2&openNow=true`;
             const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(1); // Only restaurant 1
+            expect(res.body[0].cuisines).toContain('Chinese');
+        });
+
+        it('should include closed restaurants when openNow=false', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=2&openNow=false`;
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(2); // Restaurant 1 + 4
+        });
+
+        it('should return 0 if no restaurants match the rating filter', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=5`;
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(0);
+        });
+
+        it('should support multiple cuisines in query', async () => {
+            url = `/api/restaurants/discover?cuisines=Chinese,Japanese&minRating=2`;
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(3); // Rest 1, 2, 4
+        });
+
+        it('should return only restaurants within 100m radius', async () => {
+            const radius = 100;
+            url = `/api/restaurants/discover?cuisines=Chinese&minRating=2&lat=${queryLat}&lng=${queryLng}&radius=${radius}&openNow=true`;
+            const res = await exec();
+
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(1);
+            expect(res.body[0].location.coordinates).toEqual(nearCoords);
+        });
+
+        it('should return restaurants within 5km radius', async () => {
+            const radius = 5000;
+            url = `/api/restaurants/discover?cuisines=Chinese&lat=${queryLat}&lng=${queryLng}&radius=${radius}`;
+            const res = await exec();
+
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(2);
+            const resultCoords = res.body.map(r => r.location.coordinates);
+            expect(resultCoords).toEqual(
+                expect.arrayContaining([nearCoords, midCoords])
+            );
+        });
+
+        it('should return all restaurants within a very large radius', async () => {
+            const radius = 20000;
+            url = `/api/restaurants/discover?cuisines=Chinese&lat=${queryLat}&lng=${queryLng}&radius=${radius}`;
+            const res = await exec();
+
+            expect(res.status).toBe(200);
             expect(res.body.length).toBe(3);
-            res.body.forEach(restaurant => {
-                expect(restaurant).toHaveProperty('name');
-                expect(restaurant).toHaveProperty('address');
-                expect(restaurant).toHaveProperty('contactNumber');
-                expect(restaurant).toHaveProperty('cuisines');
-                expect(restaurant).toHaveProperty('openingHours');
-                expect(restaurant).toHaveProperty('maxCapacity');
-                expect(restaurant).toHaveProperty('averageRating');
-                expect(restaurant).toHaveProperty('reviewCount');
-            });
         });
     });
 
@@ -191,11 +396,13 @@ describe('restaurant test', () => {
         });
     });
 
-    describe('POST /api/restaurants', () => {
+    // skip to avoid sending requests to mapBox
+    describe.skip('POST /api/restaurants', () => {
         let name;
         let address;
         let contactNumber;
         let cuisines;
+        let tags;
         let openingHours;
         let maxCapacity;
 
@@ -234,11 +441,12 @@ describe('restaurant test', () => {
 
             // creating a restaurant
             name = "restaurant";
-            address = "new york";
+            address = "Blk 30 Kelantan Lane #12-01D, S208652";
             contactNumber = "87654321";
             cuisines = ["Chinese"];
             openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
             maxCapacity = 50;
+            tags = ["Live Music"];
         });
 
         const exec = () => {
@@ -247,7 +455,7 @@ describe('restaurant test', () => {
             .set('Cookie', [cookie])
             .send({
                 name, address, contactNumber, cuisines,
-                openingHours, maxCapacity
+                openingHours, maxCapacity, tags
             });
         };
 
@@ -285,19 +493,21 @@ describe('restaurant test', () => {
         it('should return a restaurant object', async () => {
             const res = await exec();
             const requiredKeys = [
-                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
+                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity', 'location', 'tags'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
-    describe('POST /api/restaurants/bulk', () => {
+    // skip to avoid sending requests to mapBox
+    describe.skip('POST /api/restaurants/bulk', () => {
         let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1;
         let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2;
         let cookie;
         let token;
         let user;
         let profile;
+        let tags;
 
         beforeEach(async () => { 
             await User.deleteMany({});
@@ -306,17 +516,18 @@ describe('restaurant test', () => {
 
             // creating restaurant 1
             restaurantName1 = "restaurant1";
-            address1 = "new york";
+            address1 = "Blk 30 Kelantan Lane #12-01D, S208652";
             contactNumber1 = "87654321";
             cuisines1 = ["Chinese"];
             openingHours1 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
             maxCapacity1 = 50;
             restaurantEmail1 = `restaurant@gmail.com`;
             website1 = "https://www.restaurant.com";
+            tags = ["Live Music"];
 
             // creating restaurant 2
             restaurantName2 = "restaurant2";
-            address2 = "new york";
+            address2 = "Blk 48 Dakota Crescent, S390048";
             contactNumber2 = "12345678";
             cuisines2 = ["Japanese"];
             openingHours2 = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
@@ -346,7 +557,7 @@ describe('restaurant test', () => {
                         openingHours: openingHours1,
                         maxCapacity: maxCapacity1,
                         email: restaurantEmail1,
-                        website: website1
+                        website: website1, tags
                     },
                     {
                         name: restaurantName2,
@@ -354,7 +565,7 @@ describe('restaurant test', () => {
                         contactNumber: contactNumber2,
                         cuisines: cuisines2,
                         openingHours: openingHours2,
-                        maxCapacity: maxCapacity2,
+                        maxCapacity: maxCapacity2, tags
                     }
                 ]
             });
@@ -515,7 +726,6 @@ describe('restaurant test', () => {
         let restaurantId;
         let token;
         let name;
-        let address;
         let contactNumber;
         let cuisines;
         let openingHours;
@@ -539,7 +749,6 @@ describe('restaurant test', () => {
 
             // updated details
             name = "restaurant";
-            address = "new york";
             contactNumber = "87654321";
             cuisines = ["Chinese"];
             openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
@@ -551,7 +760,7 @@ describe('restaurant test', () => {
             .patch(`/api/restaurants/${restaurantId}`)
             .set('Cookie', [cookie])
             .send({
-                name, address, contactNumber, cuisines,
+                name, contactNumber, cuisines,
                 openingHours, maxCapacity
             });
         };

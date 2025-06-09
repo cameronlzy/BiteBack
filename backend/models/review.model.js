@@ -60,6 +60,8 @@ const reviewSchema = new mongoose.Schema({
 });
 
 reviewSchema.path('createdAt').immutable(true);
+reviewSchema.index({ restaurant: 1 });
+reviewSchema.index({ customer: 1 });
 
 const Review = mongoose.model('Review', reviewSchema);
 

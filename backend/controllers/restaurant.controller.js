@@ -1,13 +1,47 @@
 const restaurantService = require('../services/restaurant.service');
 const imageService = require('../services/image.service');
 const Restaurant = require('../models/restaurant.model');
-const { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages } = require('../validators/restaurant.validator');
+const { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch } = require('../validators/restaurant.validator');
 const Joi = require('joi');
 const { ISOdate } = require('../helpers/time.helper');
 
-exports.getAllRestaurants = async (req, res) => {
-    const { status, body } = await restaurantService.getAllRestaurants();
+exports.searchRestaurants = async (req, res) => {
+    // validate query
+    const { error } = validateSearch(req.query);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const { search, page, limit, sortBy, order } = req.query;
+
+    const filters = {
+        search: search || null,
+        page: page ? parseInt(page) : 1,
+        limit: limit ? parseInt(limit) : 8,
+        sortBy: sortBy ? sortBy : 'averageRating',
+        order: order === 'desc' ? 'desc' : 'asc',
+    };
+
+    const { status, body } = await restaurantService.searchRestaurants(filters);
     return res.status(status).json(body)
+};
+
+exports.discoverRestaurants = async (req, res) => {
+    // validate query
+    const { error } = validateDiscover(req.query);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const { cuisines, minRating, lat, lng, radius, openNow, tags } = req.query;
+
+    const filters = {
+        cuisines: cuisines ? cuisines.split(',') : null,
+        minRating: parseFloat(minRating) || 0,
+        location: lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null,
+        radius: parseInt(radius) || 5000,
+        openNow: openNow === 'true',
+        tags: tags ? tags.split(',') : null,
+    };
+    
+    const { status, body } = await restaurantService.discoverRestaurants(filters);
+    return res.status(status).json(body);
 };
 
 exports.getRestaurantById = async (req, res) => {

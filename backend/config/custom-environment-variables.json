@@ -10,5 +10,6 @@
 		"cloudName": "cloudinary_cloud_name",
 		"apiKey": "cloudinary_api_key",
 		"apiSecret": "cloudinary_api_secret"
-	}
+	},
+  "mapboxToken": "mapbox_token"
 }

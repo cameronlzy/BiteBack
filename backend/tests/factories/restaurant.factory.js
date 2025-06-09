@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 function createTestRestaurant(owner) {
     let restaurantName = "restaurant";
-    let address = "new york";
+    let address = "Blk 30 Kelantan Lane #12-01D, S208652";
     let contactNumber = "87654321";
     let cuisines = ["Chinese"];
     let openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
@@ -12,6 +12,8 @@ function createTestRestaurant(owner) {
     let restaurantEmail = `restaurant@gmail.com`;
     let website = "https://www.restaurant.com";
     let maxCapacity = 50;
+    let location = { type: 'Point', coordinates: [103.856895, 1.306698]};
+    let tags = ['Live Music'];
     return new Restaurant({
         owner,
         name: restaurantName,
@@ -21,7 +23,7 @@ function createTestRestaurant(owner) {
         openingHours,
         maxCapacity,
         email: restaurantEmail,
-        website
+        website, location, tags
     });
 }
 
