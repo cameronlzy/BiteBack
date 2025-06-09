@@ -25,8 +25,25 @@ function validateCredentials(credentials) {
   return schema.validate(credentials);
 }
 
+function validatePassword(password) {
+  const schema = Joi.object({
+    password: passwordComplexity().required(),
+  });
+  return schema.validate(password);
+}
+
+function validatePasswordChange(change) {
+  const schema = Joi.object({
+    oldPassword: passwordComplexity().required(),
+    password: passwordComplexity().required(),
+  });
+  return schema.validate(change);
+}
+
 module.exports = {
   userJoiSchema,
   validateLogin,
   validateCredentials,
+  validatePassword,
+  validatePasswordChange
 };

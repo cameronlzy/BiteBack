@@ -747,14 +747,14 @@ describe('reservation test', () => {
         it('should return 200 if valid request', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-
-        it('should return deleted reservation', async () => {
-            const res = await exec();
+            
             const requiredKeys = [
                 'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+
+            const reservationInDb = await Reservation.findById(res.body._id);
+            expect(reservationInDb).toBeNull();
         });
     });
 });

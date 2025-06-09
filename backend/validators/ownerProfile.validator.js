@@ -1,6 +1,5 @@
 const Joi = require('joi');
-const { userJoiSchema } = require('./user.validator');
-const passwordComplexity = require('joi-password-complexity');
+const { userJoiSchema } = require('./auth.validator');
 
 function validateOwnerProfile(profile) {
   const schema = userJoiSchema.keys({
@@ -14,7 +13,6 @@ function validateOwnerPatch(update) {
   const schema = Joi.object({
     username: Joi.string().min(2),
     email: Joi.string().email(),
-    password: passwordComplexity(),
     companyName: Joi.string().min(2).max(255),
   }).min(1);
   return schema.validate(update);

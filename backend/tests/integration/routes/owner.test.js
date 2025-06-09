@@ -139,7 +139,7 @@ describe('owner test', () => {
                 .patch('/api/owners/me')
                 .set('Cookie', [cookie])
                 .send({
-                    email, username, password, companyName: newCompanyName
+                    email, username, companyName: newCompanyName
                 });
         };
 
@@ -262,16 +262,13 @@ describe('owner test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            let dbUser = await User.findById(userId).lean();
-            expect(dbUser).toBeNull();
-        });
-
-        it('should return user details', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'email', 'username', 'role', 'profile'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+
+            let dbUser = await User.findById(userId).lean();
+            expect(dbUser).toBeNull();
         });
     });
 });

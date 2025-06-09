@@ -7,6 +7,7 @@ const restaurants = require('../routes/restaurant.route');
 const reviews = require('../routes/review.route');
 const customers = require('../routes/customer.route');
 const owners = require('../routes/owner.route');
+const queue = require('../routes/queue.route');
 
 module.exports = function(app) {
   app.use(express.json());
@@ -17,6 +18,7 @@ module.exports = function(app) {
   app.use('/api/reviews', reviews);
   app.use('/api/owners', owners);
   app.use('/api/customers', customers);
+  app.use('/api/queue', queue);
 
   // to log error
   app.use(error);

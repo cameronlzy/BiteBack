@@ -1,5 +1,5 @@
 const authService = require('../services/auth.service');
-const { validateLogin, validateCredentials } = require('../validators/user.validator');
+const { validateLogin, validateCredentials, validatePassword, validatePasswordChange } = require('../validators/auth.validator');
 const { validateCustomer } = require('../validators/customerProfile.validator');
 const { validateOwner } = require('../validators/ownerProfile.validator');
 const setAuthCookie = require('../helpers/setAuthCookie');
@@ -13,9 +13,19 @@ exports.forgotPassword = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-    // add validation
+    const { error } = validatePassword(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
     const { status, body } = await authService.resetPassword(req.body, req.params.token);
+    return res.status(status).json(body);
+};
+
+exports.changePassword = async (req, res) => {
+    const { error } = validatePasswordChange(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+    
+    const { token, status, body } = await authService.changePassword(req.body, req.user);
+    if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 };
 
@@ -30,7 +40,8 @@ exports.logout = async (req, res) => {
 
 exports.login = async (req, res) => {
     // validate request
-    validateLogin(req.body);
+    const { error } = validateLogin(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
     const { token, body, status } = await authService.login(req.body);
     if (token) setAuthCookie(res, token);

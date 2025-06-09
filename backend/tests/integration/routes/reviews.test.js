@@ -601,13 +601,18 @@ describe('review test', () => {
             expect(res.status).toBe(403);
         });
 
-        it('should return 200 and review object with required properties', async () => {
+        it('should return 200 and delete the review from the database', async () => {
             const res = await exec();
+            expect(res.status).toBe(200);
+
             const requiredKeys = [
                 'username', 'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+
+            const reviewInDb = await Review.findById(res.body._id);
+            expect(reviewInDb).toBeNull();
         });
 	});
 
@@ -699,6 +704,7 @@ describe('review test', () => {
 
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
+            expect(res.status).toBe(200);
             const requiredKeys = [
                 'username', 'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
@@ -819,6 +825,9 @@ describe('review test', () => {
         it('should return 200 and badgeIndex', async () => {
             const res = await exec();
             expect(typeof res.body).toBe('number');
+
+            const voteInDb = await ReviewBadgeVote.findById(reviewId);
+            expect(voteInDb).toBeNull();
         });
 	});
 });

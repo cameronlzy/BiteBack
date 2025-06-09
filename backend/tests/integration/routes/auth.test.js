@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const config = require('config');
-const cookie = require('cookie');
+const cookieParser = require('cookie');
 const User = require('../../../models/user.model');
 const { createTestUser } = require('../../factories/user.factory');
 const { createTestRestaurant } = require('../../factories/restaurant.factory');
@@ -12,8 +12,9 @@ const { generateAuthToken } = require('../../../services/user.service');
 const CustomerProfile = require('../../../models/customerProfile.model');
 const OwnerProfile = require('../../../models/ownerProfile.model');
 const Restaurant = require('../../../models/restaurant.model');
+const setTokenCookie = require('../../../helpers/setTokenCookie');
 
-describe.skip('auth test', () => {
+describe('auth test', () => {
     let server;
     beforeAll(() => {
         server = require('../../../index');
@@ -40,7 +41,7 @@ describe.skip('auth test', () => {
         beforeEach(async () => {
             await User.deleteMany({});
             user = await createTestUser('customer');
-            user.email = "zhihui1306@gmail.com";
+            user.email = "test@email.com";
             await user.save();
             username = user.username;
             email = user.email;
@@ -116,6 +117,91 @@ describe.skip('auth test', () => {
             let updatedUser = await User.findById(userId).select('password').lean();
             const isMatch = await bcrypt.compare('newPassword@123', updatedUser.password);
             expect(isMatch).toBe(true);
+        });
+    });
+
+    describe('PUT /api/auth/change-password', () => {
+        let user;
+        let oldPassword;
+        let password;
+        let token;
+        let cookie;
+    
+        const exec = () => {
+            return request(server)
+            .put('/api/auth/change-password')
+            .set('Cookie', [cookie])
+            .send({
+                oldPassword, password
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+
+            // create user with password: Password@123
+            user = await createTestUser('customer');
+            await user.save();
+
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+            password = "Password@1234";
+            oldPassword = "Password@123";
+        });
+    
+        it('should return 401 if no token', async () => {
+            cookie = "";
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+    
+        it('should return 401 if invalid token', async () => {
+            token = 'invalid-token';
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+    
+        it('should return 400 if wrong password', async () => {
+            oldPassword = "wrongPassword";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if user does not exist', async () => {
+            let otherUser = await createTestUser('customer');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            oldPassword = "wrongPassword";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200 for valid request and change the password', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            const updatedUser = await User.findById(user._id);
+            const isMatch = await bcrypt.compare(password, updatedUser.password);
+
+            expect(isMatch).toBe(true);
+        });
+
+        it('should return valid jwtToken', async () => {
+            const res = await exec();
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -377,7 +463,7 @@ describe.skip('auth test', () => {
             const cookies = res.headers['set-cookie'];
             expect(cookies).toBeDefined();
 
-            const parsed = cookie.parse(cookies[0]);
+            const parsed = cookieParser.parse(cookies[0]);
             const token = parsed.token;
             expect(token).toBeDefined();
     

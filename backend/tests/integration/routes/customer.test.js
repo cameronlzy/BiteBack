@@ -8,7 +8,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-describe.skip('customer test', () => {
+describe('customer test', () => {
     let server;
     beforeAll(() => {
         server = require('../../../index');
@@ -125,7 +125,6 @@ describe.skip('customer test', () => {
         let token;
         let email;
         let username;
-        let password;
         let name;
         let contactNumber;
         let favCuisines;
@@ -168,7 +167,7 @@ describe.skip('customer test', () => {
                 .patch('/api/customers/me')
                 .set('Cookie', [cookie])
                 .send({
-                    email, username, password, name, 
+                    email, username, name, 
                     contactNumber: newContactNumber, favCuisines
                 });
         };
@@ -194,7 +193,7 @@ describe.skip('customer test', () => {
         });
 
         it('should return 400 if invalid request', async () => {
-            password = 'weak';
+            email = 'notEmail';
             const res = await exec();
             expect(res.status).toBe(400);
         });
@@ -298,16 +297,13 @@ describe.skip('customer test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            let dbUser = await User.findById(userId).lean();
-            expect(dbUser).toBeNull();
-        });
-
-        it('should return user details', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'email', 'username', 'role', 'profile'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+
+            let dbUser = await User.findById(userId).lean();
+            expect(dbUser).toBeNull();
         });
     });
 });

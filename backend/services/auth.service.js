@@ -54,6 +54,22 @@ exports.resetPassword = async (data, token) => {
     return { status: 200, body: 'Password has been reset' };
 };
 
+exports.changePassword = async (data, authUser) => {
+    // find user and verify credentials
+    const { status, body } = await exports.verifyUserCredentials({
+        username: authUser.username, 
+        password: data.oldPassword
+    });
+    if (status !== 200) return { status, body };
+    const user = body;
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(data.password, salt);
+
+    await user.save();
+    const token = generateAuthToken(user);
+    return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role'])};
+};
+
 exports.login = async (credentials) => {
     // find user and verify credentials
     const { status, body } = await exports.verifyUserCredentials(credentials);

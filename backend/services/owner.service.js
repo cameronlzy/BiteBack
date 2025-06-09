@@ -58,10 +58,6 @@ exports.updateMe = async (update, authUser) => {
         // update user fields selectively
         if (update.email !== undefined) user.email = update.email;
         if (update.username !== undefined) user.username = update.username;
-        if (update.password !== undefined) {
-            const salt = await bcrypt.genSalt(10);
-            user.password = await bcrypt.hash(update.password, salt);
-        }
         await user.save(session ? { session } : undefined);
 
         // selectively update profile fields
