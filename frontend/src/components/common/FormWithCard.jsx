@@ -56,7 +56,9 @@ const FormWithCard = ({
               <Button
                 type="submit"
                 className="w-full"
-                disabled={!form.formState.isValid}
+                disabled={
+                  !form.formState.isValid || form.formState.isSubmitting
+                }
               >
                 {buttonText}
               </Button>

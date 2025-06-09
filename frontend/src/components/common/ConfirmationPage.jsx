@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 
-const ConfirmationPage = ({ formName = "Details", details }) => {
+const ConfirmationPage = ({ formName = "Details", details, isSubmitting }) => {
   return (
     <div className="space-y-3">
       <h3 className="text-xl font-semibold">Confirm Details</h3>
@@ -11,7 +11,7 @@ const ConfirmationPage = ({ formName = "Details", details }) => {
           </li>
         ))}
       </ul>
-      <Button type="submit" className="w-full">
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
         Confirm {formName ? formName : "Submission"}
       </Button>
     </div>

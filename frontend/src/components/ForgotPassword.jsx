@@ -62,7 +62,11 @@ const ForgotPassword = () => {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={form.formState.isSubmitting}
+        >
           Send Reset Link
         </Button>
       </form>

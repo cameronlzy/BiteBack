@@ -26,6 +26,7 @@ const badges = [
 
 const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
   const [restaurant, setRestaurant] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState([false, false, false, false])
   const [selectedBadgeIndex, setSelectedBadgeIndex] = useState(
     review.selectedBadge ?? null
   )
@@ -48,6 +49,9 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
       toast.info("Please log in")
       return
     }
+    const newSubmitting = [...isSubmitting]
+    newSubmitting[badgeIndex] = true
+    setIsSubmitting(newSubmitting)
     try {
       const newCounts = [...badgeCounts]
 
@@ -76,13 +80,15 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
       } else {
         toast.error("Failed to update reaction")
       }
+    } finally {
+      setIsSubmitting([false, false, false, false])
     }
   }
 
   return (
     <Card key={review._id}>
       <CardHeader>
-        <CardTitle className="flex justify-between items-start">
+        <CardTitle className="flex flex-wrap justify-between items-start">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div>
               <Link
@@ -117,6 +123,23 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
       </CardHeader>
       <CardContent className="space-y-2 text-sm text-gray-700">
         <div className="relative">
+          {review.images && review.images.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {review.images.map((url, idx) => (
+                <Link
+                  key={idx}
+                  to={`/images/${encodeURIComponent(url)}`}
+                  state={{ from: location.pathname }}
+                >
+                  <img
+                    src={url}
+                    alt={`review image ${idx + 1}`}
+                    className="w-20 h-20 object-cover rounded-md border border-gray-300 shadow-sm hover:opacity-90 transition-opacity"
+                  />
+                </Link>
+              ))}
+            </div>
+          )}
           <p className="text-left">{review.reviewText}</p>
           <i className="block text-left text-gray-500 mt-2">
             Visited on{" "}
@@ -127,23 +150,6 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
             })}
           </i>
         </div>
-        {review.images && review.images.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {review.images.map((url, idx) => (
-              <Link
-                key={url}
-                to={`/images/${encodeURIComponent(url)}`}
-                state={{ from: location.pathname }}
-              >
-                <img
-                  src={url}
-                  alt={`review image ${idx + 1}`}
-                  className="w-20 h-20 object-cover rounded-md border border-gray-300 shadow-sm hover:opacity-90 transition-opacity"
-                />
-              </Link>
-            ))}
-          </div>
-        )}
         <div className="flex justify-between items-center">
           <div>
             <BadgeReactions
@@ -151,6 +157,7 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
               badgeCounts={badgeCounts}
               selectedBadgeIndex={selectedBadgeIndex}
               onReact={(index) => handleBadgeReact(review._id, index)}
+              isSubmitting={isSubmitting}
             />
           </div>
           {user &&

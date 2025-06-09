@@ -1,16 +1,25 @@
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Button } from "../ui/button"
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 const BackButton = ({ from, confirming, setConfirming }) => {
   const navigate = useNavigate()
+  const location = useLocation()
   return (
     <Button
       type="button"
       variant="ghost"
       className="p-0 text-sm text-gray-600 hover:text-black flex items-center gap-2"
-      onClick={() => (confirming ? setConfirming(false) : navigate(from))}
+      onClick={() =>
+        confirming
+          ? setConfirming(false)
+          : navigate(from, {
+              state: {
+                from: location.pathname,
+              },
+            })
+      }
     >
       <FontAwesomeIcon icon={faArrowLeft} className="w-4 h-4" />
       Back
@@ -19,3 +28,4 @@ const BackButton = ({ from, confirming, setConfirming }) => {
 }
 
 export default BackButton
+//

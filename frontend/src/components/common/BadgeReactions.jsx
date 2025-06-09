@@ -5,6 +5,7 @@ const BadgeReactions = ({
   badgeCounts,
   selectedBadgeIndex,
   onReact,
+  isSubmitting,
 }) => {
   return (
     <div className="flex gap-2 flex-wrap mt-2">
@@ -13,6 +14,7 @@ const BadgeReactions = ({
           key={badge.name}
           variant="outline"
           size="icon"
+          disabled={isSubmitting[index]}
           onClick={() => onReact(index)}
           className={`relative w-10 h-10 p-0 rounded-full ${
             selectedBadgeIndex === index ? "ring-2 ring-blue-500" : ""

@@ -58,8 +58,9 @@ const ReviewSection = ({ restaurant, user, showRestaurant }) => {
       setShowForm(false)
       return savedReview
     } catch (ex) {
-      if (ex.response && ex.response.status === 403) {
+      if (ex.response?.status === 403 || ex.response?.status === 401) {
         toast.info("You must be logged in as a customer to leave a review.")
+        window.location = "/login"
       }
     }
   }

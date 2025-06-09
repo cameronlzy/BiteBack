@@ -487,6 +487,7 @@ const ReservationForm = ({ user }) => {
               transition={{ duration: 0.4 }}
             >
               <ConfirmationPage
+                isSubmitting={form.formState.isSubmitting}
                 formName="Reservation"
                 details={{
                   "Restaurant Name": restaurant.name,

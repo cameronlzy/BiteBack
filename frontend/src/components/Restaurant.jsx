@@ -8,8 +8,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom"
 import { deleteRestaurant, getRestaurant } from "@/services/restaurantService"
+
 import { getRestaurantReservations } from "@/services/reservationService"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useConfirm } from "./common/ConfirmProvider"
 import { toast } from "react-toastify"
 import { DateTime } from "luxon"
@@ -23,37 +24,47 @@ import {
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu"
 import StarRating from "./common/StarRating"
+import BackButton from "./common/BackButton"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
   const navigate = useNavigate()
   const confirm = useConfirm()
   const location = useLocation()
+  const from = location?.state?.from || "/restaurants"
 
   const [restaurant, setRestaurant] = useState(null)
   const [availableCapacity, setAvailableCapacity] = useState(null)
   const isOwnedByUser = user?.role == "owner" && user._id === restaurant?.owner
 
   const [reservations, setReservations] = useState(null)
-
+  const imageShow = location.state?.imageShow
   useEffect(() => {
+    if (sessionStorage.getItem("restaurant_cache") && imageShow) {
+      const cached = sessionStorage.getItem("restaurant_cache")
+      const parsed = JSON.parse(cached)
+      setRestaurant(parsed)
+      return
+    }
+
     const fetchRestaurant = async () => {
       try {
         const queriedRestaurant = await getRestaurant(id)
+        sessionStorage.setItem(
+          "restaurant_cache",
+          JSON.stringify(queriedRestaurant)
+        )
         setRestaurant(queriedRestaurant)
       } catch (ex) {
-        if (
-          (ex.response && ex.response.status === 404) ||
-          ex.response.status === 400
-        ) {
-          navigate("/not-found", { replace: true })
-          return
+        if (ex.response?.status === 404 || ex.response?.status === 400) {
+          toast.error("Restaurant not found")
+          navigate("/not-found")
         }
-        toast.error("Failed to fetch restaurant details")
       }
     }
+
     fetchRestaurant()
-  }, [id, navigate])
+  }, [id])
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -96,15 +107,17 @@ const Restaurant = ({ user }) => {
     cuisines,
     maxCapacity,
     openingHours,
+    tags,
   } = restaurant
 
   return (
     <div className="w-full max-w-4xl mx-auto mt-6 px-4">
+      <BackButton from={from} />
       <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-md">
         <Link
           to={`/images/${encodeURIComponent(images?.[0])}`}
-          state={{ from: location.pathname }}
           className="block w-full h-full"
+          state={{ from: location.pathname }}
         >
           <img
             src={
@@ -127,7 +140,10 @@ const Restaurant = ({ user }) => {
                 <StarRating rating={restaurant?.averageRating} />
                 <span className="ml-2 text-sm text-white font-medium">
                   {restaurant?.averageRating.toFixed(1)} (
-                  {restaurant?.reviewCount} reviews)
+                  {restaurant?.reviewCount === 1
+                    ? `${restaurant?.reviewCount || 0} review`
+                    : `${restaurant?.reviewCount || 0} reviews`}
+                  )
                 </span>
               </div>
             </div>
@@ -141,10 +157,19 @@ const Restaurant = ({ user }) => {
                   {cuisine}
                 </span>
               ))}
+
+              {tags.length > 0 &&
+                tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="bg-white/20 px-2 py-1 rounded backdrop-blur-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
             </div>
           </div>
         </Link>
-
         {isOwnedByUser && (
           <div className="absolute top-2 right-2 z-10">
             <DropdownMenu>

@@ -23,6 +23,13 @@ const passwordMessages = {
 const passwordSchema = passwordComplexity.required().messages(passwordMessages)
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$|^Closed$/
 const websitePattern = /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}([/?].*)?$/;
+const passwordFields = {
+  password: passwordSchema,
+  confirmPassword: Joi.any().valid(Joi.ref("password")).required().messages({
+    "any.only": "Passwords do not match.",
+    "any.required": "Confirm password is required.",
+  }),
+}
 
 const validIdentifier = Joi.string()
     .required()
@@ -76,11 +83,29 @@ const dailyTimeSchema = Joi.string()
     "any.required": "Time is required",
   })
 
+const singaporePostalCodeRegex = /^\d{6}$/
+
 export const cuisineList = [
   "Chinese", "Malay", "Indian", "Peranakan", "Western", "Thai",
   "Korean", "Vietnamese", "Indonesian", "Filipino", "Middle Eastern",
   "Mexican", "Italian", "French", "Hawker", "Fusion", "Seafood",
-  "Vegetarian", "Halal", "Japanese"
+  "Japanese", 'Fast Food',
+]
+
+export const tagList = [
+  // Features
+  "Free Wi-Fi",
+  "Outdoor Seating",
+  "Live Music",
+  "Pet Friendly",
+  "Wheelchair Accessible",
+
+  // Dietary
+  "Vegan Options",
+  "Gluten-Free Available",
+  "Halal Certified",
+  "Low Carb",
+  "Nut-Free"
 ]
 
 export const restaurantSchema = Joi.object({
@@ -91,10 +116,30 @@ export const restaurantSchema = Joi.object({
     "string.empty": "Restaurant name is required.",
     "any.required": "Restaurant name is required.",
   }),
-  address: Joi.string().min(2).max(255).required().messages({
-    "string.min": "Address must be at least 2 characters.",
-    "string.empty": "Address is required.",
-    "any.required": "Address is required.",
+  blockNumber: Joi.string()
+  .pattern(/^\d+[A-Za-z]?$/)
+  .required()
+  .messages({
+    "string.pattern.base": "Block/House number must be numeric and may include a single letter (e.g., 608A).",
+    "string.empty": "Block/House number is required.",
+    "any.required": "Block/House number is required.",
+  }),
+
+  streetName: Joi.string().min(2).max(100).required().messages({
+    "string.base": "Street name must be a string.",
+    "string.empty": "Street name is required.",
+    "string.min": "Street name must be at least 2 characters.",
+    "any.required": "Street name is required.",
+  }),
+
+  unitNumber: Joi.string().pattern(/^#?\d{1,3}-\d{1,3}$/).allow("").optional().messages({
+    "string.pattern.base": "Unit number must follow format like #05-67.",
+  }),
+
+  postalCode: Joi.string().pattern(singaporePostalCodeRegex).required().messages({
+    "string.pattern.base": "Postal code must be a valid 6-digit Singapore postal code.",
+    "any.required": "Postal code is required.",
+    "string.empty": "Postal code is required.",
   }),
   contactNumber: Joi.string().pattern(/^\d{8}$/).required().messages({
     "string.pattern.base": "Contact number must be an 8-digit number.",
@@ -105,6 +150,8 @@ export const restaurantSchema = Joi.object({
     "array.min": "Please select at least one cuisine.",
     "any.required": "Cuisines are required.",
   }),
+  features: Joi.array().items(Joi.string()).required(),
+  dietary: Joi.array().items(Joi.string()).required(),
   openingHours: Joi.object({
     monday: dailyTimeSchema,
     tuesday: dailyTimeSchema,
@@ -131,6 +178,11 @@ export const restaurantSchema = Joi.object({
   .messages({
     "string.pattern.base": "Please enter a valid website URL (e.g. https://example.com).",
   }),
+ isBlock: Joi.boolean()
+  .required()
+  .messages({
+    'any.required': 'Please specify whether the address is a Block or House.',
+  })
 })
 
 export const ownerSchema = Joi.object({
@@ -145,12 +197,7 @@ export const ownerSchema = Joi.object({
     "string.empty": "Email is required.",
     "any.required": "Email is required.",
   }),
-  password: passwordSchema,
-  confirmPassword: Joi.any().valid(Joi.ref("password")).required().messages({
-    "any.only": "Passwords do not match.",
-    "string.empty": "Confirm password is required.",
-    "any.required": "Confirm password is required.",
-  }),
+  ...passwordFields,
   role: Joi.string().valid("owner").required(),
   companyName: Joi.string().min(2).max(255).required().messages({
     "string.min": "Company name must be at least 2 characters.",
@@ -177,11 +224,7 @@ export const customerSchema = Joi.object({
     "any.required": "Email is required.",
     "string.empty": "Email is required.",
   }),
-  password: passwordSchema,
-  confirmPassword: Joi.any().valid(Joi.ref("password")).required().messages({
-    "any.only": "Passwords do not match.",
-    "any.required": "Confirm password is required.",
-  }),
+  ...passwordFields,
   role: Joi.string().valid("customer").required(),
   name: Joi.string().min(2).max(20).required().messages({
     "string.min": "Name must be at least 2 characters.",
@@ -254,19 +297,18 @@ export const identifierSchema = Joi.object({
   identifier: validIdentifier
 })
 
-export const passwordResetSchema = Joi.object({
-  password: passwordSchema,
-  confirmPassword: Joi.any().valid(Joi.ref("password")).required().messages({
-    "any.only": "Passwords do not match.",
-    "any.required": "Confirm password is required.",
-  })
+export const passwordResetSchema = Joi.object(
+  passwordFields
+)
+
+export const passwordChangeSchema = Joi.object({
+  ...passwordFields,
+  oldPassword: passwordSchema,
 })
 
 export const deleteAccountSchema = Joi.object({
   password: passwordSchema
 })
-
-
 
 export const updateOwnerSchema = Joi.object({
   username: Joi.string().min(2).max(20).required().messages({
@@ -320,4 +362,14 @@ export const updateCustomerSchema = Joi.object({
   }),
 }).unknown(true);
 
+export const filterSchema = Joi.object({
+  cuisines: Joi.array().items(Joi.string()).required(),
+  minRating: Joi.number().min(0).max(5).default(0),
+  radius: Joi.number().min(0.1).max(10).required(),
+  openNow: Joi.boolean().default(false),
+  features: Joi.array().items(Joi.string()).required(),
+  dietary: Joi.array().items(Joi.string()).required(),
+  lat: Joi.number().required(),
+  lng: Joi.number().required(),
+})
 

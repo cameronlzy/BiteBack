@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ArrowUp, ArrowDown } from "lucide-react"
 
-const SortBy = ({ options, items, onSorted }) => {
+const SortBy = ({ options, items, onSorted, backendHandle = false }) => {
   const [selectedSort, setSelectedSort] = useState({
     value: null,
     direction: null,
@@ -25,7 +25,7 @@ const SortBy = ({ options, items, onSorted }) => {
     })
 
     setSelectedSort({ value, direction })
-    onSorted(sorted)
+    backendHandle ? onSorted({ value, direction }) : onSorted(sorted)
     setOpen(false)
   }
 

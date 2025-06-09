@@ -1,3 +1,4 @@
+import { sanitizeStrings } from '@/utils/stringSanitizer'
 import http from './httpService'
 
 const apiEndpoint = import.meta.env.VITE_API_URL + "/reviews"
@@ -18,7 +19,7 @@ export async function getReviewsByCustomer(customerId) {
 }
 
 export async function saveReview(review) {
-    const { data } = await http.post(apiEndpoint, review)
+    const { data } = await http.post(apiEndpoint, sanitizeStrings(review))
     return data
 }
 
@@ -71,7 +72,9 @@ export async function deleteReview(reviewId) {
 }
 
 export async function postReviewReply(reviewId, replyText) {
-  const { data } = await http.post(`${apiEndpoint}/${reviewId}/reply`, { replyText })
+  const { data } = await http.post(`${apiEndpoint}/${reviewId}/reply`, {
+    replyText: replyText.trim(),
+  })
   return data
 }
 

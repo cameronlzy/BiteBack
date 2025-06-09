@@ -38,6 +38,7 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
 
   const handleFormSubmit = async (data) => {
     try {
+      await ((ms) => new Promise((resolve) => setTimeout(resolve, ms)))(1000)
       const res = await onSubmit(data)
       const reviewId = res._id
       let images
@@ -53,6 +54,7 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
       form.reset()
     } catch (ex) {
       toast.error("Failed to submit review")
+      throw ex
     }
   }
 
@@ -129,7 +131,11 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
           setSelectedFiles={setSelectedFiles}
         />
 
-        <Button type="submit" className="w-full">
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={form.formState.isSubmitting}
+        >
           Submit Review
         </Button>
       </form>

@@ -1,19 +1,15 @@
 import { convertOpeningHoursToSGT, convertSlotTimesToSGT, convertOpeningHoursToString } from "@/utils/timeConverter"
 import http from "./httpService"
+import { sanitizeStrings } from "@/utils/stringSanitizer"
 
 const apiEndpoint = import.meta.env.VITE_API_URL + "/restaurants"
 
 function getRestaurantUrl(id) {
     return `${apiEndpoint}` + "/" + id
 }
-export async function getRestaurants() {
-  const { data } = await http.get(apiEndpoint)
-  return data.map((r) => ({
-    ...r,
-    openingHours: r.openingHours
-      ? convertOpeningHoursToSGT(r.openingHours)
-      : r.openingHours,
-  }))
+export async function getRestaurants(params) {
+  const { data } = await http.get(apiEndpoint, { params })
+  return data 
 }
 
 export async function getRestaurant(id) {
@@ -74,9 +70,10 @@ export async function saveRestaurants(restaurants) {
   const cleaned = Object.fromEntries(
     Object.entries(r).filter(([_, v]) => v !== "")
   )
+  const sanitized = sanitizeStrings(cleaned)
 
   return {
-    ...cleaned,
+    ...sanitized,
     openingHours: convertOpeningHoursToString(r.openingHours),
   }
 })
@@ -125,4 +122,24 @@ export async function updateRestaurantImages(restaurantId, imageUrls) {
 export async function deleteRestaurant(id) {
     const { data } = await http.delete(getRestaurantUrl(id))
     return data
+}
+
+export async function getFilteredRestaurants(params) {
+  const queryString = Object.entries(params)
+  .filter(
+    ([_, value]) =>
+      value !== "" &&
+      value !== null &&
+      value !== undefined &&
+      !(Array.isArray(value) && value.length === 0)
+  )
+  .map(([key, value]) =>
+    `${encodeURIComponent(key)}=${encodeURIComponent(
+      Array.isArray(value) ? value.join(",") : value
+    )}`
+  )
+  .join("&")
+
+  const { data } = await http.get(`${apiEndpoint}/discover?${queryString}`)
+  return data
 }

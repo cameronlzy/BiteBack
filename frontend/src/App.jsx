@@ -191,8 +191,8 @@ function App() {
           />
           <Route path="not-found" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
+          <Route path="images/:imageUrl" element={<ImageShow />} />
         </Route>
-        <Route path="images/:imageUrl" element={<ImageShow />} />
       </Routes>
     </Fragment>
   )

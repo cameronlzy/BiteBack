@@ -24,9 +24,14 @@ const ProfilePage = ({ user, isLoading }) => {
 
   const dropdownContent = [
     {
-      content: "Reset Password",
+      content: "Change Password",
       onClick: () => {
-        navigate("/change-password", { replace: true })
+        navigate("/change-password", {
+          replace: true,
+          state: {
+            from: location.pathname,
+          },
+        })
       },
     },
     {
