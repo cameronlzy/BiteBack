@@ -40,29 +40,7 @@ exports.searchRestaurants = async (filters) => {
         ]
       }
     };
-
-  //   const searchStage = search
-  //     ? !isProdEnv || regexFallback
-  //       ? regexMatchStage
-  //       : {
-  //         $search: {
-  //           index: 'default',
-  //           text: {
-  //             query: search,
-  //             path: ['name', 'tags', 'cuisines', 'searchKeywords'],
-  //             fuzzy: {
-  //               maxEdits: 1,
-  //               prefixLength: 1,
-  //             },
-  //           },
-  //         },
-  //       }
-  //     : null;
-  //   basePipeline.push(searchStage);
-  // }
-
-      const searchStage = search
-        ? regexMatchStage : null;
+    const searchStage = search ? regexMatchStage : null;
     basePipeline.push(searchStage);
   }
 
