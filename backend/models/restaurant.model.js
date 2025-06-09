@@ -147,11 +147,67 @@ const restaurantSchema = new mongoose.Schema({
         message: 'One or more cuisines are invalid.'
       }
     ], default: [],
-   }
+   }, 
+   searchKeywords: [String],
 }, { versionKey: false });
+
+restaurantSchema.pre('save', function (next) {
+  const nameTokens = this.name.toLowerCase().split(' ');
+  const tagTokens = (this.tags || []).map(tag => tag.toLowerCase());
+  const cuisineTokens = (this.cuisines || []).map(c => c.toLowerCase());
+
+  this.searchKeywords = [...nameTokens, ...tagTokens, ...cuisineTokens];
+  next();
+});
+
+function handleSearchKeywordsUpdate() {
+  return async function (next) {
+    const update = this.getUpdate();
+    if (!update) return next();
+
+    const isSet = !!update.$set;
+    const updatedFields = isSet ? update.$set : update;
+
+    // If any of name, tags, cuisines are updated, recompute keywords
+    const fieldsToUpdate = ['name', 'tags', 'cuisines'];
+    const isUpdating = fieldsToUpdate.some(f => updatedFields.hasOwnProperty(f));
+
+    if (!isUpdating) return next();
+
+    // get current doc
+    const docToUpdate = await this.model.findOne(this.getQuery()).lean();
+
+    const nameTokens = updatedFields.name
+      ? updatedFields.name.toLowerCase().split(' ')
+      : docToUpdate?.name.toLowerCase().split(' ') || [];
+
+    const tagTokens = updatedFields.tags
+      ? updatedFields.tags.map(t => t.toLowerCase())
+      : (docToUpdate?.tags || []).map(t => t.toLowerCase());
+
+    const cuisineTokens = updatedFields.cuisines
+      ? updatedFields.cuisines.map(c => c.toLowerCase())
+      : (docToUpdate?.cuisines || []).map(c => c.toLowerCase());
+
+    const searchKeywords = [...nameTokens, ...tagTokens, ...cuisineTokens];
+
+    if (isSet) {
+      update.$set.searchKeywords = searchKeywords;
+    } else {
+      update.searchKeywords = searchKeywords;
+    }
+
+    next();
+  };
+}
+
+restaurantSchema.pre('findOneAndUpdate', handleSearchKeywordsUpdate());
+restaurantSchema.pre('updateOne', handleSearchKeywordsUpdate());
+restaurantSchema.pre('updateMany', handleSearchKeywordsUpdate());
 
 restaurantSchema.index({ location: '2dsphere' });
 restaurantSchema.index({ owner: 1 });
+restaurantSchema.index({ searchKeywords: 1 });
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 

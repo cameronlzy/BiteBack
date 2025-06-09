@@ -11,6 +11,7 @@ const _ = require('lodash');
 const mongoose = require('mongoose');
 const { deleteImagesFromCloudinary, deleteImagesFromDocument } = require('./image.service');
 const geocodeAddress = require('../helpers/geocode');
+const { escapeRegex } = require('../helpers/regex.helper');
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
@@ -25,28 +26,45 @@ exports.searchRestaurants = async (filters) => {
 
   const skip = (page - 1) * limit;
   const sortOrder = order === 'desc' ? -1 : 1;
-
-  const searchStage = search
-    ? !isProdEnv
-      ? { $match: { name: { $regex: search, $options: 'i' } } }
-      : {
-        $search: {
-          index: 'default',
-          text: {
-            query: search,
-            path: ['name', 'tags', 'cuisines'],
-            fuzzy: {
-              maxEdits: 1,
-              prefixLength: 1,
-            },
-          },
-        },
-      }
-    : null;
-
   const basePipeline = [];
 
-  if (searchStage) basePipeline.push(searchStage);
+  if (search) {
+    const regex = new RegExp(escapeRegex(search), 'i');
+    const regexMatchStage = {
+      $match: {
+        $or: [
+          { name: regex },
+          { tags: regex },
+          { cuisines: regex },
+          { searchKeywords: { $elemMatch: { $regex: regex } } }
+        ]
+      }
+    };
+
+  //   const searchStage = search
+  //     ? !isProdEnv || regexFallback
+  //       ? regexMatchStage
+  //       : {
+  //         $search: {
+  //           index: 'default',
+  //           text: {
+  //             query: search,
+  //             path: ['name', 'tags', 'cuisines', 'searchKeywords'],
+  //             fuzzy: {
+  //               maxEdits: 1,
+  //               prefixLength: 1,
+  //             },
+  //           },
+  //         },
+  //       }
+  //     : null;
+  //   basePipeline.push(searchStage);
+  // }
+
+      const searchStage = search
+        ? regexMatchStage : null;
+    basePipeline.push(searchStage);
+  }
 
   // create pipeline to get totalCount
   const countPipeline = [...basePipeline, { $count: 'total' }];
