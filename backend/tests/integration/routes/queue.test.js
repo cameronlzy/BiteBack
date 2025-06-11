@@ -23,6 +23,7 @@ describe('queue test', () => {
         let token;
         let queueEntry;
         let queueEntryId;
+        let queueNumber;
     
         const exec = () => {
             return request(server)
@@ -45,6 +46,7 @@ describe('queue test', () => {
                 customer: user.profile,
                 pax: 2,
                 queueGroup: 'small',
+                queueNumber: 0
             });
             queueEntry.save();
             queueEntryId = queueEntry._id;
@@ -83,12 +85,13 @@ describe('queue test', () => {
             expect(res.status).toBe(404);
         });
 
-        it('should return 404 if invalid ID', async () => {
+        it('should return 403 if customer does not own queue entry', async () => {
             const otherQueueEntry = new QueueEntry({
                 restaurant: new mongoose.Types.ObjectId(),
                 customer: new mongoose.Types.ObjectId(),
                 pax: 2,
                 queueGroup: 'small',
+                queueNumber: 0
             });
             otherQueueEntry.save();
             queueEntryId = otherQueueEntry._id;
@@ -205,9 +208,11 @@ describe('queue test', () => {
                 customer: user.profile,
                 pax: 2,
                 queueGroup: 'small',
+                queueNumber: 0
             });
             queueEntry.save();
             queueEntryId = queueEntry._id;
+            
         });
 
         it('should return 400 if invalid id', async () => {
@@ -243,12 +248,13 @@ describe('queue test', () => {
             expect(res.status).toBe(404);
         });
 
-        it('should return 404 if invalid ID', async () => {
+        it('should return 403 if customer does not own queue entry', async () => {
             const otherQueueEntry = new QueueEntry({
                 restaurant: new mongoose.Types.ObjectId(),
                 customer: new mongoose.Types.ObjectId(),
                 pax: 2,
                 queueGroup: 'small',
+                queueNumber: 0
             });
             otherQueueEntry.save();
             queueEntryId = otherQueueEntry._id;

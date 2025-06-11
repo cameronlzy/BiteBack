@@ -31,6 +31,10 @@ const queueEntrySchema = new mongoose.Schema({
         called: { type: Date },
         seated: { type: Date },
         noShow: { type: Date }
+    },
+    queueNumber: {
+        type: Number, 
+        required: true,
     }
 }, { versionKey: false });
 

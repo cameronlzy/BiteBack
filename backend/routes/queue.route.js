@@ -1,9 +1,9 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
 import isCustomer from '../middleware/isCustomer.js';
-// import isStaff from '../middleware/isStaff.js';
+import isStaff from '../middleware/isStaff.js';
 import authorizedQueueCustomer from '../middleware/authorizedQueueCustomer.js';
-// import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
+import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
 import * as queueController from '../controllers/queue.controller.js';
 import validateObjectId from '../middleware/validateObjectId.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
