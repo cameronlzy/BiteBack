@@ -1,8 +1,9 @@
 const authService = require('../services/auth.service');
-const { validateLogin, validateCredentials, validatePassword, validatePasswordChange } = require('../validators/auth.validator');
+const { validateLogin, validateCredentials, validatePassword, validatePasswordChange } = require('../validators/user.validator');
 const { validateCustomer } = require('../validators/customerProfile.validator');
 const { validateOwner } = require('../validators/ownerProfile.validator');
-const setAuthCookie = require('../helpers/setAuthCookie');
+const { validateStaffLogin } = require('../validators/staff.validator');
+const { setAuthCookie } = require('../helpers/cookie.helper');
 
 exports.forgotPassword = async (req, res) => {
     // validate request
@@ -48,22 +49,33 @@ exports.login = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.registerCustomer = async (req, res) => {
+exports.register = async (req, res) => {
     // validate request
-    const { error } = validateCustomer(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (req.body.role === 'customer') {
+        const { error } = validateCustomer(req.body);
+        if (error) return res.status(400).send(error.details[0].message);
 
-    const {token, body, status } = await authService.registerCustomer(req.body);
-    if (token) setAuthCookie(res, token);
-    return res.status(status).json(body);
+        const {token, body, status } = await authService.registerCustomer(req.body);
+        if (token) setAuthCookie(res, token);
+        return res.status(status).json(body);
+    } else if (req.body.role === 'owner') {
+        const { error } = validateOwner(req.body);
+        if (error) return res.status(400).send(error.details[0].message);
+
+        const { token, body, status } = await authService.registerOwner(req.body);
+        if (token) setAuthCookie(res, token);
+        return res.status(status).json(body);
+    } else {
+        return res.status(400).send('Invalid role');
+    }
 };
 
-exports.registerOwner = async (req, res) => {
+exports.staffLogin = async (req, res) => {
     // validate request
-    const { error } = validateOwner(req.body);
+    const { error } = validateStaffLogin(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const { token, body, status } = await authService.registerOwner(req.body);
+    const { token, body, status } = await authService.staffLogin(req.body);
     if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 };

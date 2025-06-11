@@ -1,7 +1,7 @@
 const customerService = require('../services/customer.service');
 const authServices = require('../services/auth.service');
-const { validateCustomer, validatePatch } = require('../validators/customerProfile.validator');
-const setAuthCookie = require('../helpers/setAuthCookie');
+const { validatePatch } = require('../validators/customerProfile.validator');
+const { setAuthCookie } = require('../helpers/cookie.helper');
 
 exports.getMe = async (req, res) => {
     const { status, body } = await customerService.getMe(req.user._id);

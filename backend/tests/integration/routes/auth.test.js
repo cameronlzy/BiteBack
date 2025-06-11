@@ -8,11 +8,12 @@ const cookieParser = require('cookie');
 const User = require('../../../models/user.model');
 const { createTestUser } = require('../../factories/user.factory');
 const { createTestRestaurant } = require('../../factories/restaurant.factory');
-const { generateAuthToken } = require('../../../services/user.service');
+const { generateAuthToken } = require('../../../helpers/token.helper');
 const CustomerProfile = require('../../../models/customerProfile.model');
 const OwnerProfile = require('../../../models/ownerProfile.model');
 const Restaurant = require('../../../models/restaurant.model');
-const setTokenCookie = require('../../../helpers/setTokenCookie');
+const Staff = require('../../../models/staff.model');
+const { setTokenCookie } = require('../../../helpers/cookie.helper');
 
 describe('auth test', () => {
     let server;
@@ -205,7 +206,7 @@ describe('auth test', () => {
         });
     });
 
-    describe('POST /api/auth/register/customer', () => {
+    describe('POST /api/auth/register - for customer', () => {
         let email;
         let username;
         let password;
@@ -217,7 +218,7 @@ describe('auth test', () => {
     
         const exec = () => {
             return request(server)
-            .post('/api/auth/register/customer')
+            .post('/api/auth/register')
             .send({
                 email, username, password, role, name, contactNumber, favCuisines
             });
@@ -290,7 +291,7 @@ describe('auth test', () => {
         });
     });
 
-    describe('POST /api/auth/register/owner', () => {
+    describe('POST /api/auth/register - for owner', () => {
         let email;
         let username;
         let password;
@@ -299,7 +300,7 @@ describe('auth test', () => {
     
         const exec = () => {
             return request(server)
-            .post('/api/auth/register/owner')
+            .post('/api/auth/register')
             .send({
                 email, username, password, role, companyName
             });
@@ -471,6 +472,84 @@ describe('auth test', () => {
 
             const requiredKeys = [
                 'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/auth/login/staff', () => {
+        let username;
+        let password;
+        let role;
+        let hashedPassword;
+        let restaurant;
+        let staff;
+    
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/login/staff')
+            .send({
+                username, password
+            });
+        };
+    
+        beforeEach(async () => {
+            await Staff.deleteMany({});
+
+            username = "username";
+            password = "myPassword@123";
+            role = "staff";
+            restaurant = new mongoose.Types.ObjectId();
+            const salt = await bcrypt.genSalt(10);
+            hashedPassword = await bcrypt.hash(password, salt); 
+            staff = new Staff({
+                username, password: hashedPassword, role, restaurant
+            });
+            await staff.save();
+        });
+    
+        it('should return 400 if invalid request', async () => {
+            username = "";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 400 if user not found', async () => {
+            username = "wrongUsername";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 400 if wrong password', async () => {
+            password = "wrongPassword";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            const requiredKeys = [
+                '_id', 'username', 'role', 'restaurant'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body).not.toHaveProperty('password');
+        });
+    
+        it('should return valid jwtToken', async () => {
+            const res = await exec();
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const requiredKeys = [
+                '_id', 'username', 'role', 'restaurant'
             ];
             expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
         });

@@ -10,7 +10,7 @@ const userJoiSchema = Joi.object({
 const loginJoiSchema = Joi.object({
   email: Joi.string().email(),
   username: Joi.string().min(2),
-  password: Joi.string().min(5).max(255).required(),
+  password: passwordComplexity().required(),
 }).xor('email', 'username');
 
 function validateLogin(credentials) {

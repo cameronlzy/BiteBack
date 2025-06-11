@@ -1,7 +1,8 @@
 const User = require('../models/user.model');
 const CustomerProfile = require('../models/customerProfile.model');
 const OwnerProfile = require('../models/ownerProfile.model');
-const { generateAuthToken } = require('../services/user.service');
+const Staff = require('../models/staff.model');
+const { generateAuthToken, staffGenerateAuthToken } = require('../helpers/token.helper');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const _ = require('lodash');
@@ -184,6 +185,17 @@ exports.registerOwner = async (data) => {
     } finally {
         if (session) session.endSession();
     }
+};
+
+exports.staffLogin = async (credentials) => {
+    const staff = await Staff.findOne({ username: credentials.username });
+    if (!staff) return { status: 400, body: 'Invalid username or password' };
+
+    const isValid = await bcrypt.compare(credentials.password, staff.password);
+    if (!isValid) return { status: 400, body: 'Invalid username or password' };
+
+    const token = staffGenerateAuthToken(staff);
+    return { token, status: 200, body: _.pick(staff, ['_id', 'username', 'role', 'restaurant']) };
 };
 
 // utility services

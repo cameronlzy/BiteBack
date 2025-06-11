@@ -5,12 +5,12 @@ const OwnerProfile = require('../../../models/ownerProfile.model');
 const { createTestUser } = require('../../factories/user.factory');
 const { createTestRestaurant } = require('../../factories/restaurant.factory');
 const { createTestOwnerProfile } = require('../../factories/ownerProfile.factory');
-const { generateAuthToken } = require('../../../services/user.service');
+const { generateAuthToken } = require('../../../helpers/token.helper');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const path = require('path');
 const { DateTime } = require('luxon');
-const setTokenCookie = require('../../../helpers/setTokenCookie');
+const { setTokenCookie } = require('../../../helpers/cookie.helper');
 
 describe('restaurant test', () => {
     let server;

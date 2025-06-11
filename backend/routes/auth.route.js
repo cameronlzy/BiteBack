@@ -16,13 +16,13 @@ router.put('/change-password', auth, authController.changePassword);
 // [Public] - Log out
 router.post('/logout', authController.logout);
 
-// [Public] - Login via username or email + password
+// [Public] - Login for owners and customers via username or email + password
 router.post('/login', authController.login);
 
-// [Public] - Registration for owners
-router.post('/register/owner', authController.registerOwner);
+// [Public] - Registration for owners and customers
+router.post('/register', authController.register);
 
-// [Public] - Registration for customers
-router.post('/register/customer', authController.registerCustomer);
+// [Staff] - Login for staff
+router.post('/login/staff', authController.staffLogin);
 
 module.exports = router; 

@@ -1,7 +1,7 @@
 const ownerService = require('../services/owner.service');
 const authServices = require('../services/auth.service');
 const { validatePatch } = require('../validators/ownerProfile.validator');
-const setAuthCookie = require('../helpers/setAuthCookie');
+const { setAuthCookie } = require('../helpers/cookie.helper');
 
 exports.getMe = async (req, res) => {
     const { status, body } = await ownerService.getMe(req.user._id);

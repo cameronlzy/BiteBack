@@ -1,18 +1,15 @@
 const auth = require('../middleware/auth');
 const validateObjectId = require('../middleware/validateObjectId');
-const isOwner = require('../middleware/isOwner');
+const isStaff = require('../middleware/isStaff');
 const authorizedReservationUser = require('../middleware/authorizedReservationUser');
-const authorizedRestaurantOwner = require('../middleware/authorizedRestaurantOwner');
+const authorizedRestaurantStaff = require('../middleware/authorizedRestaurantStaff');
 const reservationController = require('../controllers/reservation.controller');
 const express = require('express');
 const wrapRoutes = require('../helpers/wrapRoutes');
 const router = wrapRoutes(express.Router());
 
-// [Owner] - Get all reservations in all restaurants owned by owner
-router.get('/owner', [auth, isOwner], reservationController.getReservationsByOwner);
-
-// [Owner] - Get all reservations in a restaurant
-router.get('/restaurant/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], reservationController.getReservationsByRestaurant);
+// [Staff] - Get reservations at restaurant for current timeslot
+router.get('/restaurant/:id', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], reservationController.getReservationsByRestaurant);
 
 // [User] - Get all of user's reservations
 router.get('/', auth, reservationController.getUserReservations);

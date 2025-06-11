@@ -1,32 +1,36 @@
 const Reservation = require('../models/reservation.model');
 const Restaurant = require('../models/restaurant.model');
 const { DateTime } = require('luxon');
-const { convertToUTCStart, convertToUTCEnd, convertToUTC } = require('../helpers/time.helper');
+const { convertToUTC } = require('../helpers/time.helper');
+const { getCurrentTimeSlotStartUTC } = require('../helpers/restaurant.helper');
 
-exports.getReservationsByOwner = async (ownerId, query) => {
-    const startDate = convertToUTCStart(query.startDate);
-    const endDate = query.endDate ? convertToUTCEnd(query.endDate) : null;
+// retired, might use for analytics
+// exports.getReservationsByOwner = async (ownerId, query) => {
+//     const startDate = convertToUTCStart(query.startDate);
+//     const endDate = query.endDate ? convertToUTCEnd(query.endDate) : null;
 
-    // find all restaurants owned by owner
-    const restaurantIds = (await Restaurant.find({ owner: ownerId }).select('_id').lean()).map(r => r._id);
+//     // find all restaurants owned by owner
+//     const restaurantIds = (await Restaurant.find({ owner: ownerId }).select('_id').lean()).map(r => r._id);
 
-    // find all the reservations for these restaurants
-    const reservations = await Reservation.find({
-        restaurant: { $in: restaurantIds },
-        reservationDate: endDate ? { $gte: startDate, $lte: endDate } : { $gte: startDate }
-    }).sort({ restaurant: 1 }).lean();
+//     // find all the reservations for these restaurants
+//     const reservations = await Reservation.find({
+//         restaurant: { $in: restaurantIds },
+//         reservationDate: endDate ? { $gte: startDate, $lte: endDate } : { $gte: startDate }
+//     }).sort({ restaurant: 1 }).lean();
 
-    return { status: 200, body: reservations };
-};
+//     return { status: 200, body: reservations };
+// };
 
-exports.getReservationsByRestaurant = async (restaurant, query) => {
-    const startDate = convertToUTCStart(query.startDate);
-    const endDate = query.endDate ? convertToUTCEnd(query.endDate) : null;
-
-    // find all reservations for restaurant
+// changing for staff
+exports.getReservationsByRestaurant = async (restaurant) => {
+    const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
+    if (!timeSlotStartUTC) return { status: 200, body: [] };
     const reservations = await Reservation.find({
         restaurant: restaurant._id,
-        reservationDate: endDate ? { $gte: startDate, $lte: endDate } : { $gte: startDate }
+        reservationDate: { 
+            $gte: timeSlotStartUTC.toJSDate(),
+            $lte: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate()
+        }
     }).lean();
     return { status: 200, body: reservations };
 };

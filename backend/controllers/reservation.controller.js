@@ -1,25 +1,8 @@
 const reservationService = require('../services/reservation.service');
-const Joi = require('joi');
-const { ISOdate } = require('../helpers/time.helper');
 const { validateReservation, validatePatch } = require('../validators/reservation.validator');
 
-exports.getReservationsByOwner = async (req, res) => {
-  // validate query
-  const schema = Joi.object({ startDate: ISOdate.required(), endDate: ISOdate });
-  const { error } = schema.validate(req.query);
-  if (error) return res.status(400).send(error.details[0].message);
-
-  const { status, body } = await reservationService.getReservationsByOwner(req.user._id, req.query);
-  return res.status(status).json(body);
-};
-
 exports.getReservationsByRestaurant = async (req, res) => {
-  // validate query
-  const schema = Joi.object({ startDate: ISOdate.required(), endDate: ISOdate });
-  const { error } = schema.validate(req.query);
-  if (error) return res.status(400).send(error.details[0].message);
-
-  const { status, body } = await reservationService.getReservationsByRestaurant(req.restaurant, req.query);
+  const { status, body } = await reservationService.getReservationsByRestaurant(req.restaurant);
   return res.status(status).json(body);
 };
 

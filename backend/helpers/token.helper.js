@@ -14,6 +14,19 @@ function generateAuthToken(user) {
   );
 }
 
+function staffGenerateAuthToken(staff) {
+  return jwt.sign(
+    {
+      _id: staff._id,
+      username: staff.username,
+      role: staff.role,
+      restaurant: staff.restaurant
+    },
+    config.get('jwtPrivateKey')
+  );
+}
+
 module.exports = {
   generateAuthToken,
+  staffGenerateAuthToken,
 };

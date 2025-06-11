@@ -1,8 +1,8 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const setTokenCookie = require('../../../helpers/setTokenCookie');
+const { setTokenCookie } = require('../../../helpers/cookie.helper');
 const QueueEntry = require('../../../models/queueEntry.model');
-const { generateAuthToken } = require('../../../services/user.service');
+const { generateAuthToken } = require('../../../helpers/token.helper');
 const { createTestUser } = require('../../factories/user.factory');
 
 describe('queue test', () => {

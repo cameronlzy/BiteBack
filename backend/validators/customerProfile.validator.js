@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { userJoiSchema } = require('./auth.validator');
+const { userJoiSchema } = require('./user.validator');
 
 const cuisineList = [
   'Chinese',

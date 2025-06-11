@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const { userJoiSchema } = require('./auth.validator');
+const { userJoiSchema } = require('./user.validator');
 
 function validateOwnerProfile(profile) {
   const schema = userJoiSchema.keys({
