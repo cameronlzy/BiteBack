@@ -1,9 +1,9 @@
-const winston = require('winston');
-const mongoose = require('mongoose');
-const config = require('config');
-const logger = require('../startup/logging');
+import winston from 'winston';
+import mongoose from 'mongoose';
+import config from 'config';
+import logger from '../startup/logging.js';
 
-module.exports = function() {
+export default function() {
   if (process.env.NODE_ENV !== 'test') {
     const db = config.get('mongoURI');
     mongoose.connect(db, { autoIndex: false })

@@ -3,19 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "export NODE_ENV=test && jest --watchAll --verbose",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --watchAll --verbose",
     "dev": "export NODE_ENV=development && nodemon index.js",
     "start": "node index.js"
   },
   "engines": {
     "node": "23.10.0"
   },
-  "jest": {
-    "setupFilesAfterEnv": [
-      "./tests/setup.js"
-    ],
-    "testEnvironment": "node"
-  },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -43,6 +38,7 @@
     "mongoose": "^8.14.3",
     "multer": "^2.0.0",
     "multer-storage-cloudinary": "^4.0.0",
+    "nanoid": "^4.0.2",
     "nodemailer": "^7.0.3",
     "validator": "^13.15.0",
     "winston": "^3.17.0",

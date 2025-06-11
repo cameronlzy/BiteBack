@@ -1,17 +1,17 @@
-const User = require('../../../models/user.model');
-const CustomerProfile = require('../../../models/customerProfile.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestCustomerProfile } = require('../../factories/customerProfile.factory');
-const { generateAuthToken } = require('../../../helpers/token.helper');
-const { setTokenCookie } = require('../../../helpers/cookie.helper');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import User from '../../../models/user.model.js';
+import CustomerProfile from '../../../models/customerProfile.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import request from 'supertest';
+import mongoose from 'mongoose';
 
 describe('customer test', () => {
     let server;
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        const mod = await import('../../../index.js');
+        server = mod.default;
     });
 
     afterAll(async () => {
@@ -132,6 +132,7 @@ describe('customer test', () => {
         let profile;
         let newContactNumber;
         let cookie;
+        let password;
 
         beforeEach(async () => {
             await User.deleteMany({});

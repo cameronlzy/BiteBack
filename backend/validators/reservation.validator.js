@@ -1,7 +1,7 @@
-const Joi = require('joi');
-const { dateFullOnly } = require('../helpers/time.helper');
+import Joi from 'joi';
+import { dateFullOnly } from '../helpers/time.helper';
 
-function validateReservation(reservation) {
+export function validateReservation(reservation) {
     const schema = Joi.object({
         user: Joi.objectId(),
         restaurant: Joi.objectId().required(),
@@ -21,7 +21,7 @@ function validateReservation(reservation) {
     return schema.validate(reservation);
 }
 
-function validatePatch(update) {
+export function validatePatch(update) {
     const schema = Joi.object({
         reservationDate: dateFullOnly,
         remarks: Joi.string().allow('').custom((value, helpers) => {
@@ -37,8 +37,3 @@ function validatePatch(update) {
     }).min(1);
     return schema.validate(update);
 }
-
-module.exports = {
-    validateReservation, 
-    validatePatch
-};

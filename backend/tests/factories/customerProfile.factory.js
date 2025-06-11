@@ -1,6 +1,6 @@
-const CustomerProfile = require('../../models/customerProfile.model');
+import CustomerProfile from '../../models/customerProfile.model.js';
 
-function createTestCustomerProfile(user = null) {
+export function createTestCustomerProfile(user = null) {
     const contactNumber = 98765432;
     const name =  `test_${Date.now()}`;
     const favCuisines = ['Chinese'];
@@ -17,5 +17,3 @@ function createTestCustomerProfile(user = null) {
     });
     return profile;
 }
-
-module.exports = { createTestCustomerProfile };

@@ -1,7 +1,7 @@
-const Joi = require('joi');
-const { userJoiSchema } = require('./user.validator');
+import Joi from 'joi';
+import { userJoiSchema } from './user.validator.js';
 
-function validateOwnerProfile(profile) {
+export function validateOwner(profile) {
   const schema = userJoiSchema.keys({
     role: Joi.string().valid("owner").required(),
     companyName: Joi.string().min(2).max(255).required(),
@@ -9,7 +9,7 @@ function validateOwnerProfile(profile) {
   return schema.validate(profile);
 }
 
-function validateOwnerPatch(update) {
+export function validatePatch(update) {
   const schema = Joi.object({
     username: Joi.string().min(2),
     email: Joi.string().email(),
@@ -17,8 +17,3 @@ function validateOwnerPatch(update) {
   }).min(1);
   return schema.validate(update);
 }
-
-module.exports = {
-    validateOwner: validateOwnerProfile,
-    validatePatch: validateOwnerPatch,
-};

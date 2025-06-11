@@ -1,24 +1,25 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const { DateTime } = require('luxon');
-const Review = require('../../../models/review.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestRestaurant } = require('../../factories/restaurant.factory');
-const { createTestCustomerProfile } = require('../../factories/customerProfile.factory');
-const { createTestReview } = require('../../factories/review.factory');
-const { generateAuthToken } = require('../../../helpers/token.helper');
-const { setTokenCookie } = require('../../../helpers/cookie.helper');
-const User = require('../../../models/user.model');
-const Restaurant = require('../../../models/restaurant.model');
-const CustomerProfile = require('../../../models/customerProfile.model');
-const OwnerProfile = require('../../../models/ownerProfile.model');
-const ReviewBadgeVote = require('../../../models/reviewBadgeVote.model');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import { DateTime } from 'luxon';
+import Review from '../../../models/review.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
+import { createTestReview } from '../../factories/review.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import User from '../../../models/user.model.js';
+import Restaurant from '../../../models/restaurant.model.js';
+import CustomerProfile from '../../../models/customerProfile.model.js';
+import OwnerProfile from '../../../models/ownerProfile.model.js';
+import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
 
 describe('review test', () => {
 	let server;
-	beforeAll(() => {
-		server = require('../../../index');
-	});
+	beforeAll(async () => {
+        const mod = await import('../../../index.js');
+        server = mod.default;
+    });
 	afterAll(async () => {
 		await mongoose.connection.close();
 		await server.close();
@@ -219,6 +220,7 @@ describe('review test', () => {
         let reviewText;
         let dateVisited;
         let cookie;
+        let token;
 
 		beforeEach(async () => {
 			// clear all
@@ -409,6 +411,7 @@ describe('review test', () => {
         let badgeVote;
         let otherCustomer;
         let otherCustomerProfile;
+        let replyText;
 
 		beforeEach(async () => {
 			// clear all
@@ -519,6 +522,9 @@ describe('review test', () => {
         let images;
         let token;
         let cookie;
+        let contactNumber;
+        let favCuisines;
+        let name;
 
 		beforeEach(async () => {
 			// clear all
@@ -629,6 +635,7 @@ describe('review test', () => {
         let replyText;
         let token;
         let cookie;
+        let name;
 
 		beforeEach(async () => {
 			// clear all
@@ -730,6 +737,7 @@ describe('review test', () => {
         let badgeVote;
         let otherCustomer;
         let otherCustomerProfile;
+        let replyText;
 
 		beforeEach(async () => {
 			// clear all

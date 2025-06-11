@@ -1,5 +1,5 @@
-const winston = require('winston');
-require('winston-mongodb');
+import winston from 'winston';
+import 'winston-mongodb';
 
 const transports = [];
 
@@ -45,4 +45,4 @@ if (process.env.NODE_ENV !== 'production') {
   );
 }
 
-module.exports = logger;
+export default logger;

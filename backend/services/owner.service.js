@@ -1,16 +1,15 @@
-const User = require('../models/user.model');
-const OwnerProfile = require('../models/ownerProfile.model');
-const Reservation = require('../models/reservation.model');
-const Restaurant = require('../models/restaurant.model');
-const restaurantService = require('../services/restaurant.service');
-const { generateAuthToken } = require('../helpers/token.helper');
-const _ = require('lodash');
-const bcrypt = require('bcryptjs');
-const mongoose = require('mongoose');
+import User from '../models/user.model.js';
+import OwnerProfile from '../models/ownerProfile.model.js';
+import Reservation from '../models/reservation.model.js';
+import Restaurant from '../models/restaurant.model.js';
+import * as restaurantService from '../services/restaurant.service.js';
+import { generateAuthToken } from '../helpers/token.helper.js';
+import _ from 'lodash';
+import mongoose from 'mongoose';
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
-exports.getMe = async (userId) => {
+export async function getMe(userId) {
     const user = await User.findById(userId)
         .populate({
             path: 'profile', 
@@ -22,9 +21,9 @@ exports.getMe = async (userId) => {
         .select('-password').lean();
     if (!user) return { status: 400, body: 'Owner not found.' };
     return { status: 200, body: user };
-};
+}
 
-exports.updateMe = async (update, authUser) => {
+export async function updateMe(update, authUser) {
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
@@ -78,9 +77,9 @@ exports.updateMe = async (update, authUser) => {
     } finally {
         if (session) session.endSession();
     }
-};
+}
 
-exports.deleteMe = async (user) => {
+export async function deleteMe(user) {
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
@@ -112,4 +111,4 @@ exports.deleteMe = async (user) => {
     } finally {
         if (session) session.endSession();
     }
-};
+}

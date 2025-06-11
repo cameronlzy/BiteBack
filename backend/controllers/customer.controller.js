@@ -1,19 +1,19 @@
-const customerService = require('../services/customer.service');
-const authServices = require('../services/auth.service');
-const { validatePatch } = require('../validators/customerProfile.validator');
-const { setAuthCookie } = require('../helpers/cookie.helper');
+import * as customerService from '../services/customer.service.js';
+import * as authService from '../services/auth.service.js';
+import { validatePatch } from '../validators/customerProfile.validator.js';
+import { setAuthCookie } from '../helpers/cookie.helper.js';
 
-exports.getMe = async (req, res) => {
+export async function getMe(req, res) {
     const { status, body } = await customerService.getMe(req.user._id);
     return res.status(status).json(body);
 };
 
-exports.publicProfile = async (req, res) => {
+export async function publicProfile(req, res) {
     const { status, body } = await customerService.publicProfile(req.params.id);
     return res.status(status).json(body);
 };
 
-exports.updateMe = async (req, res) => {
+export async function updateMe(req, res) {
     // validate request
     const { error } = validatePatch(req.body);
     if (error) return res.status(400).send(error.details[0].message);
@@ -23,13 +23,13 @@ exports.updateMe = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.deleteMe = async (req, res) => {
+export async function deleteMe(req, res) {
     const credentials = {
         username: req.user.username,
         password: req.body.password
     };
     // verify password
-    const authResult = await authServices.verifyUserCredentials(credentials)
+    const authResult = await authService.verifyUserCredentials(credentials)
     if (authResult.status !== 200) {
         return res.status(authResult.status).json(authResult.body);
     }

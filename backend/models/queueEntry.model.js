@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const queueEntrySchema = new mongoose.Schema({
     restaurant: {
@@ -39,4 +39,4 @@ queueEntrySchema.index({ customer: 1 });
 
 const QueueEntry = mongoose.model('QueueEntry', queueEntrySchema);
 
-module.exports = QueueEntry;
+export default QueueEntry;

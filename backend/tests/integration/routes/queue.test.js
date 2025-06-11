@@ -1,14 +1,15 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const { setTokenCookie } = require('../../../helpers/cookie.helper');
-const QueueEntry = require('../../../models/queueEntry.model');
-const { generateAuthToken } = require('../../../helpers/token.helper');
-const { createTestUser } = require('../../factories/user.factory');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import QueueEntry from '../../../models/queueEntry.model.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { createTestUser } from '../../factories/user.factory.js';
 
 describe('queue test', () => {
     let server;
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        const mod = await import('../../../index.js');
+        server = mod.default;
     });
 
     afterAll(async () => {
@@ -110,6 +111,7 @@ describe('queue test', () => {
         let cookie;
         let token;
         let restaurant;
+        let pax;
         let customer;
         let queueGroup;
     

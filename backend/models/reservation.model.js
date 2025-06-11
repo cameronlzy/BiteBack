@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const reservationSchema = new mongoose.Schema({
     user: { 
@@ -41,4 +41,4 @@ reservationSchema.index({ restaurant: 1 });
 
 const Reservation = mongoose.model('Reservation', reservationSchema);
 
-module.exports = Reservation;
+export default Reservation;

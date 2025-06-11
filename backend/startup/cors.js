@@ -1,4 +1,4 @@
-const cors = require('cors');
+import cors from 'cors';
 
 const corsOptions = {
   origin: 'https://bite-back-indol.vercel.app',
@@ -6,7 +6,7 @@ const corsOptions = {
   credentials: true,
 };
 
-module.exports = function (app) {
+export default function (app) {
   app.use(cors(corsOptions));
   app.options(/.*/, cors(corsOptions));
 };

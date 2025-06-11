@@ -1,21 +1,23 @@
-const Restaurant = require('../models/restaurant.model');
-const Reservation = require('../models/reservation.model');
-const User = require('../models/user.model');
-const OwnerProfile = require('../models/ownerProfile.model');
-const Review = require('../models/review.model');
-const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
-const { DateTime } = require('luxon');
-const reservationService = require('../services/reservation.service');
-const { createSlots, convertSGTOpeningHoursToUTC, filterOpenRestaurants } = require('../helpers/restaurant.helper');
-const _ = require('lodash');
-const mongoose = require('mongoose');
-const { deleteImagesFromCloudinary, deleteImagesFromDocument } = require('./image.service');
-const geocodeAddress = require('../helpers/geocode');
-const { escapeRegex } = require('../helpers/regex.helper');
+import Restaurant from '../models/restaurant.model.js';
+import Reservation from '../models/reservation.model.js';
+import User from '../models/user.model.js';
+import OwnerProfile from '../models/ownerProfile.model.js';
+import Review from '../models/review.model.js';
+import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
+import Staff from '../models/staff.model.js';
+import { DateTime } from 'luxon';
+import * as reservationService from '../services/reservation.service.js';
+import { createSlots, convertSGTOpeningHoursToUTC, filterOpenRestaurants } from '../helpers/restaurant.helper.js';
+import { generateStaffUsername, generateStaffHashedPassword } from '../helpers/staff.helper.js';
+import _ from 'lodash';
+import mongoose from 'mongoose';
+import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.service.js';
+import { geocodeAddress } from '../helpers/geocode.js';
+import { escapeRegex } from '../helpers/regex.helper.js';
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
-exports.searchRestaurants = async (filters) => {
+export async function searchRestaurants(filters) {
   const {
     search,
     page = 1,
@@ -84,7 +86,7 @@ exports.searchRestaurants = async (filters) => {
   };
 }
 
-exports.discoverRestaurants = async (filters) => {
+export async function discoverRestaurants(filters) {
   const {
     cuisines,
     minRating = 0,
@@ -148,16 +150,16 @@ exports.discoverRestaurants = async (filters) => {
   if (openNow) restaurants = filterOpenRestaurants(restaurants);
 
   return { status: 200, body: restaurants }
-};
+}
 
-exports.getRestaurantById = async (restaurantId) => { 
+export async function getRestaurantById(restaurantId) { 
   // find restaurant
   const restaurant = await Restaurant.findById(restaurantId).lean();
   if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
   return { status: 200, body: restaurant };
-};
+}
 
-exports.getAvailability = async (restaurantId, query) => {
+export async function getAvailability(restaurantId, query) {
   // find restaurant
   const restaurant = await Restaurant.findById(restaurantId).select('+_id').lean();
   if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
@@ -182,14 +184,14 @@ exports.getAvailability = async (restaurantId, query) => {
     time: slot,
     available: Math.max(0, availabilityMap[slot])
   })) };
-};
+}
 
-exports.createRestaurant = async (authUser, data) => {
+export async function createRestaurant(authUser, data) {
   const session = isProdEnv ? await mongoose.startSession() : null;
   if (session) session.startTransaction();
 
   try {
-    const restaurant = await exports.createRestaurantHelper(authUser, data, session);
+    const restaurant = await createRestaurantHelper(authUser, data, session);
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session || null);
@@ -209,9 +211,9 @@ exports.createRestaurant = async (authUser, data) => {
   } finally {
     if (session) session.endSession();
   }
-};
+}
 
-exports.createRestaurantBulk = async (authUser, data) => {
+export async function createRestaurantBulk(authUser, data) {
   const session = isProdEnv ? await mongoose.startSession() : null;
   if (session) session.startTransaction();
 
@@ -219,7 +221,7 @@ exports.createRestaurantBulk = async (authUser, data) => {
     // create restaurants
     const restaurantIds = [];
     for (const item of data) {
-      const restaurant = await exports.createRestaurantHelper(authUser, item, session);
+      const restaurant = await createRestaurantHelper(authUser, item, session);
       restaurantIds.push(restaurant._id);
     }
 
@@ -240,9 +242,9 @@ exports.createRestaurantBulk = async (authUser, data) => {
   } finally {
     if (session) session.endSession();
   }
-};
+}
 
-exports.updateRestaurantImages = async (restaurant, newImageUrls) => {
+export async function updateRestaurantImages(restaurant, newImageUrls) {
   const currentImage = restaurant.images || [];
 
   // find images to delete
@@ -261,7 +263,7 @@ exports.updateRestaurantImages = async (restaurant, newImageUrls) => {
   return { status: 200, body: restaurant.toObject().images };
 }
 
-exports.updateRestaurant = async (restaurant, update) => {
+export async function updateRestaurant(restaurant, update) {
   // selectively update only the fields that are defined
   for (const key in update) {
     if (key === 'openingHours') {
@@ -279,9 +281,9 @@ exports.updateRestaurant = async (restaurant, update) => {
   
   await restaurant.save();
   return { status: 200, body: restaurant.toObject() };
-};
+}
 
-exports.deleteRestaurant = async (restaurant, authUser) => {
+export async function deleteRestaurant(restaurant, authUser) {
   const session = isProdEnv ? await mongoose.startSession() : null;
   if (session) session.startTransaction();
 
@@ -297,7 +299,7 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
     );
     if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
 
-    await exports.deleteRestaurantAndAssociations(restaurant, session);
+    await deleteRestaurantAndAssociations(restaurant, session);
 
     // commit transaction
     if (session) await session.commitTransaction();
@@ -309,10 +311,10 @@ exports.deleteRestaurant = async (restaurant, authUser) => {
   } finally {
     if (session) session.endSession();
   }
-};
+}
 
 // utility services
-exports.createRestaurantHelper = async (authUser, data, session = null) => {
+export async function createRestaurantHelper(authUser, data, session = null) {
   // get longitude and latitude
   const fullAddress = data.address.replace(/S(\d{6})$/i, 'Singapore $1');
   const { longitude, latitude } = await geocodeAddress(fullAddress);
@@ -322,11 +324,28 @@ exports.createRestaurantHelper = async (authUser, data, session = null) => {
   restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
   restaurant.owner = authUser._id;
   restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
+
+  // create staff account for restaurant
+  const staff = createStaffForRestaurant(restaurant, session);
+  restaurant.staff = staff._id;
+
   await restaurant.save(session ? { session } : undefined);
   return restaurant;
 }
 
-exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => {
+export async function createStaffForRestaurant(restaurant, session = null) {
+  const username = generateStaffUsername(restaurant.name);
+  const password = await generateStaffHashedPassword();
+
+  const staff = new Staff({
+    username, password, restaurant: restaurant._id, role: 'staff'
+  });
+  
+  await staff.save(session ? { session } : undefined);
+  return staff;
+}
+
+export async function deleteRestaurantAndAssociations(restaurant, session = null) {
   // delete images
   await deleteImagesFromDocument(restaurant, 'images');
   
@@ -339,4 +358,4 @@ exports.deleteRestaurantAndAssociations = async (restaurant, session = null) => 
 
   // delete restaurant after children deleted
   await Restaurant.findByIdAndDelete(restaurant._id).session(session);
-};
+}

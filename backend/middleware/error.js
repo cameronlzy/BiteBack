@@ -1,6 +1,6 @@
-const logger = require('../startup/logging');
+import logger from '../startup/logging.js';
 
-module.exports = function (err, req, res, next) {
+export default function (err, req, res, next) {
   if (err.status) {
     return res.status(err.status).send(err.body);
   }

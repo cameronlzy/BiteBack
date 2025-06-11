@@ -1,12 +1,13 @@
-const auth = require('../middleware/auth');
-const isCustomer = require('../middleware/isCustomer');
-// const isStaff = require('../middleware/isStaff');
-const authorizedQueueCustomer = require('../middleware/authorizedQueueCustomer');
-// const authorizedRestaurantStaff = require('../middleware/authorizedRestaurantStaff');
-const express = require('express');
-const queueController = require('../controllers/queue.controller');
-const validateObjectId = require('../middleware/validateObjectId');
-const wrapRoutes = require('../helpers/wrapRoutes');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import isCustomer from '../middleware/isCustomer.js';
+// import isStaff from '../middleware/isStaff.js';
+import authorizedQueueCustomer from '../middleware/authorizedQueueCustomer.js';
+// import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
+import * as queueController from '../controllers/queue.controller.js';
+import validateObjectId from '../middleware/validateObjectId.js';
+import wrapRoutes from '../helpers/wrapRoutes.js';
+
 const router = wrapRoutes(express.Router());
 
 // [Customer] - Get their queue status
@@ -27,4 +28,4 @@ router.delete('/:id', [validateObjectId, auth, isCustomer, authorizedQueueCustom
 // // [Staff] - Calls next in restaurant queue
 // router.patch('/restaurant/:id/next', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.callRestaurantNext);
 
-module.exports = router; 
+export default router;

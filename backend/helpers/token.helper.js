@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const config = require('config');
+import jwt from 'jsonwebtoken';
+import config from 'config';
 
-function generateAuthToken(user) {
+export function generateAuthToken(user) {
   return jwt.sign(
     {
       _id: user._id,
@@ -14,7 +14,7 @@ function generateAuthToken(user) {
   );
 }
 
-function staffGenerateAuthToken(staff) {
+export function staffGenerateAuthToken(staff) {
   return jwt.sign(
     {
       _id: staff._id,
@@ -26,7 +26,3 @@ function staffGenerateAuthToken(staff) {
   );
 }
 
-module.exports = {
-  generateAuthToken,
-  staffGenerateAuthToken,
-};

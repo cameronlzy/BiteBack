@@ -1,16 +1,17 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const Review = require('../../../models/review.model');
-const ReviewBadgeVote = require('../../../models/reviewBadgeVote.model');
-const reviewService = require('../../../services/review.service');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestCustomerProfile } = require('../../factories/customerProfile.factory');
-const { createTestRestaurant } = require('../../factories/restaurant.factory');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import Review from '../../../models/review.model.js';
+import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
+import * as reviewService from '../../../services/review.service.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 
 describe('review test', () => {
     let server;
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        const mod = await import('../../../index.js');
+        server = mod.default;
     });
     afterAll(async () => {
         await mongoose.connection.close();

@@ -1,19 +1,20 @@
-const OwnerProfile = require('../../../models/ownerProfile.model');
-const User = require('../../../models/user.model');
-const Restaurant = require('../../../models/reservation.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestRestaurant } = require('../../factories/restaurant.factory');
-const { createTestOwnerProfile } = require('../../factories/ownerProfile.factory');
-const { generateAuthToken } = require('../../../helpers/token.helper');
-const { setTokenCookie } = require('../../../helpers/cookie.helper');
-const bcrypt = require('bcryptjs');
-const request = require('supertest');
-const mongoose = require('mongoose');
+import OwnerProfile from '../../../models/ownerProfile.model.js';
+import User from '../../../models/user.model.js';
+import Restaurant from '../../../models/reservation.model.js'; // Check this import — did you mean reservation.model or restaurant.model?
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import bcrypt from 'bcryptjs';
+import request from 'supertest';
+import mongoose from 'mongoose';
 
 describe('owner test', () => {
     let server;
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        const mod = await import('../../../index.js');
+        server = mod.default;
     });
 
     afterAll(async () => {

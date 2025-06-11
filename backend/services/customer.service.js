@@ -1,25 +1,24 @@
-const User = require('../models/user.model');
-const CustomerProfile = require('../models/customerProfile.model');
-const Review = require('../models/review.model');
-const Reservation = require('../models/reservation.model');
-const reviewService = require('../services/review.service');
-const { generateAuthToken } = require('../helpers/token.helper');
-const mongoose = require('mongoose');
-const _ = require('lodash');
-const bcrypt = require('bcryptjs');
+import User from '../models/user.model.js';
+import CustomerProfile from '../models/customerProfile.model.js';
+import Review from '../models/review.model.js';
+import Reservation from '../models/reservation.model.js';
+import * as reviewService from '../services/review.service.js';
+import { generateAuthToken } from '../helpers/token.helper.js';
+import mongoose from 'mongoose';
+import _ from 'lodash';
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
-exports.getMe = async (userId) => {
+export async function getMe(userId) {
     const user = await User.findById(userId)
         .populate('profile')
         .select('-password')
         .lean();
     if (!user) return { status: 400, body: 'User not found.' };
     return { status: 200, body: user };
-};
+}
 
-exports.publicProfile = async (customerId) => {
+export async function publicProfile(customerId) {
     // get customer
     const customer = await CustomerProfile.findById(customerId)
         .select('+totalBadges +dateJoined +username')
@@ -27,9 +26,9 @@ exports.publicProfile = async (customerId) => {
     if (!customer) return { status: 404, body: 'Customer not found.' };
 
     return { status: 200, body: customer };
-};
+}
 
-exports.updateMe = async (update, authUser) => {
+export async function updateMe(update, authUser) {
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
@@ -94,9 +93,9 @@ exports.updateMe = async (update, authUser) => {
     } finally {
         if (session) session.endSession();
     }
-};
+}
 
-exports.deleteMe = async (user) => {
+export async function deleteMe(user) {
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
@@ -128,4 +127,4 @@ exports.deleteMe = async (user) => {
     } finally {
         if (session) session.endSession();
     }
-};
+}

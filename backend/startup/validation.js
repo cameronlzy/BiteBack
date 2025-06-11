@@ -1,5 +1,6 @@
-const Joi = require('joi');
+import JoiBase from 'joi';
+import joiObjectId from 'joi-objectid';
 
-module.exports = function() {
-  Joi.objectId = require('joi-objectid')(Joi);
+export default function() {
+  JoiBase.objectId = joiObjectId(JoiBase);
 }

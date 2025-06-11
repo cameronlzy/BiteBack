@@ -1,11 +1,12 @@
-const auth = require('../middleware/auth');
-const validateObjectId = require('../middleware/validateObjectId');
-const isStaff = require('../middleware/isStaff');
-const authorizedReservationUser = require('../middleware/authorizedReservationUser');
-const authorizedRestaurantStaff = require('../middleware/authorizedRestaurantStaff');
-const reservationController = require('../controllers/reservation.controller');
-const express = require('express');
-const wrapRoutes = require('../helpers/wrapRoutes');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import validateObjectId from '../middleware/validateObjectId.js';
+import isStaff from '../middleware/isStaff.js';
+import authorizedReservationUser from '../middleware/authorizedReservationUser.js';
+import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
+import * as reservationController from '../controllers/reservation.controller.js';
+import wrapRoutes from '../helpers/wrapRoutes.js';
+
 const router = wrapRoutes(express.Router());
 
 // [Staff] - Get reservations at restaurant for current timeslot
@@ -26,4 +27,4 @@ router.patch('/:id', [validateObjectId, auth, authorizedReservationUser], reserv
 // [User] - Delete reservation
 router.delete('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.deleteReservation);
 
-module.exports = router; 
+export default router;

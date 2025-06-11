@@ -1,6 +1,6 @@
-const { DateTime } = require('luxon');
+import { DateTime } from 'luxon';
 
-exports.convertSGTOpeningHoursToUTC = (openingHoursString) => {
+export function convertSGTOpeningHoursToUTC(openingHoursString) {
   const days = openingHoursString.split('|');
 
   const converted = days.map(entry => {
@@ -17,7 +17,7 @@ exports.convertSGTOpeningHoursToUTC = (openingHoursString) => {
   return converted.join('|');
 }
 
-exports.createSlots = (openingHoursString, sgtDateTime, slotDuration = 60) => {
+export function createSlots(openingHoursString, sgtDateTime, slotDuration = 60) {
   const openingHours = openingHoursString.split('|');
   const date = sgtDateTime;
   const weekdayIndex = sgtDateTime.weekday - 1; 
@@ -43,7 +43,7 @@ exports.createSlots = (openingHoursString, sgtDateTime, slotDuration = 60) => {
   return slots;
 }
 
-exports.filterOpenRestaurants = (restaurants) => {
+export function filterOpenRestaurants(restaurants) {
   const nowUTC = DateTime.utc();
   const currentDay = nowUTC.weekday % 7;
 
@@ -65,7 +65,7 @@ exports.filterOpenRestaurants = (restaurants) => {
   });
 };
 
-exports.getCurrentTimeSlotStartUTC = (restaurant) => {
+export function getCurrentTimeSlotStartUTC(restaurant) {
     const now = DateTime.utc();
     const weekdayIndex = now.weekday - 1;
 
@@ -94,4 +94,4 @@ exports.getCurrentTimeSlotStartUTC = (restaurant) => {
     const slotStart = openingTime.plus({ minutes: slotIndex * restaurant.slotDuration });
 
     return slotStart; // JS Date in UTC
-};
+}

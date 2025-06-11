@@ -1,8 +1,9 @@
-const ownerController = require('../controllers/owner.controller');
-const auth = require('../middleware/auth');
-const isOwner = require('../middleware/isOwner');
-const express = require('express');
-const wrapRoutes = require('../helpers/wrapRoutes');
+import express from 'express';
+import * as ownerController from '../controllers/owner.controller.js';
+import auth from '../middleware/auth.js';
+import isOwner from '../middleware/isOwner.js';
+import wrapRoutes from '../helpers/wrapRoutes.js';
+
 const router = wrapRoutes(express.Router());
 
 // [Owner] - Get all information for private profile page
@@ -14,4 +15,4 @@ router.patch('/me', [auth, isOwner], ownerController.updateMe);
 // [Owner] - Delete customer
 router.delete('/me', [auth, isOwner], ownerController.deleteMe);
 
-module.exports = router;
+export default router;

@@ -1,8 +1,8 @@
-const bcrypt = require('bcryptjs');
-const User = require('../../models/user.model');
-const mongoose = require('mongoose');
+import bcrypt from 'bcryptjs';
+import User from '../../models/user.model.js';
+import mongoose from 'mongoose';
 
-async function createTestUser(role = 'customer') {
+export async function createTestUser(role = 'customer') {
   const email = `test_${Date.now()}@example.com`;
   const username = `user_${Date.now()}`;
   const password = await bcrypt.hash('Password@123', 10);
@@ -19,5 +19,3 @@ async function createTestUser(role = 'customer') {
   });
   return user;
 }
-
-module.exports = { createTestUser };

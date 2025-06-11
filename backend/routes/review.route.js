@@ -1,15 +1,18 @@
-const express = require('express');
-const auth = require('../middleware/auth');
-const isCustomer = require('../middleware/isCustomer');
-const isOwner = require('../middleware/isOwner');
-const validateObjectId = require('../middleware/validateObjectId');
-const optionalAuth = require('../middleware/optionalAuth');
-const authorizedReviewCustomer = require('../middleware/authorizedReviewCustomer');
-const authorizedReviewRestaurantOwner = require('../middleware/authorizedReviewRestaurantOwner');
-const parser = require('../middleware/cloudinaryUpload')('reviews');
-const wrapRoutes = require('../helpers/wrapRoutes');
-const reviewController = require('../controllers/review.controller');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import isCustomer from '../middleware/isCustomer.js';
+import isOwner from '../middleware/isOwner.js';
+import validateObjectId from '../middleware/validateObjectId.js';
+import optionalAuth from '../middleware/optionalAuth.js';
+import authorizedReviewCustomer from '../middleware/authorizedReviewCustomer.js';
+import authorizedReviewRestaurantOwner from '../middleware/authorizedReviewRestaurantOwner.js';
+import parser from '../middleware/cloudinaryUpload.js';
+import wrapRoutes from '../helpers/wrapRoutes.js';
+import * as reviewController from '../controllers/review.controller.js';
+
 const router = wrapRoutes(express.Router());
+
+const reviewParser = parser('reviews');
 
 // [Public] - Get all reviews for a restaurant
 router.get('/restaurant/:id', [validateObjectId, optionalAuth], reviewController.getReviewsByRestaurant);
@@ -30,7 +33,7 @@ router.post('/:id/reply', [validateObjectId, auth, isOwner, authorizedReviewRest
 router.post('/:id/badges', [validateObjectId, auth, isCustomer], reviewController.addBadge);
 
 // [Customer] - Upload images for their restaurant
-router.post('/:id/images', [auth, isCustomer, authorizedReviewCustomer, parser.array('images', 5)], reviewController.addReviewImages);
+router.post('/:id/images', [auth, isCustomer, authorizedReviewCustomer, reviewParser.array('images', 5)], reviewController.addReviewImages);
 
 // [Customer] - Delete a review (owned by the customer)
 router.delete('/:id', [validateObjectId, auth, isCustomer, authorizedReviewCustomer], reviewController.deleteReview);
@@ -41,4 +44,4 @@ router.delete('/:id/reply', [validateObjectId, auth, isOwner, authorizedReviewRe
 // [Customer] - Delete badge vote by current user on a review
 router.delete('/:id/badges', [validateObjectId, auth, isCustomer], reviewController.deleteBadge);
 
-module.exports = router;
+export default router;

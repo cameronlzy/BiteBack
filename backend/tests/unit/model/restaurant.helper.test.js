@@ -1,5 +1,5 @@
-const { createSlots } = require('../../../helpers/restaurant.helper');
-const { DateTime } = require('luxon');
+import { createSlots } from '../../../helpers/restaurant.helper.js';
+import { DateTime } from 'luxon';
 
 describe('restaurant helper tests', () => {
     it('should return an array of time intervals of the right length', () => {

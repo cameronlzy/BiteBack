@@ -1,20 +1,21 @@
-const Reservation = require('../../../models/reservation.model');
-const User = require('../../../models/user.model');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const Restaurant = require('../../../models/restaurant.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestRestaurant } = require('../../factories/restaurant.factory');
-const { createTestStaff } = require('../../factories/staff.factory');
-const { generateAuthToken, staffGenerateAuthToken } = require('../../../helpers/token.helper');
-const { DateTime } = require('luxon');
-const { setTokenCookie } = require('../../../helpers/cookie.helper');
+import Reservation from '../../../models/reservation.model.js';
+import User from '../../../models/user.model.js';
+import request from 'supertest';
+import mongoose from 'mongoose';
+import Restaurant from '../../../models/restaurant.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestStaff } from '../../factories/staff.factory.js';
+import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
+import { DateTime } from 'luxon';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 
 describe('reservation test', () => {
     let server;
 
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        const mod = await import('../../../index.js');
+        server = mod.default;
     });
 
     afterAll(async () => {
@@ -31,8 +32,9 @@ describe('reservation test', () => {
         let reservationDate1;
         let reservationDate2;
         let pax;
-        let url;
+        let staff;
         let remarks;
+        let cookie;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});

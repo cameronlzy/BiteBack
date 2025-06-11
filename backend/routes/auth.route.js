@@ -1,7 +1,8 @@
-const express = require('express');
-const auth = require('../middleware/auth');
-const authController = require('../controllers/auth.controller');
-const wrapRoutes = require('../helpers/wrapRoutes');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import * as authController from '../controllers/auth.controller.js';
+import wrapRoutes from '../helpers/wrapRoutes.js';
+
 const router = wrapRoutes(express.Router());
 
 // [Public] - Generate token for password reset
@@ -25,4 +26,4 @@ router.post('/register', authController.register);
 // [Staff] - Login for staff
 router.post('/login/staff', authController.staffLogin);
 
-module.exports = router; 
+export default router;

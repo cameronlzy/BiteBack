@@ -1,24 +1,26 @@
-const request = require('supertest');
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const config = require('config');
-const cookieParser = require('cookie');
-const User = require('../../../models/user.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestRestaurant } = require('../../factories/restaurant.factory');
-const { generateAuthToken } = require('../../../helpers/token.helper');
-const CustomerProfile = require('../../../models/customerProfile.model');
-const OwnerProfile = require('../../../models/ownerProfile.model');
-const Restaurant = require('../../../models/restaurant.model');
-const Staff = require('../../../models/staff.model');
-const { setTokenCookie } = require('../../../helpers/cookie.helper');
+import request from 'supertest';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import config from 'config';
+import cookieParser from 'cookie';
+
+import User from '../../../models/user.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import CustomerProfile from '../../../models/customerProfile.model.js';
+import OwnerProfile from '../../../models/ownerProfile.model.js';
+import Restaurant from '../../../models/restaurant.model.js';
+import Staff from '../../../models/staff.model.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 
 describe('auth test', () => {
     let server;
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        const mod = await import('../../../index.js');
+        server = mod.default;
     });
 
     afterAll(async () => {

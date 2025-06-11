@@ -1,8 +1,8 @@
-const Staff = require('../../models/staff.model');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import Staff from '../../models/staff.model.js';
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
-async function createTestStaff(restaurant = new mongoose.Types.ObjectId()) {
+export async function createTestStaff(restaurant = new mongoose.Types.ObjectId()) {
     const username = "username";
     const password = await bcrypt.hash('Password@123', 10);
     const role = 'staff';
@@ -15,5 +15,3 @@ async function createTestStaff(restaurant = new mongoose.Types.ObjectId()) {
     });
     return staff;
 }
-
-module.exports = { createTestStaff };

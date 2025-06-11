@@ -1,18 +1,18 @@
-const User = require('../models/user.model');
-const CustomerProfile = require('../models/customerProfile.model');
-const OwnerProfile = require('../models/ownerProfile.model');
-const Staff = require('../models/staff.model');
-const { generateAuthToken, staffGenerateAuthToken } = require('../helpers/token.helper');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const _ = require('lodash');
-const crypto = require('crypto');
-const config = require('config');
-const sendEmail = require('../helpers/sendEmail');
+import User from '../models/user.model.js';
+import CustomerProfile from '../models/customerProfile.model.js';
+import OwnerProfile from '../models/ownerProfile.model.js';
+import Staff from '../models/staff.model.js';
+import { generateAuthToken, staffGenerateAuthToken } from '../helpers/token.helper.js';
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import _ from 'lodash';
+import crypto from 'crypto';
+import config from 'config';
+import sendEmail from '../helpers/sendEmail.js';
 
 const isProdEnv = process.env.NODE_ENV === 'production';
 
-exports.forgotPassword = async (credentials) => {
+export async function forgotPassword(credentials) {
     // find user
     const user = await User.findOne(credentials.email 
         ? { email: credentials.email }
@@ -32,9 +32,9 @@ exports.forgotPassword = async (credentials) => {
     await sendEmail(user.email, 'Password Reset', `Click to reset your password: ${resetLink}`);
 
     return { status: 200, body: 'Password reset link sent to your email' };
-};
+}
 
-exports.resetPassword = async (data, token) => {
+export async function resetPassword(data, token)  {
     const hash = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
@@ -53,11 +53,11 @@ exports.resetPassword = async (data, token) => {
     await user.save();
 
     return { status: 200, body: 'Password has been reset' };
-};
+}
 
-exports.changePassword = async (data, authUser) => {
+export async function changePassword(data, authUser) {
     // find user and verify credentials
-    const { status, body } = await exports.verifyUserCredentials({
+    const { status, body } = await verifyUserCredentials({
         username: authUser.username, 
         password: data.oldPassword
     });
@@ -69,17 +69,17 @@ exports.changePassword = async (data, authUser) => {
     await user.save();
     const token = generateAuthToken(user);
     return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role'])};
-};
+}
 
-exports.login = async (credentials) => {
+export async function login(credentials) {
     // find user and verify credentials
-    const { status, body } = await exports.verifyUserCredentials(credentials);
+    const { status, body } = await verifyUserCredentials(credentials);
     if (status !== 200) return { status, body };
     const token = generateAuthToken(body);
     return { token, status: 200, body: _.pick(body, ['_id', 'email', 'username', 'role']) };
-};
+}
 
-exports.registerCustomer = async (data) => {
+export async function registerCustomer(data) {
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
@@ -129,9 +129,9 @@ exports.registerCustomer = async (data) => {
     } finally {
         if (session) session.endSession();
     }
-};
+}
 
-exports.registerOwner = async (data) => {
+export async function registerOwner(data) {
     const session = isProdEnv ? await mongoose.startSession() : null;
     if (session) session.startTransaction();
 
@@ -185,9 +185,9 @@ exports.registerOwner = async (data) => {
     } finally {
         if (session) session.endSession();
     }
-};
+}
 
-exports.staffLogin = async (credentials) => {
+export async function staffLogin(credentials) {
     const staff = await Staff.findOne({ username: credentials.username });
     if (!staff) return { status: 400, body: 'Invalid username or password' };
 
@@ -196,10 +196,10 @@ exports.staffLogin = async (credentials) => {
 
     const token = staffGenerateAuthToken(staff);
     return { token, status: 200, body: _.pick(staff, ['_id', 'username', 'role', 'restaurant']) };
-};
+}
 
 // utility services
-exports.verifyUserCredentials = async (credentials, session = null) => {
+export async function verifyUserCredentials(credentials, session = null) {
     const user = await User.findOne(credentials.email
         ? { email: credentials.email }
         : { username: credentials.username }
@@ -211,4 +211,4 @@ exports.verifyUserCredentials = async (credentials, session = null) => {
     if (!isValid) return { status: 400, body: 'Invalid email, username or password' };
 
     return { status: 200, body: user };
-};
+}

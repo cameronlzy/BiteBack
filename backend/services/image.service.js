@@ -1,6 +1,6 @@
-const cloudinary = require('cloudinary').v2;
+import { v2 as cloudinary } from 'cloudinary';
 
-exports.addImage = async(docModel, docId, uploadedFile, imageField = 'images') => {
+export async function addImage(docModel, docId, uploadedFile, imageField = 'images') {
     const imageUrl = uploadedFile.path;
 
     const doc = await docModel.findById(docId);
@@ -10,9 +10,9 @@ exports.addImage = async(docModel, docId, uploadedFile, imageField = 'images') =
     await doc.save();
 
     return { status: 200, body: doc.toObject() };
-};
+}
 
-exports.addImages = async (docModel, docId, uploadedFiles, imageField = 'images') => {
+export async function addImages(docModel, docId, uploadedFiles, imageField = 'images') {
     const imageUrls = uploadedFiles.map(file => file.path);
 
     const doc = await docModel.findById(docId);
@@ -22,14 +22,14 @@ exports.addImages = async (docModel, docId, uploadedFiles, imageField = 'images'
     await doc.save();
 
     return { status: 200, body: doc.toObject() };
-};
+}
 
-exports.deleteImagesFromDocument = async (doc, imageField = 'images') => {
+export async function deleteImagesFromDocument(doc, imageField = 'images') {
   const imageUrlsToDelete = doc[imageField];
-  await exports.deleteImagesFromCloudinary(imageUrlsToDelete);
-};
+  await deleteImagesFromCloudinary(imageUrlsToDelete);
+}
 
-exports.deleteImagesFromCloudinary = async (imageUrlsToDelete) => {
+export async function deleteImagesFromCloudinary(imageUrlsToDelete) {
   const deleteResults = await Promise.allSettled(
     imageUrlsToDelete.map((url) => {
       const publicId = extractPublicIdFromUrl(url);
@@ -37,7 +37,7 @@ exports.deleteImagesFromCloudinary = async (imageUrlsToDelete) => {
     })
   );
   return deleteResults;
-};
+}
 
 // helper function
 function extractPublicIdFromUrl(url) {

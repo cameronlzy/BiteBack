@@ -1,12 +1,15 @@
-const auth = require('../middleware/auth');
-const isOwner = require('../middleware/isOwner');
-const authorizedRestaurantOwner = require('../middleware/authorizedRestaurantOwner');
-const parser = require('../middleware/cloudinaryUpload')('restaurants');
-const express = require('express');
-const restaurantController = require('../controllers/restaurant.controller');
-const validateObjectId = require('../middleware/validateObjectId');
-const wrapRoutes = require('../helpers/wrapRoutes');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import isOwner from '../middleware/isOwner.js';
+import authorizedRestaurantOwner from '../middleware/authorizedRestaurantOwner.js';
+import parser from '../middleware/cloudinaryUpload.js';
+import * as restaurantController from '../controllers/restaurant.controller.js';
+import validateObjectId from '../middleware/validateObjectId.js';
+import wrapRoutes from '../helpers/wrapRoutes.js';
+
 const router = wrapRoutes(express.Router());
+
+const restaurantParser = parser('restaurants');
 
 // [Public] - Search route with filters
 router.get('/', restaurantController.searchRestaurants);
@@ -27,7 +30,7 @@ router.post('/', [auth, isOwner], restaurantController.createRestaurant);
 router.post('/bulk', [auth, isOwner], restaurantController.createRestaurantBulk);
 
 // [Owner] - Upload images for their restaurant
-router.post('/:id/images', [auth, isOwner, authorizedRestaurantOwner, parser.array('images', 5)], restaurantController.addRestaurantImages);
+router.post('/:id/images', [auth, isOwner, authorizedRestaurantOwner, restaurantParser.array('images', 5)], restaurantController.addRestaurantImages);
 
 // [Owner] - Delete images from restaurant
 router.put('/:id/images', [auth, isOwner, authorizedRestaurantOwner], restaurantController.updateRestaurantImages);
@@ -38,4 +41,4 @@ router.patch('/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner
 // [Owner] - Delete restaurant
 router.delete('/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], restaurantController.deleteRestaurant);
 
-module.exports = router; 
+export default router;

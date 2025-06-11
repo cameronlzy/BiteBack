@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
+import mongoose from 'mongoose';
+import validator from 'validator';
 
 const cuisineList = [
   'Chinese',
@@ -212,4 +212,4 @@ restaurantSchema.index({ searchKeywords: 1 });
 
 const Restaurant = mongoose.model('Restaurant', restaurantSchema);
 
-module.exports = Restaurant;
+export default Restaurant;

@@ -1,8 +1,7 @@
-const Restaurant = require('../../models/restaurant.model');
-const { convertSGTOpeningHoursToUTC } = require('../../helpers/restaurant.helper');
-const mongoose = require('mongoose');
+import Restaurant from '../../models/restaurant.model.js';
+import { convertSGTOpeningHoursToUTC } from '../../helpers/restaurant.helper.js';
 
-function createTestRestaurant(owner) {
+export function createTestRestaurant(owner) {
     let restaurantName = "restaurant";
     let address = "Blk 30 Kelantan Lane #12-01D, S208652";
     let contactNumber = "87654321";
@@ -26,5 +25,3 @@ function createTestRestaurant(owner) {
         website, location, tags
     });
 }
-
-module.exports = { createTestRestaurant };

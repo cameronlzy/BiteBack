@@ -1,9 +1,10 @@
-const auth = require('../middleware/auth');
-const customerController = require('../controllers/customer.controller');
-const express = require('express');
-const wrapRoutes = require('../helpers/wrapRoutes');
-const validateObjectId = require('../middleware/validateObjectId');
-const isCustomer = require('../middleware/isCustomer');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import * as customerController from '../controllers/customer.controller.js';
+import wrapRoutes from '../helpers/wrapRoutes.js';
+import validateObjectId from '../middleware/validateObjectId.js';
+import isCustomer from '../middleware/isCustomer.js';
+
 const router = wrapRoutes(express.Router());
 
 // [Customer] - Get all information for private profile page
@@ -18,4 +19,4 @@ router.patch('/me', [auth, isCustomer], customerController.updateMe);
 // [Customer] - Delete customer
 router.delete('/me', [auth, isCustomer], customerController.deleteMe);
 
-module.exports = router;
+export default router;

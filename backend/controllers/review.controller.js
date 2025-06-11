@@ -1,24 +1,24 @@
-const reviewService = require('../services/review.service');
-const imageService = require('../services/image.service');
-const Review = require('../models/review.model');
-const { validateReview, validateReply, validateBadge } = require('../validators/review.validator');
+import * as reviewService from '../services/review.service.js';
+import * as imageService from '../services/image.service.js';
+import Review from '../models/review.model.js';
+import { validateReview, validateReply, validateBadge } from '../validators/review.validator.js';
 
-exports.getReviewsByRestaurant = async (req, res) => {
+export async function getReviewsByRestaurant(req, res) {
   const { status, body } = await reviewService.getReviewsByRestaurant(req.params.id, req.user);
   return res.status(status).json(body);
 };
 
-exports.getReviewsByCustomer = async (req, res) => {
+export async function getReviewsByCustomer(req, res) {
   const { status, body } = await reviewService.getReviewsByCustomer(req.params.id, req.user);
   return res.status(status).json(body);
 };
 
-exports.getReviewById = async (req, res) => {
+export async function getReviewById(req, res) {
   const { status, body } = await reviewService.getReviewById(req.params.id);
   return res.status(status).json(body);
 };
 
-exports.createReview = async (req, res) => {
+export async function createReview(req, res) {
   // validate request
   const { error } = validateReview(req.body);
   if (error) return res.status(400).send(error.details[0].message);
@@ -27,7 +27,7 @@ exports.createReview = async (req, res) => {
   return res.status(status).json(body);
 };
 
-exports.createReply = async (req, res) => {
+export async function createReply(req, res) {
   // validate request
   const { error } = validateReply(req.body);
   if (error) return res.status(400).send(error.details[0].message);
@@ -36,7 +36,7 @@ exports.createReply = async (req, res) => {
   return res.status(status).json(body);
 };
 
-exports.addBadge = async (req, res) => {
+export async function addBadge(req, res) {
   // validate request
   const { error } = validateBadge(req.body);
   if (error) return res.status(400).send(error.details[0].message);
@@ -45,22 +45,22 @@ exports.addBadge = async (req, res) => {
   return res.status(status).json(body);
 };
 
-exports.addReviewImages = async (req, res) => {
+export async function addReviewImages(req, res) {
   const { status, body } = await imageService.addImages(Review, req.review._id, req.files, 'images');
   return res.status(status).json(body.images);
 };
 
-exports.deleteReview = async (req, res) => {
+export async function deleteReview(req, res) {
   const { status, body } = await reviewService.deleteReview(req.review);
   return res.status(status).json(body);
 };
 
-exports.deleteReply = async (req, res) => {
+export async function deleteReply(req, res) {
   const { status, body } = await reviewService.deleteReply(req.review);
   return res.status(status).json(body);
 };
 
-exports.deleteBadge = async (req, res) => {
+export async function deleteBadge(req, res) {
   const { status, body } = await reviewService.deleteBadge(req.params.id, req.user);
   return res.status(status).json(body);
 };

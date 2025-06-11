@@ -1,9 +1,9 @@
-const { DateTime } = require("luxon");
-const Joi = require('joi');
+import { DateTime } from 'luxon';
+import Joi from 'joi';
 
 // validates only iso full strings
 const fullISORegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|([+-]\d{2}:\d{2}))?$/;
-const dateFullOnly = Joi.string()
+export const dateFullOnly = Joi.string()
   .pattern(fullISORegex)
   .custom((value, helpers) => {
     const dt = DateTime.fromISO(value, { setZone: true });
@@ -15,7 +15,7 @@ const dateFullOnly = Joi.string()
 
 
 // validates full and partial iso strings
-const dateAllowPartial = Joi.string().custom((value, helpers) => {
+export const dateAllowPartial = Joi.string().custom((value, helpers) => {
   // Regex for YYYY-MM-DD
   const dateOnly = /^\d{4}-\d{2}-\d{2}$/;
   // Regex for YYYY-MM-DDTHH:mm:ss (24h)
@@ -28,7 +28,7 @@ const dateAllowPartial = Joi.string().custom((value, helpers) => {
 }, 'Date or DateTime validation');
 
 // only ISO date string
-const ISOdate = Joi.string()
+export const ISOdate = Joi.string()
   .isoDate()
   .messages({
     'string.base': 'Date must be a string.',
@@ -36,24 +36,14 @@ const ISOdate = Joi.string()
     'any.required': 'Date is required.'
   });
 
-const convertToUTCStart = (isoDate) => {
+export function convertToUTCStart(isoDate) {
   return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
-};
+}
 
-const convertToUTCEnd = (isoDate) => {
+export function convertToUTCEnd(isoDate) {
   return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).endOf('day').toUTC().toJSDate();
-};
+}
 
-const convertToUTC = (isoDate) => {
+export function convertToUTC(isoDate) {
   return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).toUTC().toJSDate();
-};
-
-
-module.exports = { 
-  dateFullOnly, 
-  dateAllowPartial, 
-  ISOdate,
-  convertToUTCStart,
-  convertToUTCEnd,
-  convertToUTC,
-};
+}

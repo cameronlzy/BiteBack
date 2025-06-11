@@ -1,11 +1,11 @@
-const authService = require('../services/auth.service');
-const { validateLogin, validateCredentials, validatePassword, validatePasswordChange } = require('../validators/user.validator');
-const { validateCustomer } = require('../validators/customerProfile.validator');
-const { validateOwner } = require('../validators/ownerProfile.validator');
-const { validateStaffLogin } = require('../validators/staff.validator');
-const { setAuthCookie } = require('../helpers/cookie.helper');
+import * as authService from '../services/auth.service.js';
+import { validateLogin, validateCredentials, validatePassword, validatePasswordChange } from '../validators/user.validator.js';
+import { validateCustomer } from '../validators/customerProfile.validator.js';
+import { validateOwner } from '../validators/ownerProfile.validator.js';
+import { validateStaffLogin } from '../validators/staff.validator.js';
+import { setAuthCookie } from '../helpers/cookie.helper.js';
 
-exports.forgotPassword = async (req, res) => {
+export async function forgotPassword (req, res) {
     // validate request
     validateCredentials(req.body);
     
@@ -13,7 +13,7 @@ exports.forgotPassword = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.resetPassword = async (req, res) => {
+export async function resetPassword(req, res) {
     const { error } = validatePassword(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
@@ -21,7 +21,7 @@ exports.resetPassword = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.changePassword = async (req, res) => {
+export async function changePassword(req, res) {
     const { error } = validatePasswordChange(req.body);
     if (error) return res.status(400).send(error.details[0].message);
     
@@ -30,7 +30,7 @@ exports.changePassword = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.logout = async (req, res) => {
+export async function logout(req, res) {
     res.clearCookie('token', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -39,7 +39,7 @@ exports.logout = async (req, res) => {
     res.status(200).json({ message: 'Logged out successfully' });
 };
 
-exports.login = async (req, res) => {
+export async function login(req, res) {
     // validate request
     const { error } = validateLogin(req.body);
     if (error) return res.status(400).send(error.details[0].message);
@@ -49,7 +49,7 @@ exports.login = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.register = async (req, res) => {
+export async function register(req, res) {
     // validate request
     if (req.body.role === 'customer') {
         const { error } = validateCustomer(req.body);
@@ -70,7 +70,7 @@ exports.register = async (req, res) => {
     }
 };
 
-exports.staffLogin = async (req, res) => {
+export async function staffLogin(req, res) {
     // validate request
     const { error } = validateStaffLogin(req.body);
     if (error) return res.status(400).send(error.details[0].message);

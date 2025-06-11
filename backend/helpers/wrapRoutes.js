@@ -11,7 +11,7 @@ const asyncWrapper = (handler) =>
       }
     : handler;
 
-module.exports = function wrapRoutes(router) {
+export default function wrapRoutes(router) {
   for (const method of METHODS) {
     const original = router[method];
 
