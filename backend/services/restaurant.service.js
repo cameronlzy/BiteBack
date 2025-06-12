@@ -9,13 +9,12 @@ import { DateTime } from 'luxon';
 import * as reservationService from '../services/reservation.service.js';
 import { createSlots, convertSGTOpeningHoursToUTC, filterOpenRestaurants } from '../helpers/restaurant.helper.js';
 import { generateStaffUsername, generateStaffHashedPassword } from '../helpers/staff.helper.js';
+import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
 import mongoose from 'mongoose';
 import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.service.js';
 import { geocodeAddress } from '../helpers/geocode.js';
 import { escapeRegex } from '../helpers/regex.helper.js';
-
-const isProdEnv = process.env.NODE_ENV === 'production';
 
 export async function searchRestaurants(filters) {
   const {
@@ -187,37 +186,24 @@ export async function getAvailability(restaurantId, query) {
 }
 
 export async function createRestaurant(authUser, data) {
-  const session = isProdEnv ? await mongoose.startSession() : null;
-  if (session) session.startTransaction();
-
-  try {
+  return await withTransaction(async (session) => {
     const restaurant = await createRestaurantHelper(authUser, data, session);
 
     // update owner
-    const user = await User.findById(authUser._id).populate('profile').session(session || null);
+    const user = await User.findById(authUser._id).populate('profile').session(session);
     if (!user) throw { status: 404, body: 'User not found' };
     if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
 
     // commit transaction
     user.profile.restaurants.push(restaurant._id);
-    await user.profile.save(session ? { session } : undefined);
-
-    if (session) await session.commitTransaction();
+    await user.profile.save(wrapSession(session));
 
     return { status: 200, body: restaurant.toObject() };
-  } catch (err) {
-    if (session) await session.abortTransaction();
-    throw err;
-  } finally {
-    if (session) session.endSession();
-  }
+  });
 }
 
 export async function createRestaurantBulk(authUser, data) {
-  const session = isProdEnv ? await mongoose.startSession() : null;
-  if (session) session.startTransaction();
-
-  try {
+  return await withTransaction(async (session) => {
     // create restaurants
     const restaurantIds = [];
     for (const item of data) {
@@ -226,22 +212,14 @@ export async function createRestaurantBulk(authUser, data) {
     }
 
     // update owner
-    const user = await User.findById(authUser._id).populate('profile').session(session || null);
+    const user = await User.findById(authUser._id).populate('profile').session(session);
     if (!user) throw { status: 404, body: 'User not found' };
     if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
     user.profile.restaurants = restaurantIds;
-    await user.profile.save(session ? { session } : undefined);
-
-    // commit transaction
-    if (session) await session.commitTransaction();
+    await user.profile.save(wrapSession(session));
 
     return { status: 200, body: restaurantIds };
-  } catch (err) {
-    if (session) await session.abortTransaction();
-    throw err;
-  } finally {
-    if (session) session.endSession();
-  }
+  });
 }
 
 export async function updateRestaurantImages(restaurant, newImageUrls) {
@@ -284,37 +262,26 @@ export async function updateRestaurant(restaurant, update) {
 }
 
 export async function deleteRestaurant(restaurant, authUser) {
-  const session = isProdEnv ? await mongoose.startSession() : null;
-  if (session) session.startTransaction();
-
-  try {
+  return await withTransaction(async (session) => {
     // get ownerProfile 
-    const user = await User.findById(authUser._id).session(session || null).lean();
+    const user = await User.findById(authUser._id).session(session).lean();
     if (!user) throw { status: 404, body: 'User not found.' };
     if (!user.profile) throw { status: 404, body: 'Owner Profile not found.' };
     
     // updating owner profile
     const profile = await OwnerProfile.findByIdAndUpdate(user.profile,
-        { $pull: { restaurants: restaurant._id }}, { session, runValidators: true }
-    );
+        { $pull: { restaurants: restaurant._id }}, { runValidators: true }
+    ).session(session);
     if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
 
     await deleteRestaurantAndAssociations(restaurant, session);
 
-    // commit transaction
-    if (session) await session.commitTransaction();
-
     return { status: 200, body: restaurant };
-  } catch (err) {
-    if (session) await session.abortTransaction();
-    throw err;
-  } finally {
-    if (session) session.endSession();
-  }
+  });
 }
 
 // utility services
-export async function createRestaurantHelper(authUser, data, session = null) {
+export async function createRestaurantHelper(authUser, data, session = undefined) {
   // get longitude and latitude
   const fullAddress = data.address.replace(/S(\d{6})$/i, 'Singapore $1');
   const { longitude, latitude } = await geocodeAddress(fullAddress);
@@ -333,7 +300,7 @@ export async function createRestaurantHelper(authUser, data, session = null) {
   return restaurant;
 }
 
-export async function createStaffForRestaurant(restaurant, session = null) {
+export async function createStaffForRestaurant(restaurant, session = undefined) {
   const username = generateStaffUsername(restaurant.name);
   const password = await generateStaffHashedPassword();
 
@@ -345,7 +312,7 @@ export async function createStaffForRestaurant(restaurant, session = null) {
   return staff;
 }
 
-export async function deleteRestaurantAndAssociations(restaurant, session = null) {
+export async function deleteRestaurantAndAssociations(restaurant, session = undefined) {
   // delete images
   await deleteImagesFromDocument(restaurant, 'images');
   

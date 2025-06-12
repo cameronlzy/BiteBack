@@ -4,10 +4,9 @@ import Reservation from '../models/reservation.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import * as restaurantService from '../services/restaurant.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
+import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
 import mongoose from 'mongoose';
-
-const isProdEnv = process.env.NODE_ENV === 'production';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
@@ -24,12 +23,9 @@ export async function getMe(userId) {
 }
 
 export async function updateMe(update, authUser) {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+    return await withTransaction(async (session) => {
         // find user
-        const user = await User.findById(authUser._id).populate('profile').session(session || null);
+        const user = await User.findById(authUser._id).populate('profile').session(session);
         if (!user) throw { status: 404, body: 'Owner not found' };
         if (!user.profile) throw { status: 404, body: 'Profile not found' };
 
@@ -42,7 +38,7 @@ export async function updateMe(update, authUser) {
             const existingUser = await User.findOne({
                 _id: { $ne: authUser._id },
                 $or: uniqueCheck,
-            }).session(session || null).lean();
+            }).session(session).lean();
 
             if (existingUser) {
                 if (existingUser.email === update.email) {
@@ -57,58 +53,42 @@ export async function updateMe(update, authUser) {
         // update user fields selectively
         if (update.email !== undefined) user.email = update.email;
         if (update.username !== undefined) user.username = update.username;
-        await user.save(session ? { session } : undefined);
+        await user.save(wrapSession(session));
 
         // selectively update profile fields
         if (update.companyName !== undefined) user.profile.companyName = update.companyName;
 
-        await user.profile.save(session ? { session } : undefined);
-
-        if (session) await session.commitTransaction();
+        await user.profile.save(wrapSession(session));
 
         // send back user
         const token = generateAuthToken(user);
         const { password, ...safeUser } = user.toObject();
         safeUser.profile = user.profile.toObject();
         return { token, status: 200, body: safeUser };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
+    });
 }
 
 export async function deleteMe(user) {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+    return await withTransaction(async (session) => {
         // find restaurants owned by owner
-        const restaurants = await Restaurant.find({ owner: user._id }).session(session || null);
+        const restaurants = await Restaurant.find({ owner: user._id }).session(session);
 
         // delete each restaurant and its reservations + reviews
         await Promise.all(
             restaurants.map((restaurant) =>
-                restaurantService.deleteRestaurantAndAssociations(restaurant, session || null)
+                restaurantService.deleteRestaurantAndAssociations(restaurant, session)
             )
         );
 
         // delete reservations and profile
         await Promise.all([
-            Reservation.deleteMany({ customer: user._id }).session(session || null),
-            OwnerProfile.findByIdAndDelete(user.profile._id).session(session || null)
+            Reservation.deleteMany({ customer: user._id }).session(session),
+            OwnerProfile.findByIdAndDelete(user.profile._id).session(session)
         ]);
 
         // delete user
-        await user.deleteOne({ session });
+        await user.deleteOne(wrapSession(session));
         
-        if (session) await session.commitTransaction();
         return { status: 200, body: user.toObject() };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
+    });
 }

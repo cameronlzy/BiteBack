@@ -7,3 +7,17 @@ export function validateEntry(entry) {
     });
     return schema.validate(entry);
 }
+
+export function validateQueueGroup(query) {
+    const schema = Joi.object({
+        queueGroup: Joi.string().valid('small', 'medium', 'large').required()
+    });
+    return schema.validate(query);
+}
+
+export function validateStatus(status) {
+    const schema = Joi.object({
+        status: Joi.string().valid('seated', 'skipped').required()
+    });
+    return schema.validate(status);
+}

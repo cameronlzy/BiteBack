@@ -6,8 +6,7 @@ import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
 import mongoose from 'mongoose';
 import { deleteImagesFromDocument } from './image.service.js';
-
-const isProdEnv = process.env.NODE_ENV === 'production';
+import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
 export async function getReviewsByRestaurant(restaurantId, authUser) {
     // check if restaurant exists
@@ -53,29 +52,19 @@ export async function getReviewById(reviewId) {
 }
 
 export async function createReview(data, user) {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+    return await withTransaction(async (session) => {
         // create review
         const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
         review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
         review.customer = user.profile;
         review.username = user.username;
-        await review.save(session ? { session } : undefined);
+        await review.save(wrapSession(session));
 
         // update restaurant ratings
         await updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
-        
-        if (session) await session.commitTransaction();
 
         return { status: 200, body: review.toObject() };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
+    });
 }
 
 export async function createReply(data, review, authUser) {
@@ -118,21 +107,12 @@ export async function addBadge(data, reviewId, authUser) {
 }
 
 export async function deleteReview(review) {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+    return await withTransaction(async (session) => {
         // delete the review and associations
         await deleteReviewAndAssociations(review, session);
 
-        if (session) await session.commitTransaction();
         return { status: 200, body: review.toObject() };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
+    });
 }
 
 export async function deleteReply(review) {
@@ -239,7 +219,7 @@ export async function getAverageRatingsForRestaurants(restaurants) {
     }));
 }
 
-export async function updateRatingForRestaurant(restaurantId, ratingChange, countChange, session = null) {
+export async function updateRatingForRestaurant(restaurantId, ratingChange, countChange, session = undefined) {
     // get restaurant
     const restaurant = await Restaurant.findById(restaurantId);
 
@@ -263,7 +243,7 @@ export async function updateRatingForRestaurant(restaurantId, ratingChange, coun
     await restaurant.save(session ? { session } : undefined);
 }
 
-export async function deleteReviewAndAssociations(review, session = null) {
+export async function deleteReviewAndAssociations(review, session = undefined) {
     // delete images
     await deleteImagesFromDocument(review, 'images');
 

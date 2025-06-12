@@ -6,8 +6,7 @@ import * as reviewService from '../services/review.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import mongoose from 'mongoose';
 import _ from 'lodash';
-
-const isProdEnv = process.env.NODE_ENV === 'production';
+import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
@@ -29,12 +28,9 @@ export async function publicProfile(customerId) {
 }
 
 export async function updateMe(update, authUser) {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+    return await withTransaction(async (session) => {
         // find user
-        const user = await User.findById(authUser._id).populate('profile').session(session || null);
+        const user = await User.findById(authUser._id).populate('profile').session(session);
         if (!user) throw { status: 404, body: 'Customer not found' };
         if (!user.profile) throw { status: 404, body: 'Profile not found' };
 
@@ -47,7 +43,7 @@ export async function updateMe(update, authUser) {
             const existingUser = await User.findOne({
                 _id: { $ne: authUser._id },
                 $or: uniqueCheck,
-            }).session(session || null).lean();
+            }).session(session).lean();
 
             if (existingUser) {
                 if (existingUser.email === update.email) {
@@ -62,69 +58,52 @@ export async function updateMe(update, authUser) {
         // update user fields selectively
         if (update.email !== undefined) user.email = update.email;
         if (update.username !== undefined) user.username = update.username;
-        await user.save(session ? { session } : undefined);
+        await user.save(wrapSession(session));
 
         // selectively update profile fields
         if (update.name !== undefined) user.profile.name = update.name;
         if (update.contactNumber !== undefined) user.profile.contactNumber = update.contactNumber;
         if (update.favCuisines !== undefined) user.profile.favCuisines = update.favCuisines;
 
-        await user.profile.save(session ? { session } : undefined);
+        await user.profile.save(wrapSession(session));
 
         // update reviews
         if (update.username !== undefined) {
             await Review.updateMany(
                 { customer: user.profile._id },
-                { $set: { username: update.username }},
-                { session }
-            );
+                { $set: { username: update.username }}
+            ).session(session);
         }
-
-        if (session) await session.commitTransaction();
 
         // send back user
         const token = generateAuthToken(user);
         const { password, ...safeUser } = user.toObject();
         safeUser.profile = user.profile.toObject();
         return { token, status: 200, body: safeUser };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
+    });
 }
 
 export async function deleteMe(user) {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+    return await withTransaction(async (session) => {
         // find reviews by customer
-        const reviews = await Review.find({ customer: user.profile }).session(session || null);
+        const reviews = await Review.find({ customer: user.profile }).session(session);
 
         // delete each review
         await Promise.all(
             reviews.map((review) =>
-                reviewService.deleteReviewAndAssociations(review, session || null)
+                reviewService.deleteReviewAndAssociations(review, session)
             )
         );
 
         // delete reservations and profile
         await Promise.all([
-            Reservation.deleteMany({ customer: user._id }).session(session || null),
-            CustomerProfile.findByIdAndDelete(user.profile).session(session || null)
+            Reservation.deleteMany({ customer: user._id }).session(session),
+            CustomerProfile.findByIdAndDelete(user.profile).session(session)
         ]);
 
         // delete user
-        await user.deleteOne({ session });
+        await user.deleteOne(wrapSession(session));
         
-        if (session) await session.commitTransaction();
         return { status: 200, body: user.toObject() };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
+    });
 }

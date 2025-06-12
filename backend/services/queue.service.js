@@ -2,26 +2,19 @@ import QueueEntry from '../models/queueEntry.model.js';
 import QueueCounter from '../models/queueCounter.model.js';
 import _ from 'lodash';
 import { findQueueGroup } from '../helpers/queue.helper';
-
-const isProdEnv = process.env.NODE_ENV === 'production';
+import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
+import { notifyClient } from '../helpers/sse.helper.js';
 
 export async function joinQueue(authUser, data) {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+    return await withTransaction(async (session) => {
         const queueEntry = new QueueEntry(_.pick(data,['restaurant', 'pax']));
         queueEntry.customer = authUser.profile;
         queueEntry.queueGroup = findQueueGroup(data.pax);
         queueEntry.queueNumber = await assignQueueNumber(data.restaurant, queueEntry.queueGroup, session);
-        await queueEntry.save(session ? { session } : undefined);
+        await queueEntry.save(wrapSession(session));
+
         return { status: 200, body: queueEntry.toObject() };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
+    });
 }
 
 export async function leaveQueue(queueEntry) {
@@ -90,12 +83,51 @@ export async function getRestaurantQueueOverview(restaurant) {
     return { status: 200, body: queueSummary };
 }
 
+export async function callNext(restaurant, queueGroup) {
+    return await withTransaction(async (session) => {
+        const counter = await QueueCounter.findOne(
+            { restaurant: restaurant._id, queueGroup }, null
+        ).session(session);
+        if (!counter) throw { status: 204, body: null }; // empty queue
+
+        const nextEntry = await QueueEntry.findOne({
+            restaurant: restaurant._id,
+            queueGroup,
+            status: 'waiting',
+            queueNumber: { $gt: counter.calledNumber }
+        })
+        .sort({ queueNumber: 1 })
+        .session(session);
+
+        if (!nextEntry) throw { status: 204, body: null }; // empty queue
+        nextEntry.status = 'called';
+        nextEntry.statusTimestamps.called = new Date();
+        await nextEntry.save(wrapSession(session));
+
+        counter.calledNumber = nextEntry.queueNumber;
+        await counter.save(wrapSession(session));
+
+        // notify customer
+        notifyClient(nextEntry.customer.toString(), { queueEntry: nextEntry._id, status: 'called' });
+
+        return { status: 200, body: nextEntry };
+    });
+}
+
+export async function updateQueueEntryStatus(queueEntry, update) {
+    queueEntry.status = update.status;
+    queueEntry.statusTimestamps[update.status] = new Date();
+    queueEntry.restaurant = queueEntry.restaurant._id;
+    await queueEntry.save();
+    return { status: 200, body: queueEntry.toObject() };
+}
+
 // helper service
-export async function assignQueueNumber(restaurantId, queueGroup, session = null) {
+export async function assignQueueNumber(restaurantId, queueGroup, session = undefined) {
     const counter = await QueueCounter.findOneAndUpdate(
         { restaurant: restaurantId, queueGroup },
         { $inc: { lastNumber: 1 }, $setOnInsert: { calledNumber: 0 } },
-        { new: true, upsert: true, session }
-    );
+        { new: true, upsert: true }
+    ).session(session);
     return counter.lastNumber;
 }

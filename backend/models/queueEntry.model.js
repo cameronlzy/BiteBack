@@ -23,14 +23,14 @@ const queueEntrySchema = new mongoose.Schema({
     }, 
     status: {
         type: String,
-        enum: ['waiting', 'called', 'seated', 'no-show'],
+        enum: ['waiting', 'called', 'seated', 'skipped'],
         default: 'waiting'
     },
     statusTimestamps: {
         waiting: { type: Date, default: () => new Date() },
         called: { type: Date },
         seated: { type: Date },
-        noShow: { type: Date }
+        skipped: { type: Date }
     },
     queueNumber: {
         type: Number, 
