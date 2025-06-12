@@ -1,12 +1,17 @@
 import QueueEntry from '../models/queueEntry.model.js';
 import QueueCounter from '../models/queueCounter.model.js';
+import Restaurant from '../models/restaurant.model.js';
 import _ from 'lodash';
 import { findQueueGroup } from '../helpers/queue.helper';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
+import { getOpeningHoursToday } from '../helpers/restaurant.helper.js';
 import { notifyClient } from '../helpers/sse.helper.js';
 
 export async function joinQueue(authUser, data) {
     return await withTransaction(async (session) => {
+        const restaurant = await Restaurant.findById(data.restaurant).session(session).lean();
+        if (!restaurant.queueEnabled) return { status: 403, body: 'Online queue is currently disabled' };
+
         const queueEntry = new QueueEntry(_.pick(data,['restaurant', 'pax']));
         queueEntry.customer = authUser.profile;
         queueEntry.queueGroup = findQueueGroup(data.pax);
@@ -120,6 +125,12 @@ export async function updateQueueEntryStatus(queueEntry, update) {
     queueEntry.restaurant = queueEntry.restaurant._id;
     await queueEntry.save();
     return { status: 200, body: queueEntry.toObject() };
+}
+
+export async function toggleQueue(restaurant, enabled) {
+    restaurant.queueEnabled = enabled;
+    await restaurant.save();
+    return { status: 200, body: { queueEnabled: restaurant.queueEnabled } };
 }
 
 // helper service

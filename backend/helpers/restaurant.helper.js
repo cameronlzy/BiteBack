@@ -66,11 +66,7 @@ export function filterOpenRestaurants(restaurants) {
 };
 
 export function getCurrentTimeSlotStartUTC(restaurant) {
-    const now = DateTime.utc();
-    const weekdayIndex = now.weekday - 1;
-
-    const openingHoursArray = restaurant.openingHours.split('|');
-    const todayOpening = openingHoursArray[weekdayIndex];
+    const todayOpening = getOpeningHoursToday(restaurant);
 
     if (todayOpening === 'x') {
         // Restaurant is closed today
@@ -94,4 +90,13 @@ export function getCurrentTimeSlotStartUTC(restaurant) {
     const slotStart = openingTime.plus({ minutes: slotIndex * restaurant.slotDuration });
 
     return slotStart; // JS Date in UTC
+}
+
+export function getOpeningHoursToday(restaurant) {
+  const now = DateTime.utc();
+  const weekdayIndex = now.weekday - 1;
+
+  const openingHoursArray = restaurant.openingHours.split('|');
+  const todayOpening = openingHoursArray[weekdayIndex];
+  return todayOpening;
 }

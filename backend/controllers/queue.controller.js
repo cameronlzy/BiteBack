@@ -1,6 +1,6 @@
 import * as queueService from '../services/queue.service.js';
 import { removeClient, addClient } from '../helpers/sse.helper.js';
-import { validateEntry, validateQueueGroup, validateStatus } from '../validators/queueEntry.validator.js';
+import { validateEntry, validateQueueGroup, validateStatus, validateToggle } from '../validators/queueEntry.validator.js';
 
 export function subscribeToQueue(req, res) {
     const customerId = req.user.profile.toString();
@@ -67,5 +67,13 @@ export async function callNext(req, res) {
     if (error) return res.status(400).send(error.details[0].message);
 
     const { status, body } = await queueService.callNext(req.restaurant, req.query.queueGroup);
+    return res.status(status).json(body);
+}
+
+export async function toggleQueue(req, res) {
+    const { error } = validateToggle(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+    
+    const { status, body } = await queueService.toggleQueue(req.restaurant, req.body.enabled);
     return res.status(status).json(body);
 }

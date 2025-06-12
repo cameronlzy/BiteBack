@@ -118,6 +118,7 @@ describe('queue test', () => {
         let cookie;
         let token;
         let restaurant;
+        let restaurantId;
         let pax;
         let customer;
         let queueGroup;
@@ -127,7 +128,7 @@ describe('queue test', () => {
             .post('/api/queue')
             .set('Cookie', [cookie])
             .send({
-                restaurant, pax
+                restaurant: restaurantId, pax
             });
         };
     
@@ -141,7 +142,9 @@ describe('queue test', () => {
             cookie = setTokenCookie(token);
 
             // create queue entry
-            restaurant = new mongoose.Types.ObjectId();
+            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+            await restaurant.save();
+            restaurantId = restaurant._id;
             customer = user.profile;
             pax = 2;
             queueGroup = 'small';
@@ -160,7 +163,7 @@ describe('queue test', () => {
             expect(res.status).toBe(401);
         });
 
-        it('should return 403 if owner', async () => {
+        it('should return 403 if not staff', async () => {
             const owner = await createTestUser('owner');
             token = generateAuthToken(owner);
             cookie = setTokenCookie(token);
@@ -169,9 +172,15 @@ describe('queue test', () => {
         });
 
         it('should return 400 if invalid request', async () => {
-            restaurant = '1';
+            restaurantId = '1';
             const res = await exec();
             expect(res.status).toBe(400);
+        });
+
+        it('should return 403 if queue closed', async () => {
+            await Restaurant.findByIdAndUpdate(restaurantId, { queueEnabled: false });
+            const res = await exec();
+            expect(res.status).toBe(403);
         });
 
         it('should return 200 if valid', async () => {
@@ -461,6 +470,118 @@ describe('queue test', () => {
         });
     });
 
+    describe('PATCH /api/queue/:id/status', () => {
+        let user;
+        let cookie;
+        let token;
+        let queueEntry;
+        let queueEntryId;
+        let restaurant;
+        let staff;
+        let newStatus;
+    
+        const exec = () => {
+            return request(server)
+            .patch(`/api/queue/${queueEntryId}/status`)
+            .set('Cookie', [cookie])
+            .send({
+                status: newStatus
+            });
+        };
+    
+        beforeEach(async () => {
+            await QueueEntry.deleteMany({});
+            await Restaurant.deleteMany({});
+            await QueueCounter.deleteMany({});
+            
+            // create customer
+            user = await createTestUser('customer');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+            staff = await createTestStaff(restaurant._id);
+            restaurant.staff = staff._id;
+            await restaurant.save();
+            await staff.save();
+            
+            token = staffGenerateAuthToken(staff);
+            cookie = setTokenCookie(token);
+
+            // create queue entry
+            queueEntry = new QueueEntry({
+                restaurant: restaurant._id,
+                customer: user.profile,
+                pax: 2,
+                queueGroup: 'small',
+                queueNumber: 1
+            });
+            await queueEntry.save();
+            queueEntryId = queueEntry._id;
+            newStatus = 'seated';
+        });
+
+        it('should return 400 if invalid id', async () => {
+            queueEntryId = "1";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 401 if no token', async () => {
+            cookie = "";
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            token = 'invalid-token';
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 403 if not staff', async () => {
+            const customer = await createTestUser('customer');
+            token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 404 if invalid ID', async () => {
+            queueEntryId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if restaurant does not belong to staff', async () => {
+            const otherStaff = await createTestStaff(new mongoose.Types.ObjectId());
+            await otherStaff.save();
+            token = staffGenerateAuthToken(otherStaff);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 400 if bad request', async () => {
+            newStatus = 'waiting';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 200 if valid', async () => {
+            const res = await exec();
+            const requiredKeys = [
+                'restaurant', 'customer', 'pax', 'queueGroup', 'status'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body.status).toEqual(newStatus);
+            expect(res.body.statusTimestamps[newStatus]).toBeDefined();
+        });
+    });
+
     describe('PATCH /api/queue/restaurant/:id/next', () => {
         let user;
         let cookie;
@@ -600,29 +721,26 @@ describe('queue test', () => {
         });
     });
 
-    describe('PATCH /api/queue/:id/status', () => {
+    describe('PATCH /api/restaurant/:id/toggle', () => {
         let user;
         let cookie;
         let token;
-        let queueEntry;
-        let queueEntryId;
         let restaurant;
+        let restaurantId;
         let staff;
-        let newStatus;
+        let toggle;
     
         const exec = () => {
             return request(server)
-            .patch(`/api/queue/${queueEntryId}/status`)
+            .patch(`/api/queue/restaurant/${restaurantId}/queue`)
             .set('Cookie', [cookie])
             .send({
-                status: newStatus
+                enabled: toggle
             });
         };
     
         beforeEach(async () => {
-            await QueueEntry.deleteMany({});
             await Restaurant.deleteMany({});
-            await QueueCounter.deleteMany({});
             
             // create customer
             user = await createTestUser('customer');
@@ -634,27 +752,17 @@ describe('queue test', () => {
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
             staff = await createTestStaff(restaurant._id);
             restaurant.staff = staff._id;
+            restaurantId = restaurant._id;
             await restaurant.save();
             await staff.save();
             
             token = staffGenerateAuthToken(staff);
             cookie = setTokenCookie(token);
-
-            // create 2 queue entries
-            queueEntry = new QueueEntry({
-                restaurant: restaurant._id,
-                customer: user.profile,
-                pax: 2,
-                queueGroup: 'small',
-                queueNumber: 1
-            });
-            await queueEntry.save();
-            queueEntryId = queueEntry._id;
-            newStatus = 'seated';
+            toggle = false;
         });
 
         it('should return 400 if invalid id', async () => {
-            queueEntryId = "1";
+            restaurantId = "1";
             const res = await exec();
             expect(res.status).toBe(400);
         });
@@ -681,7 +789,7 @@ describe('queue test', () => {
         });
 
         it('should return 404 if invalid ID', async () => {
-            queueEntryId = new mongoose.Types.ObjectId();
+            restaurantId = new mongoose.Types.ObjectId();
             const res = await exec();
             expect(res.status).toBe(404);
         });
@@ -696,20 +804,15 @@ describe('queue test', () => {
         });
 
         it('should return 400 if bad request', async () => {
-            newStatus = 'waiting';
+            toggle = 1;
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
         it('should return 200 if valid', async () => {
             const res = await exec();
-            console.log(res.body);
-            const requiredKeys = [
-                'restaurant', 'customer', 'pax', 'queueGroup', 'status'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            expect(res.body.status).toEqual(newStatus);
-            expect(res.body.statusTimestamps[newStatus]).toBeDefined();
+            expect(res.body).toHaveProperty('queueEnabled');
+            expect(res.body.queueEnabled).toEqual(toggle);
         });
     });
 });

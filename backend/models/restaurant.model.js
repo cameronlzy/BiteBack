@@ -149,7 +149,8 @@ const restaurantSchema = new mongoose.Schema({
     ], default: [],
    }, 
   searchKeywords: [String],
-  staff: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' }
+  staff: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
+  queueEnabled: { type: Boolean, default: true }
 }, { versionKey: false });
 
 restaurantSchema.pre('save', function (next) {

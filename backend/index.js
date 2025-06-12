@@ -7,6 +7,7 @@ import validationSetup from './startup/validation.js';
 import routesSetup from './startup/routes.js';
 import prodSetup from './startup/prod.js';
 import serverSetup from './startup/server.js';
+import { registerJobs } from './startup/jobs.js';
 
 const app = express();
 
@@ -25,6 +26,8 @@ validationSetup();
 routesSetup(app);
 prodSetup(app);
 serverSetup();
+
+registerJobs();
 
 app.use('/', statusRoute);
 

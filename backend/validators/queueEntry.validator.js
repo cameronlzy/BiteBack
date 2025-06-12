@@ -21,3 +21,10 @@ export function validateStatus(status) {
     });
     return schema.validate(status);
 }
+
+export function validateToggle(toggle) {
+    const schema = Joi.object({
+        enabled: Joi.boolean().required()
+    });
+    return schema.validate(toggle);
+}

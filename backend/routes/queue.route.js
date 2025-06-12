@@ -35,4 +35,7 @@ router.patch('/:id/status', [validateObjectId, auth, isStaff, authorizedQueueEnt
 // [Staff] - Calls next in restaurant queue
 router.patch('/restaurant/:id/next', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.callNext);
 
+// [Staff] - Toggle on and off the queue
+router.patch('/restaurant/:id/queue', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.toggleQueue);
+
 export default router;
