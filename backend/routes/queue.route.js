@@ -19,8 +19,11 @@ router.post('/', [auth, isCustomer], queueController.joinQueue);
 // [Customer] - Leave the queue
 router.delete('/:id', [validateObjectId, auth, isCustomer, authorizedQueueCustomer], queueController.leaveQueue);
 
-// // [Staff] - Get restaurant queue
-// router.get('/restaurant/:id', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.getRestaurantQueue);
+// [Public] - Get restaurant queue
+router.get('/restaurant/:id', validateObjectId, queueController.getRestaurantQueue);
+
+// [Staff] - Get restaurant queue
+router.get('/restaurant/:id/overview', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.getRestaurantQueueOverview);
 
 // // [Staff] - Update queue entry status
 // router.patch('/:id/status', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.updateQueueStatus);

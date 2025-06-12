@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export async function createTestStaff(restaurant = new mongoose.Types.ObjectId()) {
-    const username = "username";
+    const username = `user_${Date.now()}`;
     const password = await bcrypt.hash('Password@123', 10);
     const role = 'staff';
 
