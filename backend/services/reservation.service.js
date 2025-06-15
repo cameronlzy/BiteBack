@@ -21,7 +21,6 @@ import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
 //     return { status: 200, body: reservations };
 // };
 
-// changing for staff
 export async function getReservationsByRestaurant(restaurant) {
     const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
     if (!timeSlotStartUTC) return { status: 200, body: [] };
@@ -31,8 +30,18 @@ export async function getReservationsByRestaurant(restaurant) {
             $gte: timeSlotStartUTC.toJSDate(),
             $lte: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate()
         }
-    }).lean();
-    return { status: 200, body: reservations };
+    }).populate('user').lean();
+
+    const mappedReservations = reservations.map(reservation => {
+        return {
+            ...reservation,
+            user: {
+                name: reservation.user?.name,
+                contactNumber: reservation.user?.contactNumber
+            }
+        };
+    });
+    return { status: 200, body: mappedReservations };
 }
 
 export async function getUserReservations(userId) {

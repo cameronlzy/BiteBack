@@ -1,9 +1,9 @@
-export const setAuthCookie = (res, token) => {
+export const setAuthCookie = (res, token, timeInHours = 1) => {
   res.cookie('token', token, {
     httpOnly: true,
     secure: true,
     sameSite: 'None',
-    maxAge: 60 * 60 * 1000 // 1 hour
+    maxAge: 60 * 60 * 1000 * timeInHours
   });
 };
 

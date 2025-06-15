@@ -61,8 +61,8 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create reservations (in UTC)
-            reservationDate1 = DateTime.now().toJSDate();
-            reservationDate2 = DateTime.now().plus({ minute: restaurant.slotDuration }).toJSDate();
+            reservationDate1 = DateTime.utc().toJSDate();
+            reservationDate2 = DateTime.utc().plus({ minute: restaurant.slotDuration }).toJSDate();
             remarks = '';
             pax = 10;
             const reservation1 = new Reservation({

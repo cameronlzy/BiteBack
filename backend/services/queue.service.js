@@ -2,7 +2,7 @@ import QueueEntry from '../models/queueEntry.model.js';
 import QueueCounter from '../models/queueCounter.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import _ from 'lodash';
-import { findQueueGroup } from '../helpers/queue.helper';
+import { findQueueGroup } from '../helpers/queue.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import { getOpeningHoursToday } from '../helpers/restaurant.helper.js';
 import { notifyClient } from '../helpers/sse.helper.js';

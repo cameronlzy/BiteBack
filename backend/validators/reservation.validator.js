@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { dateFullOnly } from '../helpers/time.helper';
+import { dateFullOnly } from '../helpers/time.helper.js';
 
 export function validateReservation(reservation) {
     const schema = Joi.object({

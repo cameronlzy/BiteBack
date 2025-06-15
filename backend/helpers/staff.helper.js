@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { customAlphabet } from 'nanoid';
-import simpleCrypto from './encryption.helper';
+import simpleCrypto from './encryption.helper.js';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 6);
 

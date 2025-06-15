@@ -76,6 +76,6 @@ export async function staffLogin(req, res) {
     if (error) return res.status(400).send(error.details[0].message);
 
     const { token, body, status } = await authService.staffLogin(req.body);
-    if (token) setAuthCookie(res, token);
+    if (token) setAuthCookie(res, token, 12);
     return res.status(status).json(body);
 };

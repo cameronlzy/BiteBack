@@ -1,6 +1,5 @@
 import cron from 'node-cron';
 import { processEndOfDay } from '../services/scheduledJobs/processEndOfDay.js';
-import { processVisitHistory } from '../services/scheduledJobs/visitHistoryProcessor.js';
 import { runJob } from '../helpers/jobRunner.js';
 
 export function registerEndOfDayJob() {
@@ -8,7 +7,6 @@ export function registerEndOfDayJob() {
     cron.schedule('*/15 * * * *', async () => {
         await runJob('EndOfDayCleanup', async () => {
             await processEndOfDay();
-            await processVisitHistory();
         });
     });
 }

@@ -1,4 +1,6 @@
-import { queueCleanup } from "./queueCleanup";
+import { queueCleanup } from "./queueCleanup.js";
+import { processVisitHistory } from "./visitHistoryProcessor.js";
+import Restaurant from "../../models/restaurant.model.js";
 
 export async function processEndOfDay() {
     const now = new Date();
@@ -23,7 +25,7 @@ export async function processEndOfDay() {
 
         if (nowTotalMinutes >= closingTotalMinutes) {
             const deletedEntries = await queueCleanup(restaurant);
-            // add in vsiit history processing
+            await processVisitHistory(restaurant);
             // add in statistics processing
         }
     }
