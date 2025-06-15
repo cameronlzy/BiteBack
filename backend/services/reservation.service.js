@@ -79,9 +79,17 @@ export async function createReservation(user, data) {
         restaurant: data.restaurant,
         reservationDate: convertToUTC(data.reservationDate),
         remarks: data.remarks,
-        pax: data.pax
+        pax: data.pax,
+        status: user.role === 'owner' ? 'event' : 'booked'
     });
     await reservation.save();
+    return { status: 200, body: reservation.toObject() };
+}
+
+export async function updateReservationStatus(reservation, status) {
+    reservation.status = status;
+    await reservation.save();
+    reservation.restaurant = reservation.restaurant._id;
     return { status: 200, body: reservation.toObject() };
 }
 

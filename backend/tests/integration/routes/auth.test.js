@@ -5,16 +5,15 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import config from 'config';
 import cookieParser from 'cookie';
-
 import User from '../../../models/user.model.js';
-import { createTestUser } from '../../factories/user.factory.js';
-import { createTestRestaurant } from '../../factories/restaurant.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
 import Staff from '../../../models/staff.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import simpleCrypto from '../../../helpers/encryption.helper.js';
 
 describe('auth test', () => {
     let server;
@@ -484,6 +483,7 @@ describe('auth test', () => {
         let password;
         let role;
         let hashedPassword;
+        let encryptedPassword;
         let restaurant;
         let staff;
     
@@ -504,8 +504,9 @@ describe('auth test', () => {
             restaurant = new mongoose.Types.ObjectId();
             const salt = await bcrypt.genSalt(10);
             hashedPassword = await bcrypt.hash(password, salt); 
+            encryptedPassword = simpleCrypto.encrypt(password);
             staff = new Staff({
-                username, password: hashedPassword, role, restaurant
+                username, password: hashedPassword, encryptedPassword, role, restaurant
             });
             await staff.save();
         });

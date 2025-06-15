@@ -11,5 +11,6 @@
 		"apiKey": "cloudinary_api_key",
 		"apiSecret": "cloudinary_api_secret"
 	},
-  "mapboxToken": "mapbox_token"
+  "mapboxToken": "mapbox_token",
+  "encryptionSecret": "encryption_secret"
 }

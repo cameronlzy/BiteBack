@@ -66,30 +66,31 @@ export function filterOpenRestaurants(restaurants) {
 };
 
 export function getCurrentTimeSlotStartUTC(restaurant) {
-    const todayOpening = getOpeningHoursToday(restaurant);
+  const now = DateTime.utc();
+  const todayOpening = getOpeningHoursToday(restaurant);
 
-    if (todayOpening === 'x') {
-        // Restaurant is closed today
-        return null;
-    }
+  if (todayOpening === 'x') {
+      // Restaurant is closed today
+      return null;
+  }
 
-    const [openStr, closeStr] = todayOpening.split('-');
-    const [openHour, openMinute] = openStr.split(':').map(Number);
-    const [closeHour, closeMinute] = closeStr.split(':').map(Number);
+  const [openStr, closeStr] = todayOpening.split('-');
+  const [openHour, openMinute] = openStr.split(':').map(Number);
+  const [closeHour, closeMinute] = closeStr.split(':').map(Number);
 
-    const openingTime = now.set({ hour: openHour, minute: openMinute, second: 0, millisecond: 0 });
-    const closingTime = now.set({ hour: closeHour, minute: closeMinute, second: 0, millisecond: 0 });
+  const openingTime = now.set({ hour: openHour, minute: openMinute, second: 0, millisecond: 0 });
+  const closingTime = now.set({ hour: closeHour, minute: closeMinute, second: 0, millisecond: 0 });
 
-    if (now < openingTime || now >= closingTime) {
-        // Outside of business hours
-        return null;
-    }
+  if (now < openingTime || now >= closingTime) {
+      // Outside of business hours
+      return null;
+  }
 
-    const minutesSinceOpen = Math.floor(now.diff(openingTime, 'minutes').minutes);
-    const slotIndex = Math.floor(minutesSinceOpen / restaurant.slotDuration);
-    const slotStart = openingTime.plus({ minutes: slotIndex * restaurant.slotDuration });
+  const minutesSinceOpen = Math.floor(now.diff(openingTime, 'minutes').minutes);
+  const slotIndex = Math.floor(minutesSinceOpen / restaurant.slotDuration);
+  const slotStart = openingTime.plus({ minutes: slotIndex * restaurant.slotDuration });
 
-    return slotStart; // JS Date in UTC
+  return slotStart; // JS Date in UTC
 }
 
 export function getOpeningHoursToday(restaurant) {

@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { userJoiSchema } from './user.validator.js';
+import passwordComplexity from 'joi-password-complexity';
 
 export function validateOwner(profile) {
   const schema = userJoiSchema.keys({
@@ -16,4 +17,11 @@ export function validatePatch(update) {
     companyName: Joi.string().min(2).max(255),
   }).min(1);
   return schema.validate(update);
+}
+
+export function validatePassword(password) {
+  const schema = Joi.object({
+    password: passwordComplexity().required()
+  });
+  return schema.validate(password);
 }

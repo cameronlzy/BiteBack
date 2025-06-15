@@ -293,7 +293,7 @@ export async function createRestaurantHelper(authUser, data, session = undefined
   restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
 
   // create staff account for restaurant
-  const staff = createStaffForRestaurant(restaurant, session);
+  const staff = await createStaffForRestaurant(restaurant, session);
   restaurant.staff = staff._id;
 
   await restaurant.save(session ? { session } : undefined);
@@ -302,10 +302,10 @@ export async function createRestaurantHelper(authUser, data, session = undefined
 
 export async function createStaffForRestaurant(restaurant, session = undefined) {
   const username = generateStaffUsername(restaurant.name);
-  const password = await generateStaffHashedPassword();
+  const { password, encryptedPassword } = await generateStaffHashedPassword();
 
   const staff = new Staff({
-    username, password, restaurant: restaurant._id, role: 'staff'
+    username, password, encryptedPassword, restaurant: restaurant._id, role: 'staff'
   });
   
   await staff.save(session ? { session } : undefined);

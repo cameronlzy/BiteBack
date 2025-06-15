@@ -1,10 +1,18 @@
 import * as ownerService from '../services/owner.service.js';
 import * as authService from '../services/auth.service.js';
-import { validatePatch } from '../validators/ownerProfile.validator.js';
+import { validatePatch, validatePassword } from '../validators/ownerProfile.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
 
 export async function getMe(req, res) {
     const { status, body } = await ownerService.getMe(req.user._id);
+    return res.status(status).json(body);
+};
+
+export async function getStaffWithStepUp(req, res) {
+    const { error } = validatePassword(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const { status, body } = await ownerService.getStaffWithStepUp(req.user, req.body.password);
     return res.status(status).json(body);
 };
 

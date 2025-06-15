@@ -9,6 +9,7 @@ import { createTestStaff } from '../../factories/staff.factory.js';
 import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
 import { DateTime } from 'luxon';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import Staff from '../../../models/staff.model.js';
 
 describe('reservation test', () => {
     let server;
@@ -315,15 +316,24 @@ describe('reservation test', () => {
 
         it('should return 200 if valid request, customer', async () => {
             const res = await exec();
+            expect(res.status).toBe(200);
             const requiredKeys = [
                 'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body.status).toBe('booked');
         });
 
         it('should return 200 if valid request, owner', async () => {
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(200);
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body.status).toBe('event');
         });
     });
 
@@ -412,6 +422,115 @@ describe('reservation test', () => {
         });
     });    
 
+    describe('PATCH /api/reservations/:id/status', () => {
+        let token;
+        let user;
+        let userId;
+        let restaurant;
+        let restaurantId;
+        let reservationDate;
+        let remarks;
+        let pax;
+        let reservationId;
+        let cookie;
+        let newStatus;
+        let staff;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+            await Reservation.deleteMany({});
+            await Staff.deleteMany({});
+
+            // create a user
+            user = await createTestUser('customer');
+            await user.save();
+            userId = user._id;
+
+            // create a restaurant
+            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+            staff = await createTestStaff(restaurant._id);
+            restaurant.staff = staff._id;
+            await restaurant.save();
+            restaurantId = restaurant._id;
+            await staff.save();
+            token = staffGenerateAuthToken(staff);
+            cookie = setTokenCookie(token); 
+
+            // create a reservation
+            reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
+            remarks = '';
+            pax = 10;
+            const reservation = new Reservation({
+                user: userId, restaurant: restaurantId, remarks,
+                reservationDate, pax
+            });
+            await reservation.save();
+            reservationId = reservation._id;
+            newStatus = 'completed';
+        });
+
+        const exec = () => {
+            return request(server)
+            .patch(`/api/reservations/${reservationId}/status`)
+            .set('Cookie', [cookie])
+            .send({
+                status: newStatus,
+            });
+        };
+
+        it('should return 400 if invalid id', async () => {
+            reservationId = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid request', async () => {
+            newStatus = 'pending';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if reservation not found', async () => {
+            reservationId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if staff does not belong to reservation restaurant', async () => {
+            let otherUser = await createTestUser('customer');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+
+        it('should return updated reservation', async () => {
+            const res = await exec();
+            const requiredKeys = [
+                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
     describe('PATCH /api/reservations/:id', () => {
         let token;
         let user;
@@ -470,22 +589,22 @@ describe('reservation test', () => {
             });
         };
 
+        it('should return 400 if invalid id', async () => {
+            reservationId = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
         it('should return 401 if no token', async () => {
             cookie = '';
             const res = await exec();
             expect(res.status).toBe(401);
         });
 
-        it('should return 400 if invalid token', async () => {
+        it('should return 401 if invalid token', async () => {
             cookie = setTokenCookie('invalid-token');
             const res = await exec();
             expect(res.status).toBe(401);
-        });
-
-        it('should return 400 if invalid id', async () => {
-            reservationId = 1;
-            const res = await exec();
-            expect(res.status).toBe(400);
         });
 
         it('should return 400 if invalid request', async () => {

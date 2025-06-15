@@ -9,6 +9,9 @@ const router = wrapRoutes(express.Router());
 // [Owner] - Get all information for private profile page
 router.get('/me', [auth, isOwner], ownerController.getMe);
 
+// [Owner] - Get all staff username and password for each restaurant
+router.post('/staff/access', [auth, isOwner], ownerController.getStaffWithStepUp);
+
 // [Owner] - Update owner information
 router.patch('/me', [auth, isOwner], ownerController.updateMe);
 

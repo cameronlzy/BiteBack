@@ -11,6 +11,10 @@ const staffSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    encryptedPassword: {
+        type: String,
+        required: true
+    },
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Restaurant',

@@ -4,6 +4,7 @@ import validateObjectId from '../middleware/validateObjectId.js';
 import isStaff from '../middleware/isStaff.js';
 import authorizedReservationUser from '../middleware/authorizedReservationUser.js';
 import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
+import authorizedReservationStaff from '../middleware/authorizedReservationStaff.js'
 import * as reservationController from '../controllers/reservation.controller.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
 
@@ -20,6 +21,9 @@ router.get('/:id', [validateObjectId, auth, authorizedReservationUser], reservat
 
 // [User] - Create reservation
 router.post('/', auth, reservationController.createReservation);
+
+// [Staff] - Update reservation status
+router.patch('/:id/status', [validateObjectId, auth, isStaff, authorizedReservationStaff], reservationController.updateReservationStatus);
 
 // [User] - Update reservation
 router.patch('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.updateReservation);

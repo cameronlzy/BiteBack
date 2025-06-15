@@ -1,9 +1,11 @@
 import OwnerProfile from '../../../models/ownerProfile.model.js';
 import User from '../../../models/user.model.js';
-import Restaurant from '../../../models/reservation.model.js'; // Check this import — did you mean reservation.model or restaurant.model?
+import Restaurant from '../../../models/restaurant.model.js';
+import Staff from '../../../models/staff.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
+import { createTestStaff } from '../../factories/staff.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import bcrypt from 'bcryptjs';
@@ -93,6 +95,100 @@ describe('owner test', () => {
                 'email', 'username', 'role', 'profile'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/owners/staff/access', () => {
+        let email;
+        let username;
+        let password;
+        let role;
+        let roleProfile;
+        let token;
+        let user;
+        let cookie;
+        let profile;
+        let restaurant;
+        let staff;
+
+        const exec = () => {
+            return request(server)
+                .post('/api/owners/staff/access')
+                .set('Cookie', [cookie])
+                .send({
+                    password
+                });
+        };
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+            await Staff.deleteMany({});
+
+            email = "myEmail@gmail.com";
+            username = "username";
+            password = "myPassword@123";
+            role = "owner";
+            roleProfile = "OwnerProfile";
+
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            user = new User({
+                email,
+                username,
+                password: hashedPassword,
+                role,
+                roleProfile,
+                profile: new mongoose.Types.ObjectId(),
+            });
+
+            // create restaurant
+            restaurant = createTestRestaurant(user._id);
+            staff = await createTestStaff(restaurant._id);
+
+            // create owner profile
+            profile = createTestOwnerProfile(user);
+            user.profile = profile._id;
+            profile.restaurants = [restaurant._id];
+
+            await user.save();
+            await profile.save();
+            await staff.save();
+            await restaurant.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+        });
+
+        it('should return 401 if no cookie', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 403 if customer', async () => {
+            let customer = await createTestUser('customer');
+            token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 + staff credentials', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'restaurant', 'staff'
+            ];
+            expect(Object.keys(res.body[0])).toEqual(expect.arrayContaining(requiredKeys));
+            expect(Object.keys(res.body[0].staff)).toEqual(expect.arrayContaining(['_id', 'username', 'password']));
         });
     });
 

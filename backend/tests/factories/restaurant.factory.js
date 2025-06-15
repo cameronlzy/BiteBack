@@ -6,7 +6,7 @@ export function createTestRestaurant(owner) {
     let address = "Blk 30 Kelantan Lane #12-01D, S208652";
     let contactNumber = "87654321";
     let cuisines = ["Chinese"];
-    let openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
+    let openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-18:00|x";
     openingHours = convertSGTOpeningHoursToUTC(openingHours);
     let restaurantEmail = `restaurant@gmail.com`;
     let website = "https://www.restaurant.com";

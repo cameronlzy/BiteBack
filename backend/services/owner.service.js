@@ -2,11 +2,14 @@ import User from '../models/user.model.js';
 import OwnerProfile from '../models/ownerProfile.model.js';
 import Reservation from '../models/reservation.model.js';
 import Restaurant from '../models/restaurant.model.js';
+import Staff from '../models/staff.model.js';
 import * as restaurantService from '../services/restaurant.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
 import mongoose from 'mongoose';
+import simpleCrypto from '../helpers/encryption.helper.js';
+import bcrypt from 'bcryptjs';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
@@ -20,6 +23,42 @@ export async function getMe(userId) {
         .select('-password').lean();
     if (!user) return { status: 400, body: 'Owner not found.' };
     return { status: 200, body: user };
+}
+
+export async function getStaffWithStepUp(authUser, password) {
+    // find user
+    const user = await User.findById(authUser._id).populate('profile').lean();
+    if (!user) return { status: 400, body: 'Owner not found' };
+
+    // check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        return { status: 400, body: 'Invalid password' };
+    }
+
+    // find restaurants
+    const restaurants = await Restaurant.find({
+        _id: { $in: user.profile.restaurants }
+    }).lean();
+    
+    const result = await Promise.all(
+        restaurants.map(async (restaurant) => {
+            const staff = await Staff.findOne({ restaurant: restaurant._id }).lean();
+            return {
+                restaurant: {
+                    _id: restaurant._id,
+                    name: restaurant.name
+                },
+                staff: staff ? {
+                    _id: staff._id,
+                    username: staff.username,
+                    password: simpleCrypto.decrypt(staff.encryptedPassword)
+                } : null
+            };
+        })
+    );
+
+    return { status: 200, body: result };
 }
 
 export async function updateMe(update, authUser) {

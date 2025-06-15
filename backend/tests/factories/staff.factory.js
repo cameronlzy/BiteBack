@@ -1,15 +1,17 @@
 import Staff from '../../models/staff.model.js';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { generateStaffUsername, generateStaffHashedPassword } from '../../helpers/staff.helper.js';
 
 export async function createTestStaff(restaurant = new mongoose.Types.ObjectId()) {
-    const username = `user_${Date.now()}`;
-    const password = await bcrypt.hash('Password@123', 10);
+    const username = generateStaffUsername('restaurant');
+    const { hashedPassword, encryptedPassword } = await generateStaffHashedPassword();
     const role = 'staff';
 
     const staff = new Staff({
        username,
-       password,
+       password: hashedPassword,
+       encryptedPassword,
        role,
        restaurant
     });

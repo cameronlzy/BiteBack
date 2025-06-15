@@ -1,5 +1,5 @@
 import * as reservationService from '../services/reservation.service.js';
-import { validateReservation, validatePatch } from '../validators/reservation.validator.js';
+import { validateReservation, validatePatch, validateStatus } from '../validators/reservation.validator.js';
 
 export async function getReservationsByRestaurant(req, res) {
   const { status, body } = await reservationService.getReservationsByRestaurant(req.restaurant);
@@ -22,6 +22,14 @@ export async function createReservation(req, res) {
   if (error) return res.status(400).send(error.details[0].message);
 
   const { status, body } = await reservationService.createReservation(req.user, req.body);
+  return res.status(status).json(body);
+};
+
+export async function updateReservationStatus(req, res) {
+  const { error } = validateStatus(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const { status, body } = await reservationService.updateReservationStatus(req.reservation, req.body.status);
   return res.status(status).json(body);
 };
 

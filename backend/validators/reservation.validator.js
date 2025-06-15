@@ -16,7 +16,6 @@ export function validateReservation(reservation) {
             return value;
         }).required(),
         pax: Joi.number().integer().min(1).required(),
-        status: Joi.string().valid('pending', 'confirmed', 'cancelled')
     });
     return schema.validate(reservation);
 }
@@ -36,4 +35,11 @@ export function validatePatch(update) {
         pax: Joi.number().integer().min(1),
     }).min(1);
     return schema.validate(update);
+}
+
+export function validateStatus(status) {
+    const schema = Joi.object({
+        status: Joi.string().valid('completed', 'no-show').required()
+    });
+    return schema.validate(status);
 }
