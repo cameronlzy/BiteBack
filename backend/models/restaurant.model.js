@@ -39,37 +39,6 @@ const tagList = [
   "Nut-Free"
 ];
 
-const openingHoursRegex =
-  /^(x|([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)(\|(x|([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d)){6}$/;
-
-const openingHoursSchema = {
-  type: String,
-  required: true,
-  validate: {
-    validator: function(value) {
-      if (!openingHoursRegex.test(value)) return false;
-
-      const segments = value.split('|');
-
-      for (const segment of segments) {
-        if (segment === 'x') continue;
-
-        const [start, end] = segment.split('-');
-        const [startH, startM] = start.split(':').map(Number);
-        const [endH, endM] = end.split(':').map(Number);
-
-        const startMinutes = startH * 60 + startM;
-        const endMinutes = endH * 60 + endM;
-
-        if (startMinutes >= endMinutes) return false;
-      }
-
-      return true;
-    },
-    message: 'Invalid opening hours format or time ranges.'
-  }
-};
-
 const restaurantSchema = new mongoose.Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
@@ -85,7 +54,7 @@ const restaurantSchema = new mongoose.Schema({
       required: true,
     },
   },
-  address: {type: String, minLength: 2, maxLength: 255, required: true },
+  address: { type: String, minLength: 2, maxLength: 255, required: true },
   contactNumber: {
     type: String,
     required: true,
@@ -114,7 +83,7 @@ const restaurantSchema = new mongoose.Schema({
       }
     ]
   },
-  openingHours: openingHoursSchema,
+  openingHours: { type: String, required: true },
   maxCapacity: { type: Number, min: 0, max: 1000, required: true },
   slotDuration: { type: Number, min: 0, max: 1440, default: 60 },
   email: {

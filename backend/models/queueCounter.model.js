@@ -5,7 +5,7 @@ const queueCounterSchema = new mongoose.Schema({
   queueGroup: { type: String, enum: ['small', 'medium', 'large'], required: true },
   lastNumber: { type: Number, default: 0 },
   calledNumber: { type: Number, default: 0 }
-});
+}, { versionKey: false });
 
 queueCounterSchema.index({ restaurant: 1, queueGroup: 1 }, { unique: true });
 

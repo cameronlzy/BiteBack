@@ -23,6 +23,7 @@ export async function processEndOfDay() {
 
         if (nowTotalMinutes >= closingTotalMinutes) {
             const deletedEntries = await queueCleanup(restaurant);
+            // add in vsiit history processing
             // add in statistics processing
         }
     }
