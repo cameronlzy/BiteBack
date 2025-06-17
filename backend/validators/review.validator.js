@@ -24,3 +24,10 @@ export function validateBadge(badge) {
     });
     return schema.validate(badge);
 }
+
+export function validateRestaurantId(id) {
+    const schmea = Joi.object({
+        restaurantId: Joi.objectId().required()
+    });
+    return schema.validate(id);
+}

@@ -124,6 +124,7 @@ export async function updateQueueEntryStatus(queueEntry, update) {
     queueEntry.statusTimestamps[update.status] = new Date();
     queueEntry.restaurant = queueEntry.restaurant._id;
     await queueEntry.save();
+    notifyClient(queueEntry.customer.toString(), { queueEntry: queueEntry._id, status: queueEntry.status });
     return { status: 200, body: queueEntry.toObject() };
 }
 

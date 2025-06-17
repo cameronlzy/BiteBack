@@ -1,7 +1,15 @@
 import * as reviewService from '../services/review.service.js';
 import * as imageService from '../services/image.service.js';
 import Review from '../models/review.model.js';
-import { validateReview, validateReply, validateBadge } from '../validators/review.validator.js';
+import { validateReview, validateReply, validateBadge, validateRestaurantId } from '../validators/review.validator.js';
+
+export async function getEligibleVisits(req, res) {
+  const { error } = validateRestaurantId(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const { status, body } = await reviewService.getEligibleVisits(req.query.restaurantId, req.user);
+  return res.status(status).json(body);
+};
 
 export async function getReviewsByRestaurant(req, res) {
   const { status, body } = await reviewService.getReviewsByRestaurant(req.params.id, req.user);

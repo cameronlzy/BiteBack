@@ -283,6 +283,7 @@ describe('review test', () => {
 
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
+            expect(res.status).toBe(200);
             const requiredKeys = [
                 'username', 'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'

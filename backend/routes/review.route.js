@@ -14,6 +14,9 @@ const router = wrapRoutes(express.Router());
 
 const reviewParser = parser('reviews');
 
+// [Customer] - Get customer's past visits to the restaurant that have not been reviewed
+router.get('/eligible-visits', [auth, isCustomer], reviewController.getEligibleVisits);
+
 // [Public] - Get all reviews for a restaurant
 router.get('/restaurant/:id', [validateObjectId, optionalAuth], reviewController.getReviewsByRestaurant);
 
