@@ -17,6 +17,7 @@ import { Input } from "./ui/input"
 import { useState } from "react"
 import ImageUpload from "./common/ImageUpload"
 import { uploadReviewImages } from "@/services/reviewService"
+import SubmitButton from "./common/SubmitButton"
 
 const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
   const [selectedFiles, setSelectedFiles] = useState([])
@@ -130,14 +131,13 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
           selectedFiles={selectedFiles}
           setSelectedFiles={setSelectedFiles}
         />
-
-        <Button
+        <SubmitButton
           type="submit"
           className="w-full"
-          disabled={form.formState.isSubmitting}
-        >
-          Submit Review
-        </Button>
+          condition={form.formState.isSubmitting}
+          normalText="Submit Review"
+          loadingText="Submitting..."
+        />
       </form>
     </FormProvider>
   )

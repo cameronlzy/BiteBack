@@ -19,7 +19,7 @@ import BackButton from "./common/BackButton"
 import pinImg from "@/assets/map-pin.png"
 import AntiOverlapPin from "./common/AntiOverlapPin"
 import LoadingSpinner from "./common/LoadingSpinner"
-import SearchSubmit from "./common/SearchSubmit"
+import SearchSubmit from "./common/SubmitButton"
 
 const MAP_STYLE = `https://api.maptiler.com/maps/streets/style.json?key=${
   import.meta.env.VITE_MAPTILER_TOKEN
@@ -269,6 +269,8 @@ const SearchAndDiscovery = () => {
                     type="button"
                     onClick={handleSearchClick}
                     condition={form.formState.isSubmitting}
+                    loadingText="Searching..."
+                    normalText="Search"
                   />
                 </div>
 
@@ -343,7 +345,7 @@ const SearchAndDiscovery = () => {
                     key={r._id}
                     longitude={r.location.coordinates[0]}
                     latitude={r.location.coordinates[1]}
-                    anchor="top"
+                    anchor="bottom"
                     className="z-0"
                   >
                     <div
@@ -378,6 +380,9 @@ const SearchAndDiscovery = () => {
                           <Link
                             to={`/restaurants/${r._id}`}
                             className="font-semibold text-black hover:underline"
+                            state={{
+                              from: location.pathname,
+                            }}
                           >
                             {r.name}
                           </Link>

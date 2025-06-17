@@ -4,20 +4,22 @@ import {
   deleteReview,
 } from "@/services/reviewService"
 import { Fragment, useEffect, useState } from "react"
-import { Navigate, useLocation, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import ReviewForm from "./ReviewForm"
 import ReviewCard from "./ReviewCard"
-import { Button } from "./ui/button"
 import SortBy from "./common/SortBy"
 
-const ReviewSection = ({ restaurant, user, showRestaurant }) => {
+const ReviewSection = ({
+  restaurant,
+  user,
+  showRestaurant,
+  showReviewForm,
+  setShowReviewForm,
+}) => {
   const [reviews, setReviews] = useState([])
   const [sortedReviews, setSortedReviews] = useState([])
-  const [showForm, setShowForm] = useState(false)
   const navigate = useNavigate()
-  const location = useLocation()
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -40,22 +42,11 @@ const ReviewSection = ({ restaurant, user, showRestaurant }) => {
     { label: "Rating", value: "rating" },
   ]
 
-  const handleShowForm = () => {
-    if (!user && !showForm) {
-      toast.info("Please Log in First")
-      return navigate("/login", {
-        state: { from: location.pathname },
-        replace: true,
-      })
-    }
-    setShowForm((prev) => !prev)
-  }
-
   const handleReviewSubmit = async (newReview) => {
     try {
       const savedReview = await saveReview(newReview)
       savedReview.badgesCount = [0, 0, 0, 0]
-      setShowForm(false)
+      setShowReviewForm(false)
       return savedReview
     } catch (ex) {
       if (ex.response?.status === 403 || ex.response?.status === 401) {
@@ -78,16 +69,11 @@ const ReviewSection = ({ restaurant, user, showRestaurant }) => {
     <Fragment>
       {user?.role !== "owner" && (
         <div className="mb-4">
-          <Button
-            onClick={handleShowForm}
-            className="w-[180px] h-11 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-full px-6 py-2 transition-colors duration-300 shadow"
-          >
-            {showForm ? "Cancel" : "Leave a Review"}
-          </Button>
-
           <div
             className={`transition-all duration-500 ease-in-out overflow-hidden ${
-              showForm ? "max-h-[1000px] opacity-100 mt-4" : "max-h-0 opacity-0"
+              showReviewForm
+                ? "max-h-[1000px] opacity-100 mt-4"
+                : "max-h-0 opacity-0"
             }`}
           >
             <ReviewForm

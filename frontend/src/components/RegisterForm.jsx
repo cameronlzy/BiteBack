@@ -8,12 +8,12 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select"
-import { saveOwner, saveCustomer } from "@/services/userService"
+import { updateOwner, updateCustomer } from "@/services/userService"
 import BackButton from "./common/BackButton"
 import { useLocation, useNavigate } from "react-router-dom"
 import { objectComparator } from "@/utils/objectComparator"
 import { convertOpeningHoursToString } from "@/utils/timeConverter"
-import auth from "@/services/authService"
+import auth, { register } from "@/services/authService"
 
 const RegisterForm = ({ user, isLoading }) => {
   const [role, setRole] = useState(user?.role || "customer")
@@ -62,15 +62,15 @@ const RegisterForm = ({ user, isLoading }) => {
       if (user && Object.keys(result).length === 0) {
         return
       }
-
+      // TO CFM role is included
       const response =
         role === "owner"
           ? user
-            ? await saveOwner(result, true)
-            : await saveOwner(finalData, false)
+            ? await updateOwner(result)
+            : await register(finalData)
           : user
-          ? await saveCustomer(result, true)
-          : await saveCustomer(finalData, false)
+          ? await updateCustomer(result)
+          : await register(finalData)
       localStorage.setItem("role", role)
       return response
     } catch (ex) {

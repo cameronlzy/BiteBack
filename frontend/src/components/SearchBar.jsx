@@ -1,6 +1,6 @@
 import { Search } from "lucide-react"
 import { Input } from "./ui/input"
-import SearchSubmit from "./common/SearchSubmit"
+import SearchSubmit from "./common/SubmitButton"
 
 const SearchBar = ({ name, value, onChange, onSubmit, isSubmitting }) => {
   return (
@@ -21,6 +21,8 @@ const SearchBar = ({ name, value, onChange, onSubmit, isSubmitting }) => {
         size="sm"
         className="ml-1"
         condition={isSubmitting}
+        loadingText="Searching..."
+        normalText="Search"
       />
     </form>
   )

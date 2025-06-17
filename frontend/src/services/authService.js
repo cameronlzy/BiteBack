@@ -1,3 +1,4 @@
+import { sanitizeStrings } from '@/utils/stringSanitizer';
 import http from './httpService'
 
 const apiEndpoint = import.meta.env.VITE_API_URL + "/auth"
@@ -19,6 +20,12 @@ async function login(user) {
     return response.data
 }
 
+export async function register(user) {
+    const sanitized = sanitizeStrings(user)
+    const { data } = await http.post(apiEndpoint, sanitized)
+    return data
+}
+
 
 async function logout() {
     await http.post(apiEndpoint + "/logout", null)
@@ -38,6 +45,10 @@ async function resetPasswordSubmit(token, newPasswordObj) {
      return await http.post(apiEndpoint + `/reset-password/${token}`, newPasswordObj)
 }
 
+async function changePassword(newPasswordObj) {
+    const { data } = await http.put(apiEndpoint + "/change-password", newPasswordObj)
+    return data
+}
 
 
 export default {
@@ -45,4 +56,5 @@ export default {
     login,
     resetPasswordSubmit,
     resetPasswordTrigger,
+    changePassword
 }

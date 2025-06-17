@@ -248,6 +248,16 @@ export const loginUserSchema = Joi.object({
   password: passwordSchema,
 })
 
+export const loginStaffSchema = Joi.object({
+  username: Joi.string().required().messages({
+    "any.required": "Username is required.",
+    "string.empty": "Username is required.",
+    "string.min": "Username must be at least 2 characters.",
+    "string.max": "Username must not exceed 20 characters.",
+  }),
+  password: passwordSchema
+})
+
 export const reservationSchema = Joi.object({
   id:  Joi.string().optional(), // RMB ADD the objectID pattern ltr
   userId: objectId.required(),
@@ -303,7 +313,13 @@ export const passwordResetSchema = Joi.object(
 
 export const passwordChangeSchema = Joi.object({
   ...passwordFields,
-  oldPassword: passwordSchema,
+  oldPassword: passwordComplexity.required().messages({
+  "string.min": "Old Password must be at least 8 characters.",
+  "string.max": "Old Password must not exceed 26 characters.",
+  "string.pattern.name": "Old Password must include a {#name} character.",
+  "string.empty": "Old Password is required.",
+  "any.required": "Old Password is required.",
+})
 })
 
 export const deleteAccountSchema = Joi.object({

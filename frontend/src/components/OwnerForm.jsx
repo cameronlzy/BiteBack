@@ -19,6 +19,7 @@ import { MultiSelect } from "./common/MultiSelect"
 import OpeningHoursSelect from "./OpeningHoursSelect"
 import { toast } from "react-toastify"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
+import { Eye, EyeOff } from "lucide-react"
 import {
   cuisineList,
   ownerSchema,
@@ -30,9 +31,12 @@ import {
   uploadRestaurantImages,
 } from "@/services/restaurantService"
 import ImageUpload from "./common/ImageUpload"
+import SubmitButton from "./common/SubmitButton"
 
 const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
   const [selectedFilesArray, setSelectedFilesArray] = useState([[]])
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const featureList = tagList.slice(0, 5)
   const dietaryList = tagList.slice(5)
@@ -195,22 +199,65 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {baseFields.map(({ name, label, type }) => (
-          <FormField
-            key={name}
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{label}</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder={label} type={type || "text"} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
+        {baseFields.map(({ name, label, type }) => {
+          const isPassword = type === "password"
+
+          return (
+            <FormField
+              key={name}
+              control={form.control}
+              name={name}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{label}</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        placeholder={label}
+                        type={
+                          name === "password"
+                            ? showPassword
+                              ? "text"
+                              : "password"
+                            : name === "confirmPassword"
+                            ? showConfirmPassword
+                              ? "text"
+                              : "password"
+                            : "text"
+                        }
+                      />
+                      {isPassword && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            name === "password"
+                              ? setShowPassword((prev) => !prev)
+                              : setShowConfirmPassword((prev) => !prev)
+                          }
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                        >
+                          {name === "password" ? (
+                            showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )
+                          ) : showConfirmPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )
+        })}
 
         {!user && (
           <>
@@ -397,10 +444,13 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
             </Button>
           </>
         )}
-
-        <Button type="submit" className="w-full" disabled={form?.isSubmitting}>
-          {user ? "Update Profile" : "Register"}
-        </Button>
+        <SubmitButton
+          type="submit"
+          className="w-full"
+          condition={form.formState.isSubmitting}
+          normalText={user ? "Update Profile" : "Register"}
+          loadingText={user ? "Updating..." : "Registering..."}
+        />
       </form>
     </FormProvider>
   )

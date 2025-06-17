@@ -8,15 +8,11 @@ import {
 import { Button } from "@/components/ui/button"
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom"
 import { deleteRestaurant, getRestaurant } from "@/services/restaurantService"
-
-import { getRestaurantReservations } from "@/services/reservationService"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { useConfirm } from "./common/ConfirmProvider"
 import { toast } from "react-toastify"
-import { DateTime } from "luxon"
-import { readableTimeSettings } from "@/utils/timeConverter"
 import ReviewSection from "./ReviewSection"
-import { Settings } from "lucide-react"
+import { Calendar, LogIn, Settings, Star, Stars, Users } from "lucide-react"
 import LoadingSpinner from "./common/LoadingSpinner"
 import { DropdownMenu, DropdownMenuItem } from "./ui/dropdown-menu"
 import {
@@ -25,19 +21,27 @@ import {
 } from "@radix-ui/react-dropdown-menu"
 import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
+import QueueLogo from "@/assets/queue-logo.png"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
   const navigate = useNavigate()
   const confirm = useConfirm()
   const location = useLocation()
-  const from = location?.state?.from || "/restaurants"
+  let from = location?.state?.from || "/restaurants"
+
+  if (
+    (from?.startsWith("/online-queue/") || from?.startsWith("/reservation/")) &&
+    from?.split("/")[2] === id
+  ) {
+    from = "/restaurants"
+  }
 
   const [restaurant, setRestaurant] = useState(null)
   const [availableCapacity, setAvailableCapacity] = useState(null)
-  const isOwnedByUser = user?.role == "owner" && user._id === restaurant?.owner
+  const [showReviewForm, setShowReviewForm] = useState(false)
 
-  const [reservations, setReservations] = useState(null)
+  const isOwnedByUser = user?.role == "owner" && user._id === restaurant?.owner
   const imageShow = location.state?.imageShow
   useEffect(() => {
     if (sessionStorage.getItem("restaurant_cache") && imageShow) {
@@ -66,22 +70,6 @@ const Restaurant = ({ user }) => {
     fetchRestaurant()
   }, [id])
 
-  useEffect(() => {
-    const fetchReservations = async () => {
-      if (isOwnedByUser && restaurant) {
-        const today = new Date().toISOString().split("T")[0]
-        const res = await getRestaurantReservations(restaurant._id, today)
-        const enriched = res.map((r) => ({
-          ...r,
-          user: user,
-        }))
-
-        setReservations(enriched)
-      }
-    }
-    fetchReservations()
-  }, [restaurant, user, isOwnedByUser])
-
   const handleRestaurantDelete = async (id) => {
     const confirmed = await confirm(
       `Are you sure you want to delete the restaurant ${restaurant.name}?`
@@ -91,6 +79,17 @@ const Restaurant = ({ user }) => {
       toast.success("Deleted!")
       window.location = "/restaurants"
     }
+  }
+
+  const handleToggleReviewForm = () => {
+    if (!user) {
+      toast.info("Please log in first")
+      return navigate("/login", {
+        state: { from: location.pathname },
+        replace: true,
+      })
+    }
+    setShowReviewForm((prev) => !prev)
   }
 
   if (!restaurant) return <LoadingSpinner />
@@ -292,78 +291,123 @@ const Restaurant = ({ user }) => {
             )}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 flex gap-4 justify-center">
+            {(!user || user.role === "customer" || isOwnedByUser) && (
+              <Link
+                to={`/reservation/${restid}`}
+                state={{ from: location.pathname }}
+                className="group"
+              >
+                <Button
+                  className={`bg-black text-white h-11 w-11 group-hover:${
+                    isOwnedByUser ? "w-[140px]" : "w-[180px]"
+                  }
+                transition-all 
+                duration-300 
+                ease-in-out 
+                rounded-full 
+                overflow-hidden 
+                shadow 
+                flex 
+                items-center
+                gap-2 
+                px-0.75
+                `}
+                >
+                  <div
+                    className="flex items-center justify-left group-hover:justify-start 
+                  w-full 
+                  px-3
+                  transition-all 
+                  duration-300"
+                  >
+                    <Calendar className="w-5 h-5" />
+                    <span
+                      className="ml-2 opacity-0 group-hover:opacity-100 
+                    transition-opacity 
+                    duration-300 
+                    whitespace-nowrap"
+                    >
+                      {isOwnedByUser ? "Book Event" : "Make Reservation"}
+                    </span>
+                  </div>
+                </Button>
+              </Link>
+            )}
             <Link
-              to={`/reservation/${restid}`}
+              to={`/online-queue/${restid}`}
               state={{ from: location.pathname }}
+              className="group"
             >
               <Button
-                className="w-[180px] h-11 bg-black 
-             hover:bg-gray-800 
-             text-white 
-             font-semibold 
-             rounded-full 
-             px-6 
-             py-2 
-             transition-colors 
-             duration-300 
-             shadow"
+                className="bg-white text-black h-11 px-3 w-11 group-hover:w-[140px]
+                hover:bg-gray-100 
+                transition-all 
+                duration-300 
+                ease-in-out 
+                rounded-full 
+                overflow-hidden 
+                shadow 
+                flex 
+                items-center 
+                justify-start 
+                gap-2"
               >
-                Make a Reservation
+                <Users className="w-5 h-5" />
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                  View Queue
+                </span>
               </Button>
             </Link>
+            {user?.role === "customer" && (
+              <div className="group">
+                <Button
+                  onClick={handleToggleReviewForm}
+                  className={`bg-yellow-400 hover:bg-yellow-500 text-black h-11 w-11 ${
+                    showReviewForm
+                      ? "group-hover:w-[100px]"
+                      : "group-hover:w-[160px]"
+                  }
+  transition-all 
+  duration-300 
+  ease-in-out 
+  rounded-full 
+  overflow-hidden 
+  shadow 
+  flex 
+  items-center 
+  gap-2 
+  px-0.75 group`}
+                >
+                  <div
+                    className="flex items-center justify-left group-hover:justify-start 
+    w-full 
+    px-3 
+    transition-all 
+    duration-300"
+                  >
+                    <Star className="w-5 h-5" />
+                    <span
+                      className="ml-2 opacity-0 group-hover:opacity-100  
+      transition-opacity 
+      duration-300 
+      whitespace-nowrap"
+                    >
+                      {showReviewForm ? "Cancel" : "Leave a Review"}
+                    </span>
+                  </div>
+                </Button>
+              </div>
+            )}
           </div>
 
           <ReviewSection
             restaurant={restaurant}
             user={user}
             showRestaurant={false}
+            showReviewForm={showReviewForm}
+            setShowReviewForm={setShowReviewForm}
           />
-          {isOwnedByUser && (
-            <CardContent className="space-y-4">
-              <hr className="my-6 border-t border-gray-300" />
-              <h4 className="text-lg font-semibold">Upcoming Reservations</h4>
-              {!reservations ? (
-                <LoadingSpinner inline={true} size="sm" />
-              ) : reservations.length === 0 ? (
-                <p className="text-gray-500">No upcoming reservations.</p>
-              ) : (
-                <div className="space-y-3">
-                  {reservations.map((res, index) => (
-                    <Card key={index} className="mb-4 shadow">
-                      <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                          Reservation Details
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-1 text-sm text-gray-700">
-                        <p>
-                          <strong>Email:</strong> {res.user?.email}
-                        </p>
-                        <p>
-                          <strong>Phone:</strong>{" "}
-                          {res.user?.profile.contactNumber || "-"}
-                        </p>
-                        <p>
-                          <strong>Date & Time:</strong>{" "}
-                          {DateTime.fromISO(res.reservationDate).toLocaleString(
-                            readableTimeSettings
-                          )}
-                        </p>
-                        <p>
-                          <strong>Guests:</strong> {res.pax}
-                        </p>
-                        <p>
-                          <strong>Restaurant:</strong> {restaurant.name} @{" "}
-                          {restaurant.address}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          )}
         </CardContent>
       </Card>
     </div>
