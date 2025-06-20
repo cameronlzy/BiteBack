@@ -4,7 +4,6 @@ import Restaurant from '../models/restaurant.model.js';
 import _ from 'lodash';
 import { findQueueGroup } from '../helpers/queue.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
-import { getOpeningHoursToday } from '../helpers/restaurant.helper.js';
 import { notifyClient } from '../helpers/sse.helper.js';
 
 export async function joinQueue(authUser, data) {

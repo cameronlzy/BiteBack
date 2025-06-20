@@ -11,6 +11,8 @@ export default async function (req, res, next) {
     const user = await User.findById(decoded._id);
     if (user) req.user = user;
   }
-  catch (ex) {}
+  catch {
+    // ignore token verification errors
+  }
   next();
 }

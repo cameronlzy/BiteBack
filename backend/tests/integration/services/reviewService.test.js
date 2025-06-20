@@ -1,4 +1,3 @@
-import request from 'supertest';
 import mongoose from 'mongoose';
 import Review from '../../../models/review.model.js';
 import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';

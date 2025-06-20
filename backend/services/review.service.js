@@ -4,8 +4,7 @@ import Review from '../models/review.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
-import VisitHistory from '../models/visitHistory.model.js';
-import mongoose from 'mongoose';
+// import VisitHistory from '../models/visitHistory.model.js';
 import { deleteImagesFromDocument } from './image.service.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 

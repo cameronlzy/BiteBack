@@ -132,7 +132,6 @@ describe('customer test', () => {
         let profile;
         let newContactNumber;
         let cookie;
-        let password;
 
         beforeEach(async () => {
             await User.deleteMany({});
@@ -142,7 +141,6 @@ describe('customer test', () => {
             user = await createTestUser('customer');
             email = user.email;
             username = user.username;
-            password = "Password@123";
 
             // create customer profile
             name = "test";

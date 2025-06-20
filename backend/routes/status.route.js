@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
     await mongoose.connection.db.admin().ping();
     dbStatus = 'Connected';
     dbStatusColor = 'green';
-  } catch (err) {
+  } catch {
     dbStatus = 'Disconnected';
     dbStatusColor = 'red';
   }

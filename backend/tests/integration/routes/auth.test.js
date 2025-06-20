@@ -106,7 +106,6 @@ describe('auth test', () => {
 
         it('should return 400 if username/email does not belong to anyone', async () => {
             let otherToken = crypto.randomBytes(32).toString('hex');
-            let otherHash = crypto.createHash('sha256').update(otherToken).digest('hex');
             token = otherToken;
             const res = await exec();
             expect(res.status).toBe(400);
@@ -278,7 +277,7 @@ describe('auth test', () => {
         });
 
         it('should return create a customer profile', async () => {
-            const res = await exec();
+            await exec();
             const user = await User.findOne({ email: email })
                 .populate('profile');
             const requiredKeys = [
@@ -355,7 +354,7 @@ describe('auth test', () => {
         });
 
         it('should return create a owner profile', async () => {
-            const res = await exec();
+            await exec();
             const user = await User.findOne({ email: email })
                 .populate('profile');
             const requiredKeys = [

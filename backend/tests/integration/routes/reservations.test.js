@@ -344,7 +344,6 @@ describe('reservation test', () => {
         let restaurant;
         let restaurantId;
         let reservationDate;
-        let remarks;
         let pax;
         let reservationId;
         let cookie;
@@ -368,7 +367,6 @@ describe('reservation test', () => {
 
             // create a reservation
             reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
-            remarks = '';
             pax = 10;
             const reservation = new Reservation({
                 user: userId, restaurant: restaurantId,

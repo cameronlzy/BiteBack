@@ -7,8 +7,10 @@ export function subscribeToQueue(req, res) {
 
     res.set({
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-transform',
         Connection: 'keep-alive',
+
+        'X-Accel-Buffering': 'no',
     });
 
     res.flushHeaders();
@@ -45,7 +47,7 @@ export async function leaveQueue(req, res) {
 }
 
 export async function getRestaurantQueue(req, res) {
-    const { status, body } = await queueService.getRestaurantQueue(req.params._id);
+    const { status, body } = await queueService.getRestaurantQueue(req.params.id);
     return res.status(status).json(body);
 }
 

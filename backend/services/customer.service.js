@@ -4,8 +4,6 @@ import Review from '../models/review.model.js';
 import Reservation from '../models/reservation.model.js';
 import * as reviewService from '../services/review.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
-import mongoose from 'mongoose';
-import _ from 'lodash';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 
 export async function getMe(userId) {
@@ -77,7 +75,7 @@ export async function updateMe(update, authUser) {
 
         // send back user
         const token = generateAuthToken(user);
-        const { password, ...safeUser } = user.toObject();
+        const { password: _password, ...safeUser } = user.toObject();
         safeUser.profile = user.profile.toObject();
         return { token, status: 200, body: safeUser };
     });

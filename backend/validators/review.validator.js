@@ -26,7 +26,7 @@ export function validateBadge(badge) {
 }
 
 export function validateRestaurantId(id) {
-    const schmea = Joi.object({
+    const schema = Joi.object({
         restaurantId: Joi.objectId().required()
     });
     return schema.validate(id);

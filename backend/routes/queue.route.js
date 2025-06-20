@@ -2,6 +2,8 @@ import express from 'express';
 import auth from '../middleware/auth.js';
 import isCustomer from '../middleware/isCustomer.js';
 import isStaff from '../middleware/isStaff.js';
+// import skipCompression from '../middleware/skipCompression.js';
+// import skipHelmet from '../middleware/skipHelmet.js';
 import authorizedQueueEntryCustomer from '../middleware/authorizedQueueEntryCustomer.js';
 import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
 import authorizedQueueEntryStaff from '../middleware/authorizedQueueEntryStaff.js';

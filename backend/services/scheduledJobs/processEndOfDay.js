@@ -1,6 +1,7 @@
 import { queueCleanup } from "./queueCleanup.js";
 import { processVisitHistory } from "./visitHistoryProcessor.js";
 import Restaurant from "../../models/restaurant.model.js";
+import { getOpeningHoursToday } from "../../helpers/restaurant.helper.js";
 
 export async function processEndOfDay() {
     const now = new Date();
@@ -13,7 +14,7 @@ export async function processEndOfDay() {
         const dayHours = getOpeningHoursToday(restaurant);
         if (!dayHours || dayHours === 'x') continue;
 
-        const [openStr, closeStr] = dayHours.split('-');    
+        const [_openStr, closeStr] = dayHours.split('-');    
         const [closingHourStr, closingMinuteStr] = closeStr.split(':');
         const closingHour = parseInt(closingHourStr, 10);
         const closingMinute = parseInt(closingMinuteStr, 10);
@@ -24,7 +25,7 @@ export async function processEndOfDay() {
         const nowTotalMinutes = currentHour * 60 + currentMinute;
 
         if (nowTotalMinutes >= closingTotalMinutes) {
-            const deletedEntries = await queueCleanup(restaurant);
+            await queueCleanup(restaurant); // assign to deletedEntries
             await processVisitHistory(restaurant);
             // add in statistics processing
         }

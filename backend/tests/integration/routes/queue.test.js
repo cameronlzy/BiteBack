@@ -27,7 +27,6 @@ describe('queue test', () => {
         let token;
         let queueEntry;
         let queueEntryId;
-        let queueNumber;
     
         const exec = () => {
             return request(server)
@@ -120,8 +119,6 @@ describe('queue test', () => {
         let restaurant;
         let restaurantId;
         let pax;
-        let customer;
-        let queueGroup;
     
         const exec = () => {
             return request(server)
@@ -145,9 +142,7 @@ describe('queue test', () => {
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
             await restaurant.save();
             restaurantId = restaurant._id;
-            customer = user.profile;
             pax = 2;
-            queueGroup = 'small';
         });
 
         it('should return 401 if no token', async () => {
@@ -293,6 +288,7 @@ describe('queue test', () => {
         let cookie;
         let token;
         let queueEntry;
+        let queueCounter;
         let restaurant;
         let restaurantId;
         let staff;
@@ -331,9 +327,18 @@ describe('queue test', () => {
                 customer: user.profile,
                 pax: 2,
                 queueGroup: 'small',
-                queueNumber: 0
+                queueNumber: 1
             });
             await queueEntry.save();
+
+            // create queue counter
+            queueCounter = new QueueCounter({
+                restaurant: restaurantId,
+                queueGroup: 'small',
+                lastNumber: 1,
+                calledNumber: 0,
+            });
+            await queueCounter.save();
         });
 
         it('should return 400 if invalid id', async () => {
@@ -357,6 +362,7 @@ describe('queue test', () => {
         let cookie;
         let token;
         let queueEntry;
+        let queueCounter;
         let restaurant;
         let restaurantId;
         let staff;
@@ -407,6 +413,23 @@ describe('queue test', () => {
                 queueNumber: 1
             });
             await queueEntry.save();
+
+            // create 2 queue counters
+            queueCounter = new QueueCounter({
+                restaurant: restaurantId,
+                queueGroup: 'small',
+                lastNumber: 1, 
+                calledNumber: 0,
+            });
+            await queueCounter.save();
+
+            queueCounter = new QueueCounter({
+                restaurant: restaurantId,
+                queueGroup: 'large',
+                lastNumber: 1, 
+                calledNumber: 0,
+            });
+            await queueCounter.save();
         });
 
         it('should return 400 if invalid id', async () => {

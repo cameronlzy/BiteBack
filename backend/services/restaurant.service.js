@@ -11,7 +11,6 @@ import { createSlots, convertSGTOpeningHoursToUTC, filterOpenRestaurants } from 
 import { generateStaffUsername, generateStaffHashedPassword } from '../helpers/staff.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
-import mongoose from 'mongoose';
 import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.service.js';
 import { geocodeAddress } from '../helpers/geocode.js';
 import { escapeRegex } from '../helpers/regex.helper.js';
@@ -230,10 +229,9 @@ export async function updateRestaurantImages(restaurant, newImageUrls) {
 
   // delete removed images
   if (toDelete.length > 0) {
-    const result = await deleteImagesFromCloudinary(toDelete);
+    await deleteImagesFromCloudinary(toDelete);
   }
   
-
   // overwrite old array with new array
   restaurant.images = newImageUrls;
   await restaurant.save();
@@ -302,10 +300,11 @@ export async function createRestaurantHelper(authUser, data, session = undefined
 
 export async function createStaffForRestaurant(restaurant, session = undefined) {
   const username = generateStaffUsername(restaurant.name);
-  const { password, encryptedPassword } = await generateStaffHashedPassword();
+  const { hashedPassword, encryptedPassword } = await generateStaffHashedPassword();
 
   const staff = new Staff({
-    username, password, encryptedPassword, restaurant: restaurant._id, role: 'staff'
+    username, password: hashedPassword,
+    encryptedPassword, restaurant: restaurant._id, role: 'staff'
   });
   
   await staff.save(session ? { session } : undefined);

@@ -196,7 +196,6 @@ describe('owner test', () => {
         let token;
         let email;
         let username;
-        let password = 'myPassword@123';
         let user;
         let profile;
         let newCompanyName;

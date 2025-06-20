@@ -1,6 +1,5 @@
 import Staff from '../../models/staff.model.js';
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import { generateStaffUsername, generateStaffHashedPassword } from '../../helpers/staff.helper.js';
 
 export async function createTestStaff(restaurant = new mongoose.Types.ObjectId()) {

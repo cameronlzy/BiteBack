@@ -1,4 +1,3 @@
-import winston from 'winston';
 import mongoose from 'mongoose';
 import config from 'config';
 import logger from '../startup/logging.js';

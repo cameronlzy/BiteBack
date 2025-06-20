@@ -7,7 +7,6 @@ import * as restaurantService from '../services/restaurant.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
-import mongoose from 'mongoose';
 import simpleCrypto from '../helpers/encryption.helper.js';
 import bcrypt from 'bcryptjs';
 
@@ -101,7 +100,7 @@ export async function updateMe(update, authUser) {
 
         // send back user
         const token = generateAuthToken(user);
-        const { password, ...safeUser } = user.toObject();
+        const { password: _password, ...safeUser } = user.toObject();
         safeUser.profile = user.profile.toObject();
         return { token, status: 200, body: safeUser };
     });

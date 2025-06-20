@@ -409,7 +409,6 @@ describe('review test', () => {
         let token;
         let cookie;
         let badgeIndex;
-        let badgeVote;
         let otherCustomer;
         let otherCustomerProfile;
         let replyText;
@@ -523,9 +522,6 @@ describe('review test', () => {
         let images;
         let token;
         let cookie;
-        let contactNumber;
-        let favCuisines;
-        let name;
 
 		beforeEach(async () => {
 			// clear all
@@ -539,9 +535,6 @@ describe('review test', () => {
             await restaurant.save();
             
             // create customer 
-            name = "name";
-            contactNumber = "87654321";
-            favCuisines = ['Chinese'];
             user = await createTestUser('customer');
 
             profile = createTestCustomerProfile(user);
@@ -636,7 +629,6 @@ describe('review test', () => {
         let replyText;
         let token;
         let cookie;
-        let name;
 
 		beforeEach(async () => {
 			// clear all

@@ -111,7 +111,7 @@ const restaurantSchema = new mongoose.Schema({
     validate: [
       {
         validator: function (arr) {
-        return arr.every(cuisine => tagList.includes(cuisine));
+        return arr.every(tag => tagList.includes(tag));
       },
         message: 'One or more cuisines are invalid.'
       }
@@ -141,7 +141,7 @@ function handleSearchKeywordsUpdate() {
 
     // If any of name, tags, cuisines are updated, recompute keywords
     const fieldsToUpdate = ['name', 'tags', 'cuisines'];
-    const isUpdating = fieldsToUpdate.some(f => updatedFields.hasOwnProperty(f));
+    const isUpdating = fieldsToUpdate.some(f => Object.prototype.hasOwnProperty.call(updatedFields, f));
 
     if (!isUpdating) return next();
 

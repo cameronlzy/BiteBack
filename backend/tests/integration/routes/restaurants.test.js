@@ -506,8 +506,8 @@ describe('restaurant test', () => {
 
     // skip to avoid sending requests to mapBox
     describe.skip('POST /api/restaurants/bulk', () => {
-        let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1;
-        let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2;
+        let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1, openingHours1;
+        let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2, openingHours2;
         let cookie;
         let token;
         let user;
