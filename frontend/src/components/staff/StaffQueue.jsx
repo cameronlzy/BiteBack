@@ -44,6 +44,7 @@ const StaffQueue = ({ user }) => {
         setQueue(data)
         return
       }
+      // test
       handleQueue()
       const intervalId = setInterval(handleQueue, 10000)
       return () => clearInterval(intervalId)
