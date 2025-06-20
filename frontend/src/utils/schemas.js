@@ -182,7 +182,8 @@ export const restaurantSchema = Joi.object({
   .required()
   .messages({
     'any.required': 'Please specify whether the address is a Block or House.',
-  })
+  }),
+  features: Joi.array().optional()
 })
 
 export const ownerSchema = Joi.object({

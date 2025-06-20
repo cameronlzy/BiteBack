@@ -20,6 +20,7 @@ import { toast } from "react-toastify"
 import LoadingSpinner from "./common/LoadingSpinner"
 import BackButton from "./common/BackButton"
 import QueueStatus from "./QueueStatus"
+import { isWithinOpeningHours } from "@/utils/timeConverter"
 
 const queueNumToThousand = (queueNumber, pax) => {
   if (pax > 0 && pax <= 2) {
@@ -52,6 +53,7 @@ const OnlineQueue = ({ user }) => {
         const normalRestaurantQueueData = await getCurrentRestaurantQueue(
           restaurantId
         )
+        console.log(normalRestaurantQueueData)
         // const finalData = {
         //   currentQueueNumber,
         //   groupsAhead: lastNumber - currentQueueNumber,
@@ -76,13 +78,30 @@ const OnlineQueue = ({ user }) => {
       async function fetchData() {
         try {
           const data = await getCurrentCustomerQueue(queueId)
-          if (data?.status !== "seated" && data?.status !== "skipped") {
+          if (
+            data?.status &&
+            data?.status !== "seated" &&
+            data?.status !== "skipped"
+          ) {
             setCurrentlyQueuing(true)
             setCustomerQueueData(data)
+          } else {
+            if (data?.status === "skipped") {
+              setCurrentlyQueuing(true)
+              setCustomerQueueData(data)
+            } else {
+              setCurrentlyQueuing(false)
+              setCustomerQueueData(null)
+            }
+            localStorage.removeItem("queueId")
+            return
           }
         } catch (ex) {}
       }
       fetchData()
+
+      const intervalId = setInterval(fetchData, 10000)
+      return () => clearInterval(intervalId)
     }
   }, [user, restaurantId, currentlyQueuing])
 
@@ -106,6 +125,8 @@ const OnlineQueue = ({ user }) => {
   const stillLoading = isLoading || (currentlyQueuing && !customerQueueData)
 
   if (stillLoading) return <LoadingSpinner />
+  if (!stillLoading && !isWithinOpeningHours(restaurant.openingHours))
+    return <h1> Online Queue Closed </h1>
   return (
     <React.Fragment>
       <BackButton from={from} />

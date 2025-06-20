@@ -31,7 +31,7 @@ export async function getCustomerInfo() {
 }
 
 export async function getStaffAccounts(ownerPassword) {
-  const { data } = await http.post(`${ownerApiEndpoint}/staff`, {
+  const { data } = await http.post(`${ownerApiEndpoint}/staff/access`, {
     password: ownerPassword,
   })
   return data

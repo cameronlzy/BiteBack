@@ -39,8 +39,14 @@ const StaffQueue = ({ user }) => {
 
   const fetchQueue = async () => {
     try {
-      const data = await getRestaurantQueueOverview(restaurantId)
-      setQueue(data)
+      const handleQueue = async () => {
+        const data = await getRestaurantQueueOverview(restaurantId)
+        setQueue(data)
+        return
+      }
+      handleQueue()
+      const intervalId = setInterval(handleQueue, 10000)
+      return () => clearInterval(intervalId)
     } catch (ex) {
       if (!(await handle401(ex))) {
         toast.error("Failed to load queue")

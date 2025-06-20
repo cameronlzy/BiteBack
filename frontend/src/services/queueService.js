@@ -16,6 +16,7 @@ export async function getCurrentCustomerQueue(queueId) {
 
 export async function getCurrentRestaurantQueue(restaurantId) {
     const { data } = await http.get(`${apiEndpoint}/restaurant/${restaurantId}`)
+    console.log(data)
     return data
     // return [{
     //     currentQueueNumber: 7,

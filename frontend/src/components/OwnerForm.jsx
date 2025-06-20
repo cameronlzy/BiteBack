@@ -84,7 +84,6 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
                 streetName: "",
                 unitNumber: "",
                 postalCode: "",
-                address: "",
                 contactNumber: "",
                 cuisines: [],
                 features: [],
@@ -108,6 +107,8 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
     },
     mode: "onSubmit",
   })
+
+  console.log(form.getValues())
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -161,8 +162,9 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
           trimmedUnit ? " " + trimmedUnit : ""
         }, S${trimmedPostal}`
         const tags = [...(rest.features || []), ...(rest.dietary || [])]
+        const { features, dietary, ...restNoFeatDiet } = restData
         return {
-          ...restData,
+          ...restNoFeatDiet,
           address,
           tags,
         }
@@ -172,6 +174,7 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
 
       if (!isUpdate) {
         const savedRestaurantIds = await saveRestaurants(processedRestaurants)
+
         for (let i = 0; i < savedRestaurantIds.length; i++) {
           const restaurantId = savedRestaurantIds[i]
           const files = selectedFilesArray[i] || []
@@ -192,7 +195,16 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
       )
       window.location = from
     } catch (ex) {
+      console.log(ex)
+      if (ex.response.status === 400) {
+        const message = ex.response.data
+        form.setError("username", {
+          type: "manual",
+          message: message || "Submission failed",
+        })
+      }
       toast.error("Submission failed")
+      throw ex
     }
   }
 

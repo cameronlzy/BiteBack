@@ -20,15 +20,7 @@ const ViewStaffAccounts = () => {
     setLoading(true)
     try {
       const staffList = await getStaffAccounts(password)
-
-      const enriched = await Promise.all(
-        staffList.map(async (entry) => {
-          const restaurant = await getRestaurant(entry.restaurant)
-          return { ...entry, restaurantName: restaurant.name }
-        })
-      )
-
-      setStaffData(enriched)
+      setStaffData(staffList)
       setSubmitted(true)
     } catch (err) {
       toast.error("Invalid password or failed to fetch staff accounts")
@@ -86,13 +78,13 @@ const ViewStaffAccounts = () => {
         </p>
       )}
 
-      {staffData.map((staff, index) => (
+      {staffData.map(({ staff, restaurant }, index) => (
         <div
           key={index}
-          className="border p-4 mb-3 rounded-lg bg-gray-50 flex flex-col gap-1"
+          className="border p-4 mb-3 rounded-lg bg-gray-50 flex flex-col gap-1 items-center"
         >
-          <p className="font-medium">{staff.restaurantName}</p>
-          <p>Email: {staff.email}</p>
+          <p className="font-medium">{restaurant.name}</p>
+          <p>Username: {staff.username}</p>
           <div className="relative w-fit">
             <Input
               type={showPasswords[index] ? "text" : "password"}

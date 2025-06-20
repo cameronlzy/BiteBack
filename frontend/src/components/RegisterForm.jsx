@@ -13,7 +13,7 @@ import BackButton from "./common/BackButton"
 import { useLocation, useNavigate } from "react-router-dom"
 import { objectComparator } from "@/utils/objectComparator"
 import { convertOpeningHoursToString } from "@/utils/timeConverter"
-import auth, { register } from "@/services/authService"
+import { register } from "@/services/authService"
 
 const RegisterForm = ({ user, isLoading }) => {
   const [role, setRole] = useState(user?.role || "customer")
@@ -74,6 +74,9 @@ const RegisterForm = ({ user, isLoading }) => {
       localStorage.setItem("role", role)
       return response
     } catch (ex) {
+      if (ex.response?.status === 400) {
+      }
+      console.log(ex)
       throw ex
     }
   }

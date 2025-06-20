@@ -22,6 +22,7 @@ import {
 import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
 import QueueLogo from "@/assets/queue-logo.png"
+import { isWithinOpeningHours } from "@/utils/timeConverter"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -120,16 +121,18 @@ const Restaurant = ({ user }) => {
         >
           <img
             src={
-              images && images.length > 0
-                ? images[0]
-                : "https://www.opentable.com/img/restimages/2038.jpg"
+              images?.[0]
+              // images.length > 0
+
+              // ? images[0]
+              // : "https://www.opentable.com/img/restimages/2038.jpg"
             }
             alt={name}
             className="w-full h-full object-cover"
             onError={(ex) => {
               ex.target.onerror = null
-              ex.target.src =
-                "https://www.opentable.com/img/restimages/2038.jpg"
+              // ex.target.src =
+              //   "https://www.opentable.com/img/restimages/2038.jpg"
             }}
           />
           <div className="absolute inset-0 bg-black/40 p-4 flex flex-col justify-end items-start space-y-2">
@@ -338,9 +341,12 @@ const Restaurant = ({ user }) => {
               to={`/online-queue/${restid}`}
               state={{ from: location.pathname }}
               className="group"
+              onClick={(e) =>
+                !isWithinOpeningHours(openingHours) && e.preventDefault()
+              }
             >
               <Button
-                className="bg-white text-black h-11 px-3 w-11 group-hover:w-[140px]
+                className={`bg-white text-black h-11 px-3 w-11 group-hover:w-[140px]
                 hover:bg-gray-100 
                 transition-all 
                 duration-300 
@@ -351,7 +357,13 @@ const Restaurant = ({ user }) => {
                 flex 
                 items-center 
                 justify-start 
-                gap-2"
+                gap-2
+                ${
+                  !isWithinOpeningHours(openingHours)
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
+                disabled={!isWithinOpeningHours(openingHours)}
               >
                 <Users className="w-5 h-5" />
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
@@ -368,30 +380,30 @@ const Restaurant = ({ user }) => {
                       ? "group-hover:w-[100px]"
                       : "group-hover:w-[160px]"
                   }
-  transition-all 
-  duration-300 
-  ease-in-out 
-  rounded-full 
-  overflow-hidden 
-  shadow 
-  flex 
-  items-center 
-  gap-2 
-  px-0.75 group`}
+                    transition-all 
+                    duration-300 
+                    ease-in-out 
+                    rounded-full 
+                    overflow-hidden 
+                    shadow 
+                    flex 
+                    items-center 
+                    gap-2 
+                    px-0.75 group`}
                 >
                   <div
                     className="flex items-center justify-left group-hover:justify-start 
-    w-full 
-    px-3 
-    transition-all 
-    duration-300"
+                    w-full 
+                    px-3 
+                    transition-all 
+                    duration-300"
                   >
                     <Star className="w-5 h-5" />
                     <span
                       className="ml-2 opacity-0 group-hover:opacity-100  
-      transition-opacity 
-      duration-300 
-      whitespace-nowrap"
+                    transition-opacity 
+                    duration-300 
+                    whitespace-nowrap"
                     >
                       {showReviewForm ? "Cancel" : "Leave a Review"}
                     </span>

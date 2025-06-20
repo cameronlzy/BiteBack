@@ -22,7 +22,7 @@ async function login(user) {
 
 export async function register(user) {
     const sanitized = sanitizeStrings(user)
-    const { data } = await http.post(apiEndpoint, sanitized)
+    const { data } = await http.post(apiEndpoint + "/register", sanitized)
     return data
 }
 
