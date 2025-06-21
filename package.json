@@ -7,9 +7,14 @@
   "devDependencies": {
     "@eslint/js": "^9.28.0",
     "eslint": "^9.28.0",
-    "globals": "^16.2.0"
+    "globals": "^16.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2"
   },
   "scripts": {
     "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js, mjs}": "eslint --fix"
   }
 }
