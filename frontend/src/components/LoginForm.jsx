@@ -6,6 +6,7 @@ import { loginUserSchema } from "@/utils/schemas"
 import FormWithCard from "./common/FormWithCard"
 import auth from "@/services/authService"
 import LoadingSpinner from "./common/LoadingSpinner"
+import { toast } from "react-toastify"
 
 const LoginForm = ({ user, loading }) => {
   const form = useForm({
@@ -60,7 +61,7 @@ const LoginForm = ({ user, loading }) => {
         form={form}
       />
       <p>
-        If you don't have an account, you can register{" "}
+        If you don&apos;t have an account, you can register{" "}
         <Link to="/register" className="underline-link">
           here
         </Link>

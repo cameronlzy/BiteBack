@@ -36,7 +36,7 @@ const StaffReservations = () => {
       await updateReservationStatus(id, status)
       toast.success(`Marked as ${status}`)
       fetchReservations()
-    } catch (ex) {
+    } catch {
       toast.error("Failed to update reservation")
     }
   }

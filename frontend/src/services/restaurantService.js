@@ -35,7 +35,7 @@ export async function getRestaurantAvailability(restaurantId, date) {
     const { data } = await http.get(`${apiEndpoint}/${restaurantId}/availability?date=${date}`)
     if (!Array.isArray(data)) return []
     return convertSlotTimesToSGT(data, date)
-  } catch (err) {
+  } catch {
     return []
   }
 }
@@ -67,7 +67,7 @@ export async function saveRestaurant(restaurant, isUpdate) {
 export async function saveRestaurants(restaurants) {
   const results = restaurants.map((r) => {
   const cleaned = Object.fromEntries(
-    Object.entries(r).filter(([_, v]) => v !== "")
+    Object.entries(r).filter(([_ignore, v]) => v !== "")
   )
   const sanitized = sanitizeStrings(cleaned)
 
@@ -126,7 +126,7 @@ export async function deleteRestaurant(id) {
 export async function getFilteredRestaurants(params) {
   const queryString = Object.entries(params)
   .filter(
-    ([_, value]) =>
+    ([_ignore, value]) =>
       value !== "" &&
       value !== null &&
       value !== undefined &&

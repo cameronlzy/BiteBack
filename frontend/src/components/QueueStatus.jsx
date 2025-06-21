@@ -25,7 +25,6 @@ const QueueStatus = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [queueStatus, setQueueStatus] = useState("Pending")
-  const [eventSource, setEventSource] = useState(null)
 
   useEffect(() => {
     const newStatus =
@@ -63,8 +62,6 @@ const QueueStatus = ({
     }
 
     const es = createQueueEventSource(customerQueueData._id, handleStatusUpdate)
-
-    setEventSource(es)
 
     return () => {
       closeEventSource(es)

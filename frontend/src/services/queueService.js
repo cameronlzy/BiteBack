@@ -34,10 +34,6 @@ export async function getCurrentRestaurantQueue(restaurantId) {
 export async function joinQueue(queueDetails) {
     const { data } = await http.post(apiEndpoint, queueDetails)
     return data
-    return {
-        _id: 1,
-        status: "confirming",
-    }
 }
 
 export async function leaveQueue(restaurantId) {

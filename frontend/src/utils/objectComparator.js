@@ -20,7 +20,7 @@ export const objectComparator = (original, updated) => {
 
 const flattenUser = (user) => {
   const { _id, profile = {}, ...rest } = user;
-  const { _id: profileId, ...flattenedProfile } = profile;
+  const { _id: _profileId, ...flattenedProfile } = profile;
 
   return {
     ...rest,

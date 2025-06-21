@@ -11,7 +11,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
 import StarRatingInput from "@/components/common/StarRatingInput"
 import { Input } from "./ui/input"
 import { useState } from "react"
@@ -32,10 +31,7 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
     },
   })
 
-  const {
-    handleSubmit,
-    formState: { errors },
-  } = form
+  const { handleSubmit } = form
 
   const handleFormSubmit = async (data) => {
     try {

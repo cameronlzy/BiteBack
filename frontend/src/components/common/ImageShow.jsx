@@ -5,7 +5,6 @@ const ImageShow = () => {
   const { imageUrl } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const restaurant = location?.state?.restaurant
   const [failedToLoad, setFailedToLoad] = useState(false)
 
   if (!imageUrl) return <p className="text-center mt-10">No image specified</p>

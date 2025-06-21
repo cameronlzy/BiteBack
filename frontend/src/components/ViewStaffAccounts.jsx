@@ -1,6 +1,5 @@
 import React from "react"
 import { useState } from "react"
-import { getRestaurant } from "@/services/restaurantService"
 import { getStaffAccounts } from "@/services/userService"
 import { Eye, EyeOff } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -22,7 +21,7 @@ const ViewStaffAccounts = () => {
       const staffList = await getStaffAccounts(password)
       setStaffData(staffList)
       setSubmitted(true)
-    } catch (err) {
+    } catch {
       toast.error("Invalid password or failed to fetch staff accounts")
     } finally {
       setLoading(false)

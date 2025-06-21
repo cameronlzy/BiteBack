@@ -1,4 +1,4 @@
-import { use, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import CustomerForm from "@/components/CustomerForm"
 import OwnerForm from "@/components/OwnerForm"
 import {
@@ -17,8 +17,6 @@ import { register } from "@/services/authService"
 
 const RegisterForm = ({ user, isLoading }) => {
   const [role, setRole] = useState(user?.role || "customer")
-  const [ownerForm, setOwnerForm] = useState(null)
-  const [customerForm, setCustomerForm] = useState(null)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,7 +29,7 @@ const RegisterForm = ({ user, isLoading }) => {
   const deepClean = (obj) =>
     Object.fromEntries(
       Object.entries(obj)
-        .filter(([_, value]) => value !== "")
+        .filter(([_ignore, value]) => value !== "")
         .map(([key, value]) => [
           key,
           value && typeof value === "object" && !Array.isArray(value)
@@ -42,7 +40,7 @@ const RegisterForm = ({ user, isLoading }) => {
 
   const handleRegister = async (userToSubmit) => {
     let cleanedUser = Object.fromEntries(
-      Object.entries(userToSubmit).filter(([_, value]) => value !== "")
+      Object.entries(userToSubmit).filter(([_ignore, value]) => value !== "")
     )
 
     if (
@@ -56,29 +54,22 @@ const RegisterForm = ({ user, isLoading }) => {
       })
     }
 
-    try {
-      const finalData = user ? { ...cleanedUser, _id: user._id } : cleanedUser
-      const result = objectComparator(user, finalData)
-      if (user && Object.keys(result).length === 0) {
-        return
-      }
-      // TO CFM role is included
-      const response =
-        role === "owner"
-          ? user
-            ? await updateOwner(result)
-            : await register(finalData)
-          : user
-          ? await updateCustomer(result)
-          : await register(finalData)
-      localStorage.setItem("role", role)
-      return response
-    } catch (ex) {
-      if (ex.response?.status === 400) {
-      }
-      console.log(ex)
-      throw ex
+    const finalData = user ? { ...cleanedUser, _id: user._id } : cleanedUser
+    const result = objectComparator(user, finalData)
+    if (user && Object.keys(result).length === 0) {
+      return
     }
+    // TO CFM role is included
+    const response =
+      role === "owner"
+        ? user
+          ? await updateOwner(result)
+          : await register(finalData)
+        : user
+        ? await updateCustomer(result)
+        : await register(finalData)
+    localStorage.setItem("role", role)
+    return response
   }
 
   return (
@@ -113,7 +104,6 @@ const RegisterForm = ({ user, isLoading }) => {
       {role === "customer" ? (
         <CustomerForm
           onRegister={handleRegister}
-          setFormRef={setCustomerForm}
           user={user}
           from={from}
           isLoading={isLoading}
@@ -121,7 +111,6 @@ const RegisterForm = ({ user, isLoading }) => {
       ) : (
         <OwnerForm
           onRegister={handleRegister}
-          setFormRef={setOwnerForm}
           user={user}
           from={from}
           isLoading={isLoading}

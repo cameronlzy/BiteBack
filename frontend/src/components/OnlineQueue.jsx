@@ -3,7 +3,6 @@ import {
   Table,
   TableCell,
   TableBody,
-  TableCaption,
   TableHeader,
   TableHead,
   TableRow,
@@ -38,7 +37,6 @@ const OnlineQueue = ({ user }) => {
   const [customerQueueData, setCustomerQueueData] = useState(null)
   const [restaurantQueueData, setRestaurantQueueData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [wantsRejoin, setWantsRejoin] = useState(false)
   const [restaurant, setRestaurant] = useState(null)
   const { restaurantId } = useParams()
   const navigate = useNavigate()
@@ -76,27 +74,25 @@ const OnlineQueue = ({ user }) => {
     const queueId = localStorage.getItem("queueId")
     if (user.role === "customer" && queueId) {
       async function fetchData() {
-        try {
-          const data = await getCurrentCustomerQueue(queueId)
-          if (
-            data?.status &&
-            data?.status !== "seated" &&
-            data?.status !== "skipped"
-          ) {
+        const data = await getCurrentCustomerQueue(queueId)
+        if (
+          data?.status &&
+          data?.status !== "seated" &&
+          data?.status !== "skipped"
+        ) {
+          setCurrentlyQueuing(true)
+          setCustomerQueueData(data)
+        } else {
+          if (data?.status === "skipped") {
             setCurrentlyQueuing(true)
             setCustomerQueueData(data)
           } else {
-            if (data?.status === "skipped") {
-              setCurrentlyQueuing(true)
-              setCustomerQueueData(data)
-            } else {
-              setCurrentlyQueuing(false)
-              setCustomerQueueData(null)
-            }
-            localStorage.removeItem("queueId")
-            return
+            setCurrentlyQueuing(false)
+            setCustomerQueueData(null)
           }
-        } catch (ex) {}
+          localStorage.removeItem("queueId")
+          return
+        }
       }
       fetchData()
 

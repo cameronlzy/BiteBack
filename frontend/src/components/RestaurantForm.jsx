@@ -31,7 +31,6 @@ const RestaurantForm = ({ user }) => {
   const navigate = useNavigate()
   const [existingRestaurant, setExistingRestaurant] = useState(null)
   const [confirming, setConfirming] = useState(false)
-  const [isBlock, setIsBlock] = useState(true)
   const [selectedFiles, setSelectedFiles] = useState([])
   const [existingImageUrls, setExistingImageUrls] = useState([])
   const from = "/restaurants" + (restaurantId ? `/${restaurantId}` : "")
@@ -68,14 +67,7 @@ const RestaurantForm = ({ user }) => {
     },
   })
 
-  const {
-    handleSubmit,
-    setValue,
-    getValues,
-    trigger,
-    watch,
-    formState: { errors },
-  } = form
+  const { handleSubmit, setValue, getValues, trigger, watch } = form
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -158,7 +150,7 @@ const RestaurantForm = ({ user }) => {
             setValue(key, val)
           }
         })
-      } catch (ex) {
+      } catch {
         toast.error("Failed to fetch restaurant")
         navigate("/not-found", { replace: true })
       }
@@ -197,7 +189,7 @@ const RestaurantForm = ({ user }) => {
 
   const onSubmit = async (data) => {
     const {
-      id,
+      id: _id,
       isBlock,
       blockNumber,
       streetName,
@@ -216,7 +208,9 @@ const RestaurantForm = ({ user }) => {
       const tags = [...(features || []), ...(dietary || [])]
 
       const cleanedNoEmpty = Object.fromEntries(
-        Object.entries({ ...rest, address, tags }).filter(([_, v]) => v !== "")
+        Object.entries({ ...rest, address, tags }).filter(
+          ([_ignore, v]) => v !== ""
+        )
       )
 
       let changes = restaurantId

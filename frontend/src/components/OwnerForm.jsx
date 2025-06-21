@@ -6,7 +6,6 @@ import {
 } from "react-hook-form"
 import { useEffect, useState } from "react"
 import {
-  Form,
   FormField,
   FormItem,
   FormLabel,
@@ -33,7 +32,7 @@ import {
 import ImageUpload from "./common/ImageUpload"
 import SubmitButton from "./common/SubmitButton"
 
-const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
+const OwnerForm = ({ onRegister, user, from }) => {
   const [selectedFilesArray, setSelectedFilesArray] = useState([[]])
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -108,16 +107,10 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
     mode: "onSubmit",
   })
 
-  console.log(form.getValues())
-
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "restaurants",
   })
-
-  useEffect(() => {
-    if (setFormRef) setFormRef(form)
-  }, [form, setFormRef])
 
   useEffect(() => {
     return () =>
@@ -126,7 +119,11 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
 
   const onSubmit = async (data) => {
     try {
-      const { confirmPassword, restaurants, ...ownerData } = data
+      const {
+        confirmPassword: _confirmPassword,
+        restaurants,
+        ...ownerData
+      } = data
       const isUpdate = !!user
 
       if (!isUpdate) {
@@ -150,7 +147,6 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
           isBlock,
           ...restData
         } = rest
-        const hasUnit = !!unitNumber?.trim()
         const trimmedBlock = blockNumber.trim()
         const trimmedStreet = streetName.trim()
         const trimmedUnit = unitNumber?.trim()
@@ -162,7 +158,11 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
           trimmedUnit ? " " + trimmedUnit : ""
         }, S${trimmedPostal}`
         const tags = [...(rest.features || []), ...(rest.dietary || [])]
-        const { features, dietary, ...restNoFeatDiet } = restData
+        const {
+          features: _features,
+          dietary: _dietary,
+          ...restNoFeatDiet
+        } = restData
         return {
           ...restNoFeatDiet,
           address,
@@ -182,7 +182,7 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
           if (files.length > 0) {
             try {
               await uploadRestaurantImages(restaurantId, files)
-            } catch (ex) {
+            } catch {
               toast.error(`Image upload failed for Restaurant #${i + 1}`)
             }
           }

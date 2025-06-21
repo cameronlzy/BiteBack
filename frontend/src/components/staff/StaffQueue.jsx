@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { handle401 } from "@/utils/handleStaffTimeout"
 
-const StaffQueue = ({ user }) => {
+const StaffQueue = () => {
   const [queue, setQueue] = useState(null)
   const [restaurant, setRestaurant] = useState(null)
   const [queueEnabled, setQueueEnabled] = useState(null)
@@ -44,7 +44,6 @@ const StaffQueue = ({ user }) => {
         setQueue(data)
         return
       }
-      // test
       handleQueue()
       const intervalId = setInterval(handleQueue, 10000)
       return () => clearInterval(intervalId)
@@ -61,7 +60,7 @@ const StaffQueue = ({ user }) => {
       setCalledCustomers((prev) => [...prev, { ...data, group }])
       toast.success(`Called next in ${group} queue`)
       await fetchQueue()
-    } catch (ex) {
+    } catch {
       toast.error("Failed to call next customer")
     }
   }
@@ -72,7 +71,7 @@ const StaffQueue = ({ user }) => {
       toast.success(`Marked ${status}`)
       await fetchQueue()
       setCalledCustomers((prev) => prev.filter((e) => e._id !== entryId))
-    } catch (ex) {
+    } catch {
       toast.error("Failed to update status")
     }
   }
@@ -83,7 +82,7 @@ const StaffQueue = ({ user }) => {
       const updated = await toggleQueueEnabled(restaurantId, !queueEnabled)
       setQueueEnabled(updated.queueEnabled)
       toast.success(`Queue ${updated.queueEnabled ? "enabled" : "disabled"}`)
-    } catch (ex) {
+    } catch {
       toast.error("Failed to toggle queue")
     } finally {
       setTogglingQueue(false)

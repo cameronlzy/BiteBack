@@ -1,4 +1,4 @@
-import { use, useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faUser } from "@fortawesome/free-solid-svg-icons"
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/select"
 import { Button } from "./ui/button"
 import { useForm, FormProvider } from "react-hook-form"
-import { parseISO, format } from "date-fns"
 import {
   getRestaurant,
   getRestaurantAvailability,
@@ -27,7 +26,7 @@ import {
 } from "@/services/reservationService"
 import { toast } from "react-toastify"
 import { readableTimeSettings } from "@/utils/timeConverter"
-import { getDay, set } from "date-fns"
+import { getDay } from "date-fns"
 import { DateTime } from "luxon"
 import BackButton from "./common/BackButton"
 import ConfirmationPage from "./common/ConfirmationPage"
@@ -78,10 +77,8 @@ const ReservationForm = ({ user }) => {
 
   useEffect(() => {
     async function fetchExistingReservations() {
-      try {
-        const reservations = await getReservations()
-        setExistingReservations(reservations)
-      } catch (ex) {}
+      const reservations = await getReservations()
+      setExistingReservations(reservations)
     }
     fetchExistingReservations()
   }, [user])

@@ -57,12 +57,10 @@ const ReviewSection = ({
   }
 
   const handleReviewDelete = async (reviewId) => {
-    try {
-      await deleteReview(reviewId)
-      setReviews((prev) => prev.filter((r) => r._id !== reviewId))
-      setSortedReviews((prev) => prev.filter((r) => r._id !== reviewId))
-      toast.success("Review deleted successfully.")
-    } catch (ex) {}
+    await deleteReview(reviewId)
+    setReviews((prev) => prev.filter((r) => r._id !== reviewId))
+    setSortedReviews((prev) => prev.filter((r) => r._id !== reviewId))
+    toast.success("Review deleted successfully.")
   }
 
   return (

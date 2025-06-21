@@ -13,13 +13,11 @@ import { useState } from "react"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { deleteAccountSchema } from "../utils/schemas"
 import { deleteAccount } from "@/services/userService"
-import { toast } from "react-toastify"
 import LoadingSpinner from "./common/LoadingSpinner"
 
 const DeleteAccountPopup = ({ onClose, role, isLoading }) => {
   const confirm = useConfirm()
   const [confirming, setConfirming] = useState(false)
-  const [showPopup, setShowPopup] = useState(false)
 
   if (isLoading) return <LoadingSpinner />
   const form = useForm({
@@ -38,9 +36,8 @@ const DeleteAccountPopup = ({ onClose, role, isLoading }) => {
       )
 
       if (!confirmed) return
-      const response = await deleteAccount(data, role)
+      await deleteAccount(data, role)
       window.location = "/"
-    } catch (ex) {
     } finally {
       form.reset()
       setConfirming(false)

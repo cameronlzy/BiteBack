@@ -12,7 +12,7 @@ import { useEffect, useState } from "react"
 import { useConfirm } from "./common/ConfirmProvider"
 import { toast } from "react-toastify"
 import ReviewSection from "./ReviewSection"
-import { Calendar, LogIn, Settings, Star, Stars, Users } from "lucide-react"
+import { Calendar, Settings, Star, Users } from "lucide-react"
 import LoadingSpinner from "./common/LoadingSpinner"
 import { DropdownMenu, DropdownMenuItem } from "./ui/dropdown-menu"
 import {
@@ -21,7 +21,6 @@ import {
 } from "@radix-ui/react-dropdown-menu"
 import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
-import QueueLogo from "@/assets/queue-logo.png"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
 
 const Restaurant = ({ user }) => {
@@ -39,7 +38,6 @@ const Restaurant = ({ user }) => {
   }
 
   const [restaurant, setRestaurant] = useState(null)
-  const [availableCapacity, setAvailableCapacity] = useState(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
 
   const isOwnedByUser = user?.role == "owner" && user._id === restaurant?.owner
@@ -285,13 +283,6 @@ const Restaurant = ({ user }) => {
                   ))}
               </ul>
             </div>
-            {availableCapacity !== null && (
-              <div className="mt-4">
-                <span className="inline-block bg-green-100 text-green-800 text-sm font-semibold px-4 py-1 rounded-full">
-                  Live Availability: {availableCapacity} seats left today
-                </span>
-              </div>
-            )}
           </div>
 
           <div className="mt-6 flex gap-4 justify-center">
@@ -302,20 +293,11 @@ const Restaurant = ({ user }) => {
                 className="group"
               >
                 <Button
-                  className={`bg-black text-white h-11 w-11 group-hover:${
-                    isOwnedByUser ? "w-[140px]" : "w-[180px]"
-                  }
-                transition-all 
-                duration-300 
-                ease-in-out 
-                rounded-full 
-                overflow-hidden 
-                shadow 
-                flex 
-                items-center
-                gap-2 
-                px-0.75
-                `}
+                  className={`bg-black text-white h-11 w-11 ${
+                    isOwnedByUser
+                      ? "group-hover:w-[140px]"
+                      : "group-hover:w-[180px]"
+                  } transition-all duration-300 ease-in-out rounded-full overflow-hidden shadow flex items-center gap-2 px-0.75`}
                 >
                   <div
                     className="flex items-center justify-left group-hover:justify-start 
@@ -371,7 +353,7 @@ const Restaurant = ({ user }) => {
                 </span>
               </Button>
             </Link>
-            {user?.role === "customer" && (
+            {user?.role !== "owner" && (
               <div className="group">
                 <Button
                   onClick={handleToggleReviewForm}

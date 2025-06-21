@@ -44,7 +44,7 @@ const ResetPassword = ({ user }) => {
 
   const onSubmit = async (data) => {
     try {
-      const { confirmPassword, ...finalData } = data
+      const { confirmPassword: _confirmPassword, ...finalData } = data
       user
         ? await auth.changePassword(finalData)
         : await auth.resetPasswordSubmit(token, finalData)

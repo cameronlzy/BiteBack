@@ -18,14 +18,7 @@ import {
 import SubmitButton from "./SubmitButton"
 import { Eye, EyeOff } from "lucide-react"
 
-const FormWithCard = ({
-  title,
-  description,
-  buttonText,
-  onSubmit,
-  form,
-  inputFields,
-}) => {
+const FormWithCard = ({ title, description, onSubmit, form, inputFields }) => {
   const [showPassword, setShowPassword] = useState(false)
 
   return (

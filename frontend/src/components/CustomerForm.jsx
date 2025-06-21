@@ -6,7 +6,6 @@ import {
 } from "@/utils/schemas"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import {
-  Form,
   FormField,
   FormItem,
   FormLabel,
@@ -16,12 +15,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
 import { MultiSelect } from "./common/MultiSelect"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { toast } from "react-toastify"
 import LoadingSpinner from "./common/LoadingSpinner"
 import SubmitButton from "./common/SubmitButton"
 
-const CustomerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
+const CustomerForm = ({ onRegister, user, from, isLoading }) => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   if (isLoading) return <LoadingSpinner />
@@ -44,13 +43,9 @@ const CustomerForm = ({ onRegister, setFormRef, user, from, isLoading }) => {
     mode: "onChange",
   })
 
-  useEffect(() => {
-    if (setFormRef) setFormRef(form)
-  }, [setFormRef, form])
-
   const onSubmit = async (data) => {
     try {
-      const { confirmPassword, ...cleanedData } = data
+      const { confirmPassword: _confirmPassword, ...cleanedData } = data
       await onRegister(cleanedData)
       localStorage.setItem(
         "toastMessage",
