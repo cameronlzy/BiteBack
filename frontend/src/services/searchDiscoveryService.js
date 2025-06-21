@@ -1,7 +1,3 @@
-import http from './httpService'
-
-// const apiEndpoint = import.meta.env.VITE_API_URL + "/... if needed"
-
 export async function getRoute(start, end) {
   const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?geometries=geojson&access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`
 

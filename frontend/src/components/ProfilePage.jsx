@@ -13,6 +13,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import CustomerReviews from "./CustomerReviews"
 import DeleteAccountPopup from "./DeleteAccountPopup"
 import { useState } from "react"
+import ViewStaffAccounts from "./ViewStaffAccounts"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -95,6 +96,7 @@ const ProfilePage = ({ user, isLoading }) => {
       {user.role === "owner" && (
         <>
           <OwnerRestaurants user={user} />
+          <ViewStaffAccounts />
         </>
       )}
     </div>

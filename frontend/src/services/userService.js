@@ -5,33 +5,19 @@ const customerApiEndpoint = import.meta.env.VITE_API_URL + "/customers"
 const ownerApiEndpoint = import.meta.env.VITE_API_URL + "/owners"
 
 
-export async function saveCustomer(customer, isUpdate) {
+export async function updateCustomer(customer) {
      const sanitized = sanitizeStrings(customer)
-   if(isUpdate) {
-        return await http.patch(customerApiEndpoint + "/me", sanitized) 
-   } else {
-        return await http.post(import.meta.env.VITE_API_URL + "/auth/register/customer", sanitized)
-   }
+     return await http.patch(customerApiEndpoint + "/me", sanitized) 
 }
 
-export async function saveOwner(owner, isUpdate) {
+export async function updateOwner(owner) {
     const sanitized = sanitizeStrings(owner)
-    if(isUpdate) {
-        return await http.patch(ownerApiEndpoint + "/me", sanitized) 
-   } else {
-        return await http.post(import.meta.env.VITE_API_URL + "/auth/register/owner", sanitized)
-   }
+    return await http.patch(ownerApiEndpoint + "/me", sanitized) 
 }
 
 export async function getGeneralCustomerInfo(customerId) {
      const { data } = await http.get(customerApiEndpoint + `/${customerId}`)
      return data
-}
-
-export async function changePassword(newPasswordObj, role) {
-     return role === "owner" 
-    ? await http.patch(ownerApiEndpoint + "/me", newPasswordObj) 
-    : await http.patch(customerApiEndpoint + "/me", newPasswordObj)
 }
 
 export async function getOwnerInfo() {
@@ -42,6 +28,13 @@ export async function getOwnerInfo() {
 export async function getCustomerInfo() {
     const response = await http.get(customerApiEndpoint + "/me")
     return response.data
+}
+
+export async function getStaffAccounts(ownerPassword) {
+  const { data } = await http.post(`${ownerApiEndpoint}/staff/access`, {
+    password: ownerPassword,
+  })
+  return data
 }
 
 export async function deleteAccount(confirmation, role) {

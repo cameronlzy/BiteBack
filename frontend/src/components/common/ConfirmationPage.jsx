@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+import SubmitButton from "./SubmitButton"
 
 const ConfirmationPage = ({ formName = "Details", details, isSubmitting }) => {
   return (
@@ -11,9 +11,12 @@ const ConfirmationPage = ({ formName = "Details", details, isSubmitting }) => {
           </li>
         ))}
       </ul>
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        Confirm {formName ? formName : "Submission"}
-      </Button>
+      <SubmitButton
+        type="submit"
+        className="w-full"
+        condition={isSubmitting}
+        normalText={`Confirm ${formName ? formName : "Submission"}`}
+      />
     </div>
   )
 }

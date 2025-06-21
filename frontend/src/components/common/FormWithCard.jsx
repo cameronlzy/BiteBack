@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   Card,
   CardHeader,
@@ -5,7 +6,6 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   FormField,
@@ -15,14 +15,12 @@ import {
   FormMessage,
   Form,
 } from "@/components/ui/form"
-const FormWithCard = ({
-  title,
-  description,
-  buttonText,
-  onSubmit,
-  form,
-  inputFields,
-}) => {
+import SubmitButton from "./SubmitButton"
+import { Eye, EyeOff } from "lucide-react"
+
+const FormWithCard = ({ title, description, onSubmit, form, inputFields }) => {
+  const [showPassword, setShowPassword] = useState(false)
+
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader className="space-y-1">
@@ -42,26 +40,45 @@ const FormWithCard = ({
                     <FormItem>
                       <FormLabel>{label}</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder={placeholder}
-                          type={name === "password" ? "password" : "text"}
-                          {...field}
-                        />
+                        <div className="relative">
+                          <Input
+                            placeholder={placeholder}
+                            type={
+                              name === "password" && showPassword
+                                ? "text"
+                                : name === "password"
+                                ? "password"
+                                : "text"
+                            }
+                            {...field}
+                          />
+                          {name === "password" && (
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword((prev) => !prev)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                              tabIndex={-1}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               ))}
-              <Button
+              <SubmitButton
                 type="submit"
                 className="w-full"
-                disabled={
-                  !form.formState.isValid || form.formState.isSubmitting
-                }
-              >
-                {buttonText}
-              </Button>
+                disabled={!form.formState.isValid}
+                condition={form.formState.isSubmitting}
+              />
             </div>
           </form>
         </Form>

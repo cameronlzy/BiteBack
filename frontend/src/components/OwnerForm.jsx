@@ -6,7 +6,6 @@ import {
 } from "react-hook-form"
 import { useEffect, useState } from "react"
 import {
-  Form,
   FormField,
   FormItem,
   FormLabel,
@@ -19,6 +18,7 @@ import { MultiSelect } from "./common/MultiSelect"
 import OpeningHoursSelect from "./OpeningHoursSelect"
 import { toast } from "react-toastify"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
+import { Eye, EyeOff } from "lucide-react"
 import {
   cuisineList,
   ownerSchema,
@@ -30,9 +30,12 @@ import {
   uploadRestaurantImages,
 } from "@/services/restaurantService"
 import ImageUpload from "./common/ImageUpload"
+import SubmitButton from "./common/SubmitButton"
 
-const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
+const OwnerForm = ({ onRegister, user, from }) => {
   const [selectedFilesArray, setSelectedFilesArray] = useState([[]])
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const featureList = tagList.slice(0, 5)
   const dietaryList = tagList.slice(5)
@@ -80,7 +83,6 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
                 streetName: "",
                 unitNumber: "",
                 postalCode: "",
-                address: "",
                 contactNumber: "",
                 cuisines: [],
                 features: [],
@@ -111,17 +113,17 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
   })
 
   useEffect(() => {
-    if (setFormRef) setFormRef(form)
-  }, [form, setFormRef])
-
-  useEffect(() => {
     return () =>
       selectedFilesArray.flat().forEach((f) => URL.revokeObjectURL(f))
   }, [selectedFilesArray])
 
   const onSubmit = async (data) => {
     try {
-      const { confirmPassword, restaurants, ...ownerData } = data
+      const {
+        confirmPassword: _confirmPassword,
+        restaurants,
+        ...ownerData
+      } = data
       const isUpdate = !!user
 
       if (!isUpdate) {
@@ -145,7 +147,6 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
           isBlock,
           ...restData
         } = rest
-        const hasUnit = !!unitNumber?.trim()
         const trimmedBlock = blockNumber.trim()
         const trimmedStreet = streetName.trim()
         const trimmedUnit = unitNumber?.trim()
@@ -157,8 +158,13 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
           trimmedUnit ? " " + trimmedUnit : ""
         }, S${trimmedPostal}`
         const tags = [...(rest.features || []), ...(rest.dietary || [])]
+        const {
+          features: _features,
+          dietary: _dietary,
+          ...restNoFeatDiet
+        } = restData
         return {
-          ...restData,
+          ...restNoFeatDiet,
           address,
           tags,
         }
@@ -168,6 +174,7 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
 
       if (!isUpdate) {
         const savedRestaurantIds = await saveRestaurants(processedRestaurants)
+
         for (let i = 0; i < savedRestaurantIds.length; i++) {
           const restaurantId = savedRestaurantIds[i]
           const files = selectedFilesArray[i] || []
@@ -175,7 +182,7 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
           if (files.length > 0) {
             try {
               await uploadRestaurantImages(restaurantId, files)
-            } catch (ex) {
+            } catch {
               toast.error(`Image upload failed for Restaurant #${i + 1}`)
             }
           }
@@ -188,29 +195,81 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
       )
       window.location = from
     } catch (ex) {
+      console.log(ex)
+      if (ex.response.status === 400) {
+        const message = ex.response.data
+        form.setError("username", {
+          type: "manual",
+          message: message || "Submission failed",
+        })
+      }
       toast.error("Submission failed")
+      throw ex
     }
   }
 
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {baseFields.map(({ name, label, type }) => (
-          <FormField
-            key={name}
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{label}</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder={label} type={type || "text"} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
+        {baseFields.map(({ name, label, type }) => {
+          const isPassword = type === "password"
+
+          return (
+            <FormField
+              key={name}
+              control={form.control}
+              name={name}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{label}</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        placeholder={label}
+                        type={
+                          name === "password"
+                            ? showPassword
+                              ? "text"
+                              : "password"
+                            : name === "confirmPassword"
+                            ? showConfirmPassword
+                              ? "text"
+                              : "password"
+                            : "text"
+                        }
+                      />
+                      {isPassword && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            name === "password"
+                              ? setShowPassword((prev) => !prev)
+                              : setShowConfirmPassword((prev) => !prev)
+                          }
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                        >
+                          {name === "password" ? (
+                            showPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )
+                          ) : showConfirmPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )
+        })}
 
         {!user && (
           <>
@@ -397,10 +456,13 @@ const OwnerForm = ({ onRegister, setFormRef, user, from }) => {
             </Button>
           </>
         )}
-
-        <Button type="submit" className="w-full" disabled={form?.isSubmitting}>
-          {user ? "Update Profile" : "Register"}
-        </Button>
+        <SubmitButton
+          type="submit"
+          className="w-full"
+          condition={form.formState.isSubmitting}
+          normalText={user ? "Update Profile" : "Register"}
+          loadingText={user ? "Updating..." : "Registering..."}
+        />
       </form>
     </FormProvider>
   )

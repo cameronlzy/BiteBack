@@ -1,4 +1,4 @@
-import { use, useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Calendar } from "@/components/ui/calendar"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faUser } from "@fortawesome/free-solid-svg-icons"
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/select"
 import { Button } from "./ui/button"
 import { useForm, FormProvider } from "react-hook-form"
-import { parseISO, format } from "date-fns"
 import {
   getRestaurant,
   getRestaurantAvailability,
@@ -27,7 +26,7 @@ import {
 } from "@/services/reservationService"
 import { toast } from "react-toastify"
 import { readableTimeSettings } from "@/utils/timeConverter"
-import { getDay, set } from "date-fns"
+import { getDay } from "date-fns"
 import { DateTime } from "luxon"
 import BackButton from "./common/BackButton"
 import ConfirmationPage from "./common/ConfirmationPage"
@@ -78,10 +77,8 @@ const ReservationForm = ({ user }) => {
 
   useEffect(() => {
     async function fetchExistingReservations() {
-      try {
-        const reservations = await getReservations()
-        setExistingReservations(reservations)
-      } catch (ex) {}
+      const reservations = await getReservations()
+      setExistingReservations(reservations)
     }
     fetchExistingReservations()
   }, [user])
@@ -101,6 +98,22 @@ const ReservationForm = ({ user }) => {
     }
     fetchRestaurant()
   }, [restaurantId, navigate])
+
+  const isOwnedByUser = user?.role === "owner" && restaurant?.owner === user._id
+
+  useEffect(() => {
+    if (!restaurant || !user) return
+
+    if (user.role !== "customer" && !isOwnedByUser) {
+      toast.error(
+        "Only customers or the restaurant owner can access this page",
+        {
+          toastId: "reservation-access",
+        }
+      )
+      navigate("/restaurants/" + restaurantId, { replace: true })
+    }
+  }, [restaurant, user, navigate, restaurantId])
 
   useEffect(() => {
     if (!restaurant || !reservationId) return
@@ -303,7 +316,9 @@ const ReservationForm = ({ user }) => {
               transition={{ duration: 0.4 }}
             >
               <div className="space-y-3">
-                <h2 className="text-2xl font-bold">Reservation Details</h2>
+                <h2 className="text-2xl font-bold">
+                  {isOwnedByUser ? "Event Details" : "Reservation Details"}
+                </h2>
                 <p>
                   Restaurant:{" "}
                   <b>{restaurant.name + " @ " + restaurant.address}</b>
@@ -342,6 +357,9 @@ const ReservationForm = ({ user }) => {
                             restaurant.openingHours?.[
                               weekday
                             ]?.toLowerCase() === "closed"
+                          const isPastDate =
+                            props.date.setHours(0, 0, 0, 0) <
+                            new Date().setHours(0, 0, 0, 0)
 
                           return (
                             <CustomDay
@@ -349,7 +367,7 @@ const ReservationForm = ({ user }) => {
                               updateDate={updateDate}
                               existingReservations={existingReservations}
                               selected={reservationDate}
-                              modifiers={{ disabled: isDisabled }}
+                              modifiers={{ disabled: isDisabled || isPastDate }}
                             />
                           )
                         },

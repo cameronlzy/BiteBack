@@ -51,3 +51,15 @@ export async function deleteReservation(id) {
     const {data} = await http.delete(getReservationUrl(id, false))
     return data
 }
+
+export async function updateReservationStatus(reservationId, status) {
+  const { data } = await http.patch(`${apiEndpoint}/${reservationId}/status`, { status })
+  return data
+}
+
+export async function getCurrentSlotReservations(restaurantId) {
+  const response = await http.get(`${apiEndpoint}/restaurant/${restaurantId}`)
+  console.log(response)
+  return response.data
+}
+

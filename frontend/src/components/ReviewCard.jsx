@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Star, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { Button } from "./ui/button"
 import { getRestaurant } from "@/services/restaurantService"
 import { toast } from "react-toastify"
@@ -37,7 +37,7 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
       try {
         const fetchedRestaurant = await getRestaurant(review.restaurant)
         setRestaurant(fetchedRestaurant)
-      } catch (ex) {
+      } catch {
         toast.error("Failed to fetch restaurant")
       }
     }

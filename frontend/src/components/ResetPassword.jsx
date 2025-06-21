@@ -2,8 +2,9 @@ import { useForm, FormProvider } from "react-hook-form"
 import { passwordResetSchema, passwordChangeSchema } from "../utils/schemas"
 import auth from "../services/authService"
 import { toast } from "react-toastify"
+import { useState } from "react"
+import { Eye, EyeOff } from "lucide-react"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
-import { Button } from "./ui/button"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import {
   FormControl,
@@ -13,10 +14,13 @@ import {
   FormMessage,
 } from "./ui/form"
 import { Input } from "./ui/input"
-import { changePassword } from "@/services/userService"
 import BackButton from "./common/BackButton"
+import SubmitButton from "./common/SubmitButton"
 
 const ResetPassword = ({ user }) => {
+  const [showOldPassword, setShowOldPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const from = location?.state?.from || "/"
@@ -40,9 +44,9 @@ const ResetPassword = ({ user }) => {
 
   const onSubmit = async (data) => {
     try {
-      const { confirmPassword, ...finalData } = data
+      const { confirmPassword: _confirmPassword, ...finalData } = data
       user
-        ? await changePassword(finalData, user.role)
+        ? await auth.changePassword(finalData)
         : await auth.resetPasswordSubmit(token, finalData)
       toast.success("Password Reset Successfully")
       navigate("/me", { replace: true })
@@ -78,11 +82,24 @@ const ResetPassword = ({ user }) => {
                 <FormItem>
                   <FormLabel>Old Password</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      type="password"
-                      placeholder="Old Password"
-                    />
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type={showOldPassword ? "text" : "password"}
+                        placeholder="Old Password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOldPassword((prev) => !prev)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                      >
+                        {showOldPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,11 +114,24 @@ const ResetPassword = ({ user }) => {
               <FormItem>
                 <FormLabel>New Password</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="password"
-                    placeholder="New Password"
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="New Password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -115,23 +145,36 @@ const ResetPassword = ({ user }) => {
               <FormItem>
                 <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    type="password"
-                    placeholder="Confirm Password"
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm Password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button
+          <SubmitButton
             type="submit"
             className="w-full"
-            disabled={form.formState.isSubmitting}
-          >
-            Reset Password
-          </Button>
+            condition={form.formState.isSubmitting}
+            normalText={user ? "Change Password" : "Reset Password"}
+            loadingText={user ? "Updating..." : "Resetting..."}
+          />
         </form>
       </FormProvider>
     </div>

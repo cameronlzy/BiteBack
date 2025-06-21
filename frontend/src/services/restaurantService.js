@@ -13,7 +13,6 @@ export async function getRestaurants(params) {
 }
 
 export async function getRestaurant(id) {
-  await new Promise((resolve) => setTimeout(resolve, 1000));
   const { data } = await http.get(getRestaurantUrl(id))
   if (data.openingHours) {
     data.openingHours = convertOpeningHoursToSGT(data.openingHours)
@@ -36,7 +35,7 @@ export async function getRestaurantAvailability(restaurantId, date) {
     const { data } = await http.get(`${apiEndpoint}/${restaurantId}/availability?date=${date}`)
     if (!Array.isArray(data)) return []
     return convertSlotTimesToSGT(data, date)
-  } catch (err) {
+  } catch {
     return []
   }
 }
@@ -68,7 +67,7 @@ export async function saveRestaurant(restaurant, isUpdate) {
 export async function saveRestaurants(restaurants) {
   const results = restaurants.map((r) => {
   const cleaned = Object.fromEntries(
-    Object.entries(r).filter(([_, v]) => v !== "")
+    Object.entries(r).filter(([_ignore, v]) => v !== "")
   )
   const sanitized = sanitizeStrings(cleaned)
 
@@ -127,7 +126,7 @@ export async function deleteRestaurant(id) {
 export async function getFilteredRestaurants(params) {
   const queryString = Object.entries(params)
   .filter(
-    ([_, value]) =>
+    ([_ignore, value]) =>
       value !== "" &&
       value !== null &&
       value !== undefined &&
