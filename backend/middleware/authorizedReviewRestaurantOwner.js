@@ -1,6 +1,6 @@
-const Review = require('../models/review.model');
+import Review from '../models/review.model.js';
 
-module.exports = async function checkReviewOwnership(req, res, next) {
+export default async function checkReviewOwnership(req, res, next) {
     const review = await Review.findById(req.params.id).populate('restaurant');
 
     if (!review) return res.status(404).send('Review not found');

@@ -1,37 +1,50 @@
-const Reservation = require('../models/reservation.model');
-const Restaurant = require('../models/restaurant.model');
-const { DateTime } = require('luxon');
-const { convertToUTCStart, convertToUTCEnd, convertToUTC } = require('../helpers/time.helper');
+import Reservation from '../models/reservation.model.js';
+import Restaurant from '../models/restaurant.model.js';
+import { DateTime } from 'luxon';
+import { convertToUTC } from '../helpers/time.helper.js';
+import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
 
-exports.getReservationsByOwner = async (ownerId, query) => {
-    const startDate = convertToUTCStart(query.startDate);
-    const endDate = query.endDate ? convertToUTCEnd(query.endDate) : null;
+// retired, might use for analytics
+// exports.getReservationsByOwner = async (ownerId, query) => {
+//     const startDate = convertToUTCStart(query.startDate);
+//     const endDate = query.endDate ? convertToUTCEnd(query.endDate) : null;
 
-    // find all restaurants owned by owner
-    const restaurantIds = (await Restaurant.find({ owner: ownerId }).select('_id').lean()).map(r => r._id);
+//     // find all restaurants owned by owner
+//     const restaurantIds = (await Restaurant.find({ owner: ownerId }).select('_id').lean()).map(r => r._id);
 
-    // find all the reservations for these restaurants
-    const reservations = await Reservation.find({
-        restaurant: { $in: restaurantIds },
-        reservationDate: endDate ? { $gte: startDate, $lte: endDate } : { $gte: startDate }
-    }).sort({ restaurant: 1 }).lean();
+//     // find all the reservations for these restaurants
+//     const reservations = await Reservation.find({
+//         restaurant: { $in: restaurantIds },
+//         reservationDate: endDate ? { $gte: startDate, $lte: endDate } : { $gte: startDate }
+//     }).sort({ restaurant: 1 }).lean();
 
-    return { status: 200, body: reservations };
-};
+//     return { status: 200, body: reservations };
+// };
 
-exports.getReservationsByRestaurant = async (restaurant, query) => {
-    const startDate = convertToUTCStart(query.startDate);
-    const endDate = query.endDate ? convertToUTCEnd(query.endDate) : null;
-
-    // find all reservations for restaurant
+export async function getReservationsByRestaurant(restaurant) {
+    const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
+    if (!timeSlotStartUTC) return { status: 200, body: [] };
     const reservations = await Reservation.find({
         restaurant: restaurant._id,
-        reservationDate: endDate ? { $gte: startDate, $lte: endDate } : { $gte: startDate }
-    }).lean();
-    return { status: 200, body: reservations };
-};
+        reservationDate: { 
+            $gte: timeSlotStartUTC.toJSDate(),
+            $lte: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate()
+        }
+    }).populate('user').lean();
 
-exports.getUserReservations = async (userId) => {
+    const mappedReservations = reservations.map(reservation => {
+        return {
+            ...reservation,
+            user: {
+                name: reservation.user?.name,
+                contactNumber: reservation.user?.contactNumber
+            }
+        };
+    });
+    return { status: 200, body: mappedReservations };
+}
+
+export async function getUserReservations(userId) {
     // get reservations
     const reservations = await Reservation.find({
         user: userId,
@@ -39,17 +52,17 @@ exports.getUserReservations = async (userId) => {
     }).sort({ restaurant: 1 }).lean();
 
     return { status: 200, body: reservations };
-};
+}
 
-exports.getSingleReservation = async (reservation) => {
+export async function getSingleReservation(reservation) {
     // check if expired
     if (reservation.reservationDate < Date.now()) {
         return { status: 404, body: 'Reservation expired' };
     }
     return { status: 200, body: reservation.toObject() };
-};
+}
 
-exports.createReservation = async (user, data) => {
+export async function createReservation(user, data) {
     // get restaurant
     const restaurant = await Restaurant.findById(data.restaurant).lean();
     if (!restaurant) return { status: 404, body: 'Restaurant not found.' };
@@ -75,13 +88,21 @@ exports.createReservation = async (user, data) => {
         restaurant: data.restaurant,
         reservationDate: convertToUTC(data.reservationDate),
         remarks: data.remarks,
-        pax: data.pax
+        pax: data.pax,
+        status: user.role === 'owner' ? 'event' : 'booked'
     });
     await reservation.save();
     return { status: 200, body: reservation.toObject() };
-};
+}
 
-exports.updateReservation = async (reservation, update) => {
+export async function updateReservationStatus(reservation, status) {
+    reservation.status = status;
+    await reservation.save();
+    reservation.restaurant = reservation.restaurant._id;
+    return { status: 200, body: reservation.toObject() };
+}
+
+export async function updateReservation(reservation, update) {
     const isDateChanging = update.reservationDate !== undefined;
     const isPaxChanging = update.pax !== undefined;
 
@@ -127,15 +148,15 @@ exports.updateReservation = async (reservation, update) => {
 
     await reservation.save();
     return { status: 200, body: reservation.toObject() };
-};
+}
 
-exports.deleteReservation = async (reservation) => {
+export async function deleteReservation(reservation) {
     // delete reservation
     await Reservation.deleteOne({ _id: reservation._id });
     return { status: 200, body: reservation.toObject() };
-};
+}
 
-exports.getReservationsByRestaurantByDate = async (restaurantId, date) => {
+export async function getReservationsByRestaurantByDate(restaurantId, date) {
     // convert date
     const SGTdate = DateTime.fromISO(date, { zone: "Asia/Singapore" });
     const [utcStart, utcEnd] = [SGTdate.startOf('day').toUTC().toJSDate(), SGTdate.endOf('day').toUTC().toJSDate()];
@@ -146,4 +167,4 @@ exports.getReservationsByRestaurantByDate = async (restaurantId, date) => {
     }).select({ reservationDate: 1, pax: 1 }).lean();
 
     return reservations;
-};
+}

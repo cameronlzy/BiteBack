@@ -1,17 +1,17 @@
-const User = require('../../../models/user.model');
-const CustomerProfile = require('../../../models/customerProfile.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestCustomerProfile } = require('../../factories/customerProfile.factory');
-const { generateAuthToken } = require('../../../services/user.service');
-const setTokenCookie = require('../../../helpers/setTokenCookie');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import User from '../../../models/user.model.js';
+import CustomerProfile from '../../../models/customerProfile.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
+import request from 'supertest';
+import mongoose from 'mongoose';
 
-describe.skip('customer test', () => {
+describe('customer test', () => {
     let server;
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        server = await serverPromise;
     });
 
     afterAll(async () => {
@@ -125,7 +125,6 @@ describe.skip('customer test', () => {
         let token;
         let email;
         let username;
-        let password;
         let name;
         let contactNumber;
         let favCuisines;
@@ -142,7 +141,6 @@ describe.skip('customer test', () => {
             user = await createTestUser('customer');
             email = user.email;
             username = user.username;
-            password = "Password@123";
 
             // create customer profile
             name = "test";
@@ -168,7 +166,7 @@ describe.skip('customer test', () => {
                 .patch('/api/customers/me')
                 .set('Cookie', [cookie])
                 .send({
-                    email, username, password, name, 
+                    email, username, name, 
                     contactNumber: newContactNumber, favCuisines
                 });
         };
@@ -194,7 +192,7 @@ describe.skip('customer test', () => {
         });
 
         it('should return 400 if invalid request', async () => {
-            password = 'weak';
+            email = 'notEmail';
             const res = await exec();
             expect(res.status).toBe(400);
         });
@@ -298,16 +296,13 @@ describe.skip('customer test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            let dbUser = await User.findById(userId).lean();
-            expect(dbUser).toBeNull();
-        });
-
-        it('should return user details', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'email', 'username', 'role', 'profile'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+
+            let dbUser = await User.findById(userId).lean();
+            expect(dbUser).toBeNull();
         });
     });
 });

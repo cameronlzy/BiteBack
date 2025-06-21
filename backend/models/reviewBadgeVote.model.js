@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const reviewBadgeVoteSchema = new mongoose.Schema({
   customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
@@ -12,4 +12,4 @@ reviewBadgeVoteSchema.index({ customer: 1, review: 1 }, { unique: true });
 
 const ReviewBadgeVote = mongoose.model('ReviewBadgeVote', reviewBadgeVoteSchema);
 
-module.exports = ReviewBadgeVote;
+export default ReviewBadgeVote;

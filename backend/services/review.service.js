@@ -1,15 +1,14 @@
-const _ = require('lodash');
-const { DateTime } = require('luxon');
-const Review = require('../models/review.model');
-const Restaurant = require('../models/restaurant.model');
-const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
-const CustomerProfile = require('../models/customerProfile.model');
-const mongoose = require('mongoose');
-const { deleteImagesFromDocument } = require('./image.service');
+import _ from 'lodash';
+import { DateTime } from 'luxon';
+import Review from '../models/review.model.js';
+import Restaurant from '../models/restaurant.model.js';
+import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
+import CustomerProfile from '../models/customerProfile.model.js';
+// import VisitHistory from '../models/visitHistory.model.js';
+import { deleteImagesFromDocument } from './image.service.js';
+import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
-const isProdEnv = process.env.NODE_ENV === 'production';
-
-exports.getReviewsByRestaurant = async (restaurantId, authUser) => {
+export async function getReviewsByRestaurant(restaurantId, authUser) {
     // check if restaurant exists
     const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
     if (!restaurant) return { status: 404, body: 'Restaurant not found' };
@@ -19,15 +18,15 @@ exports.getReviewsByRestaurant = async (restaurantId, authUser) => {
     if (Array.isArray(reviews) && reviews.length === 0) return { status: 200, body: reviews };
 
     // get badges count
-    reviews = await exports.getBadgesCount(reviews);
+    reviews = await getBadgesCount(reviews);
 
     // get user badge votes
-    if (authUser) reviews = await exports.getUserBadgeVotes(reviews, authUser);
+    if (authUser) reviews = await getUserBadgeVotes(reviews, authUser);
 
     return { status: 200, body: reviews };
-};
+}
 
-exports.getReviewsByCustomer = async (customerId, authUser) => {
+export async function getReviewsByCustomer(customerId, authUser) {
     // find customer profile
     const customer = await CustomerProfile.findById(customerId);
     if (!customer) return { status: 404, body: 'Customer profile not found' };
@@ -37,48 +36,38 @@ exports.getReviewsByCustomer = async (customerId, authUser) => {
     if (Array.isArray(reviews) && reviews.length === 0) return { status: 200, body: reviews };
 
     // get badges count
-    reviews = await exports.getBadgesCount(reviews);
+    reviews = await getBadgesCount(reviews);
 
     // get user badge votes
-    if (authUser) reviews = await exports.getUserBadgeVotes(reviews, authUser);
+    if (authUser) reviews = await getUserBadgeVotes(reviews, authUser);
 
     return { status: 200, body: reviews };
-};
+}
 
-exports.getReviewById = async (reviewId) => {
+export async function getReviewById(reviewId) {
     // get review
     const review = await Review.findById(reviewId).lean();
     if (!review) return { status: 404, body: 'Review not found.' };
     return { status: 200, body: review };
-};
+}
 
-exports.createReview = async (data, user) => {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+export async function createReview(data, user) {
+    return await withTransaction(async (session) => {
         // create review
         const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
         review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
         review.customer = user.profile;
         review.username = user.username;
-        await review.save(session ? { session } : undefined);
+        await review.save(wrapSession(session));
 
         // update restaurant ratings
-        await exports.updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
-        
-        if (session) await session.commitTransaction();
+        await updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
 
         return { status: 200, body: review.toObject() };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
-};
+    });
+}
 
-exports.createReply = async (data, review, authUser) => {
+export async function createReply(data, review, authUser) {
     // add reply to review
     review.reply = {
         owner: authUser._id,
@@ -87,9 +76,9 @@ exports.createReply = async (data, review, authUser) => {
     await review.save();
 
     return { status: 200, body: review.toObject() };
-};
+}
 
-exports.addBadge = async(data, reviewId, authUser) => {
+export async function addBadge(data, reviewId, authUser) {
     // find review
     const review = await Review.findById(reviewId).lean();
     if (!review) return { status: 404, body: 'Review with this ID not found' };
@@ -115,35 +104,26 @@ exports.addBadge = async(data, reviewId, authUser) => {
     }
 
     return { status: 200, body: data.badgeIndex };
-};
+}
 
-exports.deleteReview = async (review) => {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+export async function deleteReview(review) {
+    return await withTransaction(async (session) => {
         // delete the review and associations
-        await exports.deleteReviewAndAssociations(review, session);
+        await deleteReviewAndAssociations(review, session);
 
-        if (session) await session.commitTransaction();
         return { status: 200, body: review.toObject() };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
-};
+    });
+}
 
-exports.deleteReply = async (review) => {
+export async function deleteReply(review) {
     // delete reply
     review.reply = undefined;
     await review.save();
 
     return { status: 200, body: review.toObject() };
-};
+}
 
-exports.deleteBadge = async(reviewId, authUser) => {
+export async function deleteBadge(reviewId, authUser) {
     // find review
     const review = await Review.findById(reviewId).lean();
     if (!review) return { status: 404, body: 'Review with this ID not found' };
@@ -158,10 +138,10 @@ exports.deleteBadge = async(reviewId, authUser) => {
     await badgeVote.deleteOne();
 
     return { status: 200, body: badgeIndex };
-};
+}
 
 // utlity services
-exports.getBadgesCount = async (reviews) => {
+export async function getBadgesCount(reviews) {
     const reviewIds = reviews.map((r) => r._id);
 
     // aggregtate badge votes
@@ -190,7 +170,7 @@ exports.getBadgesCount = async (reviews) => {
     }));
 }
 
-exports.getUserBadgeVotes = async (reviews, user) => {
+export async function getUserBadgeVotes(reviews, user) {
     const reviewIds = reviews.map(r => r._id);
 
     const votes = await ReviewBadgeVote.find({
@@ -207,9 +187,9 @@ exports.getUserBadgeVotes = async (reviews, user) => {
     ...r,
     selectedBadge: voteMap[r._id.toString()] ?? null
     }));
-};
+}
 
-exports.getAverageRatingsForRestaurants = async (restaurants) => {
+export async function getAverageRatingsForRestaurants(restaurants) {
     const restaurantIds = restaurants.map(r => r._id);
 
     const ratings = await Review.aggregate([
@@ -237,9 +217,9 @@ exports.getAverageRatingsForRestaurants = async (restaurants) => {
             averageRating: ratingMap[r._id.toString()]?.averageRating || 0,
             reviewCount: ratingMap[r._id.toString()]?.reviewCount || 0
     }));
-};
+}
 
-exports.updateRatingForRestaurant = async (restaurantId, ratingChange, countChange, session = null) => {
+export async function updateRatingForRestaurant(restaurantId, ratingChange, countChange, session = undefined) {
     // get restaurant
     const restaurant = await Restaurant.findById(restaurantId);
 
@@ -261,18 +241,18 @@ exports.updateRatingForRestaurant = async (restaurantId, ratingChange, countChan
     restaurant.reviewCount = reviewCount;
 
     await restaurant.save(session ? { session } : undefined);
-};
+}
 
-exports.deleteReviewAndAssociations = async (review, session = null) => {
+export async function deleteReviewAndAssociations(review, session = undefined) {
     // delete images
     await deleteImagesFromDocument(review, 'images');
 
     // delete reviews and it's associations
     await Promise.all([
         ReviewBadgeVote.deleteMany({ review: review._id }).session(session),
-        exports.updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session)
+        updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session)
     ]);
 
     // delete review after children deleted
     await Review.deleteOne({ _id: review._id }).session(session);
-};
+}

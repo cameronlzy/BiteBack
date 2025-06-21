@@ -1,7 +1,12 @@
-const helmet = require('helmet');
-const compression = require('compression');
+import helmet from 'helmet';
+import compression from 'compression';
 
-module.exports = function(app) {
+export default function(app) {
     app.use(helmet());
-    app.use(compression());
+    app.use(compression({
+        filter: (req, res) => {
+            if (req.header['x-no-compression']) return false;
+            return compression.filter(req, res);
+        },
+    }));
 }

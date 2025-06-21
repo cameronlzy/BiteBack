@@ -1,6 +1,5 @@
-const Joi = require('joi');
-const passwordComplexity = require('joi-password-complexity');
-const { userJoiSchema } = require('./user.validator');
+import Joi from 'joi';
+import { userJoiSchema } from './user.validator.js';
 
 const cuisineList = [
   'Chinese',
@@ -25,7 +24,7 @@ const cuisineList = [
   'Halal'
 ];
 
-function validateCustomerProfile(profile) {
+export function validateCustomer(profile) {
   const schema = userJoiSchema.keys({
     role: Joi.string().valid("customer").required(),
     name: Joi.string().min(2).max(20).required(),
@@ -47,11 +46,10 @@ function validateCustomerProfile(profile) {
   return schema.validate(profile);
 }
 
-function validateCustomerPatch(update) {
+export function validatePatch(update) {
   const schema = Joi.object({
     username: Joi.string().min(2),
     email: Joi.string().email(),
-    password: passwordComplexity(),
     name: Joi.string().min(2).max(20),
     contactNumber: Joi.string()
       .pattern(/^\d{8}$/)
@@ -68,8 +66,3 @@ function validateCustomerPatch(update) {
   }).min(1);
   return schema.validate(update);
 }
-
-module.exports = {
-    validateCustomer: validateCustomerProfile,
-    validatePatch: validateCustomerPatch
-};

@@ -1,7 +1,7 @@
-const Joi = require('joi');
-const passwordComplexity = require('joi-password-complexity');
+import Joi from 'joi';
+import passwordComplexity from 'joi-password-complexity';
 
-const userJoiSchema = Joi.object({
+export const userJoiSchema = Joi.object({
   username: Joi.string().min(2).required(),
   email: Joi.string().email().required(),
   password: passwordComplexity().required(),
@@ -10,14 +10,14 @@ const userJoiSchema = Joi.object({
 const loginJoiSchema = Joi.object({
   email: Joi.string().email(),
   username: Joi.string().min(2),
-  password: Joi.string().min(5).max(255).required(),
+  password: passwordComplexity().required(),
 }).xor('email', 'username');
 
-function validateLogin(credentials) {
+export function validateLogin(credentials) {
   return loginJoiSchema.validate(credentials);
 }
 
-function validateCredentials(credentials) {
+export function validateCredentials(credentials) {
   const schema = Joi.object({
     email: Joi.string().email(),
     username: Joi.string().min(2),
@@ -25,8 +25,17 @@ function validateCredentials(credentials) {
   return schema.validate(credentials);
 }
 
-module.exports = {
-  userJoiSchema,
-  validateLogin,
-  validateCredentials,
-};
+export function validatePassword(password) {
+  const schema = Joi.object({
+    password: passwordComplexity().required(),
+  });
+  return schema.validate(password);
+}
+
+export function validatePasswordChange(change) {
+  const schema = Joi.object({
+    oldPassword: passwordComplexity().required(),
+    password: passwordComplexity().required(),
+  });
+  return schema.validate(change);
+}

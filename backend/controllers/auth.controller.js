@@ -1,10 +1,11 @@
-const authService = require('../services/auth.service');
-const { validateLogin, validateCredentials } = require('../validators/user.validator');
-const { validateCustomer } = require('../validators/customerProfile.validator');
-const { validateOwner } = require('../validators/ownerProfile.validator');
-const setAuthCookie = require('../helpers/setAuthCookie');
+import * as authService from '../services/auth.service.js';
+import { validateLogin, validateCredentials, validatePassword, validatePasswordChange } from '../validators/user.validator.js';
+import { validateCustomer } from '../validators/customerProfile.validator.js';
+import { validateOwner } from '../validators/ownerProfile.validator.js';
+import { validateStaffLogin } from '../validators/staff.validator.js';
+import { setAuthCookie } from '../helpers/cookie.helper.js';
 
-exports.forgotPassword = async (req, res) => {
+export async function forgotPassword (req, res) {
     // validate request
     validateCredentials(req.body);
     
@@ -12,14 +13,24 @@ exports.forgotPassword = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.resetPassword = async (req, res) => {
-    // add validation
+export async function resetPassword(req, res) {
+    const { error } = validatePassword(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
     const { status, body } = await authService.resetPassword(req.body, req.params.token);
     return res.status(status).json(body);
 };
 
-exports.logout = async (req, res) => {
+export async function changePassword(req, res) {
+    const { error } = validatePasswordChange(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+    
+    const { token, status, body } = await authService.changePassword(req.body, req.user);
+    if (token) setAuthCookie(res, token);
+    return res.status(status).json(body);
+};
+
+export async function logout(req, res) {
     res.clearCookie('token', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -28,31 +39,43 @@ exports.logout = async (req, res) => {
     res.status(200).json({ message: 'Logged out successfully' });
 };
 
-exports.login = async (req, res) => {
+export async function login(req, res) {
     // validate request
-    validateLogin(req.body);
+    const { error } = validateLogin(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
     const { token, body, status } = await authService.login(req.body);
     if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 };
 
-exports.registerCustomer = async (req, res) => {
+export async function register(req, res) {
     // validate request
-    const { error } = validateCustomer(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (req.body.role === 'customer') {
+        const { error } = validateCustomer(req.body);
+        if (error) return res.status(400).send(error.details[0].message);
 
-    const {token, body, status } = await authService.registerCustomer(req.body);
-    if (token) setAuthCookie(res, token);
-    return res.status(status).json(body);
+        const {token, body, status } = await authService.registerCustomer(req.body);
+        if (token) setAuthCookie(res, token);
+        return res.status(status).json(body);
+    } else if (req.body.role === 'owner') {
+        const { error } = validateOwner(req.body);
+        if (error) return res.status(400).send(error.details[0].message);
+
+        const { token, body, status } = await authService.registerOwner(req.body);
+        if (token) setAuthCookie(res, token);
+        return res.status(status).json(body);
+    } else {
+        return res.status(400).send('Invalid role');
+    }
 };
 
-exports.registerOwner = async (req, res) => {
+export async function staffLogin(req, res) {
     // validate request
-    const { error } = validateOwner(req.body);
+    const { error } = validateStaffLogin(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const { token, body, status } = await authService.registerOwner(req.body);
-    if (token) setAuthCookie(res, token);
+    const { token, body, status } = await authService.staffLogin(req.body);
+    if (token) setAuthCookie(res, token, 12);
     return res.status(status).json(body);
 };

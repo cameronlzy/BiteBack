@@ -1,17 +1,17 @@
-const User = require('../models/user.model');
-const CustomerProfile = require('../models/customerProfile.model');
-const OwnerProfile = require('../models/ownerProfile.model');
-const { generateAuthToken } = require('../services/user.service');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const _ = require('lodash');
-const crypto = require('crypto');
-const config = require('config');
-const sendEmail = require('../helpers/sendEmail');
+import User from '../models/user.model.js';
+import CustomerProfile from '../models/customerProfile.model.js';
+import OwnerProfile from '../models/ownerProfile.model.js';
+import Staff from '../models/staff.model.js';
+import { generateAuthToken, staffGenerateAuthToken } from '../helpers/token.helper.js';
+import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import _ from 'lodash';
+import crypto from 'crypto';
+import config from 'config';
+import sendEmail from '../helpers/sendEmail.js';
 
-const isProdEnv = process.env.NODE_ENV === 'production';
-
-exports.forgotPassword = async (credentials) => {
+export async function forgotPassword(credentials) {
     // find user
     const user = await User.findOne(credentials.email 
         ? { email: credentials.email }
@@ -31,9 +31,9 @@ exports.forgotPassword = async (credentials) => {
     await sendEmail(user.email, 'Password Reset', `Click to reset your password: ${resetLink}`);
 
     return { status: 200, body: 'Password reset link sent to your email' };
-};
+}
 
-exports.resetPassword = async (data, token) => {
+export async function resetPassword(data, token)  {
     const hash = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
@@ -52,28 +52,41 @@ exports.resetPassword = async (data, token) => {
     await user.save();
 
     return { status: 200, body: 'Password has been reset' };
-};
+}
 
-exports.login = async (credentials) => {
+export async function changePassword(data, authUser) {
     // find user and verify credentials
-    const { status, body } = await exports.verifyUserCredentials(credentials);
+    const { status, body } = await verifyUserCredentials({
+        username: authUser.username, 
+        password: data.oldPassword
+    });
+    if (status !== 200) return { status, body };
+    const user = body;
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(data.password, salt);
+
+    await user.save();
+    const token = generateAuthToken(user);
+    return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role'])};
+}
+
+export async function login(credentials) {
+    // find user and verify credentials
+    const { status, body } = await verifyUserCredentials(credentials);
     if (status !== 200) return { status, body };
     const token = generateAuthToken(body);
     return { token, status: 200, body: _.pick(body, ['_id', 'email', 'username', 'role']) };
-};
+}
 
-exports.registerCustomer = async (data) => {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+export async function registerCustomer(data) {
+    return await withTransaction(async (session) => {
         // if user exists
         let existingUser = await User.findOne({
           $or: [
             { email: data.email },
             { username: data.username }
           ]
-        }).session(session || null).lean();
+        }).session(session).lean();
         if (existingUser) {
             if (existingUser.email === data.email && existingUser.role === 'owner') {
                 throw { status: 400, body: 'Email already registered to a restaurant owner.' };
@@ -92,40 +105,29 @@ exports.registerCustomer = async (data) => {
         // create new user
         let user = new User(_.pick(data, ['email', 'username', 'password', 'role']));
         customerProfile.user = user._id;
-        await customerProfile.save(session ? { session } : undefined);
+        await customerProfile.save(wrapSession(session));
 
         // hash password and add references
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
         user.roleProfile = 'CustomerProfile';
         user.profile = customerProfile._id;
-        await user.save(session ? { session } : undefined);
-
-        // commit transaction
-        if (session) await session.commitTransaction();
+        await user.save(wrapSession(session));
 
         const token = generateAuthToken(user);
         return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role']) };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
-};
+    });
+}
 
-exports.registerOwner = async (data) => {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+export async function registerOwner(data) {
+    return await withTransaction(async (session) => {
         // if user exists
         let existingUser = await User.findOne({
             $or: [
             { email: data.email },
             { username: data.username }
             ]
-        }).session(session || null).lean();
+        }).session(session).lean();
         if (existingUser) {
             if (existingUser.email === data.email && existingUser.role === 'owner') {
                 throw { status: 400, body: 'Email already registered to a restaurant owner.' };
@@ -150,28 +152,31 @@ exports.registerOwner = async (data) => {
         // create a owner profile
         let ownerProfile = new OwnerProfile(_.pick(data, ['companyName', 'username']));
         ownerProfile.user = user._id;
-        await ownerProfile.save(session ? { session } : undefined);
+        await ownerProfile.save(wrapSession(session));
 
         // reupdate user.profile
         user.profile = ownerProfile._id;
-        await user.save(session ? { session } : undefined);
-
-        // commit transaction
-        if (session) await session.commitTransaction();
+        await user.save(wrapSession(session));
 
         const token = generateAuthToken(user);
         const safeUser = _.pick(user, ['_id', 'email', 'username', 'role']);
         return { token, status: 200, body: safeUser };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
-};
+    });
+}
+
+export async function staffLogin(credentials) {
+    const staff = await Staff.findOne({ username: credentials.username });
+    if (!staff) return { status: 400, body: 'Invalid username or password' };
+
+    const isValid = await bcrypt.compare(credentials.password, staff.password);
+    if (!isValid) return { status: 400, body: 'Invalid username or password' };
+
+    const token = staffGenerateAuthToken(staff);
+    return { token, status: 200, body: _.pick(staff, ['_id', 'username', 'role', 'restaurant']) };
+}
 
 // utility services
-exports.verifyUserCredentials = async (credentials, session = null) => {
+export async function verifyUserCredentials(credentials, session = undefined) {
     const user = await User.findOne(credentials.email
         ? { email: credentials.email }
         : { username: credentials.username }
@@ -183,4 +188,4 @@ exports.verifyUserCredentials = async (credentials, session = null) => {
     if (!isValid) return { status: 400, body: 'Invalid email, username or password' };
 
     return { status: 200, body: user };
-};
+}

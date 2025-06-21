@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const reservationSchema = new mongoose.Schema({
     user: { 
@@ -33,7 +33,7 @@ const reservationSchema = new mongoose.Schema({
         }
     },
     pax: { type: Number, required: true },
-    status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'pending' }
+    status: { type: String, enum: ['booked', 'event', 'no-show', 'completed'], default: 'booked' }
 }, { versionKey: false });
 
 reservationSchema.index({ user: 1 });
@@ -41,4 +41,4 @@ reservationSchema.index({ restaurant: 1 });
 
 const Reservation = mongoose.model('Reservation', reservationSchema);
 
-module.exports = Reservation;
+export default Reservation;

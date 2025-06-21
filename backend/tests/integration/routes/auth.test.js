@@ -1,22 +1,25 @@
-const request = require('supertest');
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const config = require('config');
-const cookie = require('cookie');
-const User = require('../../../models/user.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestRestaurant } = require('../../factories/restaurant.factory');
-const { generateAuthToken } = require('../../../services/user.service');
-const CustomerProfile = require('../../../models/customerProfile.model');
-const OwnerProfile = require('../../../models/ownerProfile.model');
-const Restaurant = require('../../../models/restaurant.model');
+import request from 'supertest';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import config from 'config';
+import cookieParser from 'cookie';
+import User from '../../../models/user.model.js';
+import CustomerProfile from '../../../models/customerProfile.model.js';
+import OwnerProfile from '../../../models/ownerProfile.model.js';
+import Restaurant from '../../../models/restaurant.model.js';
+import Staff from '../../../models/staff.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
+import simpleCrypto from '../../../helpers/encryption.helper.js';
 
-describe.skip('auth test', () => {
+describe('auth test', () => {
     let server;
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        server = await serverPromise;
     });
 
     afterAll(async () => {
@@ -40,7 +43,7 @@ describe.skip('auth test', () => {
         beforeEach(async () => {
             await User.deleteMany({});
             user = await createTestUser('customer');
-            user.email = "zhihui1306@gmail.com";
+            user.email = "test@email.com";
             await user.save();
             username = user.username;
             email = user.email;
@@ -103,7 +106,6 @@ describe.skip('auth test', () => {
 
         it('should return 400 if username/email does not belong to anyone', async () => {
             let otherToken = crypto.randomBytes(32).toString('hex');
-            let otherHash = crypto.createHash('sha256').update(otherToken).digest('hex');
             token = otherToken;
             const res = await exec();
             expect(res.status).toBe(400);
@@ -119,7 +121,92 @@ describe.skip('auth test', () => {
         });
     });
 
-    describe('POST /api/auth/register/customer', () => {
+    describe('PUT /api/auth/change-password', () => {
+        let user;
+        let oldPassword;
+        let password;
+        let token;
+        let cookie;
+    
+        const exec = () => {
+            return request(server)
+            .put('/api/auth/change-password')
+            .set('Cookie', [cookie])
+            .send({
+                oldPassword, password
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+
+            // create user with password: Password@123
+            user = await createTestUser('customer');
+            await user.save();
+
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+            password = "Password@1234";
+            oldPassword = "Password@123";
+        });
+    
+        it('should return 401 if no token', async () => {
+            cookie = "";
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+    
+        it('should return 401 if invalid token', async () => {
+            token = 'invalid-token';
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+    
+        it('should return 400 if wrong password', async () => {
+            oldPassword = "wrongPassword";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if user does not exist', async () => {
+            let otherUser = await createTestUser('customer');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            oldPassword = "wrongPassword";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200 for valid request and change the password', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            const updatedUser = await User.findById(user._id);
+            const isMatch = await bcrypt.compare(password, updatedUser.password);
+
+            expect(isMatch).toBe(true);
+        });
+
+        it('should return valid jwtToken', async () => {
+            const res = await exec();
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/auth/register - for customer', () => {
         let email;
         let username;
         let password;
@@ -131,7 +218,7 @@ describe.skip('auth test', () => {
     
         const exec = () => {
             return request(server)
-            .post('/api/auth/register/customer')
+            .post('/api/auth/register')
             .send({
                 email, username, password, role, name, contactNumber, favCuisines
             });
@@ -190,7 +277,7 @@ describe.skip('auth test', () => {
         });
 
         it('should return create a customer profile', async () => {
-            const res = await exec();
+            await exec();
             const user = await User.findOne({ email: email })
                 .populate('profile');
             const requiredKeys = [
@@ -204,7 +291,7 @@ describe.skip('auth test', () => {
         });
     });
 
-    describe('POST /api/auth/register/owner', () => {
+    describe('POST /api/auth/register - for owner', () => {
         let email;
         let username;
         let password;
@@ -213,7 +300,7 @@ describe.skip('auth test', () => {
     
         const exec = () => {
             return request(server)
-            .post('/api/auth/register/owner')
+            .post('/api/auth/register')
             .send({
                 email, username, password, role, companyName
             });
@@ -267,7 +354,7 @@ describe.skip('auth test', () => {
         });
 
         it('should return create a owner profile', async () => {
-            const res = await exec();
+            await exec();
             const user = await User.findOne({ email: email })
                 .populate('profile');
             const requiredKeys = [
@@ -377,7 +464,7 @@ describe.skip('auth test', () => {
             const cookies = res.headers['set-cookie'];
             expect(cookies).toBeDefined();
 
-            const parsed = cookie.parse(cookies[0]);
+            const parsed = cookieParser.parse(cookies[0]);
             const token = parsed.token;
             expect(token).toBeDefined();
     
@@ -385,6 +472,86 @@ describe.skip('auth test', () => {
 
             const requiredKeys = [
                 'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/auth/login/staff', () => {
+        let username;
+        let password;
+        let role;
+        let hashedPassword;
+        let encryptedPassword;
+        let restaurant;
+        let staff;
+    
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/login/staff')
+            .send({
+                username, password
+            });
+        };
+    
+        beforeEach(async () => {
+            await Staff.deleteMany({});
+
+            username = "username";
+            password = "myPassword@123";
+            role = "staff";
+            restaurant = new mongoose.Types.ObjectId();
+            const salt = await bcrypt.genSalt(10);
+            hashedPassword = await bcrypt.hash(password, salt); 
+            encryptedPassword = simpleCrypto.encrypt(password);
+            staff = new Staff({
+                username, password: hashedPassword, encryptedPassword, role, restaurant
+            });
+            await staff.save();
+        });
+    
+        it('should return 400 if invalid request', async () => {
+            username = "";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 400 if user not found', async () => {
+            username = "wrongUsername";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 400 if wrong password', async () => {
+            password = "wrongPassword";
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            const requiredKeys = [
+                '_id', 'username', 'role', 'restaurant'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body).not.toHaveProperty('password');
+        });
+    
+        it('should return valid jwtToken', async () => {
+            const res = await exec();
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const requiredKeys = [
+                '_id', 'username', 'role', 'restaurant'
             ];
             expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
         });

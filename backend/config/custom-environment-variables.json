@@ -1,15 +1,16 @@
 {
   "email": {
-    "user": "email_user",
-    "pass": "email_pass"
+    "user": "EMAIL_USER",
+    "pass": "EMAIL_PASS"
   },
-  "jwtPrivateKey": "biteback_jwtPrivateKey",
-  "frontendLink": "https://bite-back-indol.vercel.app",
-  "mongoURI": "biteback_db",
+  "jwtPrivateKey": "BITEBACK_JWT_PRIVATE_KEY",
+  "frontendLink": "https://bite-back-henna.vercel.app",
+  "mongoURI": "BITEBACK_DB",
   "cloudinary": {
-		"cloudName": "cloudinary_cloud_name",
-		"apiKey": "cloudinary_api_key",
-		"apiSecret": "cloudinary_api_secret"
+		"cloudName": "CLOUDINARY_CLOUD_NAME",
+		"apiKey": "CLOUDINARY_API_KEY",
+		"apiSecret": "CLOUDINARY_API_SECRET"
 	},
-  "mapboxToken": "mapbox_token"
+  "mapboxToken": "MAPBOX_TOKEN",
+  "encryptionSecret": "ENCRYPTION_SECRET"
 }

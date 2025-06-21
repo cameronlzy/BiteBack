@@ -1,13 +1,12 @@
-const Restaurant = require('../../models/restaurant.model');
-const { convertSGTOpeningHoursToUTC } = require('../../helpers/restaurant.helper');
-const mongoose = require('mongoose');
+import Restaurant from '../../models/restaurant.model.js';
+import { convertSGTOpeningHoursToUTC } from '../../helpers/restaurant.helper.js';
 
-function createTestRestaurant(owner) {
+export function createTestRestaurant(owner) {
     let restaurantName = "restaurant";
     let address = "Blk 30 Kelantan Lane #12-01D, S208652";
     let contactNumber = "87654321";
     let cuisines = ["Chinese"];
-    let openingHours = "09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|10:00-14:00|x";
+    let openingHours = "00:00-23:59|09:00-17:00|09:00-17:00|09:00-17:00|09:00-17:00|09:00-18:00|x";
     openingHours = convertSGTOpeningHoursToUTC(openingHours);
     let restaurantEmail = `restaurant@gmail.com`;
     let website = "https://www.restaurant.com";
@@ -26,5 +25,3 @@ function createTestRestaurant(owner) {
         website, location, tags
     });
 }
-
-module.exports = { createTestRestaurant };

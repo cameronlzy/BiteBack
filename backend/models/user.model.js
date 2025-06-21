@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
+import mongoose from 'mongoose';
+import validator from 'validator';
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
       message: 'Invalid email'
     }
   },
-  username: { type: String, minlength: 2, required: true, unique: true },
+  username: { type: String, minlength: 2, required: true, unique: true, trim: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['customer', 'owner'], required: true },
   profile: {
@@ -30,4 +30,4 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-module.exports = User; 
+export default User; 

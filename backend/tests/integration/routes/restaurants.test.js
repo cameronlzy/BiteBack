@@ -1,22 +1,27 @@
-const Reservation = require('../../../models/reservation.model');
-const User = require('../../../models/user.model');
-const Restaurant = require('../../../models/restaurant.model');
-const OwnerProfile = require('../../../models/ownerProfile.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestRestaurant } = require('../../factories/restaurant.factory');
-const { createTestOwnerProfile } = require('../../factories/ownerProfile.factory');
-const { generateAuthToken } = require('../../../services/user.service');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const path = require('path');
-const { DateTime } = require('luxon');
-const setTokenCookie = require('../../../helpers/setTokenCookie');
+import Reservation from '../../../models/reservation.model.js';
+import User from '../../../models/user.model.js';
+import Restaurant from '../../../models/restaurant.model.js';
+import OwnerProfile from '../../../models/ownerProfile.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import request from 'supertest';
+import mongoose from 'mongoose';
+import { fileURLToPath } from 'url';
+import path, { dirname } from 'path';
+import { DateTime } from 'luxon';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('restaurant test', () => {
     let server;
 
-    beforeAll(() => {
-        server = require('../../../index');
+    beforeAll(async () => {
+        server = await serverPromise;
     });
 
     afterAll(async () => {
@@ -501,8 +506,8 @@ describe('restaurant test', () => {
 
     // skip to avoid sending requests to mapBox
     describe.skip('POST /api/restaurants/bulk', () => {
-        let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1;
-        let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2;
+        let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1, openingHours1;
+        let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2, openingHours2;
         let cookie;
         let token;
         let user;
@@ -915,14 +920,14 @@ describe('restaurant test', () => {
         it('should return 200 if valid request', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
 
-        it('should return updated restaurant', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+
+            const restaurantInDb = await Restaurant.findById(res.body._id);
+            expect(restaurantInDb).toBeNull();
         });
     });
 });

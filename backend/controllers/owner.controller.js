@@ -1,14 +1,22 @@
-const ownerService = require('../services/owner.service');
-const authServices = require('../services/auth.service');
-const { validatePatch } = require('../validators/ownerProfile.validator');
-const setAuthCookie = require('../helpers/setAuthCookie');
+import * as ownerService from '../services/owner.service.js';
+import * as authService from '../services/auth.service.js';
+import { validatePatch, validatePassword } from '../validators/ownerProfile.validator.js';
+import { setAuthCookie } from '../helpers/cookie.helper.js';
 
-exports.getMe = async (req, res) => {
+export async function getMe(req, res) {
     const { status, body } = await ownerService.getMe(req.user._id);
     return res.status(status).json(body);
 };
 
-exports.updateMe = async (req, res) => {
+export async function getStaffWithStepUp(req, res) {
+    const { error } = validatePassword(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const { status, body } = await ownerService.getStaffWithStepUp(req.user, req.body.password);
+    return res.status(status).json(body);
+};
+
+export async function updateMe(req, res) {
     // validate request
     const { error } = validatePatch(req.body);
     if (error) return res.status(400).send(error.details[0].message);
@@ -18,13 +26,13 @@ exports.updateMe = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.deleteMe = async (req, res) => {
+export async function deleteMe(req, res) {
     const credentials = {
         username: req.user.username,
         password: req.body.password
     };
     // verify password
-    const authResult = await authServices.verifyUserCredentials(credentials)
+    const authResult = await authService.verifyUserCredentials(credentials)
     if (authResult.status != 200) {
         return res.status(authResult.status).json(authResult.body);
     }

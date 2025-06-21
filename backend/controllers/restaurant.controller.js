@@ -1,11 +1,11 @@
-const restaurantService = require('../services/restaurant.service');
-const imageService = require('../services/image.service');
-const Restaurant = require('../models/restaurant.model');
-const { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch } = require('../validators/restaurant.validator');
-const Joi = require('joi');
-const { ISOdate } = require('../helpers/time.helper');
+import * as restaurantService from '../services/restaurant.service.js';
+import * as imageService from '../services/image.service.js';
+import Restaurant from '../models/restaurant.model.js';
+import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch } from '../validators/restaurant.validator.js';
+import Joi from 'joi';
+import { ISOdate } from '../helpers/time.helper.js';
 
-exports.searchRestaurants = async (req, res) => {
+export async function searchRestaurants(req, res) {
     // validate query
     const { error } = validateSearch(req.query);
     if (error) return res.status(400).send(error.details[0].message);
@@ -24,7 +24,7 @@ exports.searchRestaurants = async (req, res) => {
     return res.status(status).json(body)
 };
 
-exports.discoverRestaurants = async (req, res) => {
+export async function discoverRestaurants(req, res) {
     // validate query
     const { error } = validateDiscover(req.query);
     if (error) return res.status(400).send(error.details[0].message);
@@ -44,12 +44,12 @@ exports.discoverRestaurants = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.getRestaurantById = async (req, res) => {
+export async function getRestaurantById(req, res) {
     const { status, body } = await restaurantService.getRestaurantById(req.params.id);
     return res.status(status).json(body);
 };
 
-exports.getAvailability = async (req, res) => {
+export async function getAvailability(req, res) {
     // validate query
     const schema = Joi.object({ date: ISOdate.required() });
     const { error } = schema.validate(req.query);
@@ -59,7 +59,7 @@ exports.getAvailability = async (req, res) => {
     return res.status(data.status).send(data.body);
 };
 
-exports.createRestaurant = async (req, res) => {
+export async function createRestaurant(req, res) {
     // validate request
     const { error } = validateRestaurant(req.body);
     if (error) return res.status(400).send(error.details[0].message);
@@ -68,7 +68,7 @@ exports.createRestaurant = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.createRestaurantBulk = async (req, res) => {
+export async function createRestaurantBulk(req, res) {
     // validate request
     const { error } = validateRestaurantBulk(req.body);
     if (error) return res.status(400).send(error.details[0].message);
@@ -77,12 +77,12 @@ exports.createRestaurantBulk = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.addRestaurantImages = async (req, res) => {
+export async function addRestaurantImages(req, res) {
     const { status, body } = await imageService.addImages(Restaurant, req.restaurant._id, req.files, 'images');
     return res.status(status).json(body.images);
 };
 
-exports.updateRestaurantImages = async (req, res) => {
+export async function updateRestaurantImages(req, res) {
     const { error } = validateImages(req.body);
     if (error) return res.status(400).send(error.details[0].message);
     
@@ -90,7 +90,7 @@ exports.updateRestaurantImages = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.updateRestaurant = async (req, res) => {
+export async function updateRestaurant(req, res) {
     // validate request
     const { error } = validatePatch(req.body);
     if (error) return res.status(400).send(error.details[0].message);
@@ -99,7 +99,7 @@ exports.updateRestaurant = async (req, res) => {
     return res.status(status).json(body);
 };
 
-exports.deleteRestaurant = async (req, res) => {
+export async function deleteRestaurant(req, res) {
     const { status, body } = await restaurantService.deleteRestaurant(req.restaurant, req.user);
     return res.status(status).json(body);
 };

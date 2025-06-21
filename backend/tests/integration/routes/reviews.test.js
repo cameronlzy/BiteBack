@@ -1,24 +1,25 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const { DateTime } = require('luxon');
-const Review = require('../../../models/review.model');
-const { createTestUser } = require('../../factories/user.factory');
-const { createTestRestaurant } = require('../../factories/restaurant.factory');
-const { createTestCustomerProfile } = require('../../factories/customerProfile.factory');
-const { createTestReview } = require('../../factories/review.factory');
-const { generateAuthToken } = require('../../../services/user.service');
-const setTokenCookie = require('../../../helpers/setTokenCookie');
-const User = require('../../../models/user.model');
-const Restaurant = require('../../../models/restaurant.model');
-const CustomerProfile = require('../../../models/customerProfile.model');
-const OwnerProfile = require('../../../models/ownerProfile.model');
-const ReviewBadgeVote = require('../../../models/reviewBadgeVote.model');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import { DateTime } from 'luxon';
+import Review from '../../../models/review.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
+import { createTestReview } from '../../factories/review.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
+import User from '../../../models/user.model.js';
+import Restaurant from '../../../models/restaurant.model.js';
+import CustomerProfile from '../../../models/customerProfile.model.js';
+import OwnerProfile from '../../../models/ownerProfile.model.js';
+import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
 
 describe('review test', () => {
 	let server;
-	beforeAll(() => {
-		server = require('../../../index');
-	});
+	beforeAll(async () => {
+        server = await serverPromise;
+    });
 	afterAll(async () => {
 		await mongoose.connection.close();
 		await server.close();
@@ -219,6 +220,7 @@ describe('review test', () => {
         let reviewText;
         let dateVisited;
         let cookie;
+        let token;
 
 		beforeEach(async () => {
 			// clear all
@@ -281,6 +283,7 @@ describe('review test', () => {
 
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
+            expect(res.status).toBe(200);
             const requiredKeys = [
                 'username', 'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
@@ -406,9 +409,9 @@ describe('review test', () => {
         let token;
         let cookie;
         let badgeIndex;
-        let badgeVote;
         let otherCustomer;
         let otherCustomerProfile;
+        let replyText;
 
 		beforeEach(async () => {
 			// clear all
@@ -532,9 +535,6 @@ describe('review test', () => {
             await restaurant.save();
             
             // create customer 
-            name = "name";
-            contactNumber = "87654321";
-            favCuisines = ['Chinese'];
             user = await createTestUser('customer');
 
             profile = createTestCustomerProfile(user);
@@ -601,13 +601,18 @@ describe('review test', () => {
             expect(res.status).toBe(403);
         });
 
-        it('should return 200 and review object with required properties', async () => {
+        it('should return 200 and delete the review from the database', async () => {
             const res = await exec();
+            expect(res.status).toBe(200);
+
             const requiredKeys = [
                 'username', 'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+
+            const reviewInDb = await Review.findById(res.body._id);
+            expect(reviewInDb).toBeNull();
         });
 	});
 
@@ -699,6 +704,7 @@ describe('review test', () => {
 
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
+            expect(res.status).toBe(200);
             const requiredKeys = [
                 'username', 'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
@@ -724,6 +730,7 @@ describe('review test', () => {
         let badgeVote;
         let otherCustomer;
         let otherCustomerProfile;
+        let replyText;
 
 		beforeEach(async () => {
 			// clear all
@@ -819,6 +826,9 @@ describe('review test', () => {
         it('should return 200 and badgeIndex', async () => {
             const res = await exec();
             expect(typeof res.body).toBe('number');
+
+            const voteInDb = await ReviewBadgeVote.findById(reviewId);
+            expect(voteInDb).toBeNull();
         });
 	});
 });

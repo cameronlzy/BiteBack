@@ -1,16 +1,16 @@
-const User = require('../models/user.model');
-const OwnerProfile = require('../models/ownerProfile.model');
-const Reservation = require('../models/reservation.model');
-const Restaurant = require('../models/restaurant.model');
-const restaurantService = require('../services/restaurant.service');
-const { generateAuthToken } = require('./user.service');
-const _ = require('lodash');
-const bcrypt = require('bcryptjs');
-const mongoose = require('mongoose');
+import User from '../models/user.model.js';
+import OwnerProfile from '../models/ownerProfile.model.js';
+import Reservation from '../models/reservation.model.js';
+import Restaurant from '../models/restaurant.model.js';
+import Staff from '../models/staff.model.js';
+import * as restaurantService from '../services/restaurant.service.js';
+import { generateAuthToken } from '../helpers/token.helper.js';
+import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
+import _ from 'lodash';
+import simpleCrypto from '../helpers/encryption.helper.js';
+import bcrypt from 'bcryptjs';
 
-const isProdEnv = process.env.NODE_ENV === 'production';
-
-exports.getMe = async (userId) => {
+export async function getMe(userId) {
     const user = await User.findById(userId)
         .populate({
             path: 'profile', 
@@ -22,15 +22,48 @@ exports.getMe = async (userId) => {
         .select('-password').lean();
     if (!user) return { status: 400, body: 'Owner not found.' };
     return { status: 200, body: user };
-};
+}
 
-exports.updateMe = async (update, authUser) => {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
+export async function getStaffWithStepUp(authUser, password) {
+    // find user
+    const user = await User.findById(authUser._id).populate('profile').lean();
+    if (!user) return { status: 400, body: 'Owner not found' };
 
-    try {
+    // check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        return { status: 400, body: 'Invalid password' };
+    }
+
+    // find restaurants
+    const restaurants = await Restaurant.find({
+        _id: { $in: user.profile.restaurants }
+    }).lean();
+    
+    const result = await Promise.all(
+        restaurants.map(async (restaurant) => {
+            const staff = await Staff.findOne({ restaurant: restaurant._id }).lean();
+            return {
+                restaurant: {
+                    _id: restaurant._id,
+                    name: restaurant.name
+                },
+                staff: staff ? {
+                    _id: staff._id,
+                    username: staff.username,
+                    password: simpleCrypto.decrypt(staff.encryptedPassword)
+                } : null
+            };
+        })
+    );
+
+    return { status: 200, body: result };
+}
+
+export async function updateMe(update, authUser) {
+    return await withTransaction(async (session) => {
         // find user
-        const user = await User.findById(authUser._id).populate('profile').session(session || null);
+        const user = await User.findById(authUser._id).populate('profile').session(session);
         if (!user) throw { status: 404, body: 'Owner not found' };
         if (!user.profile) throw { status: 404, body: 'Profile not found' };
 
@@ -43,7 +76,7 @@ exports.updateMe = async (update, authUser) => {
             const existingUser = await User.findOne({
                 _id: { $ne: authUser._id },
                 $or: uniqueCheck,
-            }).session(session || null).lean();
+            }).session(session).lean();
 
             if (existingUser) {
                 if (existingUser.email === update.email) {
@@ -58,62 +91,42 @@ exports.updateMe = async (update, authUser) => {
         // update user fields selectively
         if (update.email !== undefined) user.email = update.email;
         if (update.username !== undefined) user.username = update.username;
-        if (update.password !== undefined) {
-            const salt = await bcrypt.genSalt(10);
-            user.password = await bcrypt.hash(update.password, salt);
-        }
-        await user.save(session ? { session } : undefined);
+        await user.save(wrapSession(session));
 
         // selectively update profile fields
         if (update.companyName !== undefined) user.profile.companyName = update.companyName;
 
-        await user.profile.save(session ? { session } : undefined);
-
-        if (session) await session.commitTransaction();
+        await user.profile.save(wrapSession(session));
 
         // send back user
         const token = generateAuthToken(user);
-        const { password, ...safeUser } = user.toObject();
+        const { password: _password, ...safeUser } = user.toObject();
         safeUser.profile = user.profile.toObject();
         return { token, status: 200, body: safeUser };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
-};
+    });
+}
 
-exports.deleteMe = async (user) => {
-    const session = isProdEnv ? await mongoose.startSession() : null;
-    if (session) session.startTransaction();
-
-    try {
+export async function deleteMe(user) {
+    return await withTransaction(async (session) => {
         // find restaurants owned by owner
-        const restaurants = await Restaurant.find({ owner: user._id }).session(session || null);
+        const restaurants = await Restaurant.find({ owner: user._id }).session(session);
 
         // delete each restaurant and its reservations + reviews
         await Promise.all(
             restaurants.map((restaurant) =>
-                restaurantService.deleteRestaurantAndAssociations(restaurant, session || null)
+                restaurantService.deleteRestaurantAndAssociations(restaurant, session)
             )
         );
 
         // delete reservations and profile
         await Promise.all([
-            Reservation.deleteMany({ customer: user._id }).session(session || null),
-            OwnerProfile.findByIdAndDelete(user.profile._id).session(session || null)
+            Reservation.deleteMany({ customer: user._id }).session(session),
+            OwnerProfile.findByIdAndDelete(user.profile._id).session(session)
         ]);
 
         // delete user
-        await user.deleteOne({ session });
+        await user.deleteOne(wrapSession(session));
         
-        if (session) await session.commitTransaction();
         return { status: 200, body: user.toObject() };
-    } catch (err) {
-        if (session) await session.abortTransaction();
-        throw err;
-    } finally {
-        if (session) session.endSession();
-    }
-};
+    });
+}

@@ -1,5 +1,9 @@
 {
-	"jwtPrivateKey": "",
-	"mongoURI": "mongodb://localhost:27017/biteback",
-	"frontendLink": "https://bite-back-indol.vercel.app",
+  "jwtPrivateKey": "",
+  "mongoURI": "",
+  "frontendLink": "",
+  "cloudinary": {},
+  "email": {},
+  "mapboxToken": "",
+  "encryptionSecret": ""
 }

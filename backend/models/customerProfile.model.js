@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const cuisineList = [
   'Chinese',
@@ -79,4 +79,4 @@ customerProfileSchema.path('dateJoined').immutable(true);
 
 const CustomerProfile = mongoose.model('CustomerProfile', customerProfileSchema);
 
-module.exports = CustomerProfile;
+export default CustomerProfile;

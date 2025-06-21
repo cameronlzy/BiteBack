@@ -1,18 +1,17 @@
-const auth = require('../middleware/auth');
-const validateObjectId = require('../middleware/validateObjectId');
-const isOwner = require('../middleware/isOwner');
-const authorizedReservationUser = require('../middleware/authorizedReservationUser');
-const authorizedRestaurantOwner = require('../middleware/authorizedRestaurantOwner');
-const reservationController = require('../controllers/reservation.controller');
-const express = require('express');
-const wrapRoutes = require('../helpers/wrapRoutes');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import validateObjectId from '../middleware/validateObjectId.js';
+import isStaff from '../middleware/isStaff.js';
+import authorizedReservationUser from '../middleware/authorizedReservationUser.js';
+import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
+import authorizedReservationStaff from '../middleware/authorizedReservationStaff.js'
+import * as reservationController from '../controllers/reservation.controller.js';
+import wrapRoutes from '../helpers/wrapRoutes.js';
+
 const router = wrapRoutes(express.Router());
 
-// [Owner] - Get all reservations in all restaurants owned by owner
-router.get('/owner', [auth, isOwner], reservationController.getReservationsByOwner);
-
-// [Owner] - Get all reservations in a restaurant
-router.get('/restaurant/:id', [validateObjectId, auth, isOwner, authorizedRestaurantOwner], reservationController.getReservationsByRestaurant);
+// [Staff] - Get reservations at restaurant for current timeslot
+router.get('/restaurant/:id', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], reservationController.getReservationsByRestaurant);
 
 // [User] - Get all of user's reservations
 router.get('/', auth, reservationController.getUserReservations);
@@ -23,10 +22,13 @@ router.get('/:id', [validateObjectId, auth, authorizedReservationUser], reservat
 // [User] - Create reservation
 router.post('/', auth, reservationController.createReservation);
 
+// [Staff] - Update reservation status
+router.patch('/:id/status', [validateObjectId, auth, isStaff, authorizedReservationStaff], reservationController.updateReservationStatus);
+
 // [User] - Update reservation
 router.patch('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.updateReservation);
 
 // [User] - Delete reservation
 router.delete('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.deleteReservation);
 
-module.exports = router; 
+export default router;

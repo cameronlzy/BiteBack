@@ -1,5 +1,4 @@
-const Joi = require('joi');
-const { sortBy } = require('lodash');
+import Joi from 'joi';
 
 const cuisineList = [
   'Chinese',
@@ -86,18 +85,18 @@ const restaurantJoiSchema = Joi.object({
   tags: Joi.array().items(Joi.string().valid(...tagList)).required(),
 });
 
-function validateRestaurant(restaurant) {
+export function validateRestaurant(restaurant) {
   return restaurantJoiSchema.validate(restaurant);
 }
 
-function validateRestaurantBulk(restaurants) {
+export function validateRestaurantBulk(restaurants) {
   const schema = Joi.object({
     restaurants: Joi.array().items(restaurantJoiSchema).required(),
   });
   return schema.validate(restaurants);
 }
 
-function validatePatch(update) {
+export function validatePatch(update) {
   const schema = Joi.object({
     name: Joi.string().min(2).max(20),
     address: Joi.string().min(2).max(255),
@@ -119,14 +118,14 @@ function validatePatch(update) {
   return schema.validate(update);
 }
 
-function validateImages(images) {
+export function validateImages(images) {
   const schema = Joi.object({
     images: Joi.array().items(Joi.string().uri()).required()
   });
   return schema.validate(images);
 }
 
-function validateDiscover(filters) {
+export function validateDiscover(filters) {
   const schema = Joi.object({
     cuisines: Joi.string(),
     minRating: Joi.number().min(0).max(5).precision(1),
@@ -139,7 +138,7 @@ function validateDiscover(filters) {
   return schema.validate(filters);
 }
 
-function validateSearch(filters) {
+export function validateSearch(filters) {
   const schema = Joi.object({
     search: Joi.string(),
     page: Joi.number().integer().min(1),
@@ -149,13 +148,3 @@ function validateSearch(filters) {
   });
   return schema.validate(filters);
 }
-
-module.exports = { 
-  validateRestaurant,
-  validateRestaurantBulk,
-  restaurantJoiSchema, 
-  validatePatch,
-  validateImages,
-  validateDiscover,
-  validateSearch,
-};

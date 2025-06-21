@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const config = require('config');
+import jwt from 'jsonwebtoken';
+import config from 'config';
 
-module.exports = function (req, res, next) {
+export default function (req, res, next) {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ message: 'Access denied' });
 
@@ -10,7 +10,7 @@ module.exports = function (req, res, next) {
     req.user = decoded;
     next();
   }
-  catch (ex) {
+  catch {
     res.status(401).json({ message: 'Invalid token' });
   }
 }

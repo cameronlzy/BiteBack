@@ -1,39 +1,22 @@
-const reservationService = require('../services/reservation.service');
-const Joi = require('joi');
-const { ISOdate } = require('../helpers/time.helper');
-const { validateReservation, validatePatch } = require('../validators/reservation.validator');
+import * as reservationService from '../services/reservation.service.js';
+import { validateReservation, validatePatch, validateStatus } from '../validators/reservation.validator.js';
 
-exports.getReservationsByOwner = async (req, res) => {
-  // validate query
-  const schema = Joi.object({ startDate: ISOdate.required(), endDate: ISOdate });
-  const { error } = schema.validate(req.query);
-  if (error) return res.status(400).send(error.details[0].message);
-
-  const { status, body } = await reservationService.getReservationsByOwner(req.user._id, req.query);
+export async function getReservationsByRestaurant(req, res) {
+  const { status, body } = await reservationService.getReservationsByRestaurant(req.restaurant);
   return res.status(status).json(body);
 };
 
-exports.getReservationsByRestaurant = async (req, res) => {
-  // validate query
-  const schema = Joi.object({ startDate: ISOdate.required(), endDate: ISOdate });
-  const { error } = schema.validate(req.query);
-  if (error) return res.status(400).send(error.details[0].message);
-
-  const { status, body } = await reservationService.getReservationsByRestaurant(req.restaurant, req.query);
-  return res.status(status).json(body);
-};
-
-exports.getUserReservations = async (req, res) => {
+export async function getUserReservations(req, res) {
   const { status, body } = await reservationService.getUserReservations(req.user._id);
   return res.status(status).json(body);
 };
 
-exports.getSingleReservation = async (req, res) => {
+export async function getSingleReservation(req, res) {
   const { status, body } = await reservationService.getSingleReservation(req.reservation);
   return res.status(status).json(body);
 };
 
-exports.createReservation = async (req, res) => {
+export async function createReservation(req, res) {
   // validate request
   const { error } = validateReservation(req.body);
   if (error) return res.status(400).send(error.details[0].message);
@@ -42,7 +25,15 @@ exports.createReservation = async (req, res) => {
   return res.status(status).json(body);
 };
 
-exports.updateReservation = async (req, res) => {
+export async function updateReservationStatus(req, res) {
+  const { error } = validateStatus(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const { status, body } = await reservationService.updateReservationStatus(req.reservation, req.body.status);
+  return res.status(status).json(body);
+};
+
+export async function updateReservation(req, res) {
   // validate new reservation
   const { error } = validatePatch(req.body);
   if (error) return res.status(400).send(error.details[0].message);
@@ -51,7 +42,7 @@ exports.updateReservation = async (req, res) => {
   return res.status(status).json(body);
 };
 
-exports.deleteReservation = async (req, res) => {
+export async function deleteReservation(req, res) {
   const { status, body } = await reservationService.deleteReservation(req.reservation);
   return res.status(status).json(body);
 };

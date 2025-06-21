@@ -1,7 +1,7 @@
-const Joi = require('joi');
-const { ISOdate } = require('../helpers/time.helper');
+import Joi from 'joi';
+import { ISOdate } from '../helpers/time.helper.js';
 
-function validateReview(review) {
+export function validateReview(review) {
     const schema = Joi.object({
         restaurant: Joi.objectId().required(),
         rating: Joi.number().integer().min(0).max(5).required(),
@@ -11,22 +11,23 @@ function validateReview(review) {
     return schema.validate(review);
 }
 
-function validateReply(reply) {
+export function validateReply(reply) {
     const schema = Joi.object({
         replyText: Joi.string().min(1).max(1000).required()
     });
     return schema.validate(reply);
 }
 
-function validateBadge(badge) {
+export function validateBadge(badge) {
     const schema = Joi.object({
         badgeIndex: Joi.number().integer().min(0).max(3).required()
     });
     return schema.validate(badge);
 }
 
-module.exports = {
-    validateReview,
-    validateReply,
-    validateBadge,
-};
+export function validateRestaurantId(id) {
+    const schema = Joi.object({
+        restaurantId: Joi.objectId().required()
+    });
+    return schema.validate(id);
+}

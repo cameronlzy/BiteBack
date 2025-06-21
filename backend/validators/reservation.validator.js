@@ -1,7 +1,7 @@
-const Joi = require('joi');
-const { dateFullOnly } = require('../helpers/time.helper');
+import Joi from 'joi';
+import { dateFullOnly } from '../helpers/time.helper.js';
 
-function validateReservation(reservation) {
+export function validateReservation(reservation) {
     const schema = Joi.object({
         user: Joi.objectId(),
         restaurant: Joi.objectId().required(),
@@ -16,12 +16,11 @@ function validateReservation(reservation) {
             return value;
         }).required(),
         pax: Joi.number().integer().min(1).required(),
-        status: Joi.string().valid('pending', 'confirmed', 'cancelled')
     });
     return schema.validate(reservation);
 }
 
-function validatePatch(update) {
+export function validatePatch(update) {
     const schema = Joi.object({
         reservationDate: dateFullOnly,
         remarks: Joi.string().allow('').custom((value, helpers) => {
@@ -38,7 +37,9 @@ function validatePatch(update) {
     return schema.validate(update);
 }
 
-module.exports = {
-    validateReservation, 
-    validatePatch
-};
+export function validateStatus(status) {
+    const schema = Joi.object({
+        status: Joi.string().valid('completed', 'no-show').required()
+    });
+    return schema.validate(status);
+}

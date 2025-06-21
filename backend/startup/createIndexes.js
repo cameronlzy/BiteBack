@@ -1,13 +1,12 @@
-const mongoose = require('mongoose');
-
-const User = require('../models/user.model');
-const CustomerProfile = require('../models/customerProfile.model');
-const OwnerProfile = require('../models/ownerProfile.model');
-const Review = require('../models/review.model');
-const Restaurant = require('../models/restaurant.model');
-const Reservation = require('../models/reservation.model');
-const ReviewBadgeVote = require('../models/reviewBadgeVote.model');
-const config = require('config');
+import mongoose from 'mongoose';
+import User from '../models/user.model.js';
+import CustomerProfile from '../models/customerProfile.model.js';
+import OwnerProfile from '../models/ownerProfile.model.js';
+import Review from '../models/review.model.js';
+import Restaurant from '../models/restaurant.model.js';
+import Reservation from '../models/reservation.model.js';
+import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
+import config from 'config';
 
 async function createAllIndexes() {
   try {

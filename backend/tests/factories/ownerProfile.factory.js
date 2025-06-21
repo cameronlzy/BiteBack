@@ -1,7 +1,7 @@
-const OwnerProfile = require('../../models/ownerProfile.model');
-const mongoose = require('mongoose');
+import OwnerProfile from '../../models/ownerProfile.model.js';
+import mongoose from 'mongoose';
 
-function createTestOwnerProfile(user = null) {
+export function createTestOwnerProfile(user = null) {
     const companyName = "name";
     let username;
     if (!user) {
@@ -16,5 +16,3 @@ function createTestOwnerProfile(user = null) {
     });
     return profile;
 }
-
-module.exports = { createTestOwnerProfile };

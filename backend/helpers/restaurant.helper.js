@@ -1,6 +1,6 @@
-const { DateTime } = require('luxon');
+import { DateTime } from 'luxon';
 
-exports.convertSGTOpeningHoursToUTC = (openingHoursString) => {
+export function convertSGTOpeningHoursToUTC(openingHoursString) {
   const days = openingHoursString.split('|');
 
   const converted = days.map(entry => {
@@ -17,7 +17,7 @@ exports.convertSGTOpeningHoursToUTC = (openingHoursString) => {
   return converted.join('|');
 }
 
-exports.createSlots = (openingHoursString, sgtDateTime, slotDuration = 60) => {
+export function createSlots(openingHoursString, sgtDateTime, slotDuration = 60) {
   const openingHours = openingHoursString.split('|');
   const date = sgtDateTime;
   const weekdayIndex = sgtDateTime.weekday - 1; 
@@ -43,7 +43,7 @@ exports.createSlots = (openingHoursString, sgtDateTime, slotDuration = 60) => {
   return slots;
 }
 
-exports.filterOpenRestaurants = (restaurants) => {
+export function filterOpenRestaurants(restaurants) {
   const nowUTC = DateTime.utc();
   const currentDay = nowUTC.weekday % 7;
 
@@ -64,3 +64,44 @@ exports.filterOpenRestaurants = (restaurants) => {
     return nowUTC >= start && nowUTC <= end;
   });
 };
+
+export function getCurrentTimeSlotStartUTC(restaurant) {
+  const now = DateTime.utc();
+  const today = now.startOf('day');
+  const todayOpening = getOpeningHoursToday(restaurant);
+
+  if (todayOpening === 'x') {
+      // restaurant is closed today
+      return null;
+  }
+
+  const [openStr, closeStr] = todayOpening.split('-');
+  const [openHour, openMinute] = openStr.split(':').map(Number);
+  const [closeHour, closeMinute] = closeStr.split(':').map(Number);
+
+  const openingTime = today.set({ hour: openHour, minute: openMinute, second: 0, millisecond: 0 });
+  let closingTime = today.set({ hour: closeHour, minute: closeMinute, second: 0, millisecond: 0 });
+
+  if (closingTime <= openingTime) {
+    closingTime = closingTime.plus({ days: 1 });
+  }
+
+  if (now < openingTime || now >= closingTime) {
+    return null;
+  }
+
+  const minutesSinceOpen = Math.floor(now.diff(openingTime, 'minutes').minutes);
+  const slotIndex = Math.floor(minutesSinceOpen / restaurant.slotDuration);
+  const slotStart = openingTime.plus({ minutes: slotIndex * restaurant.slotDuration }).set({ second: 0, millisecond: 0 });
+
+  return slotStart.toUTC(); // JS Date in UTC
+}
+
+export function getOpeningHoursToday(restaurant) {
+  const now = DateTime.now().setZone('Asia/Singapore');
+  const weekdayIndex = now.weekday - 1;
+
+  const openingHoursArray = restaurant.openingHours.split('|');
+  const todayOpening = openingHoursArray[weekdayIndex];
+  return todayOpening;
+}

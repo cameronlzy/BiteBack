@@ -1,6 +1,6 @@
-const Review = require('../../models/review.model');
+import Review from '../../models/review.model.js';
 
-function createTestReview(customer, restaurant) {
+export function createTestReview(customer, restaurant) {
     const rating = 3;
     const reviewText = "Great";
     
@@ -13,4 +13,3 @@ function createTestReview(customer, restaurant) {
     return review;
 }
 
-module.exports = { createTestReview };
