@@ -8,6 +8,7 @@ import { createTestCustomerProfile } from '../../factories/customerProfile.facto
 import { createTestReview } from '../../factories/review.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
 import User from '../../../models/user.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
@@ -17,8 +18,7 @@ import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
 describe('review test', () => {
 	let server;
 	beforeAll(async () => {
-        const mod = await import('../../../index.js');
-        server = mod.default;
+        server = await serverPromise;
     });
 	afterAll(async () => {
 		await mongoose.connection.close();

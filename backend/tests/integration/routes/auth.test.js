@@ -13,13 +13,13 @@ import Staff from '../../../models/staff.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
 import simpleCrypto from '../../../helpers/encryption.helper.js';
 
 describe('auth test', () => {
     let server;
     beforeAll(async () => {
-        const mod = await import('../../../index.js');
-        server = mod.default;
+        server = await serverPromise;
     });
 
     afterAll(async () => {

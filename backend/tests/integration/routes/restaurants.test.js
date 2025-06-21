@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 import path, { dirname } from 'path';
 import { DateTime } from 'luxon';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,8 +21,7 @@ describe('restaurant test', () => {
     let server;
 
     beforeAll(async () => {
-        const mod = await import('../../../index.js');
-        server = mod.default;
+        server = await serverPromise;
     });
 
     afterAll(async () => {

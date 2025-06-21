@@ -9,14 +9,14 @@ import { createTestStaff } from '../../factories/staff.factory.js';
 import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
 import { DateTime } from 'luxon';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
 import Staff from '../../../models/staff.model.js';
 
 describe('reservation test', () => {
     let server;
 
     beforeAll(async () => {
-        const mod = await import('../../../index.js');
-        server = mod.default;
+        server = await serverPromise;
     });
 
     afterAll(async () => {

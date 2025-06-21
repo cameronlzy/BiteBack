@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/.bin/jest --verbose",
     "lint": "eslint . --ext .js --fix",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --verbose",
     "test:dev": "node --experimental-vm-modules node_modules/.bin/jest --watchAll --verbose",
+    "test:debug": "node --experimental-vm-modules ./node_modules/.bin/jest --detectOpenHandles",  
     "dev": "export NODE_ENV=development && nodemon index.js",
     "start": "node index.js"
   },

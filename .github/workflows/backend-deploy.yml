@@ -9,6 +9,20 @@ jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      NODE_ENV: test
+      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
+      EMAIL_USER: ${{ secrets.EMAIL_USER }}
+      EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+      BITEBACK_JWT_PRIVATE_KEY: ${{ secrets.BITEBACK_JWT_PRIVATE_KEY }}
+      BITEBACK_DB: ${{ secrets.BITEBACK_DB }}
+      CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
+      ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_SECRET }}
+
     defaults:
       run:
         working-directory: backend
@@ -29,36 +43,12 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-          BITEBACK_JWT_PRIVATE_KEY: ${{ secrets.BITEBACK_JWT_PRIVATE_KEY }}
-          BITEBACK_DB: ${{ secrets.BITEBACK_DB }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
-          ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_SECRET }}
         run: npm test
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh
 
       - name: Deploy to Heroku
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_APP_NAME: ${{ secrets.HEROKU_APP_NAME }}
-          EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-          BITEBACK_JWT_PRIVATE_KEY: ${{ secrets.BITEBACK_JWT_PRIVATE_KEY }}
-          BITEBACK_DB: ${{ secrets.BITEBACK_DB }}
-          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-          MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
-          ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_SECRET }}
         run: |
           echo "machine api.heroku.com login $HEROKU_API_KEY" > ~/.netrc
           echo "machine git.heroku.com login $HEROKU_API_KEY" >> ~/.netrc

@@ -25,13 +25,12 @@ corsSetup(app);
 validationSetup();
 routesSetup(app);
 prodSetup(app);
-serverSetup();
-
-registerJobs();
-
 app.use('/', statusRoute);
 
-const port = process.env.PORT || 3000;
-const server = app.listen(port, () => logger.info(`Listening on port ${port}...`));
+export const serverPromise = (async () => {
+  await serverSetup();
+  registerJobs();
 
-export default server;
+  const port = process.env.PORT || 3000;
+  return app.listen(port, () => logger.info(`Listening on port ${port}...`));
+})();

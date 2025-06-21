@@ -5,12 +5,12 @@ import * as reviewService from '../../../services/review.service.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { serverPromise } from '../../../index.js';
 
 describe('review test', () => {
     let server;
     beforeAll(async () => {
-        const mod = await import('../../../index.js');
-        server = mod.default;
+        server = await serverPromise;
     });
     afterAll(async () => {
         await mongoose.connection.close();

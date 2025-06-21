@@ -8,6 +8,7 @@ import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js'
 import { createTestStaff } from '../../factories/staff.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import mongoose from 'mongoose';
@@ -15,8 +16,7 @@ import mongoose from 'mongoose';
 describe('owner test', () => {
     let server;
     beforeAll(async () => {
-        const mod = await import('../../../index.js');
-        server = mod.default;
+        server = await serverPromise;
     });
 
     afterAll(async () => {

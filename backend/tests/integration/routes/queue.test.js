@@ -8,12 +8,12 @@ import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/toke
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestStaff } from '../../factories/staff.factory.js';
+import { serverPromise } from '../../../index.js';
 
 describe('queue test', () => {
     let server;
     beforeAll(async () => {
-        const mod = await import('../../../index.js');
-        server = mod.default;
+        server = await serverPromise;
     });
 
     afterAll(async () => {
