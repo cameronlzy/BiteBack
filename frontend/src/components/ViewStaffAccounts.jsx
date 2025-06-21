@@ -89,7 +89,7 @@ const ViewStaffAccounts = () => {
               type={showPasswords[index] ? "text" : "password"}
               value={staff.password}
               readOnly
-              className="pr-8 w-[300px]"
+              className="text-sm"
             />
             <button
               type="button"
