@@ -1,7 +1,7 @@
-import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { customAlphabet } from 'nanoid';
 import simpleCrypto from './encryption.helper.js';
+import generatePassword from 'generate-password';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 6);
 
@@ -15,7 +15,14 @@ export function generateStaffUsername(restaurantName) {
 }
 
 export async function generateStaffHashedPassword() {
-    const plainPassword = crypto.randomBytes(9).toString('base64').slice(0, 12);
+    const plainPassword = generatePassword.generate({
+        length: 12, 
+        numbers: true,
+        uppercase: true,
+        lowercase: true,
+        symbols: true,
+        strict: true,
+    });
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(plainPassword, salt);
     const encryptedPassword = simpleCrypto.encrypt(plainPassword);
