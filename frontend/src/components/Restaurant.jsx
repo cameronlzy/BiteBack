@@ -22,6 +22,7 @@ import {
 import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
+import { DateTime } from "luxon"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -68,6 +69,14 @@ const Restaurant = ({ user }) => {
 
     fetchRestaurant()
   }, [id])
+
+  useEffect(() => {
+    console.log(restaurant)
+    console.log("NOW:", DateTime.now().toFormat("HH:mm"))
+    console.log("TODAY:", DateTime.now().weekdayLong.toLowerCase())
+    console.log("Opening hours:", restaurant?.openingHours)
+    console.log("Within hours:", isWithinOpeningHours(restaurant?.openingHours))
+  }, [restaurant])
 
   const handleRestaurantDelete = async (id) => {
     const confirmed = await confirm(

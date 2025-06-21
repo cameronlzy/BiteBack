@@ -86,8 +86,23 @@ export const isWithinOpeningHours = (openingHours) => {
   const [openStr, closeStr] = hours.split(/[-–]/).map(s => s.trim());
   
   try {
-    const openTime = DateTime.fromISO(`2023-01-01T${openStr}:00`, { zone: "Asia/Singapore" });
-    const closeTime = DateTime.fromISO(`2023-01-01T${closeStr}:00`, { zone: "Asia/Singapore" });
+
+    const openTime = DateTime.fromFormat(openStr, "HH:mm", {
+      zone: "Asia/Singapore",
+    }).set({
+      year: now.year,
+      month: now.month,
+      day: now.day,
+    })
+
+    let closeTime = DateTime.fromFormat(closeStr, "HH:mm", {
+      zone: "Asia/Singapore",
+    }).set({
+      year: now.year,
+      month: now.month,
+      day: now.day,
+    })
+    
     
     const adjustedCloseTime = closeTime < openTime ? 
       closeTime.plus({ days: 1 }) : 
