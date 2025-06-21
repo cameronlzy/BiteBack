@@ -6,6 +6,9 @@ export default async function() {
   if (process.env.NODE_ENV !== 'test') {
     const db = config.get('mongoURI');
     await mongoose.connect(db, { autoIndex: false })
-      .then(() => logger.info(`Connected to ${db}...`));
+      .then(() => {
+        const uri = new URL(db);
+        logger.info(`Connected to ${uri.host}/${uri.pathname.replace('/', '')}`);
+      });
   }
 }
