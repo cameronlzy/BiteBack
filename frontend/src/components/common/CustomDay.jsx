@@ -54,7 +54,7 @@ const CustomDay = ({
     }
   }, [reservationsOnDate, hasReservations, restaurantMap])
 
-  const handleClick = (e) => {
+  const handleClick = () => {
     updateDate(date)
   }
 

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
 import { useConfirm } from "./common/ConfirmProvider"
 import { toast } from "react-toastify"
 import SortBy from "./common/SortBy"
@@ -26,6 +25,7 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
       setSortedReviews(queriedReviews)
     } catch (ex) {
       toast.error("Failed to load reviews")
+      throw ex
     }
   }
 

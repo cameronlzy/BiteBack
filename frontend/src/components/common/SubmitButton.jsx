@@ -1,30 +1,33 @@
 import { Button } from "@/components/ui/button"
-import LoadingSpinner from "../common/LoadingSpinner"
+import LoadingSpinner from "./LoadingSpinner"
 
-const SearchSubmit = ({
+const SubmitButton = ({
   type = "submit",
   onClick,
   condition,
   size = "sm",
   className = "",
+  loadingText = "Submitting...",
+  normalText = "Submit",
+  disabled,
 }) => {
   return (
     <Button
       type={type}
       onClick={onClick}
-      disabled={condition}
+      disabled={condition || disabled}
       size={size}
       className={className}
     >
       {condition ? (
         <>
-          <LoadingSpinner size="sm" inline={true} /> Searching...
+          <LoadingSpinner size="sm" inline={true} /> {loadingText}
         </>
       ) : (
-        "Search"
+        normalText
       )}
     </Button>
   )
 }
 
-export default SearchSubmit
+export default SubmitButton

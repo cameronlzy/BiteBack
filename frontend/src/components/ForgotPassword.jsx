@@ -3,7 +3,6 @@ import { identifierSchema } from "../utils/schemas"
 import auth from "../services/authService"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
-import { Button } from "./ui/button"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import {
   FormControl,
@@ -13,6 +12,7 @@ import {
   FormMessage,
 } from "./ui/form"
 import { Input } from "./ui/input"
+import SubmitButton from "./common/SubmitButton"
 
 const ForgotPassword = () => {
   const navigate = useNavigate()
@@ -62,13 +62,13 @@ const ForgotPassword = () => {
             </FormItem>
           )}
         />
-        <Button
+        <SubmitButton
           type="submit"
           className="w-full"
-          disabled={form.formState.isSubmitting}
-        >
-          Send Reset Link
-        </Button>
+          condition={form.formState.isSubmitting}
+          normalText="Send Reset Link"
+          loadingText="Validating..."
+        />
       </form>
     </FormProvider>
   )

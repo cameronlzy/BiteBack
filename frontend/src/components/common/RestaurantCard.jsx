@@ -32,8 +32,8 @@ const RestaurantCard = ({
 
     return [...matching, ...nonMatching]
   })()
-  const imageSrc =
-    images?.[0] || "https://www.opentable.com/img/restimages/2038.jpg"
+  const imageSrc = images?.[0]
+  // || "https://www.opentable.com/img/restimages/2038.jpg"
 
   return (
     <Card className="w-full h-auto p-4 rounded-xl shadow-md space-y-3">
@@ -44,7 +44,9 @@ const RestaurantCard = ({
           className="w-full h-36 object-cover rounded-lg border border-gray-200 shadow-sm"
           onError={(e) => {
             e.target.onerror = null
-            e.target.src = "https://www.opentable.com/img/restimages/2038.jpg"
+            e.target.src =
+              // "https://www.opentable.com/img/restimages/2038.jpg" ||
+              null
           }}
         />
       </div>

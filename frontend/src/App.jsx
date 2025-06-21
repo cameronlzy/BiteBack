@@ -20,6 +20,10 @@ import GeneralProfilePage from "./components/GeneralProfilePage"
 import ForgotPassword from "./components/ForgotPassword"
 import ResetPassword from "./components/ResetPassword"
 import ImageShow from "./components/common/ImageShow"
+import OnlineQueue from "./components/OnlineQueue"
+import ProtectedStaffRoute from "./components/common/ProtectedStaffRoute"
+import StaffLogin from "./components/staff/StaffLogin"
+import StaffControlCenter from "./components/staff/StaffControlCenter"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -28,7 +32,7 @@ function App() {
   useEffect(() => {
     const msg = localStorage.getItem("toastMessage")
     if (msg) {
-      toast.success(msg)
+      toast.info(msg)
       setTimeout(() => {
         localStorage.removeItem("toastMessage")
       }, 100)
@@ -38,6 +42,13 @@ function App() {
     const savedRole = localStorage.getItem("role")
 
     if (!savedRole) {
+      setLoading(false)
+      return
+    }
+
+    if (savedRole === "staff") {
+      const storedUser = localStorage.getItem("staffUser")
+      if (storedUser) setUser(JSON.parse(storedUser))
       setLoading(false)
       return
     }
@@ -84,6 +95,14 @@ function App() {
                       },
                       { type: "link", path: "/login", name: "Login" },
                       { type: "link", path: "/register", name: "Register" },
+                    ]
+                  : user.role === "staff"
+                  ? [
+                      {
+                        type: "link",
+                        path: "/staff/control-center",
+                        name: "Control Center",
+                      },
                     ]
                   : [
                       {
@@ -189,9 +208,43 @@ function App() {
               />
             }
           />
+          <Route path="images/:imageUrl" element={<ImageShow />} />
+          <Route
+            path="online-queue/:restaurantId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<OnlineQueue user={user} />}
+              />
+            }
+          />
+          <Route
+            path="staff/login"
+            element={<StaffLogin user={user} setUser={setUser} />}
+          />
+          <Route
+            path="staff/control-center"
+            element={
+              <ProtectedStaffRoute
+                loading={loading}
+                user={user}
+                element={<StaffControlCenter user={user} />}
+              />
+            }
+          />
+          {/* <Route
+            path="staff/login"
+            element={
+              <ProtectedStaffRoute
+                loading={loading}
+                user={user}
+                element={<StaffLogin user={user} />}
+              />
+            }
+          /> */}
           <Route path="not-found" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
-          <Route path="images/:imageUrl" element={<ImageShow />} />
         </Route>
       </Routes>
     </Fragment>

@@ -13,11 +13,12 @@ import { toast } from "react-toastify"
 import { Trash2 } from "lucide-react"
 import { DateTime } from "luxon"
 import { readableTimeSettings } from "@/utils/timeConverter"
+import SubmitButton from "./common/SubmitButton"
 
 const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
   const isOwnedByUser = user?.role === "owner" && user._id === restaurant?.owner
 
-  const methods = useForm({
+  const form = useForm({
     defaultValues: {
       replyText: review.reply?.replyText ?? "",
     },
@@ -28,7 +29,7 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
     control,
     reset,
     formState: { isSubmitting },
-  } = methods
+  } = form
 
   const onSubmit = async ({ replyText }) => {
     try {
@@ -36,7 +37,6 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
       onReplyChange(updatedReview.reply)
       toast.success("Reply posted!")
     } catch (ex) {
-      console.log(ex)
       toast.error("Failed to post reply")
       throw ex
     }
@@ -88,7 +88,7 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
         </div>
       )}
       {isOwnedByUser && (
-        <FormProvider {...methods}>
+        <FormProvider {...form}>
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-3 mt-3 border-t pt-4"
@@ -110,9 +110,12 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
             )}
             <div className="flex gap-2">
               {!review.reply && (
-                <Button type="submit" disabled={isSubmitting}>
-                  Submit
-                </Button>
+                <SubmitButton
+                  type="submit"
+                  condition={isSubmitting}
+                  normalText="Submit"
+                  loadingText="Submitting..."
+                />
               )}
             </div>
           </form>
