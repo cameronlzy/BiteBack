@@ -18,5 +18,6 @@
   },
   "lint-staged": {
     "*.{js, mjs}": "eslint --fix"
-  }
+  },
+  "type": "module"
 }
