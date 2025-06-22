@@ -109,5 +109,6 @@ async function createGitHubIssue(issue) {
     }
   } catch (err) {
     console.error('Error during sync:', err);
+    process.exitCode = 1;
   }
 })();
