@@ -650,19 +650,25 @@ describe('restaurant test', () => {
 
         it('should return 401 if no token', async () => {
             cookie = '';
-            const res = await exec();
+            const res = await request(server)
+                .post(`/api/restaurants/${restaurantId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(401);
         });
 
         it('should return 401 if invalid token', async () => {
             cookie = setTokenCookie('invalid-token');
-            const res = await exec();
+            const res = await request(server)
+                .post(`/api/restaurants/${restaurantId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid id', async () => {
             restaurantId = 1;
-            const res = await exec();
+            const res = await request(server)
+                .post(`/api/restaurants/${restaurantId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(400);
         });
 

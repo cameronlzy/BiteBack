@@ -127,6 +127,38 @@ describe('promotion test', () => {
         });
     });
 
+    describe('GET /api/promotions/:id', () => {
+        let promotion, promotionId;
+
+        beforeEach(async () => {
+            await Promotion.deleteMany({});
+
+            promotion = createTestPromotion();
+            await promotion.save();
+            promotionId = promotion._id;
+        });
+
+        const exec = () => {
+            return request(server)
+            .get(`/api/promotions/${promotionId}`);
+        };
+
+        it('should return 400 if invalid id', async () => {
+            promotionId = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 200 and promotion object with required properties', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'title', 'description', 'startDate', 'endDate'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
     describe('POST /api/promotions', () => {
         let user, token, cookie;
         let restaurant, title, description, startDate, endDate;
@@ -235,19 +267,25 @@ describe('promotion test', () => {
 
         it('should return 401 if no token', async () => {
             cookie = '';
-            const res = await exec();
+            const res = await request(server)
+                .post(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(401);
         });
 
         it('should return 401 if invalid token', async () => {
             cookie = setTokenCookie('invalid-token');
-            const res = await exec();
+            const res = await request(server)
+                .post(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid id', async () => {
             promotionId = 1;
-            const res = await exec();
+            const res = await request(server)
+                .post(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(400);
         });
 
@@ -324,19 +362,25 @@ describe('promotion test', () => {
 
         it('should return 401 if no token', async () => {
             cookie = '';
-            const res = await exec();
+            const res = await request(server)
+                .patch(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(401);
         });
 
         it('should return 401 if invalid token', async () => {
             cookie = setTokenCookie('invalid-token');
-            const res = await exec();
+            const res = await request(server)
+                .patch(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(401);
         });
 
         it('should return 400 if invalid id', async () => {
             promotionId = 1;
-            const res = await exec();
+            const res = await request(server)
+                .patch(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
             expect(res.status).toBe(400);
         });
 

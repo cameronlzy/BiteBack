@@ -15,7 +15,7 @@ const promotionParser = parser('promotions');
 router.get('/', promotionController.searchPromotions);
 
 // // [Public] - Get promotion by ID
-// router.get('/:id', [validateObjectId], promotionController.getPromotionById);
+router.get('/:id', [validateObjectId], promotionController.getPromotionById);
 
 // // [Public] - Get all promotions by owner
 // router.get('/owner', [auth, isOwner], promotionController.getPromotionsByOwner);

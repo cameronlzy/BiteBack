@@ -20,7 +20,12 @@ export async function searchPromotions(req, res) {
 
     const { status, body } = await promotionService.searchPromotions(filters);
     return res.status(status).json(body);
-};
+}
+
+export async function getPromotionById(req, res) {
+    const { status, body } = await promotionService.getPromotionById(req.params.id);
+    return res.status(status).json(body);
+}
 
 export async function createPromotion(req, res) {
     const { error } = validatePromotion(req.body);
@@ -45,7 +50,7 @@ export async function addPromotionImages(req, res) {
 
     const failed = [mainResult, bannerResult].find(res => res?.status !== 200);
     if (failed) return res.status(400).send(failed.body);
-    
+
     return res.status(200).json({
         mainImage: mainResult.body.mainImage,
         bannerImage: bannerResult.body.bannerImage
