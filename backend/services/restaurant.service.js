@@ -16,13 +16,7 @@ import { geocodeAddress } from '../helpers/geocode.js';
 import { escapeRegex } from '../helpers/regex.helper.js';
 
 export async function searchRestaurants(filters) {
-  const {
-    search,
-    page = 1,
-    limit = 8,
-    sortBy = 'averageRating',
-    order = 'desc',
-  } = filters;
+  const { search, page, limit, sortBy, order } = filters;
 
   const skip = (page - 1) * limit;
   const sortOrder = order === 'desc' ? -1 : 1;

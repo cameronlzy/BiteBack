@@ -35,7 +35,7 @@ router.post('/:id/reply', [validateObjectId, auth, isOwner, authorizedReviewRest
 // [Customer] - Add or Update a badge vote on a review
 router.post('/:id/badges', [validateObjectId, auth, isCustomer], reviewController.addBadge);
 
-// [Customer] - Upload images for their restaurant
+// [Customer] - Upload images for their review
 router.post('/:id/images', [auth, isCustomer, authorizedReviewCustomer, reviewParser.array('images', 5)], reviewController.addReviewImages);
 
 // [Customer] - Delete a review (owned by the customer)

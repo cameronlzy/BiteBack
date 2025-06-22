@@ -36,6 +36,8 @@ export const ISOdate = Joi.string()
     'any.required': 'Date is required.'
   });
 
+export const timeString = Joi.string().pattern(/^([01]\d|2[0-3]):[0-5]\d$/).message('Time must be in HH:mm format (00:00 - 23:59)');
+
 export function convertToUTCStart(isoDate) {
   return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
 }

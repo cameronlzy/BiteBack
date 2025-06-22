@@ -17,7 +17,7 @@ export async function searchRestaurants(req, res) {
         page: page ? parseInt(page) : 1,
         limit: limit ? parseInt(limit) : 8,
         sortBy: sortBy ? sortBy : 'averageRating',
-        order: order === 'desc' ? 'desc' : 'asc',
+        order: order === 'asc' ? 'asc' : 'desc',
     };
 
     const { status, body } = await restaurantService.searchRestaurants(filters);

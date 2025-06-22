@@ -184,8 +184,8 @@ export async function getUserBadgeVotes(reviews, user) {
     }
 
     return reviews.map(r => ({
-    ...r,
-    selectedBadge: voteMap[r._id.toString()] ?? null
+        ...r,
+        selectedBadge: voteMap[r._id.toString()] ?? null
     }));
 }
 

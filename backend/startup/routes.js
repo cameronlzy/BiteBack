@@ -8,6 +8,7 @@ import reviews from '../routes/review.route.js';
 import customers from '../routes/customer.route.js';
 import owners from '../routes/owner.route.js';
 import queue from '../routes/queue.route.js';
+import promotions from '../routes/promotion.route.js';
 
 export default function(app) {
   app.use(express.json());
@@ -19,6 +20,7 @@ export default function(app) {
   app.use('/api/owners', owners);
   app.use('/api/customers', customers);
   app.use('/api/queue', queue);
+  app.use('/api/promotions', promotions);
 
   // to log error
   app.use(error);
