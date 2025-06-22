@@ -2,6 +2,8 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
 import Review from '../../../models/review.model.js';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
@@ -14,6 +16,9 @@ import Restaurant from '../../../models/restaurant.model.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
 import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('review test', () => {
 	let server;
@@ -212,7 +217,7 @@ describe('review test', () => {
         });
 	});
 
-    describe('POST /api/reviews/:id', () => {
+    describe('POST /api/reviews', () => {
         let user;
         let restaurant;
         let profile;
@@ -831,4 +836,92 @@ describe('review test', () => {
             expect(voteInDb).toBeNull();
         });
 	});
+
+    describe('POST /api/reviews/:id/images', () => {
+        let user, token, cookie, profile;
+        let review, reviewId;
+        let restaurant;
+        let filePath;
+
+        beforeEach(async () => {
+            await Review.deleteMany({});
+            await User.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // create customer
+            user = await createTestUser('customer');
+            profile = createTestCustomerProfile(user);
+            user.profile = profile._id;
+            await user.save();
+            await profile.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user._id);
+            await restaurant.save();
+
+            // create review
+            review = createTestReview(profile, restaurant._id);
+            await review.save();
+            reviewId = review._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .post(`/api/reviews/${reviewId}/images`)
+            .set('Cookie', [cookie])
+            .attach('images', filePath);
+        };
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid id', async () => {
+            reviewId = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if review not found', async () => {
+            reviewId = new mongoose.Types.ObjectId();
+            const res = await request(server)
+                .post(`/api/reviews/${reviewId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if review does not belong to user', async () => {
+            let otherUser = await createTestUser('customer');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await request(server)
+                .post(`/api/reviews/${reviewId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(403);
+        });
+
+        // skip to avoid sending test images to cloudinary
+        it.skip('should return 200 if valid request', async () => { 
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('images');
+            expect(Array.isArray(res.body.images)).toBe(true);
+
+            const allStrings = res.body.images.every(url => typeof url === 'string');
+            expect(allStrings).toBe(true);
+        });
+    });
 });

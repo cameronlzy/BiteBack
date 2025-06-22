@@ -12,7 +12,6 @@ export function validatePromotion(promotion) {
             startTime: timeString.required(),
             endTime: timeString.required()
         }).optional(),
-        isActive: Joi.boolean().required()
     });
     return schema.validate(promotion);
 }

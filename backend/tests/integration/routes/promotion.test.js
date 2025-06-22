@@ -1,14 +1,20 @@
 import mongoose from 'mongoose';
 import request from 'supertest';
-import Promotion from '../../../models/promotion.model.js';
-// import path, { dirname } from 'path';
-// import { fileURLToPath } from 'url';
-import { createTestPromotion } from '../../factories/promotion.factory.js';
 import { DateTime } from 'luxon';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { createTestPromotion } from '../../factories/promotion.factory.js';
 import { serverPromise } from '../../../index.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import User from '../../../models/user.model.js';
+import Promotion from '../../../models/promotion.model.js';
+import Restaurant from '../../../models/restaurant.model.js';
 
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = dirname(__filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('promotion test', () => {
     let server;
@@ -118,6 +124,257 @@ describe('promotion test', () => {
 
             expect(res.body.promotions.length).toBe(1);
             expect(res.body.promotions[0].title).toBe('Alpha');
+        });
+    });
+
+    describe('POST /api/promotions', () => {
+        let user, token, cookie;
+        let restaurant, title, description, startDate, endDate;
+
+        beforeEach(async () => {
+            await Promotion.deleteMany({});
+            await User.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create promotion
+            restaurant = new mongoose.Types.ObjectId();
+            title = 'title';
+            description = 'description';
+            startDate = DateTime.now().plus({ days: 1 }).toJSDate();
+            endDate = DateTime.now().plus({ weeks: 1 }).toJSDate();            
+        });
+
+        const exec = () => {
+            return request(server)
+            .post('/api/promotions')
+            .set('Cookie', [cookie])
+            .send({
+                restaurant, title, description, startDate, endDate
+            });
+        };
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 403 if customer', async () => {
+            let customer = await createTestUser('customer');
+            token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 400 if invalid request', async () => {
+            startDate = '';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 200 and promotion object with required properties', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'restaurant', 'title', 'description', 'startDate', 'endDate'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+        
+    });
+
+    describe('POST /api/promotions/:id/images', () => {
+        let user, token, cookie;
+        let promotion, promotionId;
+        let filePath;
+        let restaurant;
+
+        beforeEach(async () => {
+            await Promotion.deleteMany({});
+            await User.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user._id);
+            await restaurant.save();
+
+            // create promotion
+            promotion = createTestPromotion(restaurant._id);
+            await promotion.save();
+            promotionId = promotion._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .post(`/api/promotions/${promotionId}/images`)
+            .set('Cookie', [cookie])
+            .attach('mainImage', filePath)
+            .attach('bannerImage', filePath);
+        };
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid id', async () => {
+            promotionId = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if promotion not found', async () => {
+            promotionId = new mongoose.Types.ObjectId();
+            const res = await request(server)
+                .post(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if promotion does not belong to user', async () => {
+            let otherUser = await createTestUser('owner');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await request(server)
+                .post(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(403);
+        });
+
+        // skip to avoid sending test images to cloudinary
+        it.skip('should return 200 if valid request', async () => { 
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('mainImage');
+            expect(res.body).toHaveProperty('bannerImage');
+
+            expect(typeof res.body.mainImage).toBe('string');
+            expect(typeof res.body.bannerImage).toBe('string');
+
+            const urlRegex = /^https?:\/\/.+|^\/.+/;
+            expect(res.body.mainImage).toMatch(urlRegex);
+            expect(res.body.bannerImage).toMatch(urlRegex);
+        });
+    });
+
+    describe('PATCH /api/promotions/:id/images', () => {
+        let user, token, cookie;
+        let promotion, promotionId;
+        let filePath;
+        let restaurant;
+
+        beforeEach(async () => {
+            await Promotion.deleteMany({});
+            await User.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user._id);
+            await restaurant.save();
+
+            // create promotion
+            promotion = createTestPromotion(restaurant._id);
+            await promotion.save();
+            promotionId = promotion._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .patch(`/api/promotions/${promotionId}/images`)
+            .set('Cookie', [cookie])
+            .attach('mainImage', filePath)
+        };
+
+        it('should return 401 if no token', async () => {
+            cookie = '';
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 401 if invalid token', async () => {
+            cookie = setTokenCookie('invalid-token');
+            const res = await exec();
+            expect(res.status).toBe(401);
+        });
+
+        it('should return 400 if invalid id', async () => {
+            promotionId = 1;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if promotion not found', async () => {
+            promotionId = new mongoose.Types.ObjectId();
+            const res = await request(server)
+                .patch(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if promotion does not belong to user', async () => {
+            let otherUser = await createTestUser('owner');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await request(server)
+                .patch(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 400 if no images attached', async () => {
+            const res = await request(server)
+                .patch(`/api/promotions/${promotionId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(400);
+        });
+
+        // skip to avoid sending test images to cloudinary
+        it.skip('should return 200 if valid request', async () => { 
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('mainImage');
+
+            expect(typeof res.body.mainImage).toBe('string');
+
+            const urlRegex = /^https?:\/\/.+|^\/.+/;
+            expect(res.body.mainImage).toMatch(urlRegex);
         });
     });
 });

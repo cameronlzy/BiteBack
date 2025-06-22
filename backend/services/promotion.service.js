@@ -1,13 +1,21 @@
 import Promotion from '../models/promotion.model.js';
 import mongoose from 'mongoose';
 import { escapeRegex } from '../helpers/regex.helper.js';
+import _ from 'lodash';
 
 export async function searchPromotions(filters) {
     const { search, restaurants, page, limit, sortBy, order } = filters;
 
     const skip = (page - 1) * limit;
     const sortOrder = order === 'desc' ? -1 : 1;
+    const now = new Date();
     const basePipeline = [];
+    basePipeline.push({
+        $match: {
+            endDate: { $gt: now },
+            isActive: true
+        }
+    });
 
     if (restaurants && Array.isArray(restaurants) && restaurants.length > 0) {
         basePipeline.push({
@@ -69,4 +77,12 @@ export async function searchPromotions(filters) {
             promotions
         }
     };
-}   
+}
+
+export async function createPromotion(data) {
+    const promotion = new Promotion(_.pick(data, ['restaurant', 'title', 'description', 'startDate', 'endDate']));
+    if (data.timeWindow) promotion.timeWindow = data.timeWindow;
+    await promotion.save();
+
+    return { status: 200, body: promotion.toObject() };
+}

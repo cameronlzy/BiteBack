@@ -9,9 +9,14 @@ export const dateFullOnly = Joi.string()
     const dt = DateTime.fromISO(value, { setZone: true });
     if (!dt.isValid) return helpers.error('any.invalid');
     const now = DateTime.now();
-    if (dt < now) return helpers.error('date.min', { limit: now.toISO() });
+    if (dt < now) return helpers.error('custom.date.min', { limit: now.toISO() });
     return value;
-}, 'Strict full ISO datetime validation');
+}, 'Strict full ISO datetime validation')
+  .messages({
+    'any.invalid': 'Date must be a valid ISO string',
+    'string.pattern.base': 'Date must match full ISO format',
+    'custom.date.min': 'Date cannot be in the past (min: {#limit})'
+  });
 
 
 // validates full and partial iso strings

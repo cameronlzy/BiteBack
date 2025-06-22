@@ -218,9 +218,8 @@ describe('queue test', () => {
                 queueGroup: 'small',
                 queueNumber: 0
             });
-            queueEntry.save();
+            await queueEntry.save();
             queueEntryId = queueEntry._id;
-            
         });
 
         it('should return 400 if invalid id', async () => {
