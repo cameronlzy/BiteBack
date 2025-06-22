@@ -1,9 +1,10 @@
 name: Deploy Backend to Heroku
 
 on:
-  push:
-    branches:
-      - 'feature/backend-**'
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - 'feature/backend-**'
 
 jobs:
   build-test-deploy:
