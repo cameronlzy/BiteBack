@@ -1,7 +1,10 @@
 name: Sync Jira Issues
 
 on:
-  workflow_dispatch: {}
+  push:
+    branches: 
+      - 'feature/backend-**'
+  # workflow_dispatch: {}
 
 jobs:
   sync:
