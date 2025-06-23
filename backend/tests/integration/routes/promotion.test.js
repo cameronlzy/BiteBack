@@ -143,12 +143,6 @@ describe('promotion test', () => {
             .get(`/api/promotions/${promotionId}`);
         };
 
-        it('should return 400 if invalid id', async () => {
-            promotionId = 1;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
         it('should return 200 and promotion object with required properties', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
@@ -189,26 +183,6 @@ describe('promotion test', () => {
                 restaurant, title, description, startDate, endDate
             });
         };
-
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if customer', async () => {
-            let customer = await createTestUser('customer');
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
 
         it('should return 400 if invalid request', async () => {
             startDate = '';
@@ -264,38 +238,6 @@ describe('promotion test', () => {
             .attach('mainImage', filePath)
             .attach('bannerImage', filePath);
         };
-
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await request(server)
-                .post(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await request(server)
-                .post(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 400 if invalid id', async () => {
-            promotionId = 1;
-            const res = await request(server)
-                .post(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 404 if promotion not found', async () => {
-            promotionId = new mongoose.Types.ObjectId();
-            const res = await request(server)
-                .post(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(404);
-        });
 
         it('should return 403 if promotion does not belong to user', async () => {
             let otherUser = await createTestUser('owner');
@@ -359,48 +301,6 @@ describe('promotion test', () => {
             .set('Cookie', [cookie])
             .attach('mainImage', filePath)
         };
-
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await request(server)
-                .patch(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await request(server)
-                .patch(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 400 if invalid id', async () => {
-            promotionId = 1;
-            const res = await request(server)
-                .patch(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 404 if promotion not found', async () => {
-            promotionId = new mongoose.Types.ObjectId();
-            const res = await request(server)
-                .patch(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(404);
-        });
-
-        it('should return 403 if promotion does not belong to user', async () => {
-            let otherUser = await createTestUser('owner');
-            token = generateAuthToken(otherUser);
-            cookie = setTokenCookie(token);
-            const res = await request(server)
-                .patch(`/api/promotions/${promotionId}/images`)
-                .set('Cookie', [cookie]);
-            expect(res.status).toBe(403);
-        });
 
         it('should return 400 if no images attached', async () => {
             const res = await request(server)

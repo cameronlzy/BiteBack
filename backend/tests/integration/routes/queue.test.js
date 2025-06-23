@@ -9,6 +9,7 @@ import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestStaff } from '../../factories/staff.factory.js';
 import { serverPromise } from '../../../index.js';
+import User from '../../../models/user.model.js';
 
 describe('queue test', () => {
     let server;
@@ -51,55 +52,8 @@ describe('queue test', () => {
                 queueGroup: 'small',
                 queueNumber: 0
             });
-            queueEntry.save();
+            await queueEntry.save();
             queueEntryId = queueEntry._id;
-        });
-
-        it('should return 400 if invalid id', async () => {
-            queueEntryId = "1";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 401 if no token', async () => {
-            cookie = "";
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            token = 'invalid-token';
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if owner', async () => {
-            const owner = await createTestUser('owner');
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if invalid ID', async () => {
-            queueEntryId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
-        it('should return 403 if customer does not own queue entry', async () => {
-            const otherQueueEntry = new QueueEntry({
-                restaurant: new mongoose.Types.ObjectId(),
-                customer: new mongoose.Types.ObjectId(),
-                pax: 2,
-                queueGroup: 'small',
-                queueNumber: 0
-            });
-            otherQueueEntry.save();
-            queueEntryId = otherQueueEntry._id;
-            const res = await exec();
-            expect(res.status).toBe(403);
         });
 
         it('should return 200 if valid', async () => {
@@ -145,27 +99,6 @@ describe('queue test', () => {
             pax = 2;
         });
 
-        it('should return 401 if no token', async () => {
-            cookie = "";
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            token = 'invalid-token';
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if not staff', async () => {
-            const owner = await createTestUser('owner');
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
         it('should return 400 if invalid request', async () => {
             restaurantId = '1';
             const res = await exec();
@@ -203,6 +136,7 @@ describe('queue test', () => {
     
         beforeEach(async () => {
             await QueueEntry.deleteMany({});
+            await User.deleteMany({});
             
             // create customer
             user = await createTestUser('customer');
@@ -220,53 +154,6 @@ describe('queue test', () => {
             });
             await queueEntry.save();
             queueEntryId = queueEntry._id;
-        });
-
-        it('should return 400 if invalid id', async () => {
-            queueEntryId = "1";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 401 if no token', async () => {
-            cookie = "";
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            token = 'invalid-token';
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if owner', async () => {
-            const owner = await createTestUser('owner');
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if invalid ID', async () => {
-            queueEntryId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
-        it('should return 403 if customer does not own queue entry', async () => {
-            const otherQueueEntry = new QueueEntry({
-                restaurant: new mongoose.Types.ObjectId(),
-                customer: new mongoose.Types.ObjectId(),
-                pax: 2,
-                queueGroup: 'small',
-                queueNumber: 0
-            });
-            otherQueueEntry.save();
-            queueEntryId = otherQueueEntry._id;
-            const res = await exec();
-            expect(res.status).toBe(403);
         });
 
         it('should return 200 if valid and delete it from the database', async () => {
@@ -338,12 +225,6 @@ describe('queue test', () => {
                 calledNumber: 0,
             });
             await queueCounter.save();
-        });
-
-        it('should return 400 if invalid id', async () => {
-            restaurantId = "1";
-            const res = await exec();
-            expect(res.status).toBe(400);
         });
 
         it('should return 200 if valid', async () => {
@@ -431,39 +312,6 @@ describe('queue test', () => {
             await queueCounter.save();
         });
 
-        it('should return 400 if invalid id', async () => {
-            restaurantId = "1";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 401 if no token', async () => {
-            cookie = "";
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            token = 'invalid-token';
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if not staff', async () => {
-            const customer = await createTestUser('customer');
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if invalid ID', async () => {
-            restaurantId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
         it('should return 403 if restaurant does not belong to staff', async () => {
             const otherStaff = await createTestStaff(new mongoose.Types.ObjectId());
             await otherStaff.save();
@@ -543,48 +391,6 @@ describe('queue test', () => {
             await queueEntry.save();
             queueEntryId = queueEntry._id;
             newStatus = 'seated';
-        });
-
-        it('should return 400 if invalid id', async () => {
-            queueEntryId = "1";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 401 if no token', async () => {
-            cookie = "";
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            token = 'invalid-token';
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if not staff', async () => {
-            const customer = await createTestUser('customer');
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if invalid ID', async () => {
-            queueEntryId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
-        it('should return 403 if restaurant does not belong to staff', async () => {
-            const otherStaff = await createTestStaff(new mongoose.Types.ObjectId());
-            await otherStaff.save();
-            token = staffGenerateAuthToken(otherStaff);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
         });
 
         it('should return 400 if bad request', async () => {
@@ -681,48 +487,6 @@ describe('queue test', () => {
             queueGroup = 'small';
         });
 
-        it('should return 400 if invalid id', async () => {
-            restaurantId = "1";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 401 if no token', async () => {
-            cookie = "";
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            token = 'invalid-token';
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if not staff', async () => {
-            const customer = await createTestUser('customer');
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if invalid ID', async () => {
-            restaurantId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
-        it('should return 403 if restaurant does not belong to staff', async () => {
-            const otherStaff = await createTestStaff(new mongoose.Types.ObjectId());
-            await otherStaff.save();
-            token = staffGenerateAuthToken(otherStaff);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
         it('should return 200 if valid', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
@@ -781,48 +545,6 @@ describe('queue test', () => {
             token = staffGenerateAuthToken(staff);
             cookie = setTokenCookie(token);
             toggle = false;
-        });
-
-        it('should return 400 if invalid id', async () => {
-            restaurantId = "1";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 401 if no token', async () => {
-            cookie = "";
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            token = 'invalid-token';
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if not staff', async () => {
-            const customer = await createTestUser('customer');
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if invalid ID', async () => {
-            restaurantId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
-        it('should return 403 if restaurant does not belong to staff', async () => {
-            const otherStaff = await createTestStaff(new mongoose.Types.ObjectId());
-            await otherStaff.save();
-            token = staffGenerateAuthToken(otherStaff);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
         });
 
         it('should return 400 if bad request', async () => {

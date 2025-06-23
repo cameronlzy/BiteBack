@@ -3,7 +3,7 @@ import config from 'config';
 
 export default function (req, res, next) {
   const token = req.cookies.token;
-  if (!token) return res.status(401).json({ message: 'Access denied' });
+  if (!token) return res.status(401).send('Access denied');
 
   try {
     const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
@@ -11,6 +11,6 @@ export default function (req, res, next) {
     next();
   }
   catch {
-    res.status(401).json({ message: 'Invalid token' });
+    res.status(401).send('Invalid token');
   }
 }

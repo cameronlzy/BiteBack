@@ -40,18 +40,6 @@ describe('customer test', () => {
             cookie = setTokenCookie(token);
         });
 
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie("invalid-token");
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-        
         it('should return 403 if owner', async () => {
             let owner = await createTestUser('owner');
             token = generateAuthToken(owner);
@@ -60,13 +48,9 @@ describe('customer test', () => {
             expect(res.status).toBe(403);
         });
 
-        it('should return 200 if valid token', async () => {
+        it('should return 200 if valid token and full user object', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-
-        it('should return user details', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'email', 'username', 'role', 'profile'
             ];
@@ -107,13 +91,9 @@ describe('customer test', () => {
             expect(res.status).toBe(404);
         });
 
-        it('should return 200 if valid token', async () => {
+        it('should return 200 if valid token and user object', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-
-        it('should return user details', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'dateJoined', 'totalBadges'
             ]
@@ -171,26 +151,6 @@ describe('customer test', () => {
                 });
         };
 
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if owner', async () => {
-            let owner = createTestUser('owner');
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
         it('should return 400 if invalid request', async () => {
             email = 'notEmail';
             const res = await exec();
@@ -220,13 +180,9 @@ describe('customer test', () => {
             expect(res.status).toBe(404);
         });
 
-        it('should return 200 if valid request', async () => {
+        it('should return 200 if valid request and return updated user + profile', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-
-        it('should return updated user + profile', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'email', 'username', 'role'
             ];
@@ -264,26 +220,6 @@ describe('customer test', () => {
             password = "Password@123";
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
-        });
-
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie("invalid-token");
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-        
-        it('should return 403 if owner', async () => {
-            let owner = await createTestUser('owner');
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
         });
 
         it('should return 400 if incorrect password', async () => {

@@ -55,7 +55,10 @@
     "winston-mongodb": "^6.0.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.27.2",
     "@eslint/js": "^9.29.0",
+    "@jest/globals": "^30.0.2",
+    "babel-jest": "^30.0.2",
     "eslint": "^9.29.0",
     "globals": "^16.2.0",
     "husky": "^9.1.7",
