@@ -10,11 +10,22 @@ const jiraProjectKey = process.env.JIRA_PROJECT_KEY;
 
 const userMap = {
   'cameronlzy@gmail.com': 'cameronlzy',
-  'benlua73@gmail.com': 'lkxben'
+  'benlua73@gmail.com': 'lkxben',
 };
 
 const normalizeLabel = (label) =>
   label.toLowerCase().replace(/\s+/g, '-');
+
+const jiraToGithubLabelMap = {
+  backend: 'backend',
+  frontend: 'frontend',
+  epic: 'enhancement',
+};
+
+function mapJiraLabel(label) {
+  const key = label.toLowerCase();
+  return jiraToGithubLabelMap[key] || normalizeLabel(label);
+}
 
 async function getJiraIssues() {
   const jql = `project=${jiraProjectKey} AND status="To Do" AND labels NOT IN ("synced-to-github")`;
@@ -60,7 +71,7 @@ async function addJiraLabel(issueKey, label) {
 }
 
 async function createGitHubIssue(issue) {
-  const assigneeEmail = issue.fields.assignee?.emailAddress;
+  const assigneeEmail = issue.fields.assignee?.emailAddress?.toLowerCase();
   const assigneeGitHub = userMap[assigneeEmail];
   const labels = [];
 
@@ -69,6 +80,12 @@ async function createGitHubIssue(issue) {
 
   if (type) labels.push(normalizeLabel(type));
   if (priority) labels.push(normalizeLabel(priority));
+
+  if (Array.isArray(issue.fields.labels)) {
+    for (const label of issue.fields.labels) {
+      labels.push(mapJiraLabel(label));
+    }
+  }
 
   // Fallback description
   let body = 'Synced from Jira. No additional details.';
@@ -93,6 +110,23 @@ async function createGitHubIssue(issue) {
   console.log(`Created GitHub issue: ${data.html_url}`);
 
   await addJiraLabel(issue.key, 'synced-to-github');
+
+  return data;
+}
+
+async function addParentRelationship(parentIssueNumber, childIssueNumber) {
+  try {
+    await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/relationships', {
+      owner: 'cameronlzy',
+      repo: 'BiteBack',
+      issue_number: parentIssueNumber,
+      relationship_type: 'parent',
+      subject_issue_number: childIssueNumber,
+    });
+    console.log(`Set issue #${parentIssueNumber} as parent of issue #${childIssueNumber}`);
+  } catch (err) {
+    console.error(`Failed to add parent relationship between #${parentIssueNumber} and #${childIssueNumber}:`, err);
+  }
 }
 
 (async () => {
@@ -100,11 +134,22 @@ async function createGitHubIssue(issue) {
     const issues = await getJiraIssues();
     console.log(`Found ${issues.length} Jira issues to sync.`);
 
-    for (const issue of issues) {
-      try {
-        await createGitHubIssue(issue);
-      } catch (err) {
-        console.error(`Failed to sync Jira issue ${issue.key}:`, err);
+    const epicMap = new Map();
+
+    const epicIssues = issues.filter(issue => issue.fields.issuetype?.name.toLowerCase() === 'epic');
+    for (const epic of epicIssues) {
+      const githubEpic = await createGitHubIssue(epic);
+      epicMap.set(epic.key, githubEpic.number);
+    }
+
+    const otherIssues = issues.filter(issue => issue.fields.issuetype?.name.toLowerCase() !== 'epic');
+    for (const issue of otherIssues) {
+      const githubIssue = await createGitHubIssue(issue);
+      const epicLink = issue.fields.parent?.key;
+      if (epicLink && epicMap.has(epicLink)) {
+        const parentIssueNumber = epicMap.get(epicLink);
+        const childIssueNumber = githubIssue.number;
+        await addParentRelationship(parentIssueNumber, childIssueNumber);
       }
     }
   } catch (err) {

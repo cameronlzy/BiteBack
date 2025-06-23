@@ -1,11 +1,6 @@
 name: Sync Jira Issues
 
 on:
-  push: 
-    branches:
-      - feature/backend-promotion
-  schedule:
-    - cron: '15 16 * * *'
   workflow_dispatch: {}
 
 jobs:
