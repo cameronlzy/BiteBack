@@ -14,11 +14,11 @@ const promotionParser = parser('promotions');
 // [Public] - Get all promotions that are greater than currentDate + active, with search params
 router.get('/', promotionController.searchPromotions);
 
-// // [Public] - Get promotion by ID
-router.get('/:id', [validateObjectId], promotionController.getPromotionById);
+// [Public] - Get all promotions by owner
+router.get('/owner', [auth, isOwner], promotionController.getPromotionsByOwner);
 
-// // [Public] - Get all promotions by owner
-// router.get('/owner', [auth, isOwner], promotionController.getPromotionsByOwner);
+// [Public] - Get promotion by ID
+router.get('/:id', [validateObjectId], promotionController.getPromotionById);
 
 // [Owner] - Create promotion
 router.post('/', [auth, isOwner], promotionController.createPromotion);
@@ -29,10 +29,10 @@ router.post('/:id/images', [validateObjectId, auth, isOwner, authorizedPromotion
 // [Owner] - Update images for promotion
 router.patch('/:id/images', [validateObjectId, auth, isOwner, authorizedPromotionOwner, promotionParser.fields([{ name: 'mainImage', maxCount: 1 }, { name: 'bannerImage', maxCount: 1 }])], promotionController.updatePromotionImages);
 
-// // [Owner] - Update promotion
-// router.patch('/:id', [validateObjectId, auth, isOwner, authorizedPromotionOwner], promotionController.updatePromotion);
+// [Owner] - Update promotion
+router.patch('/:id', [validateObjectId, auth, isOwner, authorizedPromotionOwner], promotionController.updatePromotion);
 
-// // [Owner] - Delete promotion
-// router.delete('/me', [validateObjectId, auth, isOwner, authorizedPromotionOwner], promotionController.deletePromotion);
+// [Owner] - Delete promotion
+router.delete('/:id', [validateObjectId, auth, isOwner, authorizedPromotionOwner], promotionController.deletePromotion);
 
 export default router;

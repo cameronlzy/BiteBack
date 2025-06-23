@@ -9,8 +9,8 @@ const jiraToken = process.env.JIRA_API_TOKEN;
 const jiraProjectKey = process.env.JIRA_PROJECT_KEY;
 
 const userMap = {
-  'cameronlzy@gmail.com': 'cameronlzy',
-  'benlua73@gmail.com': 'lkxben',
+  '712020:a6227c20-b6c7-4d1c-9ee9-0d90795fc35e': 'cameronlzy',
+  '712020:4d25dd23-8ba6-421f-b6b1-54a9db1cf893': 'lkxben',
 };
 
 const normalizeLabel = (label) =>
@@ -71,8 +71,8 @@ async function addJiraLabel(issueKey, label) {
 }
 
 async function createGitHubIssue(issue) {
-  const assigneeEmail = issue.fields.assignee?.emailAddress?.toLowerCase();
-  const assigneeGitHub = userMap[assigneeEmail];
+  const assigneeId = issue.fields.assignee?.accountId;
+  const assigneeGitHub = userMap[assigneeId];
   const labels = [];
 
   const type = issue.fields.issuetype?.name;
@@ -90,7 +90,6 @@ async function createGitHubIssue(issue) {
   // Fallback description
   let body = 'Synced from Jira. No additional details.';
   if (issue.fields.description) {
-    // Jira descriptions can be complex; for simplicity, try to get plain text if possible
     if (typeof issue.fields.description === 'string') {
       body = issue.fields.description;
     } else if (issue.fields.description.content?.[0]?.content?.[0]?.text) {
@@ -110,23 +109,6 @@ async function createGitHubIssue(issue) {
   console.log(`Created GitHub issue: ${data.html_url}`);
 
   await addJiraLabel(issue.key, 'synced-to-github');
-
-  return data;
-}
-
-async function addParentRelationship(parentIssueNumber, childIssueNumber) {
-  try {
-    await octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/relationships', {
-      owner: 'cameronlzy',
-      repo: 'BiteBack',
-      issue_number: parentIssueNumber,
-      relationship_type: 'parent',
-      subject_issue_number: childIssueNumber,
-    });
-    console.log(`Set issue #${parentIssueNumber} as parent of issue #${childIssueNumber}`);
-  } catch (err) {
-    console.error(`Failed to add parent relationship between #${parentIssueNumber} and #${childIssueNumber}:`, err);
-  }
 }
 
 (async () => {
@@ -134,22 +116,11 @@ async function addParentRelationship(parentIssueNumber, childIssueNumber) {
     const issues = await getJiraIssues();
     console.log(`Found ${issues.length} Jira issues to sync.`);
 
-    const epicMap = new Map();
-
-    const epicIssues = issues.filter(issue => issue.fields.issuetype?.name.toLowerCase() === 'epic');
-    for (const epic of epicIssues) {
-      const githubEpic = await createGitHubIssue(epic);
-      epicMap.set(epic.key, githubEpic.number);
-    }
-
-    const otherIssues = issues.filter(issue => issue.fields.issuetype?.name.toLowerCase() !== 'epic');
-    for (const issue of otherIssues) {
-      const githubIssue = await createGitHubIssue(issue);
-      const epicLink = issue.fields.parent?.key;
-      if (epicLink && epicMap.has(epicLink)) {
-        const parentIssueNumber = epicMap.get(epicLink);
-        const childIssueNumber = githubIssue.number;
-        await addParentRelationship(parentIssueNumber, childIssueNumber);
+    for (const issue of issues) {
+      try {
+        await createGitHubIssue(issue);
+      } catch (err) {
+        console.error(`Failed to sync Jira issue ${issue.key}:`, err);
       }
     }
   } catch (err) {

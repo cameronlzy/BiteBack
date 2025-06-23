@@ -1,7 +1,8 @@
 import Restaurant from '../../models/restaurant.model.js';
 import { convertSGTOpeningHoursToUTC } from '../../helpers/restaurant.helper.js';
+import mongoose from 'mongoose';
 
-export function createTestRestaurant(owner) {
+export function createTestRestaurant(owner = new mongoose.Types.ObjectId()) {
     let restaurantName = "restaurant";
     let address = "Blk 30 Kelantan Lane #12-01D, S208652";
     let contactNumber = "87654321";

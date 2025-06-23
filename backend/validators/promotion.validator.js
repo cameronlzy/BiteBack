@@ -27,3 +27,17 @@ export function validateSearch(search) {
     });
     return schema.validate(search);
 }
+
+export function validatePatch(update) {
+    const schema = Joi.object({
+        title: Joi.string(),
+        description: Joi.string(),
+        startDate: dateFullOnly,
+        endDate: dateFullOnly,
+        timeWindow: Joi.object({
+            startTime: timeString.required(),
+            endTime: timeString.required()
+        }).optional(),
+    }).min(1);
+    return schema.validate(update);
+}

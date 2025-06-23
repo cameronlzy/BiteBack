@@ -3,15 +3,17 @@ import request from 'supertest';
 import { DateTime } from 'luxon';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { createTestPromotion } from '../../factories/promotion.factory.js';
 import { serverPromise } from '../../../index.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
+import { createTestPromotion } from '../../factories/promotion.factory.js';
 import User from '../../../models/user.model.js';
 import Promotion from '../../../models/promotion.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
+import OwnerProfile from '../../../models/ownerProfile.model.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,9 +37,11 @@ describe('promotion test', () => {
         let promotion;
         let endDates;
         let url;
+        let restaurant1, restaurant2;
 
         beforeEach(async () => {
             await Promotion.deleteMany({});
+            await Restaurant.deleteMany({});
 
             // create 2 titles
             titles = ['Alpha', 'Zebra'];
@@ -45,8 +49,14 @@ describe('promotion test', () => {
             // create 2 ratings
             descriptions = ['Buy one get one free', 'Half off second purchase'];
 
-            // create 2 restaurant id
-            restaurants = [new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId()];
+            // create 2 restaurant
+            restaurant1 = createTestRestaurant();
+            restaurant1.name = 'Bennys';
+            await restaurant1.save();
+            restaurant2 = createTestRestaurant();
+            restaurant2.name = 'Pizza';
+            await restaurant2.save();
+            restaurants = [restaurant1._id, restaurant2._id];
 
             // create 2 endDates
             endDates = [
@@ -71,7 +81,7 @@ describe('promotion test', () => {
         };
 
         it('should return an array of promotion', async () => {
-        const res = await exec();
+            const res = await exec();
             expect(res.status).toBe(200);
             expect(Array.isArray(res.body.promotions)).toBe(true);
             expect(res.body.promotions.length).toBe(2);
@@ -119,7 +129,7 @@ describe('promotion test', () => {
         });
 
         it('should return only promotions from restaurant', async () => {
-            url = `/api/promotions?restaurants=${restaurants[0].toString()}`;
+            url = `/api/promotions?search=${restaurant1.name}`;
             const res = await exec();
 
             expect(res.body.promotions.length).toBe(1);
@@ -127,13 +137,95 @@ describe('promotion test', () => {
         });
     });
 
-    describe('GET /api/promotions/:id', () => {
-        let promotion, promotionId;
+    describe('GET /api/promotions/owner', () => {
+        let titles;
+        let descriptions;
+        let restaurants;
+        let promotion;
+        let endDates;
+        let restaurant1, restaurant2;
+        let user, profile, token, cookie;
 
         beforeEach(async () => {
             await Promotion.deleteMany({});
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
 
-            promotion = createTestPromotion();
+            // create 2 titles
+            titles = ['Alpha', 'Zebra'];
+
+            // create 2 ratings
+            descriptions = ['Buy one get one free', 'Half off second purchase'];
+
+            // create owner
+            user = await createTestUser('owner');
+            profile = createTestOwnerProfile(user);
+            user.profile = profile._id;
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create 2 restaurant
+            restaurant1 = createTestRestaurant(user._id);
+            restaurant1.name = 'Bennys';
+            await restaurant1.save();
+            restaurant2 = createTestRestaurant(user._id);
+            restaurant2.name = 'Pizza';
+            await restaurant2.save();
+            restaurants = [restaurant1._id, restaurant2._id];
+            profile.restaurants = restaurants;
+            await profile.save();
+
+            // create 2 endDates
+            endDates = [
+                DateTime.now().plus({ weeks: 1}).toJSDate(), 
+                DateTime.now().plus({ weeks: 2 }).toJSDate()
+            ];
+
+            // create 2 promotions
+            for (let i = 0; i < 2; i++) {
+                promotion = createTestPromotion(restaurants[i]);
+                promotion.title = titles[i];
+                promotion.description = descriptions[i];
+                promotion.endDate = endDates[i];
+                await promotion.save();
+            }
+        });
+
+        const exec = () => {
+            return request(server)
+            .get('/api/promotions/owner')
+            .set('Cookie', [cookie]);
+        };
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(2);
+            res.body.forEach(promotion => {    
+                expect(promotion).toHaveProperty('restaurant');
+                expect(promotion).toHaveProperty('title');
+                expect(promotion).toHaveProperty('description');
+                expect(promotion).toHaveProperty('startDate');
+                expect(promotion).toHaveProperty('endDate');
+            });
+        });
+    });
+
+    describe('GET /api/promotions/:id', () => {
+        let promotion, promotionId;
+        let restaurant;
+
+        beforeEach(async () => {
+            await Promotion.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // create restaurant
+            restaurant = createTestRestaurant();
+            await restaurant.save();
+
+            promotion = createTestPromotion(restaurant._id);
             await promotion.save();
             promotionId = promotion._id;
         });
@@ -319,6 +411,102 @@ describe('promotion test', () => {
 
             const urlRegex = /^https?:\/\/.+|^\/.+/;
             expect(res.body.mainImage).toMatch(urlRegex);
+        });
+    });
+
+    describe('PATCH /api/promotions/:id', () => {
+        let user, token, cookie;
+        let restaurant, title;
+        let promotion, promotionId;
+
+        beforeEach(async () => {
+            await Promotion.deleteMany({});
+            await User.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user._id);
+            await restaurant.save();
+
+            promotion = createTestPromotion(restaurant._id);
+            await promotion.save();
+            promotionId = promotion._id;
+
+            title = 'newTitle';         
+        });
+
+        const exec = () => {
+            return request(server)
+            .patch(`/api/promotions/${promotionId}`)
+            .set('Cookie', [cookie])
+            .send({
+                title
+            });
+        };
+
+        it('should return 400 if invalid request', async () => {
+            title = '';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 200 and promotion object with required properties', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'restaurant', 'title', 'description', 'startDate', 'endDate'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('DELETE /api/promotions/:id', () => {
+        let user, token, cookie;
+        let restaurant;
+        let promotion, promotionId;
+
+        beforeEach(async () => {
+            await Promotion.deleteMany({});
+            await User.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user._id);
+            await restaurant.save();
+
+            promotion = createTestPromotion(restaurant._id);
+            await promotion.save();
+            promotionId = promotion._id;      
+        });
+
+        const exec = () => {
+            return request(server)
+            .delete(`/api/promotions/${promotionId}`)
+            .set('Cookie', [cookie]);
+        };
+
+        it('should return 200 and promotion object with required properties', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'title', 'description', 'startDate', 'endDate'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+
+            const promotionInDb = await Promotion.findById(res.body._id);
+            expect(promotionInDb).toBeNull();
         });
     });
 });
