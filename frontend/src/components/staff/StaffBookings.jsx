@@ -29,6 +29,7 @@ const StaffBookings = () => {
   const fetchBookings = async () => {
     try {
       const data = await getCurrentSlotReservations(restaurantId)
+      console.log("Fetched bookings:", data)
       setBookings(data)
     } catch (ex) {
       if (!(await handle401(ex))) {
