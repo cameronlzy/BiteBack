@@ -355,7 +355,7 @@ const PromotionForm = ({ user }) => {
             type="submit"
             className="w-full"
             condition={formState.isSubmitting}
-            normalText="Create Promotion"
+            normalText={promotionId ? "Update Promotion" : "Create Promotion"}
             loadingText="Creating..."
           />
         </form>
