@@ -12,7 +12,7 @@ import ListReservations from "./ListReservations"
 import { Button } from "@/components/ui/button"
 import LoadingSpinner from "./common/LoadingSpinner"
 
-const CustomerReservations = ({ user }) => {
+const UserReservations = ({ user }) => {
   const [reservations, setReservations] = useState([])
   const [sortedReservations, setSortedReservations] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
@@ -22,6 +22,10 @@ const CustomerReservations = ({ user }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const confirm = useConfirm()
+
+  const isOwner = user?.role === "owner"
+  const label = isOwner ? "Event" : "Reservation"
+  const labelPlural = isOwner ? "Events" : "Reservations"
 
   const getAndSetReservations = async () => {
     try {
@@ -54,10 +58,12 @@ const CustomerReservations = ({ user }) => {
   }
 
   const handleDelete = async (reservationId) => {
-    const confirmed = await confirm("Are you sure you want to delete?")
+    const confirmed = await confirm(
+      `Are you sure you want to delete this ${label.toLowerCase()}?`
+    )
     if (confirmed) {
       await deleteReservation(reservationId)
-      toast.success("Deleted!")
+      toast.success(`${label} deleted!`)
       await getAndSetReservations()
     }
   }
@@ -65,7 +71,7 @@ const CustomerReservations = ({ user }) => {
   return (
     <div className="max-w-3xl mx-auto mt-10">
       <div className="mb-6 flex flex-col items-center gap-2">
-        <h2 className="text-2xl font-bold text-center">Current Reservations</h2>
+        <h2 className="text-2xl font-bold text-center">Manage {labelPlural}</h2>
         <Button
           className="text-sm px-3 py-1"
           variant="outline"
@@ -79,7 +85,7 @@ const CustomerReservations = ({ user }) => {
       {loading ? (
         <LoadingSpinner size="md" />
       ) : reservations.length === 0 ? (
-        <p className="text-gray-500">No Current Reservations</p>
+        <p className="text-gray-500">No Current {labelPlural}</p>
       ) : viewMode === "list" ? (
         <ListReservations
           reservations={reservations}
@@ -88,16 +94,18 @@ const CustomerReservations = ({ user }) => {
           user={user}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          label={label}
         />
       ) : (
         <CalendarReservations
           reservations={reservations}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
+          label={label}
         />
       )}
     </div>
   )
 }
 
-export default CustomerReservations
+export default UserReservations

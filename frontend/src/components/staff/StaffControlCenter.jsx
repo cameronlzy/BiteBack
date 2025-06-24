@@ -1,6 +1,6 @@
 import React from "react"
 import StaffQueue from "./StaffQueue"
-import StaffReservations from "./StaffReservations"
+import StaffBookings from "./StaffBookings"
 
 const StaffControlCenter = ({ user }) => {
   return (
@@ -12,7 +12,7 @@ const StaffControlCenter = ({ user }) => {
         </p>
       </div>
       <StaffQueue user={user} />
-      <StaffReservations />
+      <StaffBookings />
     </React.Fragment>
   )
 }
