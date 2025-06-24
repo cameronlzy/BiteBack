@@ -5,14 +5,15 @@ import Reservation from '../models/reservation.model.js';
 import * as reviewService from '../services/review.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
+import { error, success } from '../helpers/response.js';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
         .populate('profile')
         .select('-password')
         .lean();
-    if (!user) return { status: 400, body: 'User not found.' };
-    return { status: 200, body: user };
+    if (!user) return error(400, 'User not found');
+    return success(user);
 }
 
 export async function publicProfile(customerId) {
@@ -20,17 +21,17 @@ export async function publicProfile(customerId) {
     const customer = await CustomerProfile.findById(customerId)
         .select('+totalBadges +dateJoined +username')
         .lean();
-    if (!customer) return { status: 404, body: 'Customer not found.' };
+    if (!customer) return error(404, 'Customer not found');
 
-    return { status: 200, body: customer };
+    return success(customer);
 }
 
 export async function updateMe(update, authUser) {
     return await withTransaction(async (session) => {
         // find user
         const user = await User.findById(authUser._id).populate('profile').session(session);
-        if (!user) throw { status: 404, body: 'Customer not found' };
-        if (!user.profile) throw { status: 404, body: 'Profile not found' };
+        if (!user) return error(404, 'Customer not found');
+        if (!user.profile) return error(404, 'Profile not found');
 
         // check if email or username being updated and is already taken
         const uniqueCheck = [];
@@ -45,10 +46,10 @@ export async function updateMe(update, authUser) {
 
             if (existingUser) {
                 if (existingUser.email === update.email) {
-                    throw { status: 400, body: 'Email is already taken.' };
+                    return error(400, 'Email is already taken');
                 }
                 if (existingUser.username === update.username) {
-                    throw { status: 400, body: 'Username is already taken.' };
+                    return error(400, 'Username is already taken');
                 }
             }
         }
@@ -59,19 +60,12 @@ export async function updateMe(update, authUser) {
         await user.save(wrapSession(session));
 
         // selectively update profile fields
+        if (update.username !== undefined) user.profile.username = update.username;
         if (update.name !== undefined) user.profile.name = update.name;
         if (update.contactNumber !== undefined) user.profile.contactNumber = update.contactNumber;
         if (update.favCuisines !== undefined) user.profile.favCuisines = update.favCuisines;
 
         await user.profile.save(wrapSession(session));
-
-        // update reviews
-        if (update.username !== undefined) {
-            await Review.updateMany(
-                { customer: user.profile._id },
-                { $set: { username: update.username }}
-            ).session(session);
-        }
 
         // send back user
         const token = generateAuthToken(user);
@@ -102,6 +96,6 @@ export async function deleteMe(user) {
         // delete user
         await user.deleteOne(wrapSession(session));
         
-        return { status: 200, body: user.toObject() };
+        return success(user.toObject());
     });
 }

@@ -1,6 +1,8 @@
 export default {
-  setupFilesAfterEnv: ['./tests/setup.js'],
   testEnvironment: 'node',
-  transform: {},
+  transform: {
+    '^.+\\.js$': ['babel-jest', { presets: ['@babel/preset-env'] }],
+  },
+  setupFilesAfterEnv: ['./tests/setup.js'],
   verbose: true,
 };

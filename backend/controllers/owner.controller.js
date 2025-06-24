@@ -2,6 +2,7 @@ import * as ownerService from '../services/owner.service.js';
 import * as authService from '../services/auth.service.js';
 import { validatePatch, validatePassword } from '../validators/ownerProfile.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
+import { wrapError } from '../helpers/response.js';
 
 export async function getMe(req, res) {
     const { status, body } = await ownerService.getMe(req.user._id);
@@ -10,7 +11,7 @@ export async function getMe(req, res) {
 
 export async function getStaffWithStepUp(req, res) {
     const { error } = validatePassword(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
 
     const { status, body } = await ownerService.getStaffWithStepUp(req.user, req.body.password);
     return res.status(status).json(body);
@@ -19,7 +20,7 @@ export async function getStaffWithStepUp(req, res) {
 export async function updateMe(req, res) {
     // validate request
     const { error } = validatePatch(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
 
     const { token, status, body } = await ownerService.updateMe(req.body, req.user);
     if (token) setAuthCookie(res, token);

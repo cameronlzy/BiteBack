@@ -10,6 +10,7 @@ import _ from 'lodash';
 import crypto from 'crypto';
 import config from 'config';
 import sendEmail from '../helpers/sendEmail.js';
+import { error, success } from '../helpers/response.js';
 
 export async function forgotPassword(credentials) {
     // find user
@@ -18,7 +19,7 @@ export async function forgotPassword(credentials) {
         : { username: credentials.username }
     );
 
-    if (!user) return { status: 400, body: 'User with this email/username does not exist' };
+    if (!user) return error(400, 'User with this email/username does not exist');
     
     const token = crypto.randomBytes(32).toString('hex');
     const hash = crypto.createHash('sha256').update(token).digest('hex');
@@ -30,7 +31,7 @@ export async function forgotPassword(credentials) {
     const resetLink = `${config.get('frontendLink')}/reset-password/${token}`;
     await sendEmail(user.email, 'Password Reset', `Click to reset your password: ${resetLink}`);
 
-    return { status: 200, body: 'Password reset link sent to your email' };
+    return success({ message: 'Password reset link sent to your email' });
 }
 
 export async function resetPassword(data, token)  {
@@ -41,7 +42,7 @@ export async function resetPassword(data, token)  {
         resetPasswordExpires: { $gt: Date.now() },
     });
 
-    if (!user) return { status: 400, body: 'Token is invalid or expired' };
+    if (!user) return error(400, 'Token is invalid or expired');
 
     const { password } = data;
     const salt = await bcrypt.genSalt(10);
@@ -51,7 +52,7 @@ export async function resetPassword(data, token)  {
     user.resetPasswordExpires = undefined;
     await user.save();
 
-    return { status: 200, body: 'Password has been reset' };
+    return success({ message: 'Password has been reset' });
 }
 
 export async function changePassword(data, authUser) {
@@ -89,13 +90,13 @@ export async function registerCustomer(data) {
         }).session(session).lean();
         if (existingUser) {
             if (existingUser.email === data.email && existingUser.role === 'owner') {
-                throw { status: 400, body: 'Email already registered to a restaurant owner.' };
+                return error(400, 'Email already registered to a restaurant owner');
             }
             if (existingUser.email === data.email && existingUser.role === 'customer') {
-                throw { status: 400, body: 'Email already registered to a customer.' };
+                return error(400, 'Email already registered to a customer');
             }
             if (existingUser.username === data.username) {
-                throw { status: 400, body: 'Username already taken.' };
+                return error(400, 'Username already taken.');
             }
         }
 
@@ -130,13 +131,13 @@ export async function registerOwner(data) {
         }).session(session).lean();
         if (existingUser) {
             if (existingUser.email === data.email && existingUser.role === 'owner') {
-                throw { status: 400, body: 'Email already registered to a restaurant owner.' };
+                return error(400, 'Email already registered to a restaurant owner');
             }
             if (existingUser.email === data.email && existingUser.role === 'customer') {
-                throw { status: 400, body: 'Email already registered to a customer.' };
+                return error(400, 'Email already registered to a customer');
             }
             if (existingUser.username === data.username) {
-                throw { status: 400, body: 'Username already taken.' };
+                return error(400, 'Username already taken');
             }
         }
 
@@ -166,10 +167,10 @@ export async function registerOwner(data) {
 
 export async function staffLogin(credentials) {
     const staff = await Staff.findOne({ username: credentials.username });
-    if (!staff) return { status: 400, body: 'Invalid username or password' };
+    if (!staff) return error(400, 'Invalid username or password');
 
     const isValid = await bcrypt.compare(credentials.password, staff.password);
-    if (!isValid) return { status: 400, body: 'Invalid username or password' };
+    if (!isValid) return error(400, 'Invalid username or password');
 
     const token = staffGenerateAuthToken(staff);
     return { token, status: 200, body: _.pick(staff, ['_id', 'username', 'role', 'restaurant']) };
@@ -182,10 +183,10 @@ export async function verifyUserCredentials(credentials, session = undefined) {
         : { username: credentials.username }
     ).session(session);
 
-    if (!user) return { status: 400, body: 'Invalid email, username or password' };
+    if (!user) return error(400, 'Invalid email, username or password');
 
     const isValid = await bcrypt.compare(credentials.password, user.password);
-    if (!isValid) return { status: 400, body: 'Invalid email, username or password' };
+    if (!isValid) return error(400, 'Invalid email, username or password');
 
-    return { status: 200, body: user };
+    return success(user);
 }

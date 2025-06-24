@@ -3,7 +3,7 @@ name: Deploy Backend to Heroku
 on:
   push:
     branches:
-      - feature/backend-online-queue
+      - 'feature/backend-**'
 
 jobs:
   build-test-deploy:

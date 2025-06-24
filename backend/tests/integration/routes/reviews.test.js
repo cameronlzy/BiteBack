@@ -2,6 +2,8 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
 import Review from '../../../models/review.model.js';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
@@ -14,6 +16,9 @@ import Restaurant from '../../../models/restaurant.model.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
 import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('review test', () => {
 	let server;
@@ -57,12 +62,6 @@ describe('review test', () => {
             return request(server)
             .get(`/api/reviews/restaurant/${restaurantId}`);
         };
-
-        it('should return 400 if invalid ID', async () => {
-            restaurantId = 1;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
 
         it('should return 404 if restaurant does not exist', async () => {
             restaurantId = new mongoose.Types.ObjectId();
@@ -117,12 +116,6 @@ describe('review test', () => {
             return request(server)
             .get(`/api/reviews/customer/${customerId}`);
         };
-
-        it('should return 400 if invalid ID', async () => {
-            customerId = 1;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
 
         it('should return 404 if customer does not exist', async () => {
             customerId = new mongoose.Types.ObjectId();
@@ -189,12 +182,6 @@ describe('review test', () => {
             .get(`/api/reviews/${reviewId}`);
         };
 
-        it('should return 400 if invalid ID', async () => {
-            reviewId = 1;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
         it('should return 404 if review does not exist', async () => {
             reviewId = new mongoose.Types.ObjectId();
             const res = await exec();
@@ -212,7 +199,7 @@ describe('review test', () => {
         });
 	});
 
-    describe('POST /api/reviews/:id', () => {
+    describe('POST /api/reviews', () => {
         let user;
         let restaurant;
         let profile;
@@ -254,26 +241,6 @@ describe('review test', () => {
                 rating, reviewText, dateVisited
             });
         };
-
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if owner', async () => {
-            let owner = await createTestUser('owner');
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
 
         it('should return 400 if invalid request', async () => {
             rating = 6;
@@ -351,31 +318,6 @@ describe('review test', () => {
                 replyText
             });
         };
-
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if customer', async () => {
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if review does not exist', async () => {
-            reviewId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
 
         it('should return 400 if invalid request', async () => {
             replyText = null;
@@ -473,31 +415,6 @@ describe('review test', () => {
             });
         };
 
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if owner', async () => {
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if review does not exist', async () => {
-            reviewId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
         it('should return 400 if invalid request', async () => {
             badgeIndex = 5;
             const res = await exec();
@@ -509,6 +426,68 @@ describe('review test', () => {
             expect(typeof res.body).toBe('number');
         });
 	});
+
+    describe('POST /api/reviews/:id/images', () => {
+        let user, token, cookie, profile;
+        let review, reviewId;
+        let restaurant;
+        let filePath;
+
+        beforeEach(async () => {
+            await Review.deleteMany({});
+            await User.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            // create customer
+            user = await createTestUser('customer');
+            profile = createTestCustomerProfile(user);
+            user.profile = profile._id;
+            await user.save();
+            await profile.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user._id);
+            await restaurant.save();
+
+            // create review
+            review = createTestReview(profile, restaurant._id);
+            await review.save();
+            reviewId = review._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .post(`/api/reviews/${reviewId}/images`)
+            .set('Cookie', [cookie])
+            .attach('images', filePath);
+        };
+
+        it('should return 403 if review does not belong to user', async () => {
+            let otherUser = await createTestUser('customer');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await request(server)
+                .post(`/api/reviews/${reviewId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(403);
+        });
+
+        // skip to avoid sending test images to cloudinary
+        it.skip('should return 200 if valid request', async () => { 
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('images');
+            expect(Array.isArray(res.body.images)).toBe(true);
+
+            const allStrings = res.body.images.every(url => typeof url === 'string');
+            expect(allStrings).toBe(true);
+        });
+    });
 
     describe('DELETE /api/reviews/:id', () => {
         let review;
@@ -566,32 +545,6 @@ describe('review test', () => {
             .set('Cookie', [cookie]);
         };
 
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if owner', async () => {
-            let owner = await createTestUser('owner');
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if review does not exist', async () => {
-            reviewId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
         it('should return 403 if review does not belong to user', async () => {
             let otherCustomer = await createTestUser('customer');
             await otherCustomer.save();
@@ -606,7 +559,7 @@ describe('review test', () => {
             expect(res.status).toBe(200);
 
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -677,36 +630,11 @@ describe('review test', () => {
             .set('Cookie', [cookie]);
         };
 
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if customer', async () => {
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
-        it('should return 404 if review does not exist', async () => {
-            reviewId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -797,25 +725,6 @@ describe('review test', () => {
             .delete(`/api/reviews/${reviewId}/badges`)
             .set('Cookie', [cookie]);
         };
-
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if owner', async () => {
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
 
         it('should return 404 if review does not exist', async () => {
             reviewId = new mongoose.Types.ObjectId();

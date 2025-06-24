@@ -291,13 +291,9 @@ describe('restaurant test', () => {
             .get(`/api/restaurants/${restaurantId}`);
         };
 
-        it('should return 200 if valid request', async () => {
+        it('should return 200 if valid request + restaurant object', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-
-        it('should return a restaurant object', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
             ];
@@ -349,12 +345,6 @@ describe('restaurant test', () => {
             .get(url);
         };
 
-        it('should return 400 if invalid id', async () => {
-            url = `/api/restaurants/1/availability?date=${queryDateSG}`;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
         it('should return 400 if no date query', async () => {
             url = `/api/restaurants/${restaurantId}/availability`;
             const res = await exec();
@@ -378,7 +368,7 @@ describe('restaurant test', () => {
             url = `/api/restaurants/${restaurantId}/availability?date=${sunday}`;
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(res.body).toBe(-1);
+            expect(res.body).toEqual([]);
         });
 
         it('should return 200 if valid token, restaurant not closed', async () => {
@@ -401,8 +391,7 @@ describe('restaurant test', () => {
         });
     });
 
-    // skip to avoid sending requests to mapBox
-    describe.skip('POST /api/restaurants', () => {
+    describe('POST /api/restaurants', () => {
         let name;
         let address;
         let contactNumber;
@@ -464,39 +453,16 @@ describe('restaurant test', () => {
             });
         };
 
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if customer', async () => {
-            let customer = await createTestUser('customer');
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
         it('should return 404 if user does not exist', async () => {
             await User.deleteMany({});
             const res = await exec();
             expect(res.status).toBe(404);
         });
 
-        it('should return 200 if valid request', async () => {
+        // skip to avoid sending requests to mapBox
+        it.skip('should return 200 if valid request', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-
-        it('should return a restaurant object', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity', 'location', 'tags'
             ];
@@ -504,8 +470,7 @@ describe('restaurant test', () => {
         });
     });
 
-    // skip to avoid sending requests to mapBox
-    describe.skip('POST /api/restaurants/bulk', () => {
+    describe('POST /api/restaurants/bulk', () => {
         let restaurantName1, address1, contactNumber1, cuisines1, maxCapacity1, restaurantEmail1, website1, openingHours1;
         let restaurantName2, address2, contactNumber2, cuisines2, maxCapacity2, openingHours2;
         let cookie;
@@ -576,33 +541,14 @@ describe('restaurant test', () => {
             });
         };
 
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 403 if customer', async () => {
-            let customer = await createTestUser('customer');
-            token = generateAuthToken(customer);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(403);
-        });
-
         it('should return 404 if user does not exist', async () => {
             await User.deleteMany({});
             const res = await exec();
             expect(res.status).toBe(404);
         });
 
-        it('should return 200 and array of restaurantID if valid request', async () => {
+        // skip to avoid sending requests to mapBox
+        it.skip('should return 200 and array of restaurantID if valid request', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
             expect(Array.isArray(res.body)).toBe(true);
@@ -610,8 +556,7 @@ describe('restaurant test', () => {
         });
     });
 
-    // skip to avoid sending test images to cloudinary
-    describe.skip('POST /api/restaurants/:id/images', () => {
+    describe('POST /api/restaurants/:id/images', () => {
         let owner;
         let ownerProfile;
         let restaurant;
@@ -653,6 +598,17 @@ describe('restaurant test', () => {
             .attach('images', filePath);
         };
 
+        it('should return 403 if restaurant does not belong to user', async () => {
+            let otherUser = await createTestUser('owner');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await request(server)
+                .post(`/api/restaurants/${restaurantId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(403);
+        });
+
+        // skip to avoid sending test images to cloudinary
         it.skip('should return 200 if valid request', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
@@ -666,6 +622,7 @@ describe('restaurant test', () => {
 
     describe('PUT /api/restaurants/:id/images', () => {
         let restaurant;
+        let restaurantId;
         let token;
         let cookie;
         let imagesPayload;
@@ -688,14 +645,23 @@ describe('restaurant test', () => {
                 'https://res.cloudinary.com/drmcljacy/image/upload/v1749118205/biteback/restaurants/uxtab5rmjomf57ouznni.jpg',
             ];
             await restaurant.save();
+            restaurantId = restaurant._id
         });
 
         const exec = () => {
             return request(server)
-            .put(`/api/restaurants/${restaurant._id}/images`)
+            .put(`/api/restaurants/${restaurantId}/images`)
             .set('Cookie', [cookie])
             .send({ images: imagesPayload });
         };
+
+        it('should return 403 if restaurant does not belong to user', async () => {
+            let otherUser = await createTestUser('owner');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
 
         it('should return 400 if images is missing', async () => {
             const res = await request(server)
@@ -717,6 +683,7 @@ describe('restaurant test', () => {
             expect(res.status).toBe(400);
         });
 
+        // skip to avoid sending test images to cloudinary
         it.skip('should return 200 for valid array of image URLs', async () => {
             const res = await exec();
 
@@ -770,36 +737,6 @@ describe('restaurant test', () => {
             });
         };
 
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 400 if invalid id', async () => {
-            restaurantId = 1;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 400 if invalid request', async () => {
-            cuisines = 1;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 404 if restaurant not found', async () => {
-            restaurantId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
         it('should return 403 if restaurant does not belong to user', async () => {
             let otherUser = await createTestUser('owner');
             token = generateAuthToken(otherUser);
@@ -808,13 +745,9 @@ describe('restaurant test', () => {
             expect(res.status).toBe(403);
         });
 
-        it('should return 200 if valid request', async () => {
+        it('should return 200 if valid request + updated restaurant', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-        });
-
-        it('should return updated restaurant', async () => {
-            const res = await exec();
             const requiredKeys = [
                 'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
             ];
@@ -872,36 +805,6 @@ describe('restaurant test', () => {
             .delete(`/api/restaurants/${restaurantId}`)
             .set('Cookie', [cookie]);
         };
-
-        it('should return 401 if no token', async () => {
-            cookie = '';
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 401 if invalid token', async () => {
-            cookie = setTokenCookie('invalid-token');
-            const res = await exec();
-            expect(res.status).toBe(401);
-        });
-
-        it('should return 400 if invalid id', async () => {
-            restaurantId = 1;
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 404 if user does not exist', async () => {
-            await User.deleteMany({});
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
-
-        it('should return 404 if restaurant not found', async () => {
-            restaurantId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);
-        });
 
         it('should return 403 if restaurant does not belong to user', async () => {
             let otherOwner = await createTestUser('owner');

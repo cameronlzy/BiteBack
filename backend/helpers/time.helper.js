@@ -9,9 +9,14 @@ export const dateFullOnly = Joi.string()
     const dt = DateTime.fromISO(value, { setZone: true });
     if (!dt.isValid) return helpers.error('any.invalid');
     const now = DateTime.now();
-    if (dt < now) return helpers.error('date.min', { limit: now.toISO() });
+    if (dt < now) return helpers.error('custom.date.min', { limit: now.toISO() });
     return value;
-}, 'Strict full ISO datetime validation');
+}, 'Strict full ISO datetime validation')
+  .messages({
+    'any.invalid': 'Date must be a valid ISO string',
+    'string.pattern.base': 'Date must match full ISO format',
+    'custom.date.min': 'Date cannot be in the past (min: {#limit})'
+  });
 
 
 // validates full and partial iso strings
@@ -35,6 +40,8 @@ export const ISOdate = Joi.string()
     'string.isoDate': 'Date must be a valid ISO 8601 date string.',
     'any.required': 'Date is required.'
   });
+
+export const timeString = Joi.string().pattern(/^([01]\d|2[0-3]):[0-5]\d$/).message('Time must be in HH:mm format (00:00 - 23:59)');
 
 export function convertToUTCStart(isoDate) {
   return DateTime.fromISO(isoDate, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();

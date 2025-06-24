@@ -9,6 +9,7 @@ import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
 import simpleCrypto from '../helpers/encryption.helper.js';
 import bcrypt from 'bcryptjs';
+import { error, success } from '../helpers/response.js';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
@@ -20,19 +21,19 @@ export async function getMe(userId) {
             }
         })
         .select('-password').lean();
-    if (!user) return { status: 400, body: 'Owner not found.' };
-    return { status: 200, body: user };
+    if (!user) return error(400, 'Owner not found');
+    return success(user);
 }
 
 export async function getStaffWithStepUp(authUser, password) {
     // find user
     const user = await User.findById(authUser._id).populate('profile').lean();
-    if (!user) return { status: 400, body: 'Owner not found' };
+    if (!user) return error(400, 'Owner not found');
 
     // check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-        return { status: 400, body: 'Invalid password' };
+        return error(400, 'Invalid password');
     }
 
     // find restaurants
@@ -57,15 +58,15 @@ export async function getStaffWithStepUp(authUser, password) {
         })
     );
 
-    return { status: 200, body: result };
+    return success(result);
 }
 
 export async function updateMe(update, authUser) {
     return await withTransaction(async (session) => {
         // find user
         const user = await User.findById(authUser._id).populate('profile').session(session);
-        if (!user) throw { status: 404, body: 'Owner not found' };
-        if (!user.profile) throw { status: 404, body: 'Profile not found' };
+        if (!user) return error(404, 'Owner not found');
+        if (!user.profile) return error(404, 'Profile not found');
 
         // check if email or username being updated and is already taken
         const uniqueCheck = [];
@@ -80,10 +81,10 @@ export async function updateMe(update, authUser) {
 
             if (existingUser) {
                 if (existingUser.email === update.email) {
-                    throw { status: 400, body: 'Email is already taken.' };
+                    return error(400, 'Email is already taken');
                 }
                 if (existingUser.username === update.username) {
-                    throw { status: 400, body: 'Username is already taken.' };
+                    return error(400, 'Username is already taken');
                 }
             }
         }
@@ -94,6 +95,7 @@ export async function updateMe(update, authUser) {
         await user.save(wrapSession(session));
 
         // selectively update profile fields
+        if (update.username !== undefined) user.profile.username = update.username;
         if (update.companyName !== undefined) user.profile.companyName = update.companyName;
 
         await user.profile.save(wrapSession(session));
@@ -127,6 +129,6 @@ export async function deleteMe(user) {
         // delete user
         await user.deleteOne(wrapSession(session));
         
-        return { status: 200, body: user.toObject() };
+        return success(user.toObject());
     });
 }
