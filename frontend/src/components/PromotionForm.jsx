@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { useForm, FormProvider } from "react-hook-form"
 import { toast } from "react-toastify"
 import { Input } from "@/components/ui/input"
@@ -29,6 +29,7 @@ import {
 } from "./ui/select"
 import { objectComparator } from "@/utils/objectComparator"
 import { DateTime } from "luxon"
+import BackButton from "./common/BackButton"
 
 const PromotionForm = ({ user }) => {
   const navigate = useNavigate()
@@ -36,6 +37,8 @@ const PromotionForm = ({ user }) => {
   const [bannerImageFile, setBannerImageFile] = useState(null)
   const [promotion, setPromotion] = useState(null)
   const { promotionId } = useParams()
+  const location = useLocation()
+  const from = location.state?.from || "/promotions"
 
   useEffect(() => {
     if (user.role !== "owner") {
@@ -205,6 +208,7 @@ const PromotionForm = ({ user }) => {
 
   return (
     <div className="space-y-6 max-w-xl mx-auto mt-10">
+      <BackButton from={from} />
       <FormProvider {...form}>
         <form
           onSubmit={handleSubmit(onSubmit)}

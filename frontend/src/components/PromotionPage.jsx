@@ -40,7 +40,16 @@ const PromotionPage = ({ user }) => {
     ) {
       const segments = normalizedFrom.split("/")
       const maybeRestaurantId = segments[2]
-      if (maybeRestaurantId === promotion.restaurant._id) {
+      if (maybeRestaurantId === restaurant._id) {
+        setNormalizedFrom("/promotions")
+      }
+    } else if (
+      normalizedFrom.startsWith("/promotions/edit/") &&
+      promotion?._id
+    ) {
+      const segments = normalizedFrom.split("/")
+      const maybePromotionId = segments[3]
+      if (maybePromotionId === promotion._id) {
         setNormalizedFrom("/promotions")
       }
     }
@@ -80,7 +89,7 @@ const PromotionPage = ({ user }) => {
     )
     if (confirmed) {
       try {
-        await deletePromotion(promotion._id)
+        await deletePromotion(_id)
         toast.success("Promotion deleted")
         window.location = "/promotions"
       } catch (err) {
@@ -108,6 +117,9 @@ const PromotionPage = ({ user }) => {
     )
   }
 
+  const { _id, title, startDate, endDate, mainImage, restaurant, description } =
+    promotion
+
   const isAvailable = isPromotionAvailable(promotion)
   const hasStarted = hasPromotionStarted(promotion)
 
@@ -131,24 +143,22 @@ const PromotionPage = ({ user }) => {
       ) : null}
       <Card className="mt-4 shadow-xl border relative">
         <CardHeader className="flex flex-row items-start justify-between gap-4">
-          <CardTitle className="text-2xl font-bold">
-            {promotion.title}
-          </CardTitle>
+          <CardTitle className="text-2xl font-bold">{title}</CardTitle>
           <Link
-            to={`/restaurants/${promotion.restaurant._id}`}
+            to={`/restaurants/${restaurant._id}`}
             state={{ from: location.pathname }}
           >
             <Button variant="outline" size="sm">
-              View Restaurant
+              To {restaurant.name || "Restaurant"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
-            {promotion.mainImage && (
+            {mainImage && (
               <img
-                src={promotion.mainImage}
+                src={mainImage}
                 alt="Main"
                 className="w-full rounded-md object-cover border"
               />
@@ -174,7 +184,9 @@ const PromotionPage = ({ user }) => {
                     <DropdownMenuItem
                       className="hover:bg-gray-100 text-gray-800"
                       onClick={() =>
-                        navigate(`/promotions/edit/${promotion._id}`)
+                        navigate(`/promotions/edit/${_id}`, {
+                          state: { from: location.pathname },
+                        })
                       }
                     >
                       Edit Promotion
@@ -191,26 +203,30 @@ const PromotionPage = ({ user }) => {
             )}
           </div>
 
-          <p className="text-gray-700 text-base font-bold whitespace-pre-line">
-            {promotion.restaurant.name || "Restaurant Name Not Available"}
-          </p>
-          <p className="text-gray-700 text-base whitespace-pre-line">
-            {promotion.description}
+          <p className="text-gray-700 text-base font-semibold whitespace-pre-line">
+            {description}
           </p>
 
           <div className="text-sm text-gray-600 space-y-1">
-            <p>
-              <strong>Start:</strong>{" "}
-              {DateTime.fromISO(promotion.startDate).toLocaleString(
-                readableTimeSettings
-              )}
-            </p>
-            <p>
-              <strong>End:</strong>{" "}
-              {DateTime.fromISO(promotion.endDate).toLocaleString(
-                readableTimeSettings
-              )}
-            </p>
+            {!hasStarted ? (
+              <p>
+                Starting on{" "}
+                <strong>
+                  {DateTime.fromISO(startDate).toLocaleString(
+                    readableTimeSettings
+                  )}
+                </strong>
+              </p>
+            ) : (
+              <p>
+                Available till{" "}
+                <strong>
+                  {DateTime.fromISO(endDate).toLocaleString(
+                    readableTimeSettings
+                  )}
+                </strong>
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

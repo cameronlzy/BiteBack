@@ -5,6 +5,7 @@ import Pagination from "./common/Pagination"
 import { toast } from "react-toastify"
 import SearchBar from "./SearchBar"
 import SortBy from "./common/SortBy"
+import LoadingSpinner from "./common/LoadingSpinner"
 
 const Promotions = ({ user }) => {
   const [promotions, setPromotions] = useState([])
@@ -18,6 +19,7 @@ const Promotions = ({ user }) => {
   const [searchInput, setSearchInput] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [triggeredSearch, setTriggeredSearch] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 
@@ -33,6 +35,7 @@ const Promotions = ({ user }) => {
       } catch {
         toast.error("Failed to fetch promotions")
       } finally {
+        setLoading(false)
         if (triggeredSearch) {
           setIsSubmitting(false)
           setTriggeredSearch(false)
@@ -72,6 +75,8 @@ const Promotions = ({ user }) => {
     { label: "End Date", value: "endDate" },
     { label: "Title", value: "title" },
   ]
+
+  if (loading) return <LoadingSpinner />
 
   return (
     <div className="w-full px-4">

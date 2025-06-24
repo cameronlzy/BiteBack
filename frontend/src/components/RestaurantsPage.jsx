@@ -8,6 +8,7 @@ import { Link } from "react-router-dom"
 import { Button } from "./ui/button"
 import { Utensils } from "lucide-react"
 import { toast } from "react-toastify"
+import LoadingSpinner from "./common/LoadingSpinner"
 
 const Restaurants = () => {
   const [restaurants, setRestaurants] = useState([])
@@ -19,6 +20,7 @@ const Restaurants = () => {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [triggeredSearch, setTriggeredSearch] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [searchInput, setSearchInput] = useState("")
   const [totalPages, setTotalPages] = useState(1)
   const [restored, setRestored] = useState(false)
@@ -81,6 +83,7 @@ const Restaurants = () => {
       } catch {
         toast.error("Failed to fetch restaurants")
       } finally {
+        setLoading(false)
         if (triggeredSearch) {
           setIsSubmitting(false)
           setTriggeredSearch(false)
@@ -122,6 +125,8 @@ const Restaurants = () => {
     { label: "Rating", value: "averageRating" },
     { label: "Number of Reviews", value: "reviewCount" },
   ]
+
+  if (loading) return <LoadingSpinner />
 
   return (
     <div className="w-full px-4">

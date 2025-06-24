@@ -27,6 +27,8 @@ import StaffControlCenter from "./components/staff/StaffControlCenter"
 import PromotionForm from "./components/PromotionForm"
 import PromotionPage from "./components/PromotionPage"
 import Promotions from "./components/Promotions"
+import OwnerPromotions from "./components/OwnerPromotions"
+import OwnerRestaurants from "./components/OwnerRestaurants"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -116,7 +118,14 @@ function App() {
                         path: "/restaurants",
                         name: "Restaurants",
                       },
-                      { type: "link", path: "/promotions", name: "Promotions" },
+                      {
+                        type: "link",
+                        path: "/promotions",
+                        name:
+                          user && user.role === "owner"
+                            ? "Manage Promotions"
+                            : "Promotions",
+                      },
                       { type: "link", path: "/me", name: "Profile" },
                     ]
               }
@@ -140,7 +149,16 @@ function App() {
             }
           />
 
-          <Route path="restaurants" element={<Restaurants />} />
+          <Route
+            path="restaurants"
+            element={
+              user && user.role === "owner" ? (
+                <OwnerRestaurants user={user} />
+              ) : (
+                <Restaurants />
+              )
+            }
+          />
           <Route path="restaurants/:id" element={<Restaurant user={user} />} />
           <Route
             path="reservation/:restaurantId"
@@ -250,7 +268,16 @@ function App() {
               />
             }
           />
-          <Route path="promotions" element={<Promotions user={user} />} />
+          <Route
+            path="promotions"
+            element={
+              user && user.role === "owner" ? (
+                <OwnerPromotions user={user} />
+              ) : (
+                <Promotions user={user} />
+              )
+            }
+          />
           <Route
             path="promotions/:promotionId"
             element={<PromotionPage user={user} />}

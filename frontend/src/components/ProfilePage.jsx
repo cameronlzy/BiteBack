@@ -12,7 +12,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom"
 import CustomerReviews from "./CustomerReviews"
 import DeleteAccountPopup from "./DeleteAccountPopup"
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import ViewStaffAccounts from "./ViewStaffAccounts"
 import OwnerPromotions from "./OwnerPromotions"
 const ProfilePage = ({ user, isLoading }) => {
@@ -95,11 +95,9 @@ const ProfilePage = ({ user, isLoading }) => {
         </div>
       )}
       {user.role === "owner" && (
-        <>
-          <OwnerRestaurants user={user} />
-          <OwnerPromotions user={user} />
+        <Fragment>
           <ViewStaffAccounts />
-        </>
+        </Fragment>
       )}
     </div>
   )

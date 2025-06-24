@@ -13,7 +13,7 @@ const PromotionCard = (promotion) => {
   const isAvailable = isPromotionAvailable(promotion)
   const hasStarted = hasPromotionStarted(promotion)
   const hasEnded = hasPromotionEnded(promotion)
-  const { _id, title, description, startDate, endDate, bannerImage } = promotion
+  const { _id, title, startDate, endDate, bannerImage, restaurant } = promotion
   const imageSrc = bannerImage || defaultRestImg
 
   return (
@@ -42,33 +42,40 @@ const PromotionCard = (promotion) => {
       </div>
 
       <div className="text-left space-y-2 w-full">
-        <CardTitle className="text-2xl font-bold">
+        <CardTitle className="text-2xl font-semibold">
           {hasEnded ? (
-            <span className="text-gray-500 line-through">{title}</span>
+            <span className="text-gray-500">{title}</span>
           ) : (
             <Link
               to={`/promotions/${_id}`}
               state={{ from: location.pathname }}
               className="text-black hover:text-gray-700 hover:underline transition-colors"
             >
-              {title}
+              {title} by {restaurant?.name}
             </Link>
           )}
         </CardTitle>
 
-        <p className="text-gray-700 text-base whitespace-pre-line line-clamp-2">
-          {description}
-        </p>
-
         <div className="text-sm text-gray-600 space-y-1">
-          <p>
-            <strong>Start:</strong>{" "}
-            {DateTime.fromISO(startDate).toLocaleString(readableTimeSettings)}
-          </p>
-          <p>
-            <strong>End:</strong>{" "}
-            {DateTime.fromISO(endDate).toLocaleString(readableTimeSettings)}
-          </p>
+          {hasEnded ? (
+            <p className="text-gray-500">This promotion has ended.</p>
+          ) : !hasStarted ? (
+            <p>
+              Starting on{" "}
+              <strong>
+                {DateTime.fromISO(startDate).toLocaleString(
+                  readableTimeSettings
+                )}
+              </strong>
+            </p>
+          ) : (
+            <p>
+              Available till{" "}
+              <strong>
+                {DateTime.fromISO(endDate).toLocaleString(readableTimeSettings)}
+              </strong>
+            </p>
+          )}
         </div>
       </div>
     </Card>
