@@ -29,7 +29,6 @@ const StaffBookings = () => {
   const fetchBookings = async () => {
     try {
       const data = await getCurrentSlotReservations(restaurantId)
-      console.log("Fetched bookings:", data)
       setBookings(data)
     } catch (ex) {
       if (!(await handle401(ex))) {
@@ -79,7 +78,7 @@ const StaffBookings = () => {
             bookings.map((b) => (
               <div
                 key={b._id}
-                className="border rounded-md p-4 mb-3 flex justify-between items-center"
+                className="border rounded-md p-4 mb-3 flex flex-col items-start text-left space-y-1"
               >
                 <div>
                   {b.status === "event" ? (
@@ -88,11 +87,9 @@ const StaffBookings = () => {
                     </React.Fragment>
                   ) : (
                     <React.Fragment>
+                      <p className="font-semibold">Name: {b.user?.name}</p>
                       <p className="font-semibold">
-                        Name:{String(b.user.name)}
-                      </p>
-                      <p className="font-semibold">
-                        Number: {String(b.user.contactNumber)}
+                        Number: {b.user.contactNumber}
                       </p>
                     </React.Fragment>
                   )}
@@ -108,7 +105,7 @@ const StaffBookings = () => {
                           "bg-muted text-muted-foreground"
                       )}
                     >
-                      {b.status}
+                      {b.status === "event" ? "Event" : "Reservation"}
                     </span>
                   </div>
                 </div>
