@@ -85,15 +85,16 @@ const PromotionPage = ({ user }) => {
 
   const handleDeletePromotion = async () => {
     const confirmed = await confirm(
-      `Are you sure you want to delete the promotion \"${promotion?.title}\"?`
+      `Are you sure you want to delete the promotion "${promotion?.title}"?`
     )
     if (confirmed) {
       try {
         await deletePromotion(_id)
         toast.success("Promotion deleted")
         window.location = "/promotions"
-      } catch (err) {
+      } catch (ex) {
         toast.error("Failed to delete promotion")
+        throw ex
       }
     }
   }

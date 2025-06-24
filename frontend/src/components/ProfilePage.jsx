@@ -1,5 +1,4 @@
 import CustomerReservations from "@/components/CustomerReservations"
-import OwnerRestaurants from "@/components/OwnerRestaurants"
 import authService from "@/services/authService"
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
@@ -14,7 +13,6 @@ import CustomerReviews from "./CustomerReviews"
 import DeleteAccountPopup from "./DeleteAccountPopup"
 import { Fragment, useState } from "react"
 import ViewStaffAccounts from "./ViewStaffAccounts"
-import OwnerPromotions from "./OwnerPromotions"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()

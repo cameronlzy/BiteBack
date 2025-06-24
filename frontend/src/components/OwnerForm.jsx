@@ -70,7 +70,7 @@ const OwnerForm = ({ onRegister, user, from }) => {
       role: "owner",
       username: user?.username || "",
       email: user?.email || "",
-      companyName: user?.companyName || "",
+      companyName: user?.profile.companyName || "",
       ...(user
         ? {}
         : {

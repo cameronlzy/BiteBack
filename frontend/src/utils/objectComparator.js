@@ -3,6 +3,16 @@ import { DateTime } from "luxon"
 
 const DATE_KEYS = ["startDate", "endDate"]
 
+const flattenUser = (user) => {
+  const { _id, profile, ...rest } = user
+  const { _id: _profileId, ...flattenedProfile } = profile
+
+  return {
+    ...rest,
+    ...flattenedProfile,
+  }
+}
+
 export const objectComparator = (original, updated) => {
   const result = {}
 

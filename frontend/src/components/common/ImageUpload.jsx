@@ -59,7 +59,7 @@ const ImageUpload = ({
       if (required) {
         try {
           await validateDimensions(file, required)
-        } catch (err) {
+        } catch {
           setErrorMessage(
             `Image must be ${required.width}x${required.height}px.`
           )

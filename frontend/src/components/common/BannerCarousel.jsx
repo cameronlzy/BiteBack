@@ -19,8 +19,9 @@ const BannerCarousel = () => {
           order: "desc",
         })
         setBanners(promotions.filter((p) => p.bannerImage))
-      } catch (err) {
-        console.error("Failed to fetch banners:", err)
+      } catch (ex) {
+        console.error("Failed to fetch banners:", ex)
+        throw ex
       }
     }
     fetchTop5Promotions()
