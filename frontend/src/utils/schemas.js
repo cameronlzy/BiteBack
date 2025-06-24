@@ -388,3 +388,67 @@ export const filterSchema = Joi.object({
   lng: Joi.number().required(),
 })
 
+export const promotionSchema = Joi.object({
+  restaurant: Joi.string()
+    .required()
+    .messages({
+      "any.required": "Restaurant is required.",
+      "string.base": "Restaurant must be a valid string.",
+    }),
+
+  title: Joi.string()
+    .min(3)
+    .required()
+    .messages({
+      "string.empty": "Title is required.",
+      "string.min": "Title must be at least 3 characters.",
+      "any.required": "Title is required.",
+    }),
+
+  description: Joi.string()
+    .min(5)
+    .required()
+    .messages({
+      "string.empty": "Description is required.",
+      "string.min": "Description must be at least 5 characters.",
+      "any.required": "Description is required.",
+    }),
+
+  startDate: Joi.string()
+    .isoDate()
+    .required()
+    .messages({
+      "string.empty": "Start date is required.",
+      "string.isoDate": "Start date must be in ISO format.",
+      "any.required": "Start date is required.",
+    }),
+
+  endDate: Joi.string()
+    .isoDate()
+    .required()
+    .messages({
+      "string.empty": "End date is required.",
+      "string.isoDate": "End date must be in ISO format.",
+      "any.required": "End date is required.",
+    }),
+
+  timeWindow: Joi.object({
+    startTime: Joi.string()
+      .pattern(/^\d{2}:\d{2}$/)
+      .allow("")
+      .optional()
+      .messages({
+        "string.pattern.base": "Start time must be in HH:mm format (e.g. 09:00).",
+        "string.base": "Start time must be a string.",
+      }),
+
+    endTime: Joi.string()
+      .pattern(/^\d{2}:\d{2}$/)
+      .allow("")
+      .optional()
+      .messages({
+        "string.pattern.base": "End time must be in HH:mm format (e.g. 17:30).",
+        "string.base": "End time must be a string.",
+      }),
+  }).optional(),
+})

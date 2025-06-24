@@ -2,6 +2,7 @@ import { Link } from "react-router-dom"
 import { Card, CardTitle } from "@/components/ui/card"
 import { MapPin } from "lucide-react"
 import StarRating from "./StarRating"
+import defaultRestImg from "@/assets/default-restaurant-img.png"
 
 const RestaurantCard = ({
   _id,
@@ -32,8 +33,7 @@ const RestaurantCard = ({
 
     return [...matching, ...nonMatching]
   })()
-  const imageSrc = images?.[0]
-  // || "https://www.opentable.com/img/restimages/2038.jpg"
+  const imageSrc = images?.[0] || defaultRestImg
 
   return (
     <Card className="w-full h-auto p-4 rounded-xl shadow-md space-y-3">
@@ -44,9 +44,7 @@ const RestaurantCard = ({
           className="w-full h-36 object-cover rounded-lg border border-gray-200 shadow-sm"
           onError={(e) => {
             e.target.onerror = null
-            e.target.src =
-              // "https://www.opentable.com/img/restimages/2038.jpg" ||
-              null
+            e.target.src = defaultRestImg
           }}
         />
       </div>

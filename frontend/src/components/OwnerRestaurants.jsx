@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import { Fragment, useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
@@ -28,22 +28,24 @@ const OwnerRestaurants = ({ user }) => {
       {restaurants.length === 0 ? (
         <p className="text-gray-500">No Owned Restaurants</p>
       ) : (
-        restaurants.map((res, index) => (
-          <Card key={index} className="mb-4 shadow">
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <span>{res.name}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleSelect(res._id)}
-                >
-                  See Details
-                </Button>
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        ))
+        <Fragment>
+          {restaurants.map((res, index) => (
+            <Card key={index} className="mb-4 shadow">
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  <span>{res.name}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSelect(res._id)}
+                  >
+                    See Details
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          ))}
+        </Fragment>
       )}
     </div>
   )

@@ -70,7 +70,7 @@ const OwnerForm = ({ onRegister, user, from }) => {
       role: "owner",
       username: user?.username || "",
       email: user?.email || "",
-      companyName: user?.companyName || "",
+      companyName: user?.profile.companyName || "",
       ...(user
         ? {}
         : {
@@ -195,7 +195,6 @@ const OwnerForm = ({ onRegister, user, from }) => {
       )
       window.location = from
     } catch (ex) {
-      console.log(ex)
       if (ex.response.status === 400) {
         const message = ex.response.data
         form.setError("username", {

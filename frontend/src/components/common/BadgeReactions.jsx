@@ -28,7 +28,7 @@ const BadgeReactions = ({
           <span
             className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 
                        bg-black text-white text-[10px] leading-none 
-                       rounded-full px-1.5 py-0.5 z-10"
+                       rounded-full px-1.5 py-0.5 z-0"
           >
             {badgeCounts?.[index] ?? 0}
           </span>

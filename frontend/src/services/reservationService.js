@@ -59,7 +59,6 @@ export async function updateReservationStatus(reservationId, status) {
 
 export async function getCurrentSlotReservations(restaurantId) {
   const response = await http.get(`${apiEndpoint}/restaurant/${restaurantId}`)
-  console.log(response)
   return response.data
 }
 

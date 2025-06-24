@@ -114,3 +114,40 @@ export const isWithinOpeningHours = (openingHours) => {
     return false;
   }
 }
+
+export const isPromotionAvailable = (promotion) => {
+  const now = DateTime.now().setZone("Asia/Singapore")
+
+  if (promotion.timeWindow?.startTime && promotion.timeWindow?.endTime) {
+    const dummyDate = { year: 1970, month: 1, day: 1 }
+
+    const nowTime = now.set(dummyDate)
+    const startTime = DateTime.fromFormat(promotion.timeWindow.startTime, "HH:mm", {
+      zone: "Asia/Singapore",
+    }).set(dummyDate)
+
+    const endTime = DateTime.fromFormat(promotion.timeWindow.endTime, "HH:mm", {
+      zone: "Asia/Singapore",
+    }).set(dummyDate)
+
+    if (endTime > startTime) {
+      return nowTime >= startTime && nowTime <= endTime
+    } else {
+      return nowTime >= startTime || nowTime <= endTime
+    }
+  }
+
+  return true
+}
+
+export const hasPromotionStarted = (promotion) => {
+  const now = DateTime.now().setZone("Asia/Singapore")
+  const start = DateTime.fromISO(promotion.startDate)
+  return now >= start
+}
+
+export const hasPromotionEnded = (promotion) => {
+  const now = DateTime.now().setZone("Asia/Singapore")
+  const end = DateTime.fromISO(promotion.endDate)
+  return end <= now
+}

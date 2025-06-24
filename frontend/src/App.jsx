@@ -24,6 +24,11 @@ import OnlineQueue from "./components/OnlineQueue"
 import ProtectedStaffRoute from "./components/common/ProtectedStaffRoute"
 import StaffLogin from "./components/staff/StaffLogin"
 import StaffControlCenter from "./components/staff/StaffControlCenter"
+import PromotionForm from "./components/PromotionForm"
+import PromotionPage from "./components/PromotionPage"
+import Promotions from "./components/Promotions"
+import OwnerPromotions from "./components/OwnerPromotions"
+import OwnerRestaurants from "./components/OwnerRestaurants"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -63,7 +68,9 @@ function App() {
         if (ex.response?.status === 401) {
           await auth.logout()
           localStorage.removeItem("role")
-          toast.info("Please re-login")
+          toast.info("Please re-login", {
+            toastId: "toast-relogin",
+          })
         } else {
           setUser(null)
           throw ex
@@ -93,6 +100,7 @@ function App() {
                         path: "/restaurants",
                         name: "Restaurants",
                       },
+                      { type: "link", path: "/promotions", name: "Promotions" },
                       { type: "link", path: "/login", name: "Login" },
                       { type: "link", path: "/register", name: "Register" },
                     ]
@@ -109,6 +117,14 @@ function App() {
                         type: "link",
                         path: "/restaurants",
                         name: "Restaurants",
+                      },
+                      {
+                        type: "link",
+                        path: "/promotions",
+                        name:
+                          user && user.role === "owner"
+                            ? "Manage Promotions"
+                            : "Promotions",
                       },
                       { type: "link", path: "/me", name: "Profile" },
                     ]
@@ -133,7 +149,16 @@ function App() {
             }
           />
 
-          <Route path="restaurants" element={<Restaurants />} />
+          <Route
+            path="restaurants"
+            element={
+              user && user.role === "owner" ? (
+                <OwnerRestaurants user={user} />
+              ) : (
+                <Restaurants />
+              )
+            }
+          />
           <Route path="restaurants/:id" element={<Restaurant user={user} />} />
           <Route
             path="reservation/:restaurantId"
@@ -233,6 +258,41 @@ function App() {
               />
             }
           />
+          <Route
+            path="promotions/new"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<PromotionForm user={user} />}
+              />
+            }
+          />
+          <Route
+            path="promotions"
+            element={
+              user && user.role === "owner" ? (
+                <OwnerPromotions user={user} />
+              ) : (
+                <Promotions user={user} />
+              )
+            }
+          />
+          <Route
+            path="promotions/:promotionId"
+            element={<PromotionPage user={user} />}
+          />
+          <Route
+            path="promotions/edit/:promotionId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<PromotionForm user={user} />}
+              />
+            }
+          />
+
           {/* <Route
             path="staff/login"
             element={

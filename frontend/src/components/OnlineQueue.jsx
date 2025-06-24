@@ -51,7 +51,6 @@ const OnlineQueue = ({ user }) => {
         const normalRestaurantQueueData = await getCurrentRestaurantQueue(
           restaurantId
         )
-        console.log(normalRestaurantQueueData)
         // const finalData = {
         //   currentQueueNumber,
         //   groupsAhead: lastNumber - currentQueueNumber,

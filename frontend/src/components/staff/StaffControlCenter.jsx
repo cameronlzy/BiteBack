@@ -1,8 +1,17 @@
 import React from "react"
+import authService from "@/services/authService"
+import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
 import StaffQueue from "./StaffQueue"
-import StaffReservations from "./StaffReservations"
+import StaffBookings from "./StaffBookings"
 
 const StaffControlCenter = ({ user }) => {
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await authService.logout()
+    navigate("/")
+  }
   return (
     <React.Fragment>
       <div className="mt-6">
@@ -11,8 +20,13 @@ const StaffControlCenter = ({ user }) => {
           Central Area for Queues and Reservation management
         </p>
       </div>
+      <div className="flex justify-end mb-4">
+        <Button variant="ghost" onClick={handleLogout}>
+          Logout
+        </Button>
+      </div>
       <StaffQueue user={user} />
-      <StaffReservations />
+      <StaffBookings />
     </React.Fragment>
   )
 }

@@ -1,5 +1,4 @@
-import CustomerReservations from "@/components/CustomerReservations"
-import OwnerRestaurants from "@/components/OwnerRestaurants"
+import UserReservation from "@/components/UserReservations"
 import authService from "@/services/authService"
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
@@ -12,7 +11,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom"
 import CustomerReviews from "./CustomerReviews"
 import DeleteAccountPopup from "./DeleteAccountPopup"
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import ViewStaffAccounts from "./ViewStaffAccounts"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
@@ -87,17 +86,16 @@ const ProfilePage = ({ user, isLoading }) => {
         </div>
       </div>
 
+      <UserReservation user={user} />
       {user.role === "customer" && (
         <div className="w-full">
-          <CustomerReservations user={user} />
           <CustomerReviews viewedCustomer={user} user={user} />
         </div>
       )}
       {user.role === "owner" && (
-        <>
-          <OwnerRestaurants user={user} />
+        <Fragment>
           <ViewStaffAccounts />
-        </>
+        </Fragment>
       )}
     </div>
   )
