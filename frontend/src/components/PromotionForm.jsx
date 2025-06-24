@@ -198,7 +198,7 @@ const PromotionForm = ({ user }) => {
       }
 
       toast.success(isEdit ? "Promotion updated" : "Promotion created")
-      navigate(`/promotions/${promotionId}`, { replace: true })
+      navigate(`/promotions`, { replace: true })
     } catch (ex) {
       toast.error("Failed to save promotion")
       console.error(ex)

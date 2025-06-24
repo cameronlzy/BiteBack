@@ -11,6 +11,11 @@ const DIMENSIONS = {
   "Banner Image": { width: 2000, height: 400 },
 }
 
+const ASPECT_RATIOS = {
+  "Main Image": 1,
+  "Banner Image": 5,
+}
+
 const ImageUpload = ({
   selectedFiles,
   setSelectedFiles,
@@ -26,15 +31,18 @@ const ImageUpload = ({
   const [dragIndex, setDragIndex] = useState(null)
   const [errorMessage, setErrorMessage] = useState("")
 
-  const validateDimensions = (file, required) => {
+  const validateDimensions = (file, requiredAspect) => {
     return new Promise((resolve, reject) => {
       const img = new Image()
       img.onload = () => {
-        if (img.width === required.width && img.height === required.height) {
+        const actualAspect = img.width / img.height
+        const expected = requiredAspect.toFixed(2)
+        const actual = actualAspect.toFixed(2)
+        if (expected === actual) {
           resolve(true)
         } else {
           reject(
-            `Image "${file.name}" must be ${required.width}x${required.height}px. Got ${img.width}x${img.height}px.`
+            `Image "${file.name}" must have aspect ratio ${expected}. Got ${actual}`
           )
         }
       }
@@ -58,10 +66,10 @@ const ImageUpload = ({
       const required = DIMENSIONS[title]
       if (required) {
         try {
-          await validateDimensions(file, required)
+          await validateDimensions(file, ASPECT_RATIOS[title])
         } catch {
           setErrorMessage(
-            `Image must be ${required.width}x${required.height}px.`
+            `Image must have an aspect ratio of ${ASPECT_RATIOS[title]} to 1 (Width to Height).`
           )
           continue
         }
@@ -123,7 +131,16 @@ const ImageUpload = ({
     <div className="space-y-4 mb-4">
       <FormLabel>
         {title} (Max {maxFiles})
+        {DIMENSIONS[title] &&
+          ` - ${DIMENSIONS[title].width}x${DIMENSIONS[title].height}px recommended`}
       </FormLabel>
+      {DIMENSIONS[title] && (
+        <div className="text-sm text-left text-muted-foreground">
+          {" "}
+          Image must have an aspect ratio of {ASPECT_RATIOS[title]} to 1 (Width
+          to Height).
+        </div>
+      )}
 
       <div
         ref={dropRef}
@@ -154,12 +171,7 @@ const ImageUpload = ({
           </label>
         </div>
         <p className="text-sm text-gray-500 mt-2">
-          {message ||
-            `Or drag and drop images here${
-              DIMENSIONS[title]
-                ? `. Required size: ${DIMENSIONS[title].width}x${DIMENSIONS[title].height}px`
-                : ""
-            }`}
+          {message || "Drag and Drop images here"}
         </p>
       </div>
 
