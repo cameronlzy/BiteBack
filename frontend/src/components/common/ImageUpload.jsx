@@ -6,28 +6,71 @@ import { toast } from "react-toastify"
 const MAX_FILE_SIZE_MB = 5
 const ACCEPTED_TYPES = ["image/jpeg", "image/png"]
 
+const DIMENSIONS = {
+  "Main Image": { width: 600, height: 600 },
+  "Banner Image": { width: 2000, height: 400 },
+}
+
 const ImageUpload = ({
   selectedFiles,
   setSelectedFiles,
   index = 0,
   message,
   firstRequired,
+  title = "Upload Images",
+  maxFiles = 5,
 }) => {
   const inputId = `image-upload-${index}`
   const dropRef = useRef(null)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const [dragIndex, setDragIndex] = useState(null)
+  const [errorMessage, setErrorMessage] = useState("")
 
-  const validateFiles = (files) => {
-    return Array.from(files).filter((file) => {
+  const validateDimensions = (file, required) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        if (img.width === required.width && img.height === required.height) {
+          resolve(true)
+        } else {
+          reject(
+            `Image "${file.name}" must be ${required.width}x${required.height}px. Got ${img.width}x${img.height}px.`
+          )
+        }
+      }
+      img.onerror = reject
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  const validateFiles = async (files) => {
+    const valid = []
+
+    for (const file of Array.from(files)) {
       const isValidSize = file.size <= MAX_FILE_SIZE_MB * 1024 * 1024
       const isValidType = ACCEPTED_TYPES.includes(file.type)
+
       if (!isValidSize || !isValidType) {
         toast.error(`${file.name} is invalid. Use JPEG/PNG ≤ 5MB.`)
-        return false
+        continue
       }
-      return true
-    })
+
+      const required = DIMENSIONS[title]
+      if (required) {
+        try {
+          await validateDimensions(file, required)
+        } catch (err) {
+          setErrorMessage(
+            `Image must be ${required.width}x${required.height}px.`
+          )
+          continue
+        }
+      }
+
+      valid.push(file)
+    }
+
+    return valid
   }
 
   const dedupeFiles = (newFiles) => {
@@ -43,18 +86,18 @@ const ImageUpload = ({
       }
     }
 
-    return unique.slice(0, 5)
+    return unique.slice(0, maxFiles)
   }
 
-  const handleFileDrop = (e) => {
+  const handleFileDrop = async (e) => {
     e.preventDefault()
     setIsDraggingOver(false)
-    const valid = validateFiles(e.dataTransfer.files)
+    const valid = await validateFiles(e.dataTransfer.files)
     setSelectedFiles(dedupeFiles(valid))
   }
 
-  const handleFileChange = (e) => {
-    const valid = validateFiles(e.target.files)
+  const handleFileChange = async (e) => {
+    const valid = await validateFiles(e.target.files)
     setSelectedFiles(dedupeFiles(valid))
     e.target.value = null
   }
@@ -78,7 +121,9 @@ const ImageUpload = ({
 
   return (
     <div className="space-y-4 mb-4">
-      <FormLabel>Upload Images (Max 5)</FormLabel>
+      <FormLabel>
+        {title} (Max {maxFiles})
+      </FormLabel>
 
       <div
         ref={dropRef}
@@ -109,19 +154,26 @@ const ImageUpload = ({
           </label>
         </div>
         <p className="text-sm text-gray-500 mt-2">
-          {message || "Or drag and drop images here"}
+          {message ||
+            `Or drag and drop images here${
+              DIMENSIONS[title]
+                ? `. Required size: ${DIMENSIONS[title].width}x${DIMENSIONS[title].height}px`
+                : ""
+            }`}
         </p>
       </div>
 
       {firstRequired && selectedFiles.length === 0 && (
         <p className="text-sm text-red-500">
-          At least one image is required for thumbnail
+          {errorMessage || "At least one image is required"}
         </p>
       )}
 
       {selectedFiles.length > 0 && (
         <div>
-          <p className="text-sm font-medium mt-3">Preview (Drag to Reorder)</p>
+          <p className="text-sm font-medium mt-3">
+            Preview {maxFiles > 1 && "(Drag to Reorder)"}
+          </p>
           <div className="flex gap-2 mt-2 flex-wrap">
             {selectedFiles.map((file, index) => (
               <div

@@ -14,6 +14,7 @@ import CustomerReviews from "./CustomerReviews"
 import DeleteAccountPopup from "./DeleteAccountPopup"
 import { useState } from "react"
 import ViewStaffAccounts from "./ViewStaffAccounts"
+import OwnerPromotions from "./OwnerPromotions"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -96,6 +97,7 @@ const ProfilePage = ({ user, isLoading }) => {
       {user.role === "owner" && (
         <>
           <OwnerRestaurants user={user} />
+          <OwnerPromotions user={user} />
           <ViewStaffAccounts />
         </>
       )}

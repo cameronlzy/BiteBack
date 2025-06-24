@@ -1,4 +1,7 @@
-import isEqual from 'lodash.isequal'
+import isEqual from "lodash.isequal"
+import { DateTime } from "luxon"
+
+const DATE_KEYS = ["startDate", "endDate"]
 
 export const objectComparator = (original, updated) => {
   const result = {}
@@ -10,20 +13,20 @@ export const objectComparator = (original, updated) => {
   if (!original || !updated) return updated || {}
 
   Object.entries(original).forEach(([key, value]) => {
-    if (key in updated && !isEqual(value, updated[key])) {
-      result[key] = updated[key]
+    if (key in updated) {
+      let v1 = value
+      let v2 = updated[key]
+
+      if (DATE_KEYS.includes(key)) {
+        v1 = DateTime.fromISO(value).toISO()
+        v2 = DateTime.fromISO(v2).toISO()
+      }
+
+      if (!isEqual(v1, v2)) {
+        result[key] = updated[key]
+      }
     }
   })
 
   return result
 }
-
-const flattenUser = (user) => {
-  const { _id, profile = {}, ...rest } = user;
-  const { _id: _profileId, ...flattenedProfile } = profile;
-
-  return {
-    ...rest,
-    ...flattenedProfile,
-  };
-};

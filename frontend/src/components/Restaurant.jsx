@@ -22,7 +22,7 @@ import {
 import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
-import { DateTime } from "luxon"
+import defaultRestImg from "@/assets/default-restaurant-img.png"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -70,21 +70,13 @@ const Restaurant = ({ user }) => {
     fetchRestaurant()
   }, [id])
 
-  useEffect(() => {
-    console.log(restaurant)
-    console.log("NOW:", DateTime.now().toFormat("HH:mm"))
-    console.log("TODAY:", DateTime.now().weekdayLong.toLowerCase())
-    console.log("Opening hours:", restaurant?.openingHours)
-    console.log("Within hours:", isWithinOpeningHours(restaurant?.openingHours))
-  }, [restaurant])
-
   const handleRestaurantDelete = async (id) => {
     const confirmed = await confirm(
       `Are you sure you want to delete the restaurant ${restaurant.name}?`
     )
     if (confirmed) {
       await deleteRestaurant(id)
-      toast.success("Deleted!")
+      toast.success("Deleted")
       window.location = "/restaurants"
     }
   }
@@ -127,19 +119,12 @@ const Restaurant = ({ user }) => {
           state={{ from: location.pathname }}
         >
           <img
-            src={
-              images?.[0]
-              // images.length > 0
-
-              // ? images[0]
-              // : "https://www.opentable.com/img/restimages/2038.jpg"
-            }
+            src={images?.length > 0 ? images[0] : defaultRestImg}
             alt={name}
             className="w-full h-full object-cover"
             onError={(ex) => {
               ex.target.onerror = null
-              // ex.target.src =
-              //   "https://www.opentable.com/img/restimages/2038.jpg"
+              ex.target.src = defaultRestImg
             }}
           />
           <div className="absolute inset-0 bg-black/40 p-4 flex flex-col justify-end items-start space-y-2">

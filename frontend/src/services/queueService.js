@@ -16,7 +16,6 @@ export async function getCurrentCustomerQueue(queueId) {
 
 export async function getCurrentRestaurantQueue(restaurantId) {
     const { data } = await http.get(`${apiEndpoint}/restaurant/${restaurantId}`)
-    console.log(data)
     return data
     // return [{
     //     currentQueueNumber: 7,
@@ -53,11 +52,10 @@ export const createQueueEventSource = (queueId, onStatusUpdate) => {
    `${apiEndpoint}/stream`, {
     withCredentials: true  
   }
-  );
+  )
 
   eventSource.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log('Received queue update:', data);
+    const data = JSON.parse(event.data)
 
     if (data.queueEntry === queueId) {
       onStatusUpdate(event);
@@ -66,21 +64,21 @@ export const createQueueEventSource = (queueId, onStatusUpdate) => {
         toast.success("Your turn has come! Please proceed to the counter.", {
           autoClose: false,
           closeOnClick: false
-        });
+        })
       }
     }
   };
 
   eventSource.onerror = (error) => {
-    console.error('EventSource error:', error);
-    eventSource.close();
+    console.error('EventSource error:', error)
+    eventSource.close()
   };
 
-  return eventSource;
+  return eventSource
 };
 
 export const closeEventSource = (eventSource) => {
   if (eventSource) {
-    eventSource.close();
+    eventSource.close()
   }
 };

@@ -83,6 +83,8 @@ const ReservationForm = ({ user }) => {
     fetchExistingReservations()
   }, [user])
 
+  // Work on When to When appear also
+
   useEffect(() => {
     async function fetchRestaurant() {
       try {

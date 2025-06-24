@@ -195,7 +195,6 @@ const OwnerForm = ({ onRegister, user, from }) => {
       )
       window.location = from
     } catch (ex) {
-      console.log(ex)
       if (ex.response.status === 400) {
         const message = ex.response.data
         form.setError("username", {

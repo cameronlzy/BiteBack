@@ -24,6 +24,9 @@ import OnlineQueue from "./components/OnlineQueue"
 import ProtectedStaffRoute from "./components/common/ProtectedStaffRoute"
 import StaffLogin from "./components/staff/StaffLogin"
 import StaffControlCenter from "./components/staff/StaffControlCenter"
+import PromotionForm from "./components/PromotionForm"
+import PromotionPage from "./components/PromotionPage"
+import Promotions from "./components/Promotions"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -63,7 +66,9 @@ function App() {
         if (ex.response?.status === 401) {
           await auth.logout()
           localStorage.removeItem("role")
-          toast.info("Please re-login")
+          toast.info("Please re-login", {
+            toastId: "toast-relogin",
+          })
         } else {
           setUser(null)
           throw ex
@@ -93,6 +98,7 @@ function App() {
                         path: "/restaurants",
                         name: "Restaurants",
                       },
+                      { type: "link", path: "/promotions", name: "Promotions" },
                       { type: "link", path: "/login", name: "Login" },
                       { type: "link", path: "/register", name: "Register" },
                     ]
@@ -110,6 +116,7 @@ function App() {
                         path: "/restaurants",
                         name: "Restaurants",
                       },
+                      { type: "link", path: "/promotions", name: "Promotions" },
                       { type: "link", path: "/me", name: "Profile" },
                     ]
               }
@@ -233,6 +240,32 @@ function App() {
               />
             }
           />
+          <Route
+            path="promotions/new"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<PromotionForm user={user} />}
+              />
+            }
+          />
+          <Route path="promotions" element={<Promotions user={user} />} />
+          <Route
+            path="promotions/:promotionId"
+            element={<PromotionPage user={user} />}
+          />
+          <Route
+            path="promotions/edit/:promotionId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<PromotionForm user={user} />}
+              />
+            }
+          />
+
           {/* <Route
             path="staff/login"
             element={

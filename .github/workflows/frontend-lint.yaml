@@ -2,9 +2,13 @@ name: Lint Frontend Codebase
 
 on:
   push:
-    branches: [main, feature/frontend-online-queue]
+    branches:
+      - "main"
+      - "feature/**"
   pull_request:
-    branches: [main, feature/frontend-online-queue]
+    branches:
+      - "main"
+      - "feature/**"
 
 jobs:
   eslint:
