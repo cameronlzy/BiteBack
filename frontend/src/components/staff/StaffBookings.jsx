@@ -78,54 +78,52 @@ const StaffBookings = () => {
             bookings.map((b) => (
               <div
                 key={b._id}
-                className="border rounded-md p-4 mb-3 flex flex-col items-start text-left space-y-1"
+                className="border rounded-md p-4 mb-3 flex justify-between items-start"
               >
-                <div>
+                <div className="flex flex-col text-left space-y-1">
                   {b.status === "event" ? (
-                    <React.Fragment>
-                      <p className="font-semibold">Booked By Owner</p>
-                    </React.Fragment>
+                    <p className="font-semibold">Booked By Owner</p>
                   ) : (
-                    <React.Fragment>
+                    <>
                       <p className="font-semibold">Name: {b.user?.name}</p>
                       <p className="font-semibold">
                         Number: {b.user.contactNumber}
                       </p>
-                    </React.Fragment>
+                    </>
                   )}
                   <p className="text-sm text-muted-foreground">
                     Number of Guests: {b.pax}
                   </p>
-                  <div className="mt-1">
-                    <span
-                      className={cn(
-                        badgeVariants({ variant: "outline" }),
-                        "rounded-full px-3",
-                        statusColor[b.status] ||
-                          "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {b.status === "event" ? "Event" : "Reservation"}
-                    </span>
-                  </div>
+                  <span
+                    className={cn(
+                      badgeVariants({ variant: "outline" }),
+                      "rounded-full px-3 w-fit",
+                      statusColor[b.status] || "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
+                  </span>
                 </div>
-                {b.status === "booked" && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleStatusUpdate(b._id, "completed")}
-                    >
-                      Mark Completed
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleStatusUpdate(b._id, "no-show")}
-                    >
-                      Mark No-Show
-                    </Button>
-                  </div>
-                )}
+
+                <div className="flex flex-col gap-2 items-center">
+                  {b.status === "booked" && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => handleStatusUpdate(b._id, "completed")}
+                      >
+                        Mark Completed
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleStatusUpdate(b._id, "no-show")}
+                      >
+                        Mark No-Show
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             ))
           )}
