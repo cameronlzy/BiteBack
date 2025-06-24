@@ -7,15 +7,23 @@ import CustomerProfile from '../models/customerProfile.model.js';
 // import VisitHistory from '../models/visitHistory.model.js';
 import { deleteImagesFromDocument } from './image.service.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
+import { error, success } from '../helpers/response.js';
 
 export async function getReviewsByRestaurant(restaurantId, authUser) {
     // check if restaurant exists
     const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
-    if (!restaurant) return { status: 404, body: 'Restaurant not found' };
+    if (!restaurant) return error(404, 'Restaurant not found');
 
     // get reviews by restaurant
-    let reviews = await Review.find({ restaurant: restaurant._id }).lean();
-    if (Array.isArray(reviews) && reviews.length === 0) return { status: 200, body: reviews };
+    let reviews = await Review.find({ restaurant: restaurant._id }).populate('customer', 'username').lean();
+    if (Array.isArray(reviews) && reviews.length === 0) return success(reviews);
+    reviews = reviews.map(r => {
+        return {
+            ...r,
+            username: r.customer.username,
+            customer: r.customer._id
+        };
+    });
 
     // get badges count
     reviews = await getBadgesCount(reviews);
@@ -23,17 +31,24 @@ export async function getReviewsByRestaurant(restaurantId, authUser) {
     // get user badge votes
     if (authUser) reviews = await getUserBadgeVotes(reviews, authUser);
 
-    return { status: 200, body: reviews };
+    return success(reviews);
 }
 
 export async function getReviewsByCustomer(customerId, authUser) {
     // find customer profile
     const customer = await CustomerProfile.findById(customerId);
-    if (!customer) return { status: 404, body: 'Customer profile not found' };
+    if (!customer) return error(404, 'Customer profile not found');
 
     // get reviews by customer
-    let reviews = await Review.find({ customer: customerId }).lean();
-    if (Array.isArray(reviews) && reviews.length === 0) return { status: 200, body: reviews };
+    let reviews = await Review.find({ customer: customerId }).populate('customer', 'username').lean();
+    if (Array.isArray(reviews) && reviews.length === 0) return success(reviews);
+    reviews = reviews.map(r => {
+        return {
+            ...r,
+            username: r.customer.username,
+            customer: r.customer._id
+        };
+    });
 
     // get badges count
     reviews = await getBadgesCount(reviews);
@@ -41,14 +56,16 @@ export async function getReviewsByCustomer(customerId, authUser) {
     // get user badge votes
     if (authUser) reviews = await getUserBadgeVotes(reviews, authUser);
 
-    return { status: 200, body: reviews };
+    return success(reviews);
 }
 
 export async function getReviewById(reviewId) {
     // get review
-    const review = await Review.findById(reviewId).lean();
-    if (!review) return { status: 404, body: 'Review not found.' };
-    return { status: 200, body: review };
+    const review = await Review.findById(reviewId).populate('customer', 'username').lean();
+    if (!review) return error(404, 'Review not found');
+    review.username = review.customer.username;
+    review.customer = review.customer._id;
+    return success(review);
 }
 
 export async function createReview(data, user) {
@@ -57,13 +74,17 @@ export async function createReview(data, user) {
         const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
         review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
         review.customer = user.profile;
-        review.username = user.username;
         await review.save(wrapSession(session));
 
         // update restaurant ratings
         await updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
 
-        return { status: 200, body: review.toObject() };
+        const returnedReview = {
+            ...review.toObject(),
+            username: user.username
+        };
+
+        return success(returnedReview);
     });
 }
 
@@ -74,14 +95,18 @@ export async function createReply(data, review, authUser) {
         replyText: data.replyText
     };
     await review.save();
+    const returnedReview = {
+        ...review.toObject(),
+        username: authUser.username
+    };
 
-    return { status: 200, body: review.toObject() };
+    return success(returnedReview);
 }
 
 export async function addBadge(data, reviewId, authUser) {
     // find review
     const review = await Review.findById(reviewId).lean();
-    if (!review) return { status: 404, body: 'Review with this ID not found' };
+    if (!review) return error(404, 'Review with this ID not found');
 
     // check if customer has made a badgeVote for this review
     const badgeVote = await ReviewBadgeVote.findOne({
@@ -103,7 +128,7 @@ export async function addBadge(data, reviewId, authUser) {
         await newBadgeVote.save();
     }
 
-    return { status: 200, body: data.badgeIndex };
+    return success(data.badgeIndex);
 }
 
 export async function deleteReview(review) {
@@ -111,7 +136,7 @@ export async function deleteReview(review) {
         // delete the review and associations
         await deleteReviewAndAssociations(review, session);
 
-        return { status: 200, body: review.toObject() };
+        return success(review.toObject());
     });
 }
 
@@ -120,24 +145,24 @@ export async function deleteReply(review) {
     review.reply = undefined;
     await review.save();
 
-    return { status: 200, body: review.toObject() };
+    return success(review.toObject());
 }
 
 export async function deleteBadge(reviewId, authUser) {
     // find review
     const review = await Review.findById(reviewId).lean();
-    if (!review) return { status: 404, body: 'Review with this ID not found' };
+    if (!review) return error(404, 'Review with this ID not found');
 
     // find badgeVote
     const badgeVote = await ReviewBadgeVote.findOne({
         customer: authUser.profile,
         review: review._id
     });
-    if (!badgeVote) return { status: 404, body: 'Vote does not exist' };
+    if (!badgeVote) return error(404, 'Vote does not exist');
     const badgeIndex = badgeVote.badgeIndex;
     await badgeVote.deleteOne();
 
-    return { status: 200, body: badgeIndex };
+    return success(badgeIndex);
 }
 
 // utlity services

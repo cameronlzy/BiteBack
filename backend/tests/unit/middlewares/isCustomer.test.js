@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 import isCustomer from '../../../middleware/isCustomer.js';
 
@@ -11,7 +12,7 @@ describe('isCustomer middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
   });
@@ -22,7 +23,7 @@ describe('isCustomer middleware', () => {
     isCustomer(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('Access denied: Only customers allowed');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Access denied: Only customers allowed'));
     expect(next).not.toHaveBeenCalled();
   });
 

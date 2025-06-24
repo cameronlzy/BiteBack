@@ -1,27 +1,28 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { error, success } from '../helpers/response.js';
 
 export async function addImage(docModel, docId, uploadedFile, imageField = 'images') {
-    const imageUrl = uploadedFile.path;
+  const imageUrl = uploadedFile.path;
 
-    const doc = await docModel.findById(docId);
-    if (!doc) return { status: 404, body: `${docModel.modelName} not found` };
+  const doc = await docModel.findById(docId);
+  if (!doc) return error(404, `${docModel.modelName} not found`);
 
-    doc[imageField] = imageUrl;
-    await doc.save();
+  doc[imageField] = imageUrl;
+  await doc.save();
 
-    return { status: 200, body: doc.toObject() };
+  return success(doc.toObject());
 }
 
 export async function addImages(docModel, docId, uploadedFiles, imageField = 'images') {
-    const imageUrls = uploadedFiles.map(file => file.path);
+  const imageUrls = uploadedFiles.map(file => file.path);
 
-    const doc = await docModel.findById(docId);
-    if (!doc) return { status: 404, body: `${docModel.modelName} not found` };
+  const doc = await docModel.findById(docId);
+  if (!doc) return error(404, `${docModel.modelName} not found`);
 
-    doc[imageField].push(...imageUrls);
-    await doc.save();
+  doc[imageField].push(...imageUrls);
+  await doc.save();
 
-    return { status: 200, body: doc.toObject() };
+  return success(doc.toObject());
 }
 
 export async function deleteImagesFromDocument(doc, imageField = 'images') {

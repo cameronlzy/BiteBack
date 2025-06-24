@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 jest.unstable_mockModule('../../../models/queueEntry.model.js', () => ({
   default: {
@@ -20,7 +21,7 @@ describe('authorizedQueueEntryStaff middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
 
@@ -37,7 +38,7 @@ describe('authorizedQueueEntryStaff middleware', () => {
     await authorizedQueueEntryStaff(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith('QueueEntry not found');
+    expect(res.json).toHaveBeenCalledWith(wrapError('QueueEntry not found'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -56,7 +57,7 @@ describe('authorizedQueueEntryStaff middleware', () => {
     await authorizedQueueEntryStaff(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('Staff cannot access QueueEntry');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Staff cannot access QueueEntry'));
     expect(next).not.toHaveBeenCalled();
   });
 

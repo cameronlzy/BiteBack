@@ -4,6 +4,7 @@ import User from '../models/user.model.js';
 import OwnerProfile from '../models/ownerProfile.model.js';
 import Review from '../models/review.model.js';
 import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
+import Promotion from '../models/promotion.model.js';
 import Staff from '../models/staff.model.js';
 import { DateTime } from 'luxon';
 import * as reservationService from '../services/reservation.service.js';
@@ -14,6 +15,7 @@ import _ from 'lodash';
 import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.service.js';
 import { geocodeAddress } from '../helpers/geocode.js';
 import { escapeRegex } from '../helpers/regex.helper.js';
+import { error, success } from '../helpers/response.js';
 
 export async function searchRestaurants(filters) {
   const { search, page, limit, sortBy, order } = filters;
@@ -66,16 +68,13 @@ export async function searchRestaurants(filters) {
   ]);
 
   const totalCount = countResult[0]?.total || 0;
-  return { 
-    status: 200, 
-    body: {
-      totalCount,
-      page,
-      limit,
-      totalPages: Math.ceil(totalCount / limit),
-      restaurants
-    }
-  };
+  return success({
+    totalCount,
+    page,
+    limit,
+    totalPages: Math.ceil(totalCount / limit),
+    restaurants
+  });
 }
 
 export async function discoverRestaurants(filters) {
@@ -141,20 +140,20 @@ export async function discoverRestaurants(filters) {
   // filter open now
   if (openNow) restaurants = filterOpenRestaurants(restaurants);
 
-  return { status: 200, body: restaurants }
+  return success(restaurants);
 }
 
 export async function getRestaurantById(restaurantId) { 
   // find restaurant
   const restaurant = await Restaurant.findById(restaurantId).lean();
-  if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
-  return { status: 200, body: restaurant };
+  if (!restaurant) return error(404, 'Restaurant not found');
+  return success(restaurant);
 }
 
 export async function getAvailability(restaurantId, query) {
   // find restaurant
   const restaurant = await Restaurant.findById(restaurantId).select('+_id').lean();
-  if (!restaurant) throw { status: 404, message: 'Restaurant not found.' };
+  if (!restaurant) return error(404, 'Restaurant not found');
 
   // get reservations on query date
   const reservations = await reservationService.getReservationsByRestaurantByDate(restaurant._id, query.date);
@@ -162,7 +161,7 @@ export async function getAvailability(restaurantId, query) {
   // create time slots
   const SGTdate = DateTime.fromISO(query.date, { zone: 'Asia/Singapore' });
   const timeSlots = createSlots(restaurant.openingHours, SGTdate);
-  if (Array.isArray(timeSlots) && timeSlots.length === 0) return { status: 200, body: -1 };
+  if (Array.isArray(timeSlots) && timeSlots.length === 0) return success([]);
 
   // calculate availability for each slot
   const availabilityMap = {};
@@ -172,10 +171,10 @@ export async function getAvailability(restaurantId, query) {
     if (availabilityMap[slotTime]) availabilityMap[slotTime] -= pax;
   });
 
-  return { status: 200, body: timeSlots.map(slot => ({
+  return success(timeSlots.map(slot => ({
     time: slot,
     available: Math.max(0, availabilityMap[slot])
-  })) };
+  })));
 }
 
 export async function createRestaurant(authUser, data) {
@@ -184,14 +183,14 @@ export async function createRestaurant(authUser, data) {
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session);
-    if (!user) throw { status: 404, body: 'User not found' };
-    if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
+    if (!user) return error(404, 'User not found');
+    if (!user.profile) return error(404, 'Owner Profile not found');
 
     // commit transaction
     user.profile.restaurants.push(restaurant._id);
     await user.profile.save(wrapSession(session));
 
-    return { status: 200, body: restaurant.toObject() };
+    return success(restaurant.toObject());
   });
 }
 
@@ -206,12 +205,12 @@ export async function createRestaurantBulk(authUser, data) {
 
     // update owner
     const user = await User.findById(authUser._id).populate('profile').session(session);
-    if (!user) throw { status: 404, body: 'User not found' };
-    if (!user.profile) throw { status: 404, body: 'Owner Profile not found' };
+    if (!user) return error(404, 'User not found');
+    if (!user.profile) return error(404, 'Owner Profile not found');
     user.profile.restaurants = restaurantIds;
     await user.profile.save(wrapSession(session));
 
-    return { status: 200, body: restaurantIds };
+    return success(restaurantIds);
   });
 }
 
@@ -230,7 +229,7 @@ export async function updateRestaurantImages(restaurant, newImageUrls) {
   restaurant.images = newImageUrls;
   await restaurant.save();
 
-  return { status: 200, body: restaurant.toObject().images };
+  return success(restaurant.toObject().images);
 }
 
 export async function updateRestaurant(restaurant, update) {
@@ -250,25 +249,25 @@ export async function updateRestaurant(restaurant, update) {
   }
   
   await restaurant.save();
-  return { status: 200, body: restaurant.toObject() };
+  return success(restaurant.toObject());
 }
 
 export async function deleteRestaurant(restaurant, authUser) {
   return await withTransaction(async (session) => {
     // get ownerProfile 
     const user = await User.findById(authUser._id).session(session).lean();
-    if (!user) throw { status: 404, body: 'User not found.' };
-    if (!user.profile) throw { status: 404, body: 'Owner Profile not found.' };
+    if (!user) return error(404, 'User not found');
+    if (!user.profile) return error(404, 'Owner Profile not found');
     
     // updating owner profile
     const profile = await OwnerProfile.findByIdAndUpdate(user.profile,
         { $pull: { restaurants: restaurant._id }}, { runValidators: true }
     ).session(session);
-    if (!profile) throw { status: 404, body: 'Owner Profile not found.' };
+    if (!profile) return error(404, 'Owner Profile not found');
 
     await deleteRestaurantAndAssociations(restaurant, session);
 
-    return { status: 200, body: restaurant };
+    return success(restaurant);
   });
 }
 
@@ -313,7 +312,9 @@ export async function deleteRestaurantAndAssociations(restaurant, session = unde
   await Promise.all([
     Reservation.deleteMany({ restaurant: restaurant._id }).session(session),
     Review.deleteMany({ restaurant: restaurant._id }).session(session),
-    ReviewBadgeVote.deleteMany({ restaurant: restaurant._id }).session(session)
+    ReviewBadgeVote.deleteMany({ restaurant: restaurant._id }).session(session),
+    Staff.deleteMany({ restaurant: restaurant._id }).session(session),
+    Promotion.deleteMany({ restaurant: restaurant._id }).session(session)
   ]);
 
   // delete restaurant after children deleted

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 jest.unstable_mockModule('../../../models/review.model.js', () => ({
   default: {
@@ -20,7 +21,7 @@ describe('authorizedReviewRestaurantOwner middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
 
@@ -36,7 +37,7 @@ describe('authorizedReviewRestaurantOwner middleware', () => {
     await authorizedReviewRestaurantOwner(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith('Review not found');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Review not found'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -55,7 +56,7 @@ describe('authorizedReviewRestaurantOwner middleware', () => {
     await authorizedReviewRestaurantOwner(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith("Review's restaurant does not belong to owner");
+    expect(res.json).toHaveBeenCalledWith(wrapError("Review's restaurant does not belong to owner"));
     expect(next).not.toHaveBeenCalled();
   });
 

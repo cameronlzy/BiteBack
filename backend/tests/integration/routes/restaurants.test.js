@@ -368,7 +368,7 @@ describe('restaurant test', () => {
             url = `/api/restaurants/${restaurantId}/availability?date=${sunday}`;
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(res.body).toBe(-1);
+            expect(res.body).toEqual([]);
         });
 
         it('should return 200 if valid token, restaurant not closed', async () => {

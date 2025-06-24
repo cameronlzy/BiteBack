@@ -3,6 +3,7 @@ import Restaurant from '../models/restaurant.model.js';
 import { DateTime } from 'luxon';
 import { convertToUTC } from '../helpers/time.helper.js';
 import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
+import { error, success } from '../helpers/response.js';
 
 // retired, might use for analytics
 // exports.getReservationsByOwner = async (ownerId, query) => {
@@ -23,7 +24,7 @@ import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
 
 export async function getReservationsByRestaurant(restaurant) {
     const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
-    if (!timeSlotStartUTC) return { status: 200, body: [] };
+    if (!timeSlotStartUTC) return success([]);
     const reservations = await Reservation.find({
         restaurant: restaurant._id,
         reservationDate: { 
@@ -41,7 +42,7 @@ export async function getReservationsByRestaurant(restaurant) {
             }
         };
     });
-    return { status: 200, body: mappedReservations };
+    return success(mappedReservations);
 }
 
 export async function getUserReservations(userId) {
@@ -51,24 +52,24 @@ export async function getUserReservations(userId) {
         reservationDate: { $gte: Date.now() }
     }).sort({ restaurant: 1 }).lean();
 
-    return { status: 200, body: reservations };
+    return success(reservations);
 }
 
 export async function getSingleReservation(reservation) {
     // check if expired
     if (reservation.reservationDate < Date.now()) {
-        return { status: 404, body: 'Reservation expired' };
+        return error(404, 'Reservation expired');
     }
-    return { status: 200, body: reservation.toObject() };
+    return success(reservation.toObject());
 }
 
 export async function createReservation(user, data) {
     // get restaurant
     const restaurant = await Restaurant.findById(data.restaurant).lean();
-    if (!restaurant) return { status: 404, body: 'Restaurant not found.' };
+    if (!restaurant) return error(404, 'Restaurant not found');
 
     // if owner, can only reserve their own restaurants
-    if (user.role === 'owner' && !restaurant.owner.equals(user._id)) return { status: 403, body: 'Owners can only reserve their own restaurants.' };
+    if (user.role === 'owner' && !restaurant.owner.equals(user._id)) return error(403, 'Owners can only reserve their own restaurants');
 
     // check availability
     const SGTdate = DateTime.fromISO(data.reservationDate, { zone: 'Asia/Singapore' });
@@ -80,7 +81,7 @@ export async function createReservation(user, data) {
     currentReservations.forEach(({ pax }) => {
         bookedSlots += pax;
     });
-    if (bookedSlots + data.pax > restaurant.maxCapacity) return { status: 409, body: 'Restaurant is fully booked at this time slot.' };
+    if (bookedSlots + data.pax > restaurant.maxCapacity) return error(409, 'Restaurant is fully booked at this time slot');
 
     // create reservation
     const reservation = new Reservation({
@@ -92,14 +93,14 @@ export async function createReservation(user, data) {
         status: user.role === 'owner' ? 'event' : 'booked'
     });
     await reservation.save();
-    return { status: 200, body: reservation.toObject() };
+    return success(reservation.toObject());
 }
 
 export async function updateReservationStatus(reservation, status) {
     reservation.status = status;
     await reservation.save();
     reservation.restaurant = reservation.restaurant._id;
-    return { status: 200, body: reservation.toObject() };
+    return success(reservation.toObject());
 }
 
 export async function updateReservation(reservation, update) {
@@ -132,7 +133,7 @@ export async function updateReservation(reservation, update) {
             bookedSlots -= reservation.pax;
         }
         if (bookedSlots + newPax > restaurant.maxCapacity) {
-            return { status: 409, body: 'Restaurant is fully booked at this time slot.' };
+            return error(409, 'Restaurant is fully booked at this time slot');
         }
     }
 
@@ -147,13 +148,13 @@ export async function updateReservation(reservation, update) {
     }
 
     await reservation.save();
-    return { status: 200, body: reservation.toObject() };
+    return success(reservation.toObject());
 }
 
 export async function deleteReservation(reservation) {
     // delete reservation
     await Reservation.deleteOne({ _id: reservation._id });
-    return { status: 200, body: reservation.toObject() };
+    return success(reservation.toObject());
 }
 
 export async function getReservationsByRestaurantByDate(restaurantId, date) {

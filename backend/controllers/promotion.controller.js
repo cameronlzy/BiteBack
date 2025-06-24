@@ -2,10 +2,11 @@ import * as promotionService from '../services/promotion.service.js';
 import * as imageService from '../services/image.service.js';
 import Promotion from '../models/promotion.model.js';
 import { validatePromotion, validateSearch, validatePatch } from '../validators/promotion.validator.js';
+import { wrapError } from '../helpers/response.js';
 
 export async function searchPromotions(req, res) {
     const { error } = validateSearch(req.query);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
 
     const { search, page, limit, sortBy, order } = req.query;
 
@@ -33,7 +34,7 @@ export async function getPromotionById(req, res) {
 
 export async function createPromotion(req, res) {
     const { error } = validatePromotion(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
 
     const { status, body } = await promotionService.createPromotion(req.body);
     return res.status(status).json(body);
@@ -44,7 +45,7 @@ export async function addPromotionImages(req, res) {
     const bannerImage = req.files?.bannerImage?.[0];
 
     if (!mainImage || !bannerImage) {
-        return res.status(400).send('Both mainImage and bannerImage are required.');
+        return res.status(400).json(wrapError('Both mainImage and bannerImage are required.'));
     }
     
     const [mainResult, bannerResult] = await Promise.all([
@@ -53,7 +54,7 @@ export async function addPromotionImages(req, res) {
     ]);
 
     const failed = [mainResult, bannerResult].find(res => res?.status !== 200);
-    if (failed) return res.status(400).send(failed.body);
+    if (failed) return res.status(400).json(failed.body);
 
     return res.status(200).json({
         mainImage: mainResult.body.mainImage,
@@ -65,7 +66,7 @@ export async function updatePromotionImages(req, res) {
     const mainImage = req.files?.mainImage?.[0];
     const bannerImage = req.files?.bannerImage?.[0];
 
-    if (!mainImage && !bannerImage) return res.status(400).send('Please provide at least one image');
+    if (!mainImage && !bannerImage) return res.status(400).json(wrapError('Please provide at least one image'));
 
     const updateOps = {};
     if (mainImage) updateOps.mainImage = mainImage;
@@ -77,7 +78,7 @@ export async function updatePromotionImages(req, res) {
     ]);
 
     const failed = [mainResult, bannerResult].find(res => res?.status !== 200);
-    if (failed) return res.status(400).send(failed.body);
+    if (failed) return res.status(400).json(failed.body);
 
     const body = {};
     if (mainResult) body.mainImage = mainResult.body.mainImage;
@@ -87,7 +88,7 @@ export async function updatePromotionImages(req, res) {
 
 export async function updatePromotion(req, res) {
     const { error } = validatePatch(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
 
     const { status, body } = await promotionService.updatePromotion(req.promotion, req.body);
     return res.status(status).json(body);

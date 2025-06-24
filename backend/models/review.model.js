@@ -6,7 +6,6 @@ const reviewSchema = new mongoose.Schema({
         ref: 'CustomerProfile',
         required: true
     },
-    username: { type: String, minlength: 2, required: true },
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Restaurant',

@@ -2,6 +2,7 @@ import * as customerService from '../services/customer.service.js';
 import * as authService from '../services/auth.service.js';
 import { validatePatch } from '../validators/customerProfile.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
+import { wrapError } from '../helpers/response.js';
 
 export async function getMe(req, res) {
     const { status, body } = await customerService.getMe(req.user._id);
@@ -16,7 +17,7 @@ export async function publicProfile(req, res) {
 export async function updateMe(req, res) {
     // validate request
     const { error } = validatePatch(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
 
     const { token, body, status } = await customerService.updateMe(req.body, req.user);
     if (token) setAuthCookie(res, token);

@@ -3,6 +3,7 @@ import Restaurant from '../models/restaurant.model.js';
 import { DateTime } from 'luxon';
 import { escapeRegex } from '../helpers/regex.helper.js';
 import _ from 'lodash';
+import { error, success } from '../helpers/response.js';
 
 export async function searchPromotions(filters) {
     const { search, page, limit, sortBy, order } = filters;
@@ -78,16 +79,13 @@ export async function searchPromotions(filters) {
     ]);
 
     const totalCount = countResult[0]?.total || 0;
-    return {
-        status: 200,
-        body: {
-            totalCount,
-            page,
-            limit,
-            totalPages: Math.ceil(totalCount/ limit),
-            promotions
-        }
-    };
+    return success({
+        totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount/ limit),
+        promotions
+    });
 }
 
 export async function getPromotionsByOwner(authUser) {
@@ -96,14 +94,14 @@ export async function getPromotionsByOwner(authUser) {
     const promotions = await Promotion.find({
         restaurant: { $in: restaurantIds }
     }).populate('restaurant', 'name').lean();
-    return { status: 200, body: promotions };
+    return success(promotions);
 }
 
 export async function getPromotionById(promotionId) {
     const promotion = await Promotion.findById(promotionId).populate('restaurant', 'name').lean();
-    if (!promotion) return { status: 404, body: 'Promotion not found' };
-    if (promotion.endDate < new Date() || !promotion.isActive) return { status: 404, body: 'Promotion expired' };
-    return { status: 200, body: promotion };
+    if (!promotion) return error(404, 'Promotion not found');
+    if (promotion.endDate < new Date() || !promotion.isActive) return error(404, 'Promotion expired');
+    return success(promotion);
 }
 
 export async function createPromotion(data) {
@@ -126,10 +124,14 @@ export async function createPromotion(data) {
     }
     await promotion.save();
 
-    return { status: 200, body: promotion.toObject() };
+    return success(promotion.toObject());
 }
 
 export async function updatePromotion(promotion, update) {
+    if (promotion.endDate < Date.now()) {
+        return error(400, 'Promotion has expired');
+    }
+
     for (const key in update) {
         if (key === 'startDate') {
             promotion.startDate = DateTime.fromISO(update.startDate, { zone: 'Asia/Singapore' }).toUTC().toJSDate();
@@ -154,11 +156,15 @@ export async function updatePromotion(promotion, update) {
     }
 
     await promotion.save();
-    return { status: 200, body: promotion.toObject() };
+    return success(promotion.toObject());
 }
 
 export async function deletePromotion(promotion) {
+    if (promotion.endDate < Date.now()) {
+        return error(400, 'Promotion has expired');
+    }
+
     const deletedPromotion = promotion.toObject();
     await promotion.deleteOne();
-    return { status: 200, body: deletedPromotion };
+    return success(deletedPromotion);
 }

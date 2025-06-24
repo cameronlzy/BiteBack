@@ -559,7 +559,7 @@ describe('review test', () => {
             expect(res.status).toBe(200);
 
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -634,7 +634,7 @@ describe('review test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'rating', 'reviewText', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import mongoose from 'mongoose';
+import { wrapError } from '../../../helpers/response.js';
 
 import validateObjectId from '../../../middleware/validateObjectId.js';
 
@@ -12,7 +13,7 @@ describe('validateObjectId middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
   });
@@ -23,7 +24,7 @@ describe('validateObjectId middleware', () => {
     validateObjectId(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.send).toHaveBeenCalledWith('Invalid ID');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Invalid ID'));
     expect(next).not.toHaveBeenCalled();
 
     mongoose.Types.ObjectId.isValid.mockRestore();

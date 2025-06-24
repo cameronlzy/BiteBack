@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 import isStaff from '../../../middleware/isStaff.js';
 
@@ -11,7 +12,7 @@ describe('isStaff middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
   });
@@ -22,7 +23,7 @@ describe('isStaff middleware', () => {
     isStaff(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('Access denied: Only staff allowed');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Access denied: Only staff allowed'));
     expect(next).not.toHaveBeenCalled();
   });
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 jest.unstable_mockModule('../../../models/promotion.model.js', () => ({
   default: {
@@ -26,7 +27,7 @@ describe('authorizedPromotionOwner middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
   });
@@ -37,7 +38,7 @@ describe('authorizedPromotionOwner middleware', () => {
     await authorizedPromotionOwner(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith('Promotion not found');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Promotion not found'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -48,7 +49,7 @@ describe('authorizedPromotionOwner middleware', () => {
     await authorizedPromotionOwner(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith('Restaurant not found');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Restaurant not found'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -59,7 +60,7 @@ describe('authorizedPromotionOwner middleware', () => {
     await authorizedPromotionOwner(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('Promotion not owned by owner');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Promotion not owned by owner'));
     expect(next).not.toHaveBeenCalled();
   });
 

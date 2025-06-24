@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 jest.unstable_mockModule('../../../models/reservation.model.js', () => ({
   default: {
@@ -19,7 +20,7 @@ describe('authorizedReservationUser middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
     Reservation.findById.mockReset();
@@ -31,7 +32,7 @@ describe('authorizedReservationUser middleware', () => {
     await authorizedReservationUser(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith('Reservation not found');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Reservation not found'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -44,7 +45,7 @@ describe('authorizedReservationUser middleware', () => {
     await authorizedReservationUser(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('Reservation does not belong to user');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Reservation does not belong to user'));
     expect(next).not.toHaveBeenCalled();
   });
 

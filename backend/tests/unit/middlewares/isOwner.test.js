@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 import isOwner from '../../../middleware/isOwner.js';
 
@@ -11,7 +12,7 @@ describe('isOwner middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
   });
@@ -22,7 +23,7 @@ describe('isOwner middleware', () => {
     isOwner(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('Access denied: Only owners allowed');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Access denied: Only owners allowed'));
     expect(next).not.toHaveBeenCalled();
   });
 

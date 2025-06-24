@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 jest.unstable_mockModule('../../../models/review.model.js', () => ({
   default: {
@@ -19,7 +20,7 @@ describe('authorizedReviewCustomer middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
     Review.findById.mockReset();
@@ -31,7 +32,7 @@ describe('authorizedReviewCustomer middleware', () => {
     await authorizedReviewCustomer(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith('Review not found');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Review not found'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -44,7 +45,7 @@ describe('authorizedReviewCustomer middleware', () => {
     await authorizedReviewCustomer(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('Review does not belong to customer');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Review does not belong to customer'));
     expect(next).not.toHaveBeenCalled();
   });
 

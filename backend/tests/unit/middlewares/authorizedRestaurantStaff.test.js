@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 jest.unstable_mockModule('../../../models/restaurant.model.js', () => ({
   default: {
@@ -19,7 +20,7 @@ describe('authorizedRestaurantStaff middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
     Restaurant.findById.mockReset();
@@ -31,7 +32,7 @@ describe('authorizedRestaurantStaff middleware', () => {
     await authorizedRestaurantStaff(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith('Restaurant not found');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Restaurant not found'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -44,7 +45,7 @@ describe('authorizedRestaurantStaff middleware', () => {
     await authorizedRestaurantStaff(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('Staff is not linked to restaurant');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Staff is not linked to restaurant'));
     expect(next).not.toHaveBeenCalled();
   });
 

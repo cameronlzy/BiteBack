@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 jest.unstable_mockModule('jsonwebtoken', () => ({
   default: {
@@ -28,7 +29,7 @@ describe('auth middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
     config.get.mockReturnValue('fake_jwt_key');
@@ -38,7 +39,7 @@ describe('auth middleware', () => {
     auth(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.send).toHaveBeenCalledWith('Access denied');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Access denied'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -49,7 +50,7 @@ describe('auth middleware', () => {
     auth(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.send).toHaveBeenCalledWith('Invalid token');
+    expect(res.json).toHaveBeenCalledWith(wrapError('Invalid token'));
     expect(next).not.toHaveBeenCalled();
   });
 

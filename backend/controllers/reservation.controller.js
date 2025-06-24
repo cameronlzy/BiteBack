@@ -1,3 +1,4 @@
+import { wrapError } from '../helpers/response.js';
 import * as reservationService from '../services/reservation.service.js';
 import { validateReservation, validatePatch, validateStatus } from '../validators/reservation.validator.js';
 
@@ -19,7 +20,7 @@ export async function getSingleReservation(req, res) {
 export async function createReservation(req, res) {
   // validate request
   const { error } = validateReservation(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
+  if (error) return res.status(400).json(wrapError(error.details[0].message));
 
   const { status, body } = await reservationService.createReservation(req.user, req.body);
   return res.status(status).json(body);
@@ -27,7 +28,7 @@ export async function createReservation(req, res) {
 
 export async function updateReservationStatus(req, res) {
   const { error } = validateStatus(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
+  if (error) return res.status(400).json(wrapError(error.details[0].message));
 
   const { status, body } = await reservationService.updateReservationStatus(req.reservation, req.body.status);
   return res.status(status).json(body);
@@ -36,7 +37,7 @@ export async function updateReservationStatus(req, res) {
 export async function updateReservation(req, res) {
   // validate new reservation
   const { error } = validatePatch(req.body);
-  if (error) return res.status(400).send(error.details[0].message);
+  if (error) return res.status(400).json(wrapError(error.details[0].message));
 
   const { status, body } = await reservationService.updateReservation(req.reservation, req.body);
   return res.status(status).json(body);

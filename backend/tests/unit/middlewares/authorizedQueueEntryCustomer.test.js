@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { wrapError } from '../../../helpers/response.js';
 
 jest.unstable_mockModule('../../../models/queueEntry.model.js', () => ({
   default: {
@@ -19,7 +20,7 @@ describe('authorizedQueueEntryCustomer middleware', () => {
     };
     res = {
       status: jest.fn().mockReturnThis(),
-      send: jest.fn(),
+      json: jest.fn(),
     };
     next = jest.fn();
   });
@@ -30,7 +31,7 @@ describe('authorizedQueueEntryCustomer middleware', () => {
     await authorizedQueueEntryCustomer(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.send).toHaveBeenCalledWith('QueueEntry not found');
+    expect(res.json).toHaveBeenCalledWith(wrapError('QueueEntry not found'));
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -43,7 +44,7 @@ describe('authorizedQueueEntryCustomer middleware', () => {
     await authorizedQueueEntryCustomer(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.send).toHaveBeenCalledWith('QueueEntry does not belong to customer');
+    expect(res.json).toHaveBeenCalledWith(wrapError('QueueEntry does not belong to customer'));
     expect(next).not.toHaveBeenCalled();
   });
 

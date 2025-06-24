@@ -5,11 +5,12 @@ import _ from 'lodash';
 import { findQueueGroup } from '../helpers/queue.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import { notifyClient } from '../helpers/sse.helper.js';
+import { error, success } from '../helpers/response.js';
 
 export async function joinQueue(authUser, data) {
     return await withTransaction(async (session) => {
         const restaurant = await Restaurant.findById(data.restaurant).session(session).lean();
-        if (!restaurant.queueEnabled) return { status: 403, body: 'Online queue is currently disabled' };
+        if (!restaurant.queueEnabled) return error(403, 'Online queue is currently disabled');
 
         const queueEntry = new QueueEntry(_.pick(data,['restaurant', 'pax']));
         queueEntry.customer = authUser.profile;
@@ -17,14 +18,14 @@ export async function joinQueue(authUser, data) {
         queueEntry.queueNumber = await assignQueueNumber(data.restaurant, queueEntry.queueGroup, session);
         await queueEntry.save(wrapSession(session));
 
-        return { status: 200, body: queueEntry.toObject() };
+        return success(queueEntry.toObject());
     });
 }
 
 export async function leaveQueue(queueEntry) {
     const entryData = queueEntry.toObject();
     await queueEntry.deleteOne();
-    return { status: 200, body: entryData };
+    return success(entryData);
 }
 
 export async function getRestaurantQueue(restaurant) {
@@ -44,7 +45,7 @@ export async function getRestaurantQueue(restaurant) {
         };
     }
 
-    return { status: 200, body: queueSummary };
+    return success(queueSummary);
 }
 
 export async function getRestaurantQueueOverview(restaurant) {
@@ -84,7 +85,7 @@ export async function getRestaurantQueueOverview(restaurant) {
         }));
     }
 
-    return { status: 200, body: queueSummary };
+    return success(queueSummary);
 }
 
 export async function callNext(restaurant, queueGroup) {
@@ -92,7 +93,7 @@ export async function callNext(restaurant, queueGroup) {
         const counter = await QueueCounter.findOne(
             { restaurant: restaurant._id, queueGroup }, null
         ).session(session);
-        if (!counter) throw { status: 204, body: null }; // empty queue
+        if (!counter) return success(null, 204); // empty queue
 
         const nextEntry = await QueueEntry.findOne({
             restaurant: restaurant._id,
@@ -103,7 +104,7 @@ export async function callNext(restaurant, queueGroup) {
         .sort({ queueNumber: 1 })
         .session(session);
 
-        if (!nextEntry) throw { status: 204, body: null }; // empty queue
+        if (!nextEntry) return success(null, 204); // empty queue
         nextEntry.status = 'called';
         nextEntry.statusTimestamps.called = new Date();
         await nextEntry.save(wrapSession(session));
@@ -114,7 +115,7 @@ export async function callNext(restaurant, queueGroup) {
         // notify customer
         notifyClient(nextEntry.customer.toString(), { queueEntry: nextEntry._id, status: 'called' });
 
-        return { status: 200, body: nextEntry };
+        return success(nextEntry);
     });
 }
 
@@ -124,13 +125,13 @@ export async function updateQueueEntryStatus(queueEntry, update) {
     queueEntry.restaurant = queueEntry.restaurant._id;
     await queueEntry.save();
     notifyClient(queueEntry.customer.toString(), { queueEntry: queueEntry._id, status: queueEntry.status });
-    return { status: 200, body: queueEntry.toObject() };
+    return success(queueEntry.toObject());
 }
 
 export async function toggleQueue(restaurant, enabled) {
     restaurant.queueEnabled = enabled;
     await restaurant.save();
-    return { status: 200, body: { queueEnabled: restaurant.queueEnabled } };
+    return success({ queueEnabled: restaurant.queueEnabled });
 }
 
 // helper service
