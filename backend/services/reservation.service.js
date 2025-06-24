@@ -31,14 +31,21 @@ export async function getReservationsByRestaurant(restaurant) {
             $gte: timeSlotStartUTC.toJSDate(),
             $lte: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate()
         }
-    }).populate('user').lean();
+    }).populate({
+        path: 'user',
+        select: '',
+        populate: {
+            path: 'profile',
+            select: 'name contactNumber'
+        }
+    }).lean();
 
     const mappedReservations = reservations.map(reservation => {
         return {
             ...reservation,
             user: {
-                name: reservation.user?.name,
-                contactNumber: reservation.user?.contactNumber
+                name: reservation.user?.profile?.name,
+                contactNumber: reservation.user?.profile?.contactNumber
             }
         };
     });
