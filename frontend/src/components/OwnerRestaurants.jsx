@@ -2,9 +2,11 @@ import { Fragment, useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
+import { AnimatePresence, motion } from "framer-motion"
 
 const OwnerRestaurants = ({ user }) => {
   const [restaurants, setRestaurants] = useState([])
+  const [showRestaurants, setShowRestaurants] = useState(false)
   const navigate = useNavigate()
   useEffect(() => {
     if (user.role !== "owner") {
@@ -21,9 +23,6 @@ const OwnerRestaurants = ({ user }) => {
   return (
     <div className="max-w-2xl mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-6">Restaurants Owned</h2>
-      <Button className="mb-4" onClick={() => navigate("/restaurants/new")}>
-        Add New Restaurant
-      </Button>
 
       {restaurants.length === 0 ? (
         <p className="text-gray-500">No Owned Restaurants</p>

@@ -13,6 +13,7 @@ import CustomerReviews from "./CustomerReviews"
 import DeleteAccountPopup from "./DeleteAccountPopup"
 import { Fragment, useState } from "react"
 import ViewStaffAccounts from "./ViewStaffAccounts"
+import OwnerPromotions from "./OwnerPromotions"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()
