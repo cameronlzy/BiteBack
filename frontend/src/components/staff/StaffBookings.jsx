@@ -81,7 +81,11 @@ const StaffBookings = () => {
                 className="border rounded-md p-4 mb-3 flex justify-between items-center"
               >
                 <div>
-                  {b.status !== "event" && (
+                  {b.status === "event" ? (
+                    <React.Fragment>
+                      <p className="font-semibold">Booked By Owner</p>
+                    </React.Fragment>
+                  ) : (
                     <React.Fragment>
                       <p className="font-semibold">
                         Name:{String(b.user.name)}
@@ -91,6 +95,9 @@ const StaffBookings = () => {
                       </p>
                     </React.Fragment>
                   )}
+                  <p className="text-sm text-muted-foreground">
+                    Number of Guests: {b.pax}
+                  </p>
                   <div className="mt-1">
                     <span
                       className={cn(
