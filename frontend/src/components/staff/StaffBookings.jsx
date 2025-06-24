@@ -80,12 +80,22 @@ const StaffBookings = () => {
                 key={b._id}
                 className="border rounded-md p-4 mb-3 flex justify-between items-start"
               >
+<<<<<<< HEAD
                 <div className="flex flex-col text-left space-y-1">
                   {b.status === "event" ? (
                     <p className="font-semibold">Booked By Owner</p>
                   ) : (
                     <>
                       <p className="font-semibold">Name: {b.user?.name}</p>
+=======
+                <div>
+                  {b.status === "event" ? (
+                    <React.Fragment>
+                      <p className="font-semibold">Booked By Owner</p>
+                    </React.Fragment>
+                  ) : (
+                    <React.Fragment>
+>>>>>>> 8c2686d (Pax Included)
                       <p className="font-semibold">
                         Number: {b.user.contactNumber}
                       </p>
@@ -123,6 +133,24 @@ const StaffBookings = () => {
                       </Button>
                     </>
                   )}
+<<<<<<< HEAD
+=======
+                  <p className="text-sm text-muted-foreground">
+                    Number of Guests: {b.pax}
+                  </p>
+                  <div className="mt-1">
+                    <span
+                      className={cn(
+                        badgeVariants({ variant: "outline" }),
+                        "rounded-full px-3",
+                        statusColor[b.status] ||
+                          "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {b.status}
+                    </span>
+                  </div>
+>>>>>>> 8c2686d (Pax Included)
                 </div>
               </div>
             ))
