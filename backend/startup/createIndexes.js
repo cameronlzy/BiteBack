@@ -1,12 +1,13 @@
 import mongoose from 'mongoose';
-import User from '../models/user.model.js';
-import CustomerProfile from '../models/customerProfile.model.js';
-import OwnerProfile from '../models/ownerProfile.model.js';
-import Review from '../models/review.model.js';
-import Restaurant from '../models/restaurant.model.js';
-import Reservation from '../models/reservation.model.js';
-import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import config from 'config';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const modelsFolder = path.resolve(__dirname, '../models');
 
 async function createAllIndexes() {
   try {
@@ -18,27 +19,19 @@ async function createAllIndexes() {
 
     console.log('Connected to MongoDB');
 
-    // Create indexes for each model
-    await User.createIndexes();
-    console.log('User indexes created');
+    const modelFiles = fs.readdirSync(modelsFolder).filter(file => file.endsWith('.js'));
 
-    await CustomerProfile.createIndexes();
-    console.log('CustomerProfile indexes created');
+    for (const file of modelFiles) {
+      const modelPath = path.join(modelsFolder, file);
+      const { default: model } = await import(modelPath);
 
-    await OwnerProfile.createIndexes();
-    console.log('OwnerProfile indexes created');
-
-    await Review.createIndexes();
-    console.log('Review indexes created');
-
-    await Restaurant.createIndexes();
-    console.log('Restaurant indexes created');
-
-    await Reservation.createIndexes();
-    console.log('Reservation indexes created');
-
-    await ReviewBadgeVote.createIndexes();
-    console.log('ReviewBadgeVote indexes created');
+      if (model?.createIndexes instanceof Function) {
+        await model.createIndexes();
+        console.log(`${model.modelName} indexes created`);
+      } else {
+        console.warn(`Skipped ${file}: no createIndexes() found on default export`);
+      }
+    }
 
     console.log('All indexes created successfully');
   } catch (err) {
@@ -49,5 +42,4 @@ async function createAllIndexes() {
   }
 }
 
-// Run the script
 createAllIndexes();

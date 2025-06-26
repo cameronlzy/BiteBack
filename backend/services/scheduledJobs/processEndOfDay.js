@@ -1,7 +1,12 @@
-import { queueCleanup } from "./queueCleanup.js";
-import { processVisitHistory } from "./visitHistoryProcessor.js";
-import Restaurant from "../../models/restaurant.model.js";
-import { getOpeningHoursToday } from "../../helpers/restaurant.helper.js";
+import { queueCleanup } from './queueCleanup.js';
+import { generateAnalytics } from './generateAnalytics.js';
+import { processVisitHistory } from './visitHistoryProcessor.js';
+import { cleanupPastReservations } from './cleanupPastReservations.js'
+import Restaurant from '../../models/restaurant.model.js';
+import DailyAnalytics from '../../models/dailyAnalytics.model.js';
+import { getOpeningHoursToday } from '../../helpers/restaurant.helper.js';
+import mongoose from 'mongoose';
+import { DateTime } from 'luxon';
 
 export async function processEndOfDay() {
     const now = new Date();
@@ -25,9 +30,34 @@ export async function processEndOfDay() {
         const nowTotalMinutes = currentHour * 60 + currentMinute;
 
         if (nowTotalMinutes >= closingTotalMinutes) {
-            await queueCleanup(restaurant); // assign to deletedEntries
-            await processVisitHistory(restaurant);
-            // add in statistics processing
+            const nowLuxon = DateTime.fromJSDate(now).setZone('Asia/Singapore');
+            const todaySGT = nowLuxon.startOf('day');
+            const todayUTC = todaySGT.toUTC().toJSDate();
+            const session = await mongoose.startSession();
+
+            await session.withTransaction(async () => {
+                const existing = await DailyAnalytics.findOne({
+                    restaurant: restaurant._id,
+                    date: todayUTC
+                }).session(session);
+
+                if (existing) return;
+
+                // analytics processing
+                const analyticsData = await generateAnalytics(restaurant, session);
+
+                // adds to visit history
+                await processVisitHistory(restaurant, session);
+
+                // clears queue
+                await queueCleanup(restaurant, session);
+
+                // clears reservations
+                await cleanupPastReservations(restaurant, session);
+
+                // save doc
+                await DailyAnalytics.create([analyticsData], { session });
+            });
         }
     }
 }
