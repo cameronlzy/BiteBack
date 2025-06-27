@@ -3,12 +3,12 @@ name: Lint Frontend Codebase
 on:
   push:
     branches:
-      - "main"
-      - "feature/**"
+      - 'feature/frontend-**'
   pull_request:
     branches:
-      - "main"
-      - "feature/**"
+      - 'main'
+    paths:
+      - 'frontend/**'
 
 jobs:
   eslint:

@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - 'feature/backend-**'
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'backend/**'
 
 jobs:
   build-test-deploy:

@@ -32,15 +32,15 @@ export async function generateAnalytics(restaurant, session) {
         }
     ]).session(session);
 
-    const r = reservationStats[0] || {};
+    const r = reservationStats[0] ?? {};
     const reservationAnalytics = {
-        total: r.total || 0,
-        attended: r.attended || 0,
+        total: r.total ?? 0,
+        attended: r.attended ?? 0,
         noShowRate:
         r.total && r.attended !== undefined
             ? (r.total - r.attended) / r.total
             : 0,
-        averagePax: r.averagePax || 0
+        averagePax: r.averagePax ?? 0
     };
 
     // update past dailyAnalytics documents based on reviews created today
@@ -115,6 +115,8 @@ export async function generateAnalytics(restaurant, session) {
     }
 
     // queue
+    const queueGroups = ['small', 'medium', 'large'];
+
     const queueStats = await QueueEntry.aggregate([
         {
             $match: {
@@ -130,43 +132,59 @@ export async function generateAnalytics(restaurant, session) {
                         { $divide: [{ $subtract: ['$statusTimestamps.seated', '$statusTimestamps.waiting'] }, 1000 * 60] }, // in minutes
                         null
                     ]
-                }
+                },
+                isAttended: { $cond: [{ $eq: ['$status', 'seated'] }, 1, 0] }
             }
         },
         {
             $group: {
                 _id: null,
                 total: { $sum: 1 },
-                attended: {
-                    $sum: { $cond: [{ $eq: ['$status', 'seated'] }, 1, 0] }
-                },
+                attended: { $sum: '$isAttended' },
                 averageWaitTime: { $avg: '$waitTime' },
-                small: {
-                    $sum: { $cond: [{ $eq: ['$queueGroup', 'small'] }, 1, 0] }
-                },
-                medium: {
-                    $sum: { $cond: [{ $eq: ['$queueGroup', 'medium'] }, 1, 0] }
-                },
-                large: {
-                    $sum: { $cond: [{ $eq: ['$queueGroup', 'large'] }, 1, 0] }
+                ...Object.fromEntries(queueGroups.flatMap(group => [
+                    [`${group}Total`, {
+                        $sum: { $cond: [{ $eq: ['$queueGroup', group] }, 1, 0] }
+                    }],
+                    [`${group}Attended`, {
+                        $sum: {
+                            $cond: [{ $eq: ['$queueGroup', group] }, '$isAttended', 0]
+                        }
+                    }]
+                ]))
+            }
+        },
+        {
+            $addFields: {
+                abandonmentRate: {
+                    $cond: [
+                        { $gt: ['$total', 0] },
+                        { $divide: [{ $subtract: ['$total', '$attended'] }, '$total'] },
+                        0
+                    ]
                 }
             }
         }
     ]).session(session);
 
-    const q = queueStats[0] || {};
+    const q = queueStats[0] ?? {};
     const queueAnalytics = {
-        total: q.total || 0,
-        attended: q.attended || 0,
-        averageWaitTime: q.averageWaitTime || 0,
-        queueByQueueGroup: {
-            small: q.small || 0,
-            medium: q.medium || 0,
-            large: q.large || 0
-        }
+        total: q.total ?? 0,
+        attended: q.attended ?? 0,
+        abandonmentRate: +(q.abandonmentRate ?? 0).toFixed(3),
+        averageWaitTime: +(q.averageWaitTime ?? 0).toFixed(1),
+        byQueueGroup: Object.fromEntries(
+            queueGroups.map(group => [
+                group,
+                {
+                    total: q[`${group}Total`] ?? 0,
+                    attended: q[`${group}Attended`] ?? 0
+                }
+            ])
+        )
     };
 
-    const totalVisits = (r.attended || 0) + (q.attended || 0);
+    const totalVisits = (r.attended ?? 0) + (q.attended ?? 0);
 
     // calculating visitLoadByHour
     let visitLoadByHour = null;
@@ -223,7 +241,7 @@ export async function generateAnalytics(restaurant, session) {
         date: todayUTC,
         totalVisits,
         visitLoadByHour,
-        reservations: reservationAnalytics || { count: 0, averageRating: 0, ratingMode: null },
+        reservations: reservationAnalytics ?? { count: 0, averageRating: 0, ratingMode: null },
         reviews: reviewAnalyticsToday,
         queue: queueAnalytics
     };

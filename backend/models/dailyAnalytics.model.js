@@ -33,14 +33,24 @@ const dailyAnalyticsSchema = new mongoose.Schema({
   queue: {
     total: { type: Number, default: 0 },
     attended: { type: Number, default: 0 },
+    abandonmentRate: { type: Number, default: 0 },
     averageWaitTime: { type: Number, default: 0 },
-    queueByQueueGroup: {
-      small: { type: Number, default: 0 },
-      medium: { type: Number, default: 0 },
-      large: { type: Number, default: 0 }
+    byQueueGroup: {
+      small: {
+        total: { type: Number, default: 0 },
+        attended: { type: Number, default: 0 },
+      },
+      medium: {
+        total: { type: Number, default: 0 },
+        attended: { type: Number, default: 0 },
+      },
+      large: {
+        total: { type: Number, default: 0 },
+        attended: { type: Number, default: 0 },
+      }
     },
   },
-});
+}, { versionKey: false });
 
 dailyAnalyticsSchema.index({ restaurant: 1 });
 dailyAnalyticsSchema.index({ date: 1 });

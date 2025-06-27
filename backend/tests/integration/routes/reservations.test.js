@@ -87,7 +87,6 @@ describe('reservation test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             expect(res.body.length).toBe(1);
-            console.log(res.body);
             res.body.forEach(reservation => {
                 expect(reservation).toHaveProperty('user');
                 expect(reservation).toHaveProperty('restaurant');

@@ -9,6 +9,7 @@ import customers from '../routes/customer.route.js';
 import owners from '../routes/owner.route.js';
 import queue from '../routes/queue.route.js';
 import promotions from '../routes/promotion.route.js';
+import analytics from '../routes/analytics.route.js';
 
 export default function(app) {
   app.use(express.json());
@@ -21,6 +22,7 @@ export default function(app) {
   app.use('/api/customers', customers);
   app.use('/api/queue', queue);
   app.use('/api/promotions', promotions);
+  app.use('/api/analytics', analytics);
 
   // to log error
   app.use(error);
