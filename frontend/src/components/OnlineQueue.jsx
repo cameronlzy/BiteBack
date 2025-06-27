@@ -151,7 +151,7 @@ const OnlineQueue = ({ user }) => {
               <TableBody className="text-center">
                 <TableRow className="border-t border-black">
                   <TableCell className="font-medium border-r border-black">
-                    1–2 Pax
+                    1-2 Pax
                   </TableCell>
                   <TableCell className="text-xl font-bold border-r border-black">
                     {(restaurantQueueData.small.calledNumber % 1000) + 1000}
@@ -163,7 +163,7 @@ const OnlineQueue = ({ user }) => {
                 </TableRow>
                 <TableRow className="border-t border-black">
                   <TableCell className="font-medium border-r border-black">
-                    3–4 Pax
+                    3-4 Pax
                   </TableCell>
                   <TableCell className="text-xl font-bold border-r border-black">
                     {(restaurantQueueData.medium.calledNumber % 1000) + 2000}

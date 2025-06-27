@@ -68,7 +68,9 @@ const StaffQueue = () => {
   const handleUpdateStatus = async (entryId, status) => {
     try {
       await updateQueueEntryStatus(entryId, status)
-      toast.success(`Marked ${status}`)
+      toast.success(`Marked ${status}`, {
+        toastId: entryId,
+      })
       await fetchQueue()
       setCalledCustomers((prev) => prev.filter((e) => e._id !== entryId))
     } catch {
@@ -90,8 +92,8 @@ const StaffQueue = () => {
   }
 
   const queueGroups = [
-    { label: "1–2 Pax", key: "small" },
-    { label: "3–4 Pax", key: "medium" },
+    { label: "1-2 Pax", key: "small" },
+    { label: "3-4 Pax", key: "medium" },
     { label: "5+ Pax", key: "large" },
   ]
 

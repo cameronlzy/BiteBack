@@ -11,8 +11,10 @@ import {
 import { useLocation, useNavigate } from "react-router-dom"
 import CustomerReviews from "./CustomerReviews"
 import DeleteAccountPopup from "./DeleteAccountPopup"
-import { Fragment, useState } from "react"
+import { useState } from "react"
 import ViewStaffAccounts from "./ViewStaffAccounts"
+import TodaySnapshot from "./statistics/TodaySnapshot"
+import MonthlyPerformance from "./statistics/MonthlyPerformance"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -93,9 +95,13 @@ const ProfilePage = ({ user, isLoading }) => {
         </div>
       )}
       {user.role === "owner" && (
-        <Fragment>
+        <div className="w-full flex flex-col gap-6 items-center">
           <ViewStaffAccounts />
-        </Fragment>
+          <div className="w-full max-w-[650px] flex flex-col gap-6">
+            <TodaySnapshot />
+            <MonthlyPerformance />
+          </div>
+        </div>
       )}
     </div>
   )

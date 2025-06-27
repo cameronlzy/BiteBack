@@ -214,7 +214,9 @@ const PromotionForm = ({ user }) => {
           onSubmit={handleSubmit(onSubmit)}
           className="space-y-6 max-w-xl mx-auto mt-10"
         >
-          <h2 className="text-2xl font-bold mb-4">Create New Promotion</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            {promotionId ? "Edit Promotion Details" : "Create New Promotion"}
+          </h2>
 
           <FormField
             control={control}

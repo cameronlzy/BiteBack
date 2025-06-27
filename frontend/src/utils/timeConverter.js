@@ -83,7 +83,7 @@ export const isWithinOpeningHours = (openingHours) => {
   const hours = openingHours[currentDay];
   if (!hours || hours.toLowerCase() === 'closed') return false;
 
-  const [openStr, closeStr] = hours.split(/[-–]/).map(s => s.trim());
+  const [openStr, closeStr] = hours.split(/[--]/).map(s => s.trim());
   
   try {
 
