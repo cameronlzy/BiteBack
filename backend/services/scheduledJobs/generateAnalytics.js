@@ -4,7 +4,7 @@ import QueueEntry from '../../models/queueEntry.model.js';
 import Review from '../../models/review.model.js';
 import { DateTime } from 'luxon';
 import { getOpeningHoursToday } from '../../helpers/restaurant.helper.js';
-import { roundUpToHour, getSGTHourIndex } from '../../helpers/analytics.helper.js';
+import { getSGTHourIndex } from '../../helpers/analytics.helper.js';
 
 export async function generateAnalytics(restaurant, session) {
     const todaySGT = DateTime.now().setZone('Asia/Singapore').startOf('day');
@@ -193,14 +193,14 @@ export async function generateAnalytics(restaurant, session) {
     const hoursToday = getOpeningHoursToday(restaurant);
     if (hoursToday && hoursToday !== 'x') {
         const [openStr, closeStr] = hoursToday.split('-');
-        const openHour = parseInt(openStr.split(':')[0], 10);
-        const closeHour = roundUpToHour(closeStr);
+        const [oh, _om] = openStr.split(':').map(Number);
+        const [ch, cm] = closeStr.split(':').map(Number);
 
-        const hoursOpen = closeHour > openHour
-            ? closeHour - openHour
-            : 24 - openHour + closeHour;
+        let span = ch - oh;
+        if (cm > 0) span += 1;
+        if (span <= 0) span += 24;
 
-        const loadArray = Array(hoursOpen).fill(0);
+        const loadArray = Array(span).fill(0);
 
         const attendedReservations = await Reservation.find({
             restaurant: restaurantId,
@@ -215,17 +215,17 @@ export async function generateAnalytics(restaurant, session) {
         }).select('statusTimestamps.waiting').session(session);
 
         for (const res of attendedReservations) {
-            const i = getSGTHourIndex(res.reservationDate, openHour);
+            const i = getSGTHourIndex(res.reservationDate, oh);
             if (i >= 0 && i < loadArray.length) loadArray[i]++;
         }
 
         for (const qe of seatedQueues) {
-            const i = getSGTHourIndex(qe.statusTimestamps.waiting, openHour);
+            const i = getSGTHourIndex(qe.statusTimestamps.waiting, oh);
             if (i >= 0 && i < loadArray.length) loadArray[i]++;
         }
 
         visitLoadByHour = {
-            startHour: openHour,
+            startHour: oh,
             load: loadArray
         };
     }

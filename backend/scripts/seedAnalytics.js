@@ -105,7 +105,7 @@ async function seedAnalytics(days, restaurantIdArg) {
 
     for (let i = days - 1; i >= 0; i--) {
         const date = today.minus({ days: i });
-        const window = getOpeningWindow(restaurant, date);
+        const window = getOpeningWindow(date, restaurant.openingHours);
 
         if (!window) continue;
 

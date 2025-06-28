@@ -72,11 +72,6 @@ export function getPeriodFromLabel(label, unit) {
   };
 }
 
-export function roundUpToHour(timeStr) {
-    const [h, m] = timeStr.split(':').map(Number);
-    return m > 0 ? h + 1 : h;
-}
-
 export function getSGTHourIndex(date, openHour) {
     const hourSGT = DateTime.fromJSDate(date, { zone: 'Asia/Singapore' }).hour;
     return hourSGT >= openHour

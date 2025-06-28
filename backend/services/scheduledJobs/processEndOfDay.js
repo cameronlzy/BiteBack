@@ -9,9 +9,8 @@ import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
 
 export async function processEndOfDay() {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
+    const nowLuxonSGT = DateTime.now().setZone('Asia/Singapore');
+    const nowTotalMinutes = nowLuxonSGT.hour * 60 + nowLuxonSGT.minute;
 
     const restaurants = await Restaurant.find();
 
@@ -26,12 +25,11 @@ export async function processEndOfDay() {
         
         // add 30 mins buffer time
         const bufferMinutes = 30;
-        const closingTotalMinutes = closingHour * 60 + closingMinute + bufferMinutes;
-        const nowTotalMinutes = currentHour * 60 + currentMinute;
+        let closingTotalMinutes = closingHour * 60 + closingMinute + bufferMinutes;
+        closingTotalMinutes %= 1440;
 
         if (nowTotalMinutes >= closingTotalMinutes) {
-            const nowLuxon = DateTime.fromJSDate(now).setZone('Asia/Singapore');
-            const todaySGT = nowLuxon.startOf('day');
+            const todaySGT = nowLuxonSGT.startOf('day');
             const todayUTC = todaySGT.toUTC().toJSDate();
             const session = await mongoose.startSession();
 

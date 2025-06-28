@@ -4,9 +4,9 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint . --ext .js --fix",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest --verbose",
-    "test:dev": "node --experimental-vm-modules node_modules/.bin/jest --watchAll --verbose",
-    "test:debug": "node --experimental-vm-modules ./node_modules/.bin/jest --detectOpenHandles",
+    "test": "export NODE_ENV=test && node --experimental-vm-modules node_modules/.bin/jest --verbose",
+    "test:dev": "export NODE_ENV=test && node --experimental-vm-modules node_modules/.bin/jest --watchAll --verbose",
+    "test:debug": "export NODE_ENV=test && node --experimental-vm-modules ./node_modules/.bin/jest --detectOpenHandles",
     "dev": "export NODE_ENV=development && nodemon index.js",
     "start": "node index.js",
     "prepare": "husky install"
