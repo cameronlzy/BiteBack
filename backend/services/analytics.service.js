@@ -3,7 +3,7 @@ import QueueEntry from '../models/queueEntry.model.js';
 import Reservation from '../models/reservation.model.js';
 import { error, success } from '../helpers/response.js';
 import { getOpeningHoursToday } from '../helpers/restaurant.helper.js';
-import { groupVisitLoadByWeekdayPattern, computeMode, getPeriodFromLabel } from '../helpers/analytics.helper.js';
+import { groupVisitLoadByWeekdayPattern, computeMode, getPeriodFromLabel, getCurrentOpeningPattern, matchesCurrentHours } from '../helpers/analytics.helper.js';
 import { DateTime } from 'luxon';
 import _ from 'lodash';
 
@@ -127,6 +127,7 @@ export async function getSummary(restaurant, query) {
     }
 
     const now = DateTime.now().setZone('Asia/Singapore');
+    const currentPattern = getCurrentOpeningPattern(restaurant);
     let start, end, groupFormat;
 
     if (unit === 'day') {
@@ -221,7 +222,7 @@ export async function getSummary(restaurant, query) {
 
             const docsInGroup = rawDocs.filter(doc => {
                 const d = DateTime.fromJSDate(doc.date);
-                return d >= from && d <= to;
+                return d >= from && d <= to && matchesCurrentHours(doc, currentPattern);
             });
 
             const grouped = groupVisitLoadByWeekdayPattern(docsInGroup);

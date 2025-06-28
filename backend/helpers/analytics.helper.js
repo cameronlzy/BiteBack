@@ -71,3 +71,48 @@ export function getPeriodFromLabel(label, unit) {
     endDate: end.toISODate()
   };
 }
+
+export function roundUpToHour(timeStr) {
+    const [h, m] = timeStr.split(':').map(Number);
+    return m > 0 ? h + 1 : h;
+}
+
+export function getSGTHourIndex(date, openHour) {
+    const hourSGT = DateTime.fromJSDate(date, { zone: 'Asia/Singapore' }).hour;
+    return hourSGT >= openHour
+        ? hourSGT - openHour
+        : 24 - openHour + hourSGT;
+}
+
+export function getCurrentOpeningPattern(restaurant) {
+    const map = new Map();
+    const segments = restaurant.openingHours.split('|');
+
+    segments.forEach((seg, idx) => {
+        const weekday = idx + 1;
+        if (!seg || seg.toLowerCase() === 'x') return;
+
+        const [openStr, closeStr] = seg.split('-');
+        const [oh, _om] = openStr.split(':').map(Number);
+        const [ch, cm] = closeStr.split(':').map(Number);
+
+        let span = ch - oh;
+        if (cm > 0) span += 1;
+        if (span <= 0) span += 24;
+
+        map.set(weekday, { startHourUTC: oh, spanHours: span });
+    });
+
+    return map;
+}
+
+export function matchesCurrentHours(doc, pattern) {
+    const sgtWeekday = DateTime.fromJSDate(doc.date).setZone('Asia/Singapore').weekday;
+    const rule = pattern.get(sgtWeekday);
+    if (!rule) return false;
+
+    return (
+        doc.visitLoadByHour.startHour === rule.startHourUTC &&
+        doc.visitLoadByHour.load.length  === rule.spanHours
+    );
+}

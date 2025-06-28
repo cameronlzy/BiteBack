@@ -4,6 +4,7 @@ import QueueEntry from '../../models/queueEntry.model.js';
 import Review from '../../models/review.model.js';
 import { DateTime } from 'luxon';
 import { getOpeningHoursToday } from '../../helpers/restaurant.helper.js';
+import { roundUpToHour, getSGTHourIndex } from '../../helpers/analytics.helper.js';
 
 export async function generateAnalytics(restaurant, session) {
     const todaySGT = DateTime.now().setZone('Asia/Singapore').startOf('day');
@@ -193,7 +194,7 @@ export async function generateAnalytics(restaurant, session) {
     if (hoursToday && hoursToday !== 'x') {
         const [openStr, closeStr] = hoursToday.split('-');
         const openHour = parseInt(openStr.split(':')[0], 10);
-        const closeHour = parseInt(closeStr.split(':')[0], 10);
+        const closeHour = roundUpToHour(closeStr);
 
         const hoursOpen = closeHour > openHour
             ? closeHour - openHour
@@ -212,13 +213,6 @@ export async function generateAnalytics(restaurant, session) {
             status: 'seated',
             'statusTimestamps.waiting': { $gte: todayUTC, $lt: tomorrowUTC }
         }).select('statusTimestamps.waiting').session(session);
-
-        function getSGTHourIndex(date, openHour) {
-            const hourSGT = DateTime.fromJSDate(date, { zone: 'Asia/Singapore' }).hour;
-            return hourSGT >= openHour
-                ? hourSGT - openHour
-                : 24 - openHour + hourSGT;
-        }
 
         for (const res of attendedReservations) {
             const i = getSGTHourIndex(res.reservationDate, openHour);

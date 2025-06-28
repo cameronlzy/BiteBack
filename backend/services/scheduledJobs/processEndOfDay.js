@@ -56,7 +56,7 @@ export async function processEndOfDay() {
                 await cleanupPastReservations(restaurant, session);
 
                 // save doc
-                await DailyAnalytics.create([analyticsData]).session(session);
+                await DailyAnalytics.create([analyticsData], { session });
             });
         }
     }
