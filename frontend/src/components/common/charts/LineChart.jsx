@@ -29,7 +29,7 @@ const LineChart = ({
 
     const y = d3
       .scaleLinear()
-      .domain([0, d3.max(data, (d) => d.value)])
+      .domain([0, d3.max(data, (d) => d.value) * 1.1])
       .nice()
       .range([innerHeight, 0])
 

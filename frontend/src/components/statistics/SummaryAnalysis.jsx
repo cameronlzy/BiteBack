@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
@@ -21,28 +21,34 @@ import FootFall from "../common/charts/FootFall"
 import { getSummary } from "@/services/analyticsService"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { toast } from "react-toastify"
+import SubmitButton from "../common/SubmitButton"
 
 const SummaryAnalysis = ({ restaurant }) => {
   const [unit, setUnit] = useState("day")
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [number, setNumber] = useState(1)
+  const [tempNumber, setTempNumber] = useState("1")
+  const prevUnitRef = useRef(unit)
 
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState(null)
 
-  const fetchData = async () => {
+  const fetchData = async (possibleNum) => {
     if (!restaurant?._id) return
+    const n = possibleNum
+    if (unit !== "day" && n < 1) {
+      setData(null)
+      return
+    }
     setLoading(true)
-
     try {
       const params =
         unit === "day"
           ? { date: format(selectedDate, "yyyy-MM-dd") }
-          : { unit, amount: number }
+          : { unit, amount: n }
 
       const response = await getSummary(restaurant._id, params)
       if (response.type === "range") {
-        setNumber(Math.min(number, response.dataPoints))
+        setTempNumber(Math.min(n, response.dataPoints))
       }
       setData(response)
     } catch (ex) {
@@ -53,11 +59,22 @@ const SummaryAnalysis = ({ restaurant }) => {
       setLoading(false)
     }
   }
+  useEffect(() => {
+    const prevUnit = prevUnitRef.current
+    prevUnitRef.current = unit
+
+    if (!restaurant) return
+
+    if (unit === "day") {
+      fetchData()
+    } else if (unit !== prevUnit) {
+      setData(null)
+    }
+  }, [restaurant, unit, selectedDate])
 
   useEffect(() => {
-    fetchData()
-  }, [restaurant, unit, selectedDate, number])
-
+    if (restaurant && unit === "day") fetchData()
+  }, [restaurant, unit, selectedDate])
   const summary =
     data?.type === "single"
       ? data.aggregated
@@ -101,15 +118,30 @@ const SummaryAnalysis = ({ restaurant }) => {
               </PopoverContent>
             </Popover>
           ) : (
-            <Input
-              type="number"
-              min={1}
-              value={number}
-              onChange={(e) =>
-                setNumber(Math.max(0, parseInt(e.target.value) || 0))
-              }
-              className="w-[100px]"
-            />
+            <div className="flex items-center gap-2 bg-muted px-2 py-1 rounded-full border">
+              <Input
+                type="number"
+                min={1}
+                value={tempNumber}
+                onChange={(e) => setTempNumber(e.target.value)}
+                className="w-[100px] border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-sm"
+              />
+              <SubmitButton
+                type="button"
+                size="sm"
+                onClick={() => {
+                  const parsed = parseInt(tempNumber)
+                  if (!parsed || parsed < 1) {
+                    setTempNumber("1")
+                    return
+                  }
+                  fetchData(parsed)
+                }}
+                condition={loading}
+                normalText="Search"
+                loadingText="Loading..."
+              />
+            </div>
           )}
         </div>
       </CardHeader>
@@ -126,7 +158,7 @@ const SummaryAnalysis = ({ restaurant }) => {
               <FootFall
                 data={
                   data.type === "range"
-                    ? data.entries
+                    ? [data.entries[0]]
                     : [{ aggregated: summary }]
                 }
                 mode={unit}
@@ -238,6 +270,11 @@ const SummaryAnalysis = ({ restaurant }) => {
               ))}
             </div>
           </>
+        ) : unit !== "day" && !data ? (
+          <p className="text-muted-foreground text-sm col-span-full">
+            Enter a number and press <span className="font-medium">Search</span>{" "}
+            to view summary.
+          </p>
         ) : (
           <p className="text-muted-foreground text-sm col-span-full">
             No data available for selected period

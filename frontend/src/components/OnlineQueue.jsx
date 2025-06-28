@@ -120,7 +120,10 @@ const OnlineQueue = ({ user }) => {
   const stillLoading = isLoading || (currentlyQueuing && !customerQueueData)
 
   if (stillLoading) return <LoadingSpinner />
-  if (!stillLoading && !isWithinOpeningHours(restaurant.openingHours))
+  if (
+    (!stillLoading && !isWithinOpeningHours(restaurant.openingHours)) ||
+    !restaurant.queueEnabled
+  )
     return <h1> Online Queue Closed </h1>
   return (
     <React.Fragment>

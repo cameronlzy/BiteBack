@@ -318,7 +318,9 @@ const Restaurant = ({ user }) => {
               state={{ from: location.pathname }}
               className="group"
               onClick={(e) =>
-                !isWithinOpeningHours(openingHours) && e.preventDefault()
+                (!isWithinOpeningHours(openingHours) ||
+                  restaurant.queueEnabled) &&
+                e.preventDefault()
               }
             >
               <Button
