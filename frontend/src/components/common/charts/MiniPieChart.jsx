@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react"
 import * as d3 from "d3"
 
-const MiniPieChart = ({ data, width = 100, height = 100 }) => {
+const MiniPieChart = ({
+  data,
+  width = 100,
+  height = 100,
+  showLabels = true,
+}) => {
   const ref = useRef()
 
   useEffect(() => {
@@ -45,18 +50,20 @@ const MiniPieChart = ({ data, width = 100, height = 100 }) => {
         }
       })
 
-    chart
-      .selectAll("text")
-      .data(pieData)
-      .join("text")
-      .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
-      .attr("font-family", "monospace ")
-      .attr("text-anchor", "middle")
-      .attr("alignment-baseline", "middle")
-      .attr("font-size", "12px")
-      .attr("fill", "#000")
-      .text((d) => d.data.label.split(" ")[0])
-  }, [data])
+    if (showLabels) {
+      chart
+        .selectAll("text")
+        .data(pieData)
+        .join("text")
+        .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
+        .attr("font-family", "monospace")
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .attr("font-size", "12px")
+        .attr("fill", "#000")
+        .text((d) => d.data.label.split(" ")[0])
+    }
+  }, [data, width, height, showLabels])
 
   return (
     <svg

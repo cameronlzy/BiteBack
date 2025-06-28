@@ -15,16 +15,14 @@ const WaitTimeAndReservation = ({ time, count }) => {
       <CardContent className="space-y-2">
         <h3 className="text-base font-semibold">Customer Flow</h3>
         <div className="h-px bg-muted" />
-        <div className="flex items-center justify-center text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <span>
-              Average Wait Time:{" "}
-              <span className="font-medium text-black">{time} mins</span>
-            </span>
+        <div className="flex flex-col items-center justify-center text-muted-foreground">
+          <span>Average Wait Time:</span>
+          <div className="flex items-center gap-1 mt-1">
+            <span className="font-medium text-black">{time} mins</span>
             {urgency === "high" ? (
-              <AlertCircle className="w-6 h-6 mb-1 text-red-500" />
+              <AlertCircle className="w-6 h-6 text-red-500" />
             ) : (
-              <Clock className={`w-6 h-6 mb-1 ${urgencyColours[urgency]}`} />
+              <Clock className={`w-6 h-6 ${urgencyColours[urgency]}`} />
             )}
           </div>
         </div>

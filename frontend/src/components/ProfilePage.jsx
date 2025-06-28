@@ -13,8 +13,7 @@ import CustomerReviews from "./CustomerReviews"
 import DeleteAccountPopup from "./DeleteAccountPopup"
 import { useState } from "react"
 import ViewStaffAccounts from "./ViewStaffAccounts"
-import TodaySnapshot from "./statistics/TodaySnapshot"
-import MonthlyPerformance from "./statistics/MonthlyPerformance"
+import OwnerStatistics from "./OwnerStatistics"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -98,8 +97,7 @@ const ProfilePage = ({ user, isLoading }) => {
         <div className="w-full flex flex-col gap-6 items-center">
           <ViewStaffAccounts />
           <div className="w-full max-w-[650px] flex flex-col gap-6">
-            <TodaySnapshot />
-            <MonthlyPerformance />
+            <OwnerStatistics user={user} />
           </div>
         </div>
       )}

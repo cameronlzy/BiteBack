@@ -29,6 +29,7 @@ import PromotionPage from "./components/PromotionPage"
 import Promotions from "./components/Promotions"
 import OwnerPromotions from "./components/OwnerPromotions"
 import OwnerRestaurants from "./components/OwnerRestaurants"
+import RestaurantPerformance from "./components/statistics/RestaurantPerformance"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -292,17 +293,16 @@ function App() {
               />
             }
           />
-
-          {/* <Route
-            path="staff/login"
+          <Route
+            path="statistics/:restaurantId"
             element={
-              <ProtectedStaffRoute
+              <ProtectedRoute
                 loading={loading}
                 user={user}
-                element={<StaffLogin user={user} />}
+                element={<RestaurantPerformance user={user} />}
               />
             }
-          /> */}
+          />
           <Route path="not-found" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Route>

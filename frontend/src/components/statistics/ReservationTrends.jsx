@@ -178,12 +178,16 @@ const ReservationTrends = ({ data }) => {
         <Phone className="w-5 h-5" />
         Reservations Over Time
       </h1>
-
-      <LineChart
-        data={lineChartData}
-        onHoverPoint={onLineHoverPoint}
-        tooltipRef={tooltipRef}
-      />
+      <div className="relative mb-10">
+        <LineChart
+          data={lineChartData}
+          onHoverPoint={onLineHoverPoint}
+          tooltipRef={tooltipRef}
+        />
+        <div className="mt-4 text-xs text-muted-foreground text-center">
+          % change shown vs previous data point
+        </div>
+      </div>
       <div
         ref={tooltipRef}
         style={{
@@ -199,10 +203,6 @@ const ReservationTrends = ({ data }) => {
           zIndex: 1000,
         }}
       />
-
-      <div className="mt-4 text-xs text-muted-foreground text-center">
-        % change shown vs previous data point
-      </div>
     </div>
   )
 }

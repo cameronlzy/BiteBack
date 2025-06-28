@@ -117,13 +117,14 @@ const ReviewTrends = ({ data }) => {
           </div>
           <StarRating rating={mode} className="w-8 h-8" />
         </div>
-
-        <LineChart
-          data={reviewData}
-          onHoverPoint={onLineHoverPoint}
-          tooltipRef={tooltipRef}
-          color={showReviewRate ? "#3b82f6" : "#facc15"}
-        />
+        <div className="relative mb-10">
+          <LineChart
+            data={reviewData}
+            onHoverPoint={onLineHoverPoint}
+            tooltipRef={tooltipRef}
+            color={showReviewRate ? "#3b82f6" : "#facc15"}
+          />
+        </div>
         <div
           ref={tooltipRef}
           style={{

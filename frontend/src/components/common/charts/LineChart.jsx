@@ -111,18 +111,12 @@ const LineChart = ({
       ])
       .on("zoom", ({ transform }) => {
         const zx = transform.rescaleX(x)
-        const ticksEveryNDays = 2
-        const tickDates = data
-          .map((d) => new Date(d.date))
-          .filter((_, i) => i % ticksEveryNDays === 0)
-
         xAxisG.call(
           d3
             .axisBottom(zx)
-            .tickValues(tickDates)
+            .ticks(Math.floor(innerWidth / 80))
             .tickFormat(d3.timeFormat("%b %d"))
         )
-
         path
           .interrupt()
           .attr("stroke-dasharray", null)
@@ -136,7 +130,7 @@ const LineChart = ({
           )
 
         const showDots =
-          zx.domain()[1] - zx.domain()[0] <= 1000 * 60 * 60 * 24 * 10
+          zx.domain()[1] - zx.domain()[0] <= 1000 * 60 * 60 * 24 * 30
 
         circles
           .style("display", showDots ? "block" : "none")

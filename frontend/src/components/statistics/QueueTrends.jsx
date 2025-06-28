@@ -4,67 +4,37 @@ import LineChart from "../common/charts/LineChart"
 import PieChart from "../common/charts/PieChart"
 import { Clock, LogOut, Users } from "lucide-react"
 import * as d3 from "d3"
-
-const generateDummyQueueData = () => {
-  const days = 14
-  const today = new Date()
-  const data = []
-
-  for (let i = 0; i < days; i++) {
-    const date = new Date(today)
-    date.setDate(today.getDate() - i)
-    const waitTime = Math.floor(5 + Math.random() * 15)
-    const small = Math.floor(Math.random() * 20)
-    const medium = Math.floor(Math.random() * 15)
-    const large = Math.floor(Math.random() * 10)
-    const attendedSmall = Math.floor(small * 0.8)
-    const attendedMedium = Math.floor(medium * 0.7)
-    const attendedLarge = Math.floor(large * 0.6)
-    const total = small + medium + large
-    const attended = attendedSmall + attendedMedium + attendedLarge
-    const abandonmentRate = parseFloat(
-      ((1 - attended / total) * 100).toFixed(1)
-    )
-
-    data.unshift({
-      date: date.toISOString().slice(0, 10),
-      averageWaitTime: waitTime,
-      abandonmentRate,
-      queueByQueueGroup: {
-        small: { total: small, attended: attendedSmall },
-        medium: { total: medium, attended: attendedMedium },
-        large: { total: large, attended: attendedLarge },
-      },
-    })
-  }
-
-  return data
-}
-
-const QueueTrends = () => {
-  const data = useMemo(() => generateDummyQueueData(), [])
+const QueueTrends = ({ data }) => {
   const [group, setGroup] = useState("small")
   const tooltipRef = useRef()
+  const queueData = useMemo(() => {
+    return data.map((d) => ({
+      date: d.date,
+      averageWaitTime: d.queue.averageWaitTime,
+      abandonmentRate: d.queue.abandonmentRate,
+      byQueueGroup: d.queue.byQueueGroup,
+    }))
+  }, [data])
 
-  const averageWaitTimeData = data.map((d) => ({
+  const averageWaitTimeData = queueData.map((d) => ({
     date: d.date,
     value: d.averageWaitTime,
   }))
 
   const groupDistributionData = useMemo(() => {
-    const last = data[data.length - 1]
+    const last = queueData[data.length - 1]
     return ["small", "medium", "large"].map((key) => ({
       label: key.charAt(0).toUpperCase() + key.slice(1),
-      value: last.queueByQueueGroup[key].total,
+      value: last.byQueueGroup[key]?.total,
     }))
   }, [data]).filter((d) => d.value > 0)
 
   const averageAbandonment = (
-    data.reduce((acc, d) => acc + d.abandonmentRate, 0) / data.length
+    queueData.reduce((acc, d) => acc + d.abandonmentRate, 0) / queueData.length
   ).toFixed(1)
 
-  const groupStats = data.map((d) => {
-    const { total, attended } = d.queueByQueueGroup[group]
+  const groupStats = queueData.map((d) => {
+    const { total, attended } = d.byQueueGroup[group]
     return {
       date: d.date,
       value: total ? parseFloat(((1 - attended / total) * 100).toFixed(1)) : 0,
@@ -157,14 +127,15 @@ const QueueTrends = () => {
           </Button>
         ))}
       </div>
-
-      <LineChart
-        data={groupStats}
-        colour="#ffaaa5"
-        circleColour="#ff8b94"
-        tooltipRef={tooltipRef}
-        onHoverPoint={onLineHoverPoint}
-      />
+      <div className="relative mb-10">
+        <LineChart
+          data={groupStats}
+          colour="#ffaaa5"
+          circleColour="#ff8b94"
+          tooltipRef={tooltipRef}
+          onHoverPoint={onLineHoverPoint}
+        />
+      </div>
       <div
         ref={tooltipRef}
         style={{
@@ -183,7 +154,7 @@ const QueueTrends = () => {
       />
 
       <div className="mt-6 text-m font-medium text-center">
-        Current Group Distribution
+        Latest Group Distribution
       </div>
       <PieChart data={groupDistributionData} showLabels={false} />
     </div>

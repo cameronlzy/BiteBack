@@ -11,11 +11,6 @@ const Calendar = ({ selected, onSelect, components, disabled }) => {
       components={components}
       disabled={disabled}
       className={"rounded-md border shadow p-4"}
-      // styles={{
-      //   caption: { marginBottom: "0.5rem" },
-      //   table: { marginBottom: 0 },
-      //   months: { marginBottom: 0 },
-      // }}
     />
   )
 }
