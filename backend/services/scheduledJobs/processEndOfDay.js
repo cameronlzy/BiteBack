@@ -6,11 +6,9 @@ import Restaurant from '../../models/restaurant.model.js';
 import DailyAnalytics from '../../models/dailyAnalytics.model.js';
 import { getOpeningHoursToday } from '../../helpers/restaurant.helper.js';
 import mongoose from 'mongoose';
-import { DateTime } from 'luxon';
 
-export async function processEndOfDay() {
-    const nowLuxonSGT = DateTime.now().setZone('Asia/Singapore');
-    const nowTotalMinutes = nowLuxonSGT.hour * 60 + nowLuxonSGT.minute;
+export async function processEndOfDay(nowSGT) {
+    const nowTotalMinutes = nowSGT.hour * 60 + nowSGT.minute;
 
     const restaurants = await Restaurant.find();
 
@@ -18,18 +16,26 @@ export async function processEndOfDay() {
         const dayHours = getOpeningHoursToday(restaurant);
         if (!dayHours || dayHours === 'x') continue;
 
-        const [_openStr, closeStr] = dayHours.split('-');    
-        const [closingHourStr, closingMinuteStr] = closeStr.split(':');
-        const closingHour = parseInt(closingHourStr, 10);
-        const closingMinute = parseInt(closingMinuteStr, 10);
+        const [openStr, closeStr] = dayHours.split('-');    
         
-        // add 30 mins buffer time
-        const bufferMinutes = 30;
-        let closingTotalMinutes = closingHour * 60 + closingMinute + bufferMinutes;
-        closingTotalMinutes %= 1440;
+        const [openHourStr, openMinuteStr] = openStr.split(':');
+        const openHour = parseInt(openHourStr, 10);
+        const openMinute = parseInt(openMinuteStr, 10);
+        let openTotalMinutesUTC = openHour * 60 + openMinute;
 
-        if (nowTotalMinutes >= closingTotalMinutes) {
-            const todaySGT = nowLuxonSGT.startOf('day');
+        const [closeHourStr, closeMinuteStr] = closeStr.split(':');
+        const closeHour = parseInt(closeHourStr, 10);
+        const closeMinute = parseInt(closeMinuteStr, 10);
+        let closeTotalMinutesUTC = closeHour * 60 + closeMinute;
+
+        let openTotalMinutesSGT = (openTotalMinutesUTC + 8 * 60) % 1440;
+        let closeTotalMinutesSGT = (closeTotalMinutesUTC + 8 * 60) % 1440;
+
+        const isAfterOpen = nowTotalMinutes >= openTotalMinutesSGT;
+        const isAfterClose = nowTotalMinutes >= closeTotalMinutesSGT || closeTotalMinutesSGT < openTotalMinutesSGT;
+
+        if (isAfterClose && isAfterOpen) {
+            const todaySGT = nowSGT.startOf('day');
             const todayUTC = todaySGT.toUTC().toJSDate();
             const session = await mongoose.startSession();
 

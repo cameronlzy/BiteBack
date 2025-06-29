@@ -47,7 +47,7 @@ const reviewSchema = new mongoose.Schema({
     isVisible: {
         type: Boolean,
         required: true,
-        default: false
+        default: true
     },
     images: {
         type: [String],

@@ -1,10 +1,7 @@
-import DailyAnalytics from '../../models/dailyAnalytics.model.js';
 import Reservation from '../../models/reservation.model.js';
 import QueueEntry from '../../models/queueEntry.model.js';
-import Review from '../../models/review.model.js';
 import { DateTime } from 'luxon';
 import { getOpeningHoursToday } from '../../helpers/restaurant.helper.js';
-import { getSGTHourIndex } from '../../helpers/analytics.helper.js';
 
 export async function generateAnalytics(restaurant, session) {
     const todaySGT = DateTime.now().setZone('Asia/Singapore').startOf('day');
@@ -43,77 +40,6 @@ export async function generateAnalytics(restaurant, session) {
             : 0,
         averagePax: r.averagePax ?? 0
     };
-
-    // update past dailyAnalytics documents based on reviews created today
-    let reviewAnalyticsToday;
-    const reviewsCreatedToday = await Review.find({
-        createdAt: { $gte: todayUTC },
-        restaurant: restaurantId
-    }).select('dateVisited').session(session).lean();
-
-    const uniqueDateVisited = new Set();
-
-    for (const review of reviewsCreatedToday) {
-        if (!review.dateVisited) continue;
-        const dateStr = DateTime.fromJSDate(review.dateVisited).toISODate();
-        uniqueDateVisited.add(dateStr);
-    }
-
-    for (const dateStr of uniqueDateVisited) {
-        const dayStartSGT = DateTime.fromISO(dateStr, { zone: 'Asia/Singapore' }).startOf('day');
-        const dayEndSGT = dayStartSGT.endOf('day');
-        const dayStartUTC = dayStartSGT.toUTC().toJSDate();
-        const dayEndUTC = dayEndSGT.toUTC().toJSDate();
-
-        const reviewStats = await Review.aggregate([
-            {
-                $match: {
-                    restaurant: restaurantId,
-                    dateVisited: { $gte: dayStartUTC, $lte: dayEndUTC }
-                }
-            },
-            {
-                $group: {
-                    _id: '$rating',
-                    count: { $sum: 1 }
-                }
-            }
-        ]).session(session);
-
-        let reviewCount = 0;
-        let totalStars = 0;
-        let modeRating = null;
-        let maxCount = 0;
-
-        for (const { _id: rating, count } of reviewStats) {
-            reviewCount += count;
-            totalStars += rating * count;
-            if (count > maxCount) {
-                maxCount = count;
-                modeRating = rating;
-            }
-        }
-
-        const reviewAnalytics = {
-            count: reviewCount,
-            averageRating: reviewCount ? totalStars / reviewCount : 0,
-            ratingMode: modeRating
-        };
-
-        if (dayStartSGT.equals(todaySGT)) {
-            reviewAnalyticsToday = reviewAnalytics;
-        } else {
-            await DailyAnalytics.updateOne(
-                {
-                    restaurant: restaurantId,
-                    date: dayStartUTC
-                },
-                {
-                    $set: { reviews: reviewAnalytics }
-                }
-            ).session(session);
-        }
-    }
 
     // queue
     const queueGroups = ['small', 'medium', 'large'];
@@ -215,12 +141,12 @@ export async function generateAnalytics(restaurant, session) {
         }).select('statusTimestamps.waiting').session(session);
 
         for (const res of attendedReservations) {
-            const i = getSGTHourIndex(res.reservationDate, oh);
+            let i = Math.abs(DateTime.fromJSDate(res.reservationDate, { zone: 'utc' }).hour - oh);
             if (i >= 0 && i < loadArray.length) loadArray[i]++;
         }
 
         for (const qe of seatedQueues) {
-            const i = getSGTHourIndex(qe.statusTimestamps.waiting, oh);
+            let i = Math.abs(DateTime.fromJSDate(qe.statusTimestamps.waiting, { zone: 'utc' }).hour - oh);
             if (i >= 0 && i < loadArray.length) loadArray[i]++;
         }
 
@@ -235,8 +161,8 @@ export async function generateAnalytics(restaurant, session) {
         date: todayUTC,
         totalVisits,
         visitLoadByHour,
-        reservations: reservationAnalytics ?? { count: 0, averageRating: 0, ratingMode: null },
-        reviews: reviewAnalyticsToday,
+        reservations: reservationAnalytics,
+        reviews: { count: 0, averageRating: 0, ratingMode: null },
         queue: queueAnalytics
     };
 }
