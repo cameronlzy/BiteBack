@@ -28,4 +28,3 @@ const BackButton = ({ from, confirming, setConfirming }) => {
 }
 
 export default BackButton
-//

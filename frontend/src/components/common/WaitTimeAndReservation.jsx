@@ -27,7 +27,7 @@ const WaitTimeAndReservation = ({ time, count }) => {
           </div>
         </div>
         <div className="flex items-center justify-center gap-x-1">
-          <p className="text-muted-foreground">Total Reservations:</p>
+          <p className="text-muted-foreground">Queue Entries in Past Hour:</p>
           <p className="font-medium">{count}</p>
         </div>
       </CardContent>

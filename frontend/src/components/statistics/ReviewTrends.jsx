@@ -117,6 +117,14 @@ const ReviewTrends = ({ data }) => {
           </div>
           <StarRating rating={mode} className="w-8 h-8" />
         </div>
+        <div className="text-sm text-gray-600 mb-2 mt-4">
+          Viewing:{" "}
+          <span className="font-medium">
+            {showReviewRate
+              ? "Review Rate (Number & % of attendees who reviewed)"
+              : "Average Review Rating (1-5 stars)"}
+          </span>
+        </div>
         <div className="relative mb-10">
           <LineChart
             data={reviewData}
