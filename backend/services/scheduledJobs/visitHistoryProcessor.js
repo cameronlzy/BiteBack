@@ -35,20 +35,22 @@ export async function processVisitHistory(restaurant, session) {
     for (const visit of allVisits) {
         const customerId = visit.customer.toString();
 
-        const roundedDate = new Date(Math.floor(visit.date.getTime() / 1000) * 1000);
+        const ts = Math.floor(visit.date.getTime() / 1000) * 1000;
 
         if (!visitsByCustomer.has(customerId)) {
-            visitsByCustomer.set(customerId, []);
+            visitsByCustomer.set(customerId, new Map());
         }
-        visitsByCustomer.get(customerId).push({
-            visitDate: roundedDate,
-            reviewed: false
-        });
+
+        const customerMap = visitsByCustomer.get(customerId);
+        if (!customerMap.has(ts)) {
+            customerMap.set(ts, { visitDate: new Date(ts), reviewed: false });
+        }
     }
 
     const bulkOps = [];
 
-    for (const [customerIdStr, visits] of visitsByCustomer.entries()) {
+    for (const [customerIdStr, visitMap] of visitsByCustomer.entries()) {
+        const visits = Array.from(visitMap.values());
         bulkOps.push({
             updateOne: {
                 filter: {
@@ -62,6 +64,7 @@ export async function processVisitHistory(restaurant, session) {
             }
         });
     }
+
     if (bulkOps.length > 0) {
         await VisitHistory.bulkWrite(bulkOps, { session });
     }

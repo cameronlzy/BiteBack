@@ -9,7 +9,7 @@ async function run(restaurantId) {
         process.exit(1);
     }
 
-    const mongoUri = config.get('mongoUri');
+    const mongoUri = config.get('mongoURI');
     await mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
 
     try {
