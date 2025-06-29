@@ -63,6 +63,6 @@ export async function processVisitHistory(restaurant, session) {
         });
     }
     if (bulkOps.length > 0) {
-        await VisitHistory.bulkWrite(bulkOps).session(session);
+        await VisitHistory.bulkWrite(bulkOps, { session });
     }
 }
