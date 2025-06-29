@@ -11,6 +11,11 @@ axios.interceptors.response.use(null, (error) => {
         log(error)
         toast.error("Unexpected error occured")
     }
+
+    if (error.response?.status === 401) {
+        localStorage.removeItem("role");
+        window.location.reload();
+    }
     return Promise.reject(error);
 })
 

@@ -103,11 +103,14 @@ const StaffBookings = () => {
                   >
                     {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
                   </span>
+                  <p className="text-sm text-muted-foreground">
+                    Remarks: {b.remarks || "No remarks provided"}
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-2 items-center">
                   {b.status === "booked" && (
-                    <>
+                    <div>
                       <Button
                         size="sm"
                         onClick={() => handleStatusUpdate(b._id, "completed")}
@@ -121,7 +124,7 @@ const StaffBookings = () => {
                       >
                         Mark No-Show
                       </Button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>

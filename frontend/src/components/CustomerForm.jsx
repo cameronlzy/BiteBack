@@ -54,7 +54,7 @@ const CustomerForm = ({ onRegister, user, from, isLoading }) => {
       window.location = from
     } catch (ex) {
       if (ex.response?.status === 400) {
-        const message = ex.response.data
+        const message = ex.response.data.error
         form.setError("username", {
           type: "manual",
           message: message || "Submission failed",

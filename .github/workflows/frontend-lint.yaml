@@ -9,7 +9,6 @@ on:
       - 'main'
     paths:
       - 'frontend/**'
-
 jobs:
   eslint:
     name: Run ESLint

@@ -21,7 +21,7 @@ export const dateAllowPartial = Joi.string().custom((value, helpers) => {
   const dateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
 
   if (dateOnly.test(value) || dateTime.test(value)) {
-    return value; // valid
+    return value; 
   }
   return helpers.error('any.invalid');
 }, 'Date or DateTime validation');

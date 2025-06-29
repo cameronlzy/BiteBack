@@ -271,7 +271,7 @@ const ReservationForm = ({ user }) => {
       })
     } catch (ex) {
       if (ex.response && ex.response.status === 400) {
-        const message = ex.response.data
+        const message = ex.response.data.error
         form.setError("reservationDate", {
           type: "manual",
           message: message || "Reservation failed",

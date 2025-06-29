@@ -47,7 +47,7 @@ const validIdentifier = Joi.string()
     .messages({
       "string.empty": "Username or Email is required.",
       "any.required": "Username or Email is required.",
-      "any.invalid": "Must be a valid email or username (2–20 characters).",
+      "any.invalid": "Must be a valid email or username (2-20 characters).",
     })
 
 const dailyTimeSchema = Joi.string()
