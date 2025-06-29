@@ -27,7 +27,7 @@ const queueEntrySchema = new mongoose.Schema({
         default: 'waiting'
     },
     statusTimestamps: {
-        waiting: { type: Date, default: () => new Date() },
+        waiting: { type: Date, default: Date.now },
         called: { type: Date },
         seated: { type: Date },
         skipped: { type: Date }

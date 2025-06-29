@@ -105,3 +105,20 @@ export function getOpeningHoursToday(restaurant) {
   const todayOpening = openingHoursArray[weekdayIndex];
   return todayOpening;
 }
+
+export function getOpeningWindow(dateUTC, openingHoursStr) {
+  const sgtWeekday = dateUTC.setZone('Asia/Singapore').weekday;
+  const hoursSeg = openingHoursStr.split('|')[sgtWeekday - 1];
+
+  if (!hoursSeg || hoursSeg.toLowerCase() === 'x') return null;
+
+  const [openStr, closeStr] = hoursSeg.split('-');
+  const [oh] = openStr.split(':').map(Number);
+  let [ch, cm] = closeStr.split(':').map(Number);
+
+  if (cm !== 0) ch += 1;
+  let span = ch - oh;
+  if (span <= 0) span += 24;
+
+  return { startHourUTC: oh, spanHours: span };
+}

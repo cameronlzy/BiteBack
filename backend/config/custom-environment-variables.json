@@ -4,7 +4,6 @@
     "pass": "EMAIL_PASS"
   },
   "jwtPrivateKey": "BITEBACK_JWT_PRIVATE_KEY",
-  "frontendLink": "https://bite-back-henna.vercel.app",
   "mongoURI": "BITEBACK_DB",
   "cloudinary": {
 		"cloudName": "CLOUDINARY_CLOUD_NAME",

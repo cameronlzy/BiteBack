@@ -2,7 +2,9 @@ import mongoose from 'mongoose';
 
 const promotionSchema = new mongoose.Schema({
     restaurant: { 
-        type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant', required: true 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Restaurant', 
+        required: true 
     },
     title: { type: String, required: true },
     description: { type: String, require: true },
@@ -69,6 +71,7 @@ promotionSchema.pre('updateOne', handleSearchKeywordsUpdate());
 promotionSchema.pre('updateMany', handleSearchKeywordsUpdate());
 
 promotionSchema.index({ searchKeywords: 1 });
+promotionSchema.index({ restaurant: 1 });
 
 const Promotion = mongoose.model('Promotion', promotionSchema);
 

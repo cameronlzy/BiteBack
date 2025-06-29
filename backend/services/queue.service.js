@@ -4,7 +4,7 @@ import Restaurant from '../models/restaurant.model.js';
 import _ from 'lodash';
 import { findQueueGroup } from '../helpers/queue.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
-import { notifyClient } from '../helpers/sse.helper.js';
+// import { notifyClient } from '../helpers/sse.helper.js';
 import { error, success } from '../helpers/response.js';
 
 export async function joinQueue(authUser, data) {
@@ -113,7 +113,7 @@ export async function callNext(restaurant, queueGroup) {
         await counter.save(wrapSession(session));
 
         // notify customer
-        notifyClient(nextEntry.customer.toString(), { queueEntry: nextEntry._id, status: 'called' });
+        // notifyClient(nextEntry.customer.toString(), { queueEntry: nextEntry._id, status: 'called' });
 
         return success(nextEntry);
     });
@@ -124,7 +124,7 @@ export async function updateQueueEntryStatus(queueEntry, update) {
     queueEntry.statusTimestamps[update.status] = new Date();
     queueEntry.restaurant = queueEntry.restaurant._id;
     await queueEntry.save();
-    notifyClient(queueEntry.customer.toString(), { queueEntry: queueEntry._id, status: queueEntry.status });
+    // notifyClient(queueEntry.customer.toString(), { queueEntry: queueEntry._id, status: queueEntry.status });
     return success(queueEntry.toObject());
 }
 
