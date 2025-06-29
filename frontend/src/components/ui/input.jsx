@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 const Input = React.forwardRef(({ className, type, ...props }, ref) => {
   return (
     <input
-      ref={ref} // ✅ critical: forward the ref
+      ref={ref}
       type={type}
       data-slot="input"
       className={cn(

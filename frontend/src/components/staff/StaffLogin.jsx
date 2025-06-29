@@ -43,10 +43,7 @@ const StaffLogin = ({ user, loading, setUser }) => {
       toast.success("Staff Login Successful")
     } catch (ex) {
       if (ex.response?.status === 400) {
-        const message =
-          typeof ex.response.data === "string"
-            ? ex.response.data
-            : ex.response.data?.message || "Invalid login credentials"
+        const message = ex.response.data.error || "Invalid login credentials"
         form.setError("username", {
           type: "manual",
           message,

@@ -59,7 +59,7 @@ const JoinQueue = ({ onJoin, restaurantId }) => {
                       className="w-10 h-10 text-xl"
                       onClick={() => setValue("pax", Math.max(1, pax - 1))}
                     >
-                      –
+                      -
                     </Button>
 
                     <div className="text-xl font-semibold w-10 text-center">

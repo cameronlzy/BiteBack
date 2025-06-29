@@ -74,6 +74,33 @@ export function convertOpeningHoursToString(openingHours) {
   return segments.join("|")
 }
 
+export function isOpenToday(restaurant) {
+  if (!restaurant?.openingHours) return false;
+
+  const now = DateTime.now().setZone("Asia/Singapore");
+  const currentDay = now.weekdayLong.toLowerCase(); 
+  const hours = restaurant.openingHours[currentDay];
+
+  if (!hours || hours.toLowerCase() === "closed") return false;
+
+  const [openStr, closeStr] = hours.split("-").map(s => s.trim());
+
+  try {
+    const openTime = DateTime.fromFormat(openStr, "HH:mm", {
+      zone: "Asia/Singapore",
+    }).set({ year: now.year, month: now.month, day: now.day });
+
+    let closeTime = DateTime.fromFormat(closeStr, "HH:mm", {
+      zone: "Asia/Singapore",
+    }).set({ year: now.year, month: now.month, day: now.day });
+
+    return now >= openTime && now <= closeTime;
+  } catch (err) {
+    console.error("Error parsing opening hours:", err);
+    return false;
+  }
+}
+
 export const isWithinOpeningHours = (openingHours) => {
   if (!openingHours) return false;
   
@@ -83,7 +110,7 @@ export const isWithinOpeningHours = (openingHours) => {
   const hours = openingHours[currentDay];
   if (!hours || hours.toLowerCase() === 'closed') return false;
 
-  const [openStr, closeStr] = hours.split(/[-–]/).map(s => s.trim());
+  const [openStr, closeStr] = hours.split(/[--]/).map(s => s.trim());
   
   try {
 
@@ -150,4 +177,15 @@ export const hasPromotionEnded = (promotion) => {
   const now = DateTime.now().setZone("Asia/Singapore")
   const end = DateTime.fromISO(promotion.endDate)
   return end <= now
+}
+
+export const isRestaurantClosed = (restaurant, date) => {
+  if (!restaurant?.openingHours) return false
+
+  const day = date.toLocaleDateString("en-SG", {
+    weekday: "long",
+    timeZone: "Asia/Singapore",
+  }).toLowerCase()
+
+  return restaurant.openingHours[day]?.toLowerCase() === "closed"
 }

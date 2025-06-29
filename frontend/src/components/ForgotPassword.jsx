@@ -38,6 +38,12 @@ const ForgotPassword = () => {
           message: "No account found with that email or username.",
         })
       }
+      if (ex.response?.status === 400) {
+        form.setError("identifier", {
+          type: "manual",
+          message: "Invalid email or username.",
+        })
+      }
     }
   }
   return (

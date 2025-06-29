@@ -120,7 +120,10 @@ const OnlineQueue = ({ user }) => {
   const stillLoading = isLoading || (currentlyQueuing && !customerQueueData)
 
   if (stillLoading) return <LoadingSpinner />
-  if (!stillLoading && !isWithinOpeningHours(restaurant.openingHours))
+  if (
+    (!stillLoading && !isWithinOpeningHours(restaurant.openingHours)) ||
+    !restaurant.queueEnabled
+  )
     return <h1> Online Queue Closed </h1>
   return (
     <React.Fragment>
@@ -151,19 +154,23 @@ const OnlineQueue = ({ user }) => {
               <TableBody className="text-center">
                 <TableRow className="border-t border-black">
                   <TableCell className="font-medium border-r border-black">
-                    1–2 Pax
+                    1-2 Pax
                   </TableCell>
                   <TableCell className="text-xl font-bold border-r border-black">
                     {(restaurantQueueData.small.calledNumber % 1000) + 1000}
                   </TableCell>
                   <TableCell className="text-xl font-bold">
-                    {restaurantQueueData.small.lastNumber -
-                      restaurantQueueData.small.calledNumber}
+                    {Math.max(
+                      restaurantQueueData.small.lastNumber -
+                        restaurantQueueData.small.calledNumber -
+                        1,
+                      0
+                    )}
                   </TableCell>
                 </TableRow>
                 <TableRow className="border-t border-black">
                   <TableCell className="font-medium border-r border-black">
-                    3–4 Pax
+                    3-4 Pax
                   </TableCell>
                   <TableCell className="text-xl font-bold border-r border-black">
                     {(restaurantQueueData.medium.calledNumber % 1000) + 2000}
