@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
-import { generateAnalytics } from '../services/scheduledJobs/generateAnalytics.js';
+import { processVisitHistory } from '../services/scheduledJobs/visitHistoryProcessor.js';
 import Restaurant from '../models/restaurant.model.js';
 import config from 'config';
 
 async function run(restaurantId) {
     if (!restaurantId) {
-        console.error('Usage: node testGenerateAnalytics.js <restaurantId>');
+        console.error('Usage: node testVisitHistory.js <restaurantId>');
         process.exit(1);
     }
 
@@ -19,11 +19,8 @@ async function run(restaurantId) {
             process.exit(1);
         }
         const session = await mongoose.startSession();
-        const analytics = await generateAnalytics(restaurant, session);
-
-        console.log('Generated Analytics:');
-        console.dir(analytics, { depth: null, colors: true });
-
+        await processVisitHistory(restaurant, session);
+        
         await session.endSession();
     } catch (err) {
         console.error('Error running generateAnalytics:', err);

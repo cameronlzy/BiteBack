@@ -12,8 +12,6 @@ const modelsFolder = path.resolve(__dirname, '../models');
 async function createAllIndexes() {
   try {
     await mongoose.connect(config.get('mongoURI'), {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       autoIndex: false,
     });
 

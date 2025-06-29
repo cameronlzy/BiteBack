@@ -26,43 +26,60 @@ export async function processVisitHistory(restaurant, session) {
 
     // combine visits
     const allVisits = [
-        ...reservations.map(r => ({ customer: r.user.profile, date: r.reservationDate })),
-        ...queueEntries.map(q => ({ customer: q.customer, date: q.statusTimestamps.waiting }))
+        ...reservations.map(r => ({
+            customer: r.user.profile.toString(),
+            visitDate: new Date(Math.floor(r.reservationDate.getTime() / 1000) * 1000)
+        })),
+        ...queueEntries.map(q => ({
+            customer: q.customer.toString(),
+            visitDate: new Date(Math.floor(q.statusTimestamps.waiting.getTime() / 1000) * 1000)
+        }))
     ];
 
     const visitsByCustomer = new Map();
 
-    for (const visit of allVisits) {
-        const customerId = visit.customer.toString();
-
-        const ts = Math.floor(visit.date.getTime() / 1000) * 1000;
-
-        if (!visitsByCustomer.has(customerId)) {
-            visitsByCustomer.set(customerId, new Map());
+    for (const { customer, visitDate } of allVisits) {
+        if (!visitsByCustomer.has(customer)) {
+            visitsByCustomer.set(customer, new Map());
         }
-
-        const customerMap = visitsByCustomer.get(customerId);
-        if (!customerMap.has(ts)) {
-            customerMap.set(ts, { visitDate: new Date(ts), reviewed: false });
-        }
+        visitsByCustomer.get(customer).set(visitDate.getTime(), {
+            visitDate,
+            reviewed: false
+        });
     }
 
     const bulkOps = [];
 
     for (const [customerIdStr, visitMap] of visitsByCustomer.entries()) {
-        const visits = Array.from(visitMap.values());
-        bulkOps.push({
-            updateOne: {
-                filter: {
-                    customer: new mongoose.Types.ObjectId(customerIdStr),
-                    restaurant: restaurant._id
-                },
-                update: {
-                    $addToSet: { visits: { $each: visits } }
-                },
-                upsert: true
-            }
-        });
+        const customerId = new mongoose.Types.ObjectId(customerIdStr);
+
+        const doc = await VisitHistory.findOne({
+            customer: customerId,
+            restaurant: restaurant._id
+        }).select('visits.visitDate').session(session);
+
+        const existingTimestamps = new Set(
+            (doc?.visits ?? []).map(v => v.visitDate.getTime())
+        );
+
+        const newVisits = Array.from(visitMap.values()).filter(
+            v => !existingTimestamps.has(v.visitDate.getTime())
+        );
+
+        if (newVisits.length > 0) {
+            bulkOps.push({
+                updateOne: {
+                    filter: {
+                        customer: customerId,
+                        restaurant: restaurant._id
+                    },
+                    update: {
+                        $push: { visits: { $each: newVisits } }
+                    },
+                    upsert: true
+                }
+            });
+        }
     }
 
     if (bulkOps.length > 0) {

@@ -1,7 +1,7 @@
 {
   "jwtPrivateKey": "",
   "mongoURI": "",
-  "frontendLink": "",
+  "frontendLink": "https://bite-back-henna.vercel.app",
   "cloudinary": {},
   "email": {},
   "mapboxToken": "",

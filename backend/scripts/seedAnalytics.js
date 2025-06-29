@@ -9,6 +9,11 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function roundToDP(value, dp) {
+    const factor = 10 ** dp;
+    return Math.round(value * factor) / factor;
+}
+
 function smoothValue(prev, trend = 0, volatility = 0.1, min = 0, max = Infinity) {
     const randomNoise = 1 + (Math.random() - 0.5) * 2 * volatility; // e.g., ±10%
     const value = prev * (1 + trend) * randomNoise;
@@ -73,8 +78,6 @@ function generateTrendedAnalytics(restaurantId, date, prev) {
 
 async function seedAnalytics(days, restaurantIdArg) {
     await mongoose.connect(config.get('mongoURI'), {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
         autoIndex: false,
     });
 
@@ -86,7 +89,7 @@ async function seedAnalytics(days, restaurantIdArg) {
 
     let prevEntry = {
         reservations: { total: 30, attended: 25, averagePax: 2.5 },
-        reviews: { count: 10, averageRating: 4.0 },
+        reviews: { count: 10, averageRating: 3.0 },
         queue: {
             total: 90,
             attended: 80,
@@ -127,19 +130,19 @@ async function seedAnalytics(days, restaurantIdArg) {
             reservations: {
                 total: Math.round(raw.reservations.total),
                 attended: Math.round(raw.reservations.attended),
-                noShowRate: raw.reservations.noShowRate,
-                averagePax: Math.round(raw.reservations.averagePax * 10) / 10,
+                noShowRate: roundToDP(raw.reservations.noShowRate, 1),
+                averagePax: roundToDP(raw.reservations.averagePax, 1),
             },
             reviews: {
                 count: Math.round(raw.reviews.count),
-                averageRating: Math.round(raw.reviews.averageRating * 10) / 10,
+                averageRating: roundToDP(raw.reviews.averageRating, 2),
                 ratingMode: raw.reviews.ratingMode,
             },
             queue: {
                 total: Math.round(raw.queue.total),
                 attended: Math.round(raw.queue.attended),
-                abandonmentRate: raw.queue.abandonmentRate,
-                averageWaitTime: Math.round(raw.queue.averageWaitTime),
+                abandonmentRate: roundToDP(raw.queue.abandonmentRate, 1),
+                averageWaitTime: roundToDP(raw.queue.averageWaitTime, 1),
                 byQueueGroup: {
                     small: {
                         total: Math.round(raw.queue.byQueueGroup.small.total),

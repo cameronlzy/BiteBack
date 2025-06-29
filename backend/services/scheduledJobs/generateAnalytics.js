@@ -35,10 +35,10 @@ export async function generateAnalytics(restaurant, session) {
         total: r.total ?? 0,
         attended: r.attended ?? 0,
         noShowRate:
-        r.total && r.attended !== undefined
-            ? (r.total - r.attended) / r.total
-            : 0,
-        averagePax: r.averagePax ?? 0
+            r.total && r.attended !== undefined
+                ? +((r.total - r.attended) / r.total).toFixed(3)
+                : 0,
+        averagePax: +(r.averagePax ?? 0).toFixed(1)
     };
 
     // queue
