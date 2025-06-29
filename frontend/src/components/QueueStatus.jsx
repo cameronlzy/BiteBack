@@ -90,9 +90,13 @@ const QueueStatus = ({
 
   const groupsInFront =
     customerQueueData && restaurantQueueData
-      ? customerQueueData.queueNumber -
-        (restaurantQueueData[getQueueIndex(customerQueueData.pax)]
-          ?.currentQueueNumber ?? 0)
+      ? Math.max(
+          customerQueueData.queueNumber -
+            (restaurantQueueData[getQueueIndex(customerQueueData.pax)]
+              ?.currentQueueNumber ?? 0) -
+            1,
+          0
+        )
       : 0
 
   const statusConfig = {

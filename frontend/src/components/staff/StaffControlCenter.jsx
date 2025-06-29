@@ -1,16 +1,13 @@
 import React from "react"
 import authService from "@/services/authService"
 import { Button } from "@/components/ui/button"
-import { useNavigate } from "react-router-dom"
 import StaffQueue from "./StaffQueue"
 import StaffBookings from "./StaffBookings"
 
 const StaffControlCenter = ({ user }) => {
-  const navigate = useNavigate()
-
   const handleLogout = async () => {
     await authService.logout()
-    navigate("/")
+    window.location = "/"
   }
   return (
     <React.Fragment>

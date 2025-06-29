@@ -200,6 +200,13 @@ const PromotionForm = ({ user }) => {
       toast.success(isEdit ? "Promotion updated" : "Promotion created")
       navigate(`/promotions`, { replace: true })
     } catch (ex) {
+      if (ex.response?.status === 400) {
+        const message = ex.response.data?.error
+        form.setError("startDate", {
+          type: "manual",
+          message: message || "Reservation failed",
+        })
+      }
       toast.error("Failed to save promotion")
       console.error(ex)
       throw ex

@@ -30,6 +30,7 @@ import Promotions from "./components/Promotions"
 import OwnerPromotions from "./components/OwnerPromotions"
 import OwnerRestaurants from "./components/OwnerRestaurants"
 import RestaurantPerformance from "./components/statistics/RestaurantPerformance"
+import LoadingSpinner from "./components/common/LoadingSpinner"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -153,7 +154,9 @@ function App() {
           <Route
             path="restaurants"
             element={
-              user && user.role === "owner" ? (
+              loading ? (
+                <LoadingSpinner />
+              ) : user && user.role === "owner" ? (
                 <OwnerRestaurants user={user} />
               ) : (
                 <Restaurants />
@@ -272,10 +275,12 @@ function App() {
           <Route
             path="promotions"
             element={
-              user && user.role === "owner" ? (
+              loading ? (
+                <LoadingSpinner />
+              ) : user && user.role === "owner" ? (
                 <OwnerPromotions user={user} />
               ) : (
-                <Promotions user={user} />
+                <Promotions />
               )
             }
           />

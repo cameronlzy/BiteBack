@@ -114,12 +114,18 @@ const StaffQueue = () => {
     <div className="p-6">
       <div className="border p-4 rounded-xl shadow-sm mb-6 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">
-            {restaurant.name}{" "}
-            <span className="text-muted-foreground">
-              @ {restaurant.address}
-            </span>
-          </h2>
+          {restaurant ? (
+            <h2 className="text-xl font-semibold">
+              {restaurant.name}{" "}
+              <span className="text-muted-foreground">
+                @ {restaurant.address}
+              </span>
+            </h2>
+          ) : (
+            <h2 className="text-xl font-semibold text-muted-foreground">
+              Loading restaurant info...
+            </h2>
+          )}
         </div>
         <Button
           variant={queueEnabled ? "destructive" : "default"}

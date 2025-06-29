@@ -341,7 +341,10 @@ const Restaurant = ({ user }) => {
                     ? "opacity-50 cursor-not-allowed"
                     : ""
                 }`}
-                disabled={!isWithinOpeningHours(openingHours)}
+                disabled={
+                  !isWithinOpeningHours(openingHours) ||
+                  !restaurant.queueEnabled
+                }
               >
                 <Users className="w-5 h-5" />
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
