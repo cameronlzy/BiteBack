@@ -13,14 +13,25 @@ export async function getSummary(restaurantId, { date, amount, unit } = {}) {
   if (date) params.append("date", date)
   if (amount) params.append("amount", amount)
   if (unit) params.append("unit", unit)
+
   const { data } = await http.get(`${apiEndpoint}/${restaurantId}/summary?${params.toString()}`)
 
   if (data.type === "single") {
     data.aggregated.date = toSGT(data.aggregated.date).toISO()
+
+    if (data.aggregated.visitLoadByHour) {
+      data.aggregated.visitLoadByHour.startHour =
+        (data.aggregated.visitLoadByHour.startHour + 8) % 24
+    }
   } else if (data.type === "range") {
     for (const entry of data.entries) {
       entry.startDate = toSGT(entry.startDate).toISO()
       entry.endDate = toSGT(entry.endDate).toISO()
+
+      const weekdayLoads = entry.aggregated?.visitLoadByWeekday || []
+      for (const weekday of weekdayLoads) {
+        weekday.startHour = (weekday.startHour + 8) % 24
+      }
     }
   }
 

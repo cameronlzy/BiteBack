@@ -178,3 +178,14 @@ export const hasPromotionEnded = (promotion) => {
   const end = DateTime.fromISO(promotion.endDate)
   return end <= now
 }
+
+export const isRestaurantClosed = (restaurant, date) => {
+  if (!restaurant?.openingHours) return false
+
+  const day = date.toLocaleDateString("en-SG", {
+    weekday: "long",
+    timeZone: "Asia/Singapore",
+  }).toLowerCase()
+
+  return restaurant.openingHours[day]?.toLowerCase() === "closed"
+}

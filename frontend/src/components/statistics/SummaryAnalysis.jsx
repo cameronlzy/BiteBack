@@ -14,7 +14,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { format, isAfter } from "date-fns"
+import { format, isBefore, startOfToday } from "date-fns"
 import { Clock, Phone, PieChart, Star } from "lucide-react"
 import { Separator } from "../ui/separator"
 import FootFall from "../common/charts/FootFall"
@@ -22,15 +22,25 @@ import { getSummary } from "@/services/analyticsService"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { toast } from "react-toastify"
 import SubmitButton from "../common/SubmitButton"
+import { isRestaurantClosed } from "@/utils/timeConverter"
 
 const SummaryAnalysis = ({ restaurant }) => {
   const [unit, setUnit] = useState("day")
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState(
+    new Date(Date.now() - 86400000)
+  )
   const [tempNumber, setTempNumber] = useState("1")
   const prevUnitRef = useRef(unit)
 
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState(null)
+
+  const getDisabledDates = () => {
+    return (date) =>
+      !date ||
+      !isBefore(date, startOfToday()) ||
+      isRestaurantClosed(restaurant, date)
+  }
 
   const fetchData = async (possibleNum) => {
     if (!restaurant?._id) return
@@ -53,7 +63,9 @@ const SummaryAnalysis = ({ restaurant }) => {
       setData(response)
     } catch (ex) {
       console.log(ex)
-      toast.error("Failed to fetch summary:", ex)
+      toast.error("Failed to fetch summary", {
+        toastId: "fetch-summary-fail",
+      })
       setData(null)
     } finally {
       setLoading(false)
@@ -112,7 +124,7 @@ const SummaryAnalysis = ({ restaurant }) => {
                   mode="single"
                   selected={selectedDate}
                   onSelect={(date) => date && setSelectedDate(date)}
-                  disabled={(date) => isAfter(date, new Date())}
+                  disabled={getDisabledDates()}
                   initialFocus
                 />
               </PopoverContent>

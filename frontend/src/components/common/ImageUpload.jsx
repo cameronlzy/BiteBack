@@ -56,7 +56,8 @@ const ImageUpload = ({
 
     for (const file of Array.from(files)) {
       const isValidSize = file.size <= MAX_FILE_SIZE_MB * 1024 * 1024
-      const isValidType = ACCEPTED_TYPES.includes(file.type)
+      const isValidType =
+        ACCEPTED_TYPES.includes(file.type) && /\.(jpe?g|png)$/i.test(file.name)
 
       if (!isValidSize || !isValidType) {
         toast.error(`${file.name} is invalid. Use JPEG/PNG ≤ 5MB.`)

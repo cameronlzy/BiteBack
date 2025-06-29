@@ -46,21 +46,33 @@ const PieChart = ({
       .attr("stroke-width", "1px")
       .on("mouseover", function (event, d) {
         const percent = ((d.data.value / total) * 100).toFixed(1)
-        d3.select(tooltipRef.current)
+        const tooltip = tooltipRef.current
+        const bounds = ref.current.getBoundingClientRect()
+
+        d3.select(tooltip)
           .style("display", "block")
-          .style("left", event.pageX + 10 + "px")
-          .style("top", event.pageY - 28 + "px")
+          .style("left", `${event.clientX - bounds.left}px`)
+          .style(
+            "top",
+            `${event.clientY - bounds.top - tooltip.offsetHeight - 8}px`
+          )
           .html(
             `<div style="font-weight: bold; font-size: 14px;">${d.data.label}</div>
-          <hr style="margin: 6px 0;" />
-          <div>Number: <strong>${d.data.value}</strong></div>
-          <div>Percentage: ${percent}%</div>`
+       <hr style="margin: 6px 0;" />
+       <div>Number: <strong>${d.data.value}</strong></div>
+       <div>Percentage: ${percent}%</div>`
           )
       })
       .on("mousemove", function (event) {
-        d3.select(tooltipRef.current)
-          .style("left", event.pageX + 10 + "px")
-          .style("top", event.pageY - 28 + "px")
+        const tooltip = tooltipRef.current
+        const bounds = ref.current.getBoundingClientRect()
+
+        d3.select(tooltip)
+          .style("left", `${event.clientX - bounds.left + 50}px`)
+          .style(
+            "top",
+            `${event.clientY - bounds.top - tooltip.offsetHeight / 2 - 8}px`
+          )
       })
       .on("mouseout", function () {
         d3.select(tooltipRef.current).style("display", "none")
@@ -96,7 +108,7 @@ const PieChart = ({
     .range(["#ff4f0f", "#ffa673", "#ffe3bb"])
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="relative w-full flex flex-col items-center">
       <svg
         ref={ref}
         viewBox={`0 0 ${width + padding * 2} ${height + padding * 2}`}

@@ -77,7 +77,9 @@ const FootFall = ({ data, mode = "day", width = 160, height = 100 }) => {
 
     const svg = d3.select(chartRef.current)
     svg.selectAll("*").remove()
-    svg.attr("width", width).attr("height", height)
+    svg
+      .attr("viewBox", `0 0 ${width} ${height}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
 
     const g = svg
       .append("g")
@@ -117,7 +119,8 @@ const FootFall = ({ data, mode = "day", width = 160, height = 100 }) => {
       )
       .selectAll("text")
       .attr("font-size", 8)
-      .attr("fill", "#64748b")
+      .attr("font-weight", "500")
+      .attr("fill", "#1e293b")
 
     g.append("g")
       .call(
@@ -129,6 +132,7 @@ const FootFall = ({ data, mode = "day", width = 160, height = 100 }) => {
       )
       .selectAll("text")
       .attr("font-size", 8)
+      .attr("font-weight", "800")
       .attr("fill", "#64748b")
 
     g.selectAll(".domain").remove()
@@ -193,7 +197,9 @@ const FootFall = ({ data, mode = "day", width = 160, height = 100 }) => {
         </div>
       ) : (
         <div className="flex justify-center">
-          <svg ref={chartRef} className="w-full" />
+          <div className="w-[250px]">
+            <svg ref={chartRef} className="w-full" />
+          </div>
         </div>
       )}
       {isMonth && (

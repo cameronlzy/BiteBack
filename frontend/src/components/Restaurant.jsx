@@ -319,7 +319,7 @@ const Restaurant = ({ user }) => {
               className="group"
               onClick={(e) =>
                 (!isWithinOpeningHours(openingHours) ||
-                  restaurant.queueEnabled) &&
+                  !restaurant.queueEnabled) &&
                 e.preventDefault()
               }
             >

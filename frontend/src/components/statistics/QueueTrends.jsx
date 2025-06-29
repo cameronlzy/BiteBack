@@ -81,7 +81,7 @@ const QueueTrends = ({ data }) => {
         <div class='mb-1'>Date:</div>
         <strong>${dateFormatted}</strong>
         <div class='mt-1'>Average Wait Time:</div>
-        <strong>${d.value} min</strong>
+        <strong>${d.value.toFixed(1)} min</strong>
         ${changeStr}
       </div>`
 

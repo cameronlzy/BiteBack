@@ -81,7 +81,7 @@ const ReviewTrends = ({ data }) => {
         <div class='mb-1'>Date:</div>
         <strong>${dateFormatted}</strong>
         <div class='mt-1 mb-1'>Average Rating:</div>
-        <strong>${d.value}</strong>
+        <strong>${d.value.toFixed(2)}</strong>
         ${changeStr}
         <div class="mt-1">${ReactDOMServer.renderToStaticMarkup(
           <StarRating rating={d.value} className="w-4 h-4" />
