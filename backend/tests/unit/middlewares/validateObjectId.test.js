@@ -18,13 +18,17 @@ describe('validateObjectId middleware', () => {
     next = jest.fn();
   });
 
-  it('should return 400 if id is invalid', () => {
-    jest.spyOn(mongoose.Types.ObjectId, 'isValid').mockReturnValue(false);
+  it('should return 400 if any id param is invalid', () => {
+    jest.spyOn(mongoose.Types.ObjectId, 'isValid').mockImplementation((id) => {
+      if (id === req.params.id) return false;
+      return true;
+    });
 
-    validateObjectId(req, res, next);
+    const middleware = validateObjectId(['id', 'itemId']);
+    middleware(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(wrapError('Invalid ID'));
+    expect(res.json).toHaveBeenCalledWith(wrapError("Invalid ID for param 'id'"));
     expect(next).not.toHaveBeenCalled();
 
     mongoose.Types.ObjectId.isValid.mockRestore();
@@ -33,9 +37,34 @@ describe('validateObjectId middleware', () => {
   it('should call next if id is valid', () => {
     jest.spyOn(mongoose.Types.ObjectId, 'isValid').mockReturnValue(true);
 
-    validateObjectId(req, res, next);
+    const middleware = validateObjectId(['id', 'itemId']);
+    middleware(req, res, next);
 
     expect(next).toHaveBeenCalled();
+
+    mongoose.Types.ObjectId.isValid.mockRestore();
+  });
+
+  it('should validate a single id param', () => {
+    jest.spyOn(mongoose.Types.ObjectId, 'isValid').mockReturnValue(true);
+
+    const middleware = validateObjectId(['id']);
+    middleware(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+
+    mongoose.Types.ObjectId.isValid.mockRestore();
+  });
+
+  it('should return 400 if single id param is invalid', () => {
+    jest.spyOn(mongoose.Types.ObjectId, 'isValid').mockReturnValue(false);
+
+    const middleware = validateObjectId(['id']);
+    middleware(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(wrapError("Invalid ID for param 'id'"));
+    expect(next).not.toHaveBeenCalled();
 
     mongoose.Types.ObjectId.isValid.mockRestore();
   });

@@ -38,6 +38,7 @@ export function validatePatch(update) {
             startTime: timeString.required(),
             endTime: timeString.required()
         }).optional(),
+        isActive: Joi.boolean()
     }).min(1);
     return schema.validate(update);
 }

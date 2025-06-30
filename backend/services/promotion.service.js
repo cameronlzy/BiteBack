@@ -100,7 +100,7 @@ export async function getPromotionsByOwner(authUser) {
 export async function getPromotionById(promotionId) {
     const promotion = await Promotion.findById(promotionId).populate('restaurant', 'name').lean();
     if (!promotion) return error(404, 'Promotion not found');
-    if (promotion.endDate < new Date() || !promotion.isActive) return error(404, 'Promotion expired');
+    if (promotion.endDate < new Date()) return error(404, 'Promotion expired');
     return success(promotion);
 }
 

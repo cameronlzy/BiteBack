@@ -18,33 +18,33 @@ const reviewParser = parser('reviews');
 router.get('/eligible-visits', [auth, isCustomer], reviewController.getEligibleVisits);
 
 // [Public] - Get all reviews for a restaurant
-router.get('/restaurant/:id', [validateObjectId, optionalAuth], reviewController.getReviewsByRestaurant);
+router.get('/restaurant/:id', [validateObjectId(), optionalAuth], reviewController.getReviewsByRestaurant);
 
 // [Public] - Get all reviews submitted by a customer
-router.get('/customer/:id',[validateObjectId, optionalAuth], reviewController.getReviewsByCustomer);
+router.get('/customer/:id',[validateObjectId(), optionalAuth], reviewController.getReviewsByCustomer);
 
 // [Public] - Get a single review by ID
-router.get('/:id', validateObjectId, reviewController.getReviewById);
+router.get('/:id', validateObjectId(), reviewController.getReviewById);
 
 // [Customer] - Create a new review
 router.post('/', [auth, isCustomer], reviewController.createReview);
 
 // [Owner] - Create a new owner reply to a review
-router.post('/:id/reply', [validateObjectId, auth, isOwner, authorizedReviewRestaurantOwner], reviewController.createReply);
+router.post('/:id/reply', [validateObjectId(), auth, isOwner, authorizedReviewRestaurantOwner], reviewController.createReply);
 
 // [Customer] - Add or Update a badge vote on a review
-router.post('/:id/badges', [validateObjectId, auth, isCustomer], reviewController.addBadge);
+router.post('/:id/badges', [validateObjectId(), auth, isCustomer], reviewController.addBadge);
 
 // [Customer] - Upload images for their review
-router.post('/:id/images', [validateObjectId, auth, isCustomer, authorizedReviewCustomer, reviewParser.array('images', 5)], reviewController.addReviewImages);
+router.post('/:id/images', [validateObjectId(), auth, isCustomer, authorizedReviewCustomer, reviewParser.array('images', 5)], reviewController.addReviewImages);
 
 // [Customer] - Delete a review (owned by the customer)
-router.delete('/:id', [validateObjectId, auth, isCustomer, authorizedReviewCustomer], reviewController.deleteReview);
+router.delete('/:id', [validateObjectId(), auth, isCustomer, authorizedReviewCustomer], reviewController.deleteReview);
 
 // [Owner] - Delete a reply (owned by the owner)
-router.delete('/:id/reply', [validateObjectId, auth, isOwner, authorizedReviewRestaurantOwner], reviewController.deleteReply);
+router.delete('/:id/reply', [validateObjectId(), auth, isOwner, authorizedReviewRestaurantOwner], reviewController.deleteReply);
 
 // [Customer] - Delete badge vote by current user on a review
-router.delete('/:id/badges', [validateObjectId, auth, isCustomer], reviewController.deleteBadge);
+router.delete('/:id/badges', [validateObjectId(), auth, isCustomer], reviewController.deleteBadge);
 
 export default router;

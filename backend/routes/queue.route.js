@@ -17,27 +17,27 @@ const router = wrapRoutes(express.Router());
 router.get('/stream', [auth, isCustomer], queueController.subscribeToQueue);
 
 // [Customer] - Get their queue status
-router.get('/:id', [validateObjectId, auth, isCustomer, authorizedQueueEntryCustomer], queueController.getStatus);
+router.get('/:id', [validateObjectId(), auth, isCustomer, authorizedQueueEntryCustomer], queueController.getStatus);
 
 // [Customer] - Join the queue
 router.post('/', [auth, isCustomer], queueController.joinQueue);
 
 // [Customer] - Leave the queue
-router.delete('/:id', [validateObjectId, auth, isCustomer, authorizedQueueEntryCustomer], queueController.leaveQueue);
+router.delete('/:id', [validateObjectId(), auth, isCustomer, authorizedQueueEntryCustomer], queueController.leaveQueue);
 
 // [Public] - Get restaurant queue
-router.get('/restaurant/:id', validateObjectId, queueController.getRestaurantQueue);
+router.get('/restaurant/:id', validateObjectId(), queueController.getRestaurantQueue);
 
 // [Staff] - Get restaurant queue
-router.get('/restaurant/:id/overview', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.getRestaurantQueueOverview);
+router.get('/restaurant/:id/overview', [validateObjectId(), auth, isStaff, authorizedRestaurantStaff], queueController.getRestaurantQueueOverview);
 
 // [Staff] - Update queue entry status
-router.patch('/:id/status', [validateObjectId, auth, isStaff, authorizedQueueEntryStaff], queueController.updateQueueEntryStatus);
+router.patch('/:id/status', [validateObjectId(), auth, isStaff, authorizedQueueEntryStaff], queueController.updateQueueEntryStatus);
 
 // [Staff] - Calls next in restaurant queue
-router.patch('/restaurant/:id/next', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.callNext);
+router.patch('/restaurant/:id/next', [validateObjectId(), auth, isStaff, authorizedRestaurantStaff], queueController.callNext);
 
 // [Staff] - Toggle on and off the queue
-router.patch('/restaurant/:id/queue', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], queueController.toggleQueue);
+router.patch('/restaurant/:id/queue', [validateObjectId(), auth, isStaff, authorizedRestaurantStaff], queueController.toggleQueue);
 
 export default router;
