@@ -3,7 +3,7 @@ import * as imageService from '../services/image.service.js';
 import Restaurant from '../models/restaurant.model.js';
 import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch } from '../validators/restaurant.validator.js';
 import Joi from 'joi';
-import { ISOdate } from '../helpers/time.helper.js';
+import { dateFullOnly } from '../helpers/time.helper.js';
 import { wrapError } from '../helpers/response.js';
 
 export async function searchRestaurants(req, res) {
@@ -52,7 +52,7 @@ export async function getRestaurantById(req, res) {
 
 export async function getAvailability(req, res) {
     // validate query
-    const schema = Joi.object({ date: ISOdate.required() });
+    const schema = Joi.object({ date: dateFullOnly.required() });
     const { error } = schema.validate(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 

@@ -1,6 +1,5 @@
 import express from 'express';
 import * as rewardsShopController from '../controllers/rewardsShop.controller.js';
-// import parser from '../middleware/cloudinaryUpload.js';
 import auth from '../middleware/auth.js';
 import isOwner from '../middleware/isOwner.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
@@ -9,8 +8,6 @@ import authorizedRestaurantOwner from '../middleware/authorizedRestaurantOwner.j
 import authorizedRewardItemOwner from '../middleware/authorizedRewardItemOwner.js';
 
 const router = wrapRoutes(express.Router());
-
-// const promotionParser = parser('promotions');
 
 // [Public] - Get all shop items for restaurant
 router.get('/restaurant/:id/shop', [validateObjectId()], rewardsShopController.getAllItems);

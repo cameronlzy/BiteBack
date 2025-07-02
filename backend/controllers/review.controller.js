@@ -5,7 +5,7 @@ import { validateReview, validateReply, validateBadge, validateRestaurantId } fr
 import { wrapError } from '../helpers/response.js';
 
 export async function getEligibleVisits(req, res) {
-  const { error } = validateRestaurantId(req.body);
+  const { error } = validateRestaurantId(req.query.restaurantId);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
   const { status, body } = await reviewService.getEligibleVisits(req.query.restaurantId, req.user);

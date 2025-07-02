@@ -4,10 +4,27 @@ import Review from '../models/review.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
-// import VisitHistory from '../models/visitHistory.model.js';
+import VisitHistory from '../models/visitHistory.model.js';
 import { deleteImagesFromDocument } from './image.service.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 import { error, success } from '../helpers/response.js';
+
+export async function getEligibleVisits(restaurantId, authUser) {
+    // check if restaurant exists
+    const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
+    if (!restaurant) return { status: 404, body: 'Restaurant not found' };
+
+    // get visits by customer in restaurant
+    const visitHistory = await VisitHistory.find({ customer: authUser.profile, restaurant: restaurant._id }).lean();
+    if (!visitHistory || visitHistory.visits.length === 0) return success([]);
+
+    // filter out reviewed visits
+    const unreviewedVisits = visitHistory.visits
+        .filter(v => !v.reviewed)
+        .map(v => ({ visitDate: v.visitDate }));
+
+    return success(unreviewedVisits.toObject());
+}
 
 export async function getReviewsByRestaurant(restaurantId, authUser) {
     // check if restaurant exists
@@ -70,14 +87,43 @@ export async function getReviewById(reviewId) {
 
 export async function createReview(data, user) {
     return await withTransaction(async (session) => {
+        const restaurant = await Restaurant.findById(data.restaurant).select('timezone').lean();
+        if (!restaurant) return error(404, 'Restaurant not found');
+
+        const visitDate = DateTime.fromISO(data.dateVisited, { zone: restaurant.timezone }).toUTC().toJSDate();
+
+        // validate eligibility
+        const visitHistory = await VisitHistory.findOne({
+            customer: user.profile,
+            restaurant: data.restaurant,
+            'visits.visitDate': visitDate
+        }, { 'visits.$': 1 }).session(session).lean();
+
+        if (!visitHistory || visitHistory.visits.length === 0) return error(400, 'Visit not found for selected date');
+
+        const visit = visitHistory.visits[0];
+        if (visit.reviewed) return error(400, 'Visit has already been reviewed');
+
         // create review
         const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
-        review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
+        review.dateVisited = visitDate;
         review.customer = user.profile;
         await review.save(wrapSession(session));
 
         // update restaurant ratings
         await updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
+
+        // update visitHistory
+        await VisitHistory.updateOne(
+            {
+                customer: user.profile,
+                restaurant: data.restaurant,
+                'visits.visitDate': visitDate
+            },
+            {
+                $set: { 'visits.$.reviewed': true }
+            }
+        ).session(session);
 
         const returnedReview = {
             ...review.toObject(),

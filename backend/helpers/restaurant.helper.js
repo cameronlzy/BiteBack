@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
 
-export function convertSGTOpeningHoursToUTC(openingHoursString) {
+export function convertOpeningHoursToUTC(openingHoursString, timezone = 'Asia/Singapore') {
   const days = openingHoursString.split('|');
 
   const converted = days.map(entry => {
@@ -8,8 +8,8 @@ export function convertSGTOpeningHoursToUTC(openingHoursString) {
 
     const [start, end] = entry.split('-');
 
-    const startTime = DateTime.fromFormat(start, 'HH:mm', { zone: 'Asia/Singapore' }).toUTC();
-    const endTime = DateTime.fromFormat(end, 'HH:mm', { zone: 'Asia/Singapore' }).toUTC();
+    const startTime = DateTime.fromFormat(start, 'HH:mm', { zone: timezone }).toUTC();
+    const endTime = DateTime.fromFormat(end, 'HH:mm', { zone: timezone }).toUTC();
 
     return `${startTime.toFormat('HH:mm')}-${endTime.toFormat('HH:mm')}`;
   });
@@ -97,8 +97,8 @@ export function getCurrentTimeSlotStartUTC(restaurant) {
   return slotStart.toUTC(); // JS Date in UTC
 }
 
-export function getOpeningHoursToday(restaurant) {
-  const now = DateTime.now().setZone('Asia/Singapore');
+export function getOpeningHoursToday(restaurant, timezone = 'Asia/Singapore') {
+  const now = DateTime.now().setZone(timezone);
   const weekdayIndex = now.weekday - 1;
 
   const openingHoursArray = restaurant.openingHours.split('|');
@@ -106,8 +106,8 @@ export function getOpeningHoursToday(restaurant) {
   return todayOpening;
 }
 
-export function getOpeningWindow(dateUTC, openingHoursStr) {
-  const sgtWeekday = dateUTC.setZone('Asia/Singapore').weekday;
+export function getOpeningWindow(dateUTC, openingHoursStr, timezone = 'Asia/Singapore') {
+  const sgtWeekday = dateUTC.setZone(timezone).weekday;
   const hoursSeg = openingHoursStr.split('|')[sgtWeekday - 1];
 
   if (!hoursSeg || hoursSeg.toLowerCase() === 'x') return null;

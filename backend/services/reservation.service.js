@@ -1,7 +1,6 @@
 import Reservation from '../models/reservation.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import { DateTime } from 'luxon';
-import { convertToUTC } from '../helpers/time.helper.js';
 import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
 import { error, success } from '../helpers/response.js';
 
@@ -79,8 +78,8 @@ export async function createReservation(user, data) {
     if (user.role === 'owner' && !restaurant.owner.equals(user._id)) return error(403, 'Owners can only reserve their own restaurants');
 
     // check availability
-    const SGTdate = DateTime.fromISO(data.reservationDate, { zone: 'Asia/Singapore' });
-    const UTCdate = SGTdate.toUTC();
+    const date = DateTime.fromISO(data.reservationDate, { zone: restaurant.timezone });
+    const UTCdate = date.toUTC();
     const currentReservations = await Reservation.find({
         restaurant: restaurant._id, reservationDate: { $gte: UTCdate.toJSDate(), $lte: UTCdate.plus({ minutes: restaurant.slotDuration }).toJSDate() }
     }).select({ pax: 1 }).lean();
@@ -94,7 +93,7 @@ export async function createReservation(user, data) {
     const reservation = new Reservation({
         user: user._id,
         restaurant: data.restaurant,
-        reservationDate: convertToUTC(data.reservationDate),
+        reservationDate: UTCdate.toJSDate(),
         remarks: data.remarks,
         pax: data.pax,
         status: user.role === 'owner' ? 'event' : 'booked'
@@ -113,15 +112,16 @@ export async function updateReservationStatus(reservation, status) {
 export async function updateReservation(reservation, update) {
     const isDateChanging = update.reservationDate !== undefined;
     const isPaxChanging = update.pax !== undefined;
+    let newDateUTC;
 
     if (isDateChanging || isPaxChanging) {
         const newDate = isDateChanging ? update.reservationDate : reservation.reservationDate.toISOString();
         const newPax = isPaxChanging ? update.pax : reservation.pax;
+        const restaurant = await Restaurant.findById(reservation.restaurant).select('+maxCapacity +slotDuration +timezone').lean();
 
-        const SGTdate = DateTime.fromISO(newDate, { zone: 'Asia/Singapore' });
-        const UTCdate = SGTdate.toUTC();
-
-        const restaurant = await Restaurant.findById(reservation.restaurant).select('+maxCapacity +slotDuration').lean();
+        const date = DateTime.fromISO(newDate, { zone: restaurant.timezone });
+        const UTCdate = date.toUTC();
+        newDateUTC = UTCdate;
 
         const currentReservations = await Reservation.find({
             restaurant: restaurant._id,
@@ -145,7 +145,7 @@ export async function updateReservation(reservation, update) {
     }
 
     if (update.reservationDate !== undefined) {
-        reservation.reservationDate = convertToUTC(update.reservationDate);
+        reservation.reservationDate = newDateUTC;
     } 
     if (update.remarks !== undefined) {
         reservation.remarks = update.remarks;

@@ -328,7 +328,7 @@ describe('restaurant test', () => {
 
             // create a reservation
             reservationDate = new Date('2025-05-17T11:00'); // UTC date
-            queryDateSG = DateTime.fromJSDate(reservationDate, { zone: 'utc' }).setZone('Asia/Singapore').toISODate(); // SG date
+            queryDateSG = encodeURIComponent(DateTime.fromJSDate(reservationDate, { zone: 'utc' }).setZone('Asia/Singapore').startOf('day').toISO());
             pax = 10;
             const reservation = new Reservation({
                 user: userId, restaurant: restaurantId,
@@ -364,7 +364,7 @@ describe('restaurant test', () => {
         });
 
         it('should return 200 if valid token, restaurant closed', async () => {
-            const sunday = DateTime.fromISO('2025-05-18').setZone('Asia/Singapore').toISODate();
+            const sunday = encodeURIComponent(DateTime.fromISO('2025-05-18').setZone('Asia/Singapore').startOf('day').toISO());
             url = `/api/restaurants/${restaurantId}/availability?date=${sunday}`;
             const res = await exec();
             expect(res.status).toBe(200);

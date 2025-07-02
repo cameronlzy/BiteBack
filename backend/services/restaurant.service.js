@@ -8,7 +8,7 @@ import Promotion from '../models/promotion.model.js';
 import Staff from '../models/staff.model.js';
 import { DateTime } from 'luxon';
 import * as reservationService from '../services/reservation.service.js';
-import { createSlots, convertSGTOpeningHoursToUTC, filterOpenRestaurants } from '../helpers/restaurant.helper.js';
+import { createSlots, convertOpeningHoursToUTC, filterOpenRestaurants } from '../helpers/restaurant.helper.js';
 import { generateStaffUsername, generateStaffHashedPassword } from '../helpers/staff.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
@@ -152,15 +152,15 @@ export async function getRestaurantById(restaurantId) {
 
 export async function getAvailability(restaurantId, query) {
   // find restaurant
-  const restaurant = await Restaurant.findById(restaurantId).select('+_id').lean();
+  const restaurant = await Restaurant.findById(restaurantId).select('+_id +timezone').lean();
   if (!restaurant) return error(404, 'Restaurant not found');
 
   // get reservations on query date
   const reservations = await reservationService.getReservationsByRestaurantByDate(restaurant._id, query.date);
 
   // create time slots
-  const SGTdate = DateTime.fromISO(query.date, { zone: 'Asia/Singapore' });
-  const timeSlots = createSlots(restaurant.openingHours, SGTdate);
+  const date = DateTime.fromISO(query.date, { zone: restaurant.timezone });
+  const timeSlots = createSlots(restaurant.openingHours, date);
   if (Array.isArray(timeSlots) && timeSlots.length === 0) return success([]);
 
   // calculate availability for each slot
@@ -236,7 +236,7 @@ export async function updateRestaurant(restaurant, update) {
   // selectively update only the fields that are defined
   for (const key in update) {
     if (key === 'openingHours') {
-      restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
+      restaurant.openingHours = convertOpeningHoursToUTC(update.openingHours);
     } else if (key === 'address') {
       // get longitude and latitude
       const fullAddress = update[key].replace(/S(\d{6})$/i, 'Singapore $1');
@@ -281,7 +281,7 @@ export async function createRestaurantHelper(authUser, data, session = undefined
   const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website', 'tags']));
   restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
   restaurant.owner = authUser._id;
-  restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
+  restaurant.openingHours = convertOpeningHoursToUTC(data.openingHours);
 
   // create staff account for restaurant
   const staff = await createStaffForRestaurant(restaurant, session);

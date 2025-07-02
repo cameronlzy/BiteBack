@@ -76,7 +76,7 @@ function generateTrendedAnalytics(restaurantId, date, prev) {
     });
 }
 
-async function seedAnalytics(days, restaurantIdArg) {
+async function seedAnalytics(days, restaurantIdArg, timezone) {
     await mongoose.connect(config.get('mongoURI'), {
         autoIndex: false,
     });
@@ -84,7 +84,7 @@ async function seedAnalytics(days, restaurantIdArg) {
     const restaurant = await Restaurant.findById(restaurantIdArg);
     if (!restaurant) throw new Error(`Restaurant with ID ${restaurantIdArg} not found.`);
 
-    const today = DateTime.now().setZone('Asia/Singapore').startOf('day').toUTC();
+    const today = DateTime.now().setZone(timezone).startOf('day').toUTC();
     const analyticsData = [];
 
     let prevEntry = {
@@ -169,10 +169,11 @@ async function seedAnalytics(days, restaurantIdArg) {
 
 const daysArg = parseInt(process.argv[2], 10) || 180;
 const restaurantIdArg = process.argv[3] || null;
+const timezone = process.argv[4] || 'Asia/Singapore';
 
 (async () => {
     try {
-        await seedAnalytics(daysArg, restaurantIdArg);
+        await seedAnalytics(daysArg, restaurantIdArg, timezone);
     } catch (err) {
         console.error(err);
         process.exit(1);

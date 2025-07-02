@@ -12,7 +12,7 @@ import User from '../../../models/user.model.js';
 import DailyAnalytics from '../../../models/dailyAnalytics.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
-import { convertSGTOpeningHoursToUTC } from '../../../helpers/restaurant.helper.js';
+import { convertOpeningHoursToUTC } from '../../../helpers/restaurant.helper.js';
 
 describe('analytics test', () => {
     let server;
@@ -46,7 +46,7 @@ describe('analytics test', () => {
             await user.save();
             
             restaurant = createTestRestaurant(user._id);
-            restaurant.openingHours = convertSGTOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
+            restaurant.openingHours = convertOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
             profile.restaurants = [restaurant._id];
 
             await profile.save();
@@ -109,7 +109,7 @@ describe('analytics test', () => {
             }
 
             await DailyAnalytics.insertMany(analyticsDocs);
-            date = DateTime.now().setZone('Asia/Singapore').startOf('day').minus({ days: 3 }).toISODate();
+            date = encodeURIComponent(DateTime.now().setZone('Asia/Singapore').startOf('day').minus({ days: 3 }).toISO());
             unit = 'week';
             amount = 3;
             url = `/api/analytics/restaurant/${restaurantId}/summary?unit=${unit}&amount=${amount}`;
@@ -128,7 +128,7 @@ describe('analytics test', () => {
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
 
-        it('should return 200 and a summary object for range query', async () => {
+        it('should return 200 and a summary object for date query', async () => {
             url = `/api/analytics/restaurant/${restaurantId}/summary?date=${date}`;
             const res = await exec();
             expect(res.status).toBe(200);
@@ -157,7 +157,7 @@ describe('analytics test', () => {
             await user.save();
             
             restaurant = createTestRestaurant(user._id);
-            restaurant.openingHours = convertSGTOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
+            restaurant.openingHours = convertOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
             profile.restaurants = [restaurant._id];
 
             await profile.save();

@@ -11,6 +11,7 @@ import queue from '../routes/queue.route.js';
 import promotions from '../routes/promotion.route.js';
 import analytics from '../routes/analytics.route.js';
 import rewardsShop from '../routes/rewardsShop.route.js';
+import rewardsPoints from '../routes/rewardsPoints.route.js';
 
 export default function(app) {
   app.use(express.json());
@@ -25,6 +26,7 @@ export default function(app) {
   app.use('/api/promotions', promotions);
   app.use('/api/analytics', analytics);
   app.use('/api/rewards', rewardsShop);
+  app.use('/api/rewards', rewardsPoints);
 
   // to log error
   app.use(error);

@@ -260,7 +260,8 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create promotion
-            restaurant = new mongoose.Types.ObjectId();
+            restaurant = createTestRestaurant(user._id);
+            await restaurant.save();
             title = 'title';
             description = 'description';
             startDate = DateTime.now().plus({ days: 1 }).toJSDate();
@@ -272,7 +273,7 @@ describe('promotion test', () => {
             .post('/api/promotions')
             .set('Cookie', [cookie])
             .send({
-                restaurant, title, description, startDate, endDate
+                restaurant: restaurant._id, title, description, startDate, endDate
             });
         };
 
@@ -280,6 +281,19 @@ describe('promotion test', () => {
             startDate = '';
             const res = await exec();
             expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if restaurant not found', async () => {
+            restaurant = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if restaurant does not belong to owner', async () => {
+            restaurant = createTestRestaurant();
+            await restaurant.save();
+            const res = await exec();
+            expect(res.status).toBe(403);
         });
 
         it('should return 200 and promotion object with required properties', async () => {
@@ -455,6 +469,16 @@ describe('promotion test', () => {
             const res = await exec();
             expect(res.status).toBe(400);
         });
+
+        it('should return 400 if promotion has expired', async () => {
+            promotion = createTestPromotion(restaurant._id);
+            promotion.endDate = DateTime.now().minus({ days: 5 }).toJSDate();
+            await promotion.save();
+            promotionId = promotion._id;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
 
         it('should return 200 and promotion object with required properties', async () => {
             const res = await exec();

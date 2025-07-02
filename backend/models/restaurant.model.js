@@ -119,7 +119,8 @@ const restaurantSchema = new mongoose.Schema({
    }, 
   searchKeywords: [String],
   staff: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
-  queueEnabled: { type: Boolean, default: true }
+  queueEnabled: { type: Boolean, default: true },
+  timezone: { type: String, required: true, default: 'Asia/Singapore' }
 }, { versionKey: false });
 
 restaurantSchema.pre('save', function (next) {

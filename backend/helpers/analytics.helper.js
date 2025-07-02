@@ -1,12 +1,12 @@
 import { DateTime } from 'luxon';
 
-export function groupVisitLoadByWeekdayPattern(docs) {
+export function groupVisitLoadByWeekdayPattern(docs, timezone = 'Asia/Singapore') {
     const groups = {}; // key: `${weekday}-${startHour}-${length}`
 
     for (const doc of docs) {
         if (!doc.visitLoadByHour || !doc.visitLoadByHour.load) continue;
 
-        const date = DateTime.fromJSDate(doc.date).setZone('Asia/Singapore');
+        const date = DateTime.fromJSDate(doc.date).setZone(timezone);
         const weekday = date.weekday - 1;
 
         const { startHour, load } = doc.visitLoadByHour;
@@ -54,29 +54,22 @@ export function computeMode(numbers) {
     return mode;
 }
 
-export function getPeriodFromLabel(label, unit) {
-  let start, end;
-  if (unit === 'day') {
-    start = DateTime.fromFormat(label, 'yyyy-MM-dd', { zone: 'Asia/Singapore' }).startOf('day');
-    end = start;
-  } else if (unit === 'week') {
-    start = DateTime.fromFormat(label, 'kkkk-\'W\'WW', { zone: 'Asia/Singapore' }).startOf('week');
-    end = start.endOf('week');
-  } else if (unit === 'month') {
-    start = DateTime.fromFormat(label, 'yyyy-MM', { zone: 'Asia/Singapore' }).startOf('month');
-    end = start.endOf('month');
-  }
-  return {
-    startDate: start.toISODate(),
-    endDate: end.toISODate()
-  };
-}
-
-export function getSGTHourIndex(date, openHour) {
-    const hourSGT = DateTime.fromJSDate(date, { zone: 'Asia/Singapore' }).hour;
-    return hourSGT >= openHour
-        ? hourSGT - openHour
-        : 24 - openHour + hourSGT;
+export function getPeriodFromLabel(label, unit, timezone = 'Asia/Singapore') {
+    let start, end;
+    if (unit === 'day') {
+        start = DateTime.fromFormat(label, 'yyyy-MM-dd', { zone: timezone }).startOf('day');
+        end = start;
+    } else if (unit === 'week') {
+        start = DateTime.fromFormat(label, 'kkkk-\'W\'WW', { zone: timezone }).startOf('week');
+        end = start.endOf('week');
+    } else if (unit === 'month') {
+        start = DateTime.fromFormat(label, 'yyyy-MM', { zone: timezone }).startOf('month');
+        end = start.endOf('month');
+    }
+    return {
+        startDate: start.toISODate(),
+        endDate: end.toISODate()
+    };
 }
 
 export function getCurrentOpeningPattern(restaurant) {
@@ -101,8 +94,8 @@ export function getCurrentOpeningPattern(restaurant) {
     return map;
 }
 
-export function matchesCurrentHours(doc, pattern) {
-    const sgtWeekday = DateTime.fromJSDate(doc.date).setZone('Asia/Singapore').weekday;
+export function matchesCurrentHours(doc, pattern, timezone = 'Asia/Singapore') {
+    const sgtWeekday = DateTime.fromJSDate(doc.date).setZone(timezone).weekday;
     const rule = pattern.get(sgtWeekday);
     if (!rule) return false;
 

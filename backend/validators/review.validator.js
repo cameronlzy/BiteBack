@@ -1,12 +1,12 @@
 import Joi from 'joi';
-import { ISOdate } from '../helpers/time.helper.js';
+import { dateFullOnly } from '../helpers/time.helper.js';
 
 export function validateReview(review) {
     const schema = Joi.object({
         restaurant: Joi.objectId().required(),
         rating: Joi.number().integer().min(0).max(5).required(),
         reviewText: Joi.string().allow('').min(0).max(1000).required(),
-        dateVisited: ISOdate.required()
+        dateVisited: dateFullOnly.required()
     });
     return schema.validate(review);
 }

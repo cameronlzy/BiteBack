@@ -1,12 +1,12 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
-import { DateTime } from 'luxon';
 import Review from '../../../models/review.model.js';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
+import { createTestVisitHistory } from '../../factories/visitHistory.factory.js';
 import { createTestReview } from '../../factories/review.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
@@ -208,6 +208,7 @@ describe('review test', () => {
         let dateVisited;
         let cookie;
         let token;
+        let visitHistory;
 
 		beforeEach(async () => {
 			// clear all
@@ -221,15 +222,19 @@ describe('review test', () => {
             
             // create customer 
             user = await createTestUser('customer');
+            profile = createTestCustomerProfile(user);
+            user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
-            profile = createTestCustomerProfile(user);
             await profile.save();
 
             // create a review
             rating = 3;
             reviewText = "Good";
-            dateVisited = DateTime.now().toISODate();
+
+            visitHistory = createTestVisitHistory(restaurant._id, profile._id);
+            await visitHistory.save();
+            dateVisited = visitHistory.visits[0].visitDate.toISOString();
 		});
 
         const exec = () => {
