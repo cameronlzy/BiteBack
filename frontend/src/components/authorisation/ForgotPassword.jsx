@@ -1,6 +1,6 @@
 import { FormProvider, useForm } from "react-hook-form"
-import { identifierSchema } from "../utils/schemas"
-import auth from "../services/authService"
+import { identifierSchema } from "../../utils/schemas"
+import auth from "../../services/authService"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
@@ -10,9 +10,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form"
-import { Input } from "./ui/input"
-import SubmitButton from "./common/SubmitButton"
+} from "../ui/form"
+import { Input } from "../ui/input"
+import SubmitButton from "../common/SubmitButton"
 
 const ForgotPassword = () => {
   const navigate = useNavigate()

@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import SubmitButton from "./common/SubmitButton"
+import SubmitButton from "../common/SubmitButton"
 
 const JoinQueue = ({ onJoin, restaurantId }) => {
   const methods = useForm({

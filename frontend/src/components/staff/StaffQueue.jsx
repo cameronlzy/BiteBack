@@ -118,7 +118,7 @@ const StaffQueue = () => {
             <h2 className="text-xl font-semibold">
               {restaurant.name}{" "}
               <span className="text-muted-foreground">
-                @ {restaurant.address}
+                @ {getShortAddress(restaurant.address)}
               </span>
             </h2>
           ) : (

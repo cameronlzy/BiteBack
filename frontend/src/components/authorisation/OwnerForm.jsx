@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MultiSelect } from "./common/MultiSelect"
-import OpeningHoursSelect from "./OpeningHoursSelect"
+import { MultiSelect } from "../common/MultiSelect"
+import OpeningHoursSelect from "../OpeningHoursSelect"
 import { toast } from "react-toastify"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { Eye, EyeOff } from "lucide-react"
@@ -29,8 +29,8 @@ import {
   saveRestaurants,
   uploadRestaurantImages,
 } from "@/services/restaurantService"
-import ImageUpload from "./common/ImageUpload"
-import SubmitButton from "./common/SubmitButton"
+import ImageUpload from "../common/ImageUpload"
+import SubmitButton from "../common/SubmitButton"
 
 const OwnerForm = ({ onRegister, user, from }) => {
   const [selectedFilesArray, setSelectedFilesArray] = useState([[]])

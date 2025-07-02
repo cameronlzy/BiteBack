@@ -1,6 +1,6 @@
 import { useForm, FormProvider } from "react-hook-form"
-import { passwordResetSchema, passwordChangeSchema } from "../utils/schemas"
-import auth from "../services/authService"
+import { passwordResetSchema, passwordChangeSchema } from "../../utils/schemas"
+import auth from "../../services/authService"
 import { toast } from "react-toastify"
 import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
@@ -12,10 +12,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form"
-import { Input } from "./ui/input"
-import BackButton from "./common/BackButton"
-import SubmitButton from "./common/SubmitButton"
+} from "../ui/form"
+import { Input } from "../ui/input"
+import BackButton from "../common/BackButton"
+import SubmitButton from "../common/SubmitButton"
 
 const ResetPassword = ({ user }) => {
   const [showOldPassword, setShowOldPassword] = useState(false)

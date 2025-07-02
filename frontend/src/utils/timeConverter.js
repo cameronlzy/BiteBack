@@ -3,6 +3,8 @@ import { DateTime } from "luxon"
 export const toSGT = (utcString) =>
   DateTime.fromISO(utcString, { zone: "utc" }).setZone("Asia/Singapore")
 
+export const toSGTISO = (utcString) => DateTime.fromISO(utcString, { zone: "Asia/Singapore" }).toISO()
+
 export const convertSlotTimesToSGT = (slots, reservationDate) =>
   slots.map((s) => ({
     ...s,

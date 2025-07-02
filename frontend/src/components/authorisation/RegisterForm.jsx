@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import CustomerForm from "@/components/CustomerForm"
-import OwnerForm from "@/components/OwnerForm"
+import CustomerForm from "@/components/authorisation/CustomerForm"
+import OwnerForm from "@/components/authorisation/OwnerForm"
 import {
   Select,
   SelectTrigger,
@@ -9,7 +9,7 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { updateOwner, updateCustomer } from "@/services/userService"
-import BackButton from "./common/BackButton"
+import BackButton from "../common/BackButton"
 import { useLocation, useNavigate } from "react-router-dom"
 import { objectComparator } from "@/utils/objectComparator"
 import { convertOpeningHoursToString } from "@/utils/timeConverter"

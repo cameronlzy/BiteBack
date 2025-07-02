@@ -14,11 +14,11 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
-import { MultiSelect } from "./common/MultiSelect"
+import { MultiSelect } from "../common/MultiSelect"
 import { useState } from "react"
 import { toast } from "react-toastify"
-import LoadingSpinner from "./common/LoadingSpinner"
-import SubmitButton from "./common/SubmitButton"
+import LoadingSpinner from "../common/LoadingSpinner"
+import SubmitButton from "../common/SubmitButton"
 
 const CustomerForm = ({ onRegister, user, from, isLoading }) => {
   const [showPassword, setShowPassword] = useState(false)

@@ -3,6 +3,7 @@ import authService from "@/services/authService"
 import { Button } from "@/components/ui/button"
 import StaffQueue from "./StaffQueue"
 import StaffBookings from "./StaffBookings"
+import StaffPointUpdate from "./StaffPointUpdate"
 
 const StaffControlCenter = ({ user }) => {
   const handleLogout = async () => {
@@ -23,6 +24,7 @@ const StaffControlCenter = ({ user }) => {
         </Button>
       </div>
       <StaffQueue user={user} />
+      <StaffPointUpdate />
       <StaffBookings />
     </React.Fragment>
   )

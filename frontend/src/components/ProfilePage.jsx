@@ -1,4 +1,4 @@
-import UserReservation from "@/components/UserReservations"
+import UserReservation from "@/components/reservations/UserReservations"
 import authService from "@/services/authService"
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
@@ -9,11 +9,11 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 import { useLocation, useNavigate } from "react-router-dom"
-import CustomerReviews from "./CustomerReviews"
-import DeleteAccountPopup from "./DeleteAccountPopup"
+import CustomerReviews from "./reviews/CustomerReviews"
+import DeleteAccountPopup from "./authorisation/DeleteAccountPopup"
 import { useState } from "react"
-import ViewStaffAccounts from "./ViewStaffAccounts"
-import OwnerStatistics from "./OwnerStatistics"
+import ViewStaffAccounts from "./staff/ViewStaffAccounts"
+import OwnerStatistics from "./statistics/OwnerStatistics"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()

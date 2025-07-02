@@ -1,5 +1,6 @@
 import { sanitizeStrings } from '@/utils/stringSanitizer'
 import http from './httpService'
+import { toSGT } from '@/utils/timeConverter'
 
 const apiEndpoint = import.meta.env.VITE_API_URL + "/reviews"
 
@@ -16,6 +17,22 @@ export async function getReviewByRestaurant(restaurantId) {
 export async function getReviewsByCustomer(customerId) {
     const { data } = await http.get(apiEndpoint + "/customer/" + customerId)
     return data
+}
+
+export async function getUnreviewedVisits(restaurantId) {
+  // const { data } = await http.get("/api/reviews/eligible-visits", {
+  //   params: { restaurantId },
+  // })
+  const data = [
+  "2024-12-15T12:00:00Z",
+  "2024-10-01T08:30:00Z",
+  "2024-07-20T18:45:00Z",
+  "2025-01-05T14:15:00Z",
+  "2025-03-12T06:00:00Z",
+  "2025-06-01T19:20:00Z"
+]
+  const converted = data.map((d) => toSGT(d).toISO())
+  return converted
 }
 
 export async function saveReview(review) {

@@ -13,6 +13,7 @@ const PromotionCard = (promotion) => {
   const isAvailable = isPromotionAvailable(promotion)
   const hasStarted = hasPromotionStarted(promotion)
   const hasEnded = hasPromotionEnded(promotion)
+  const isActive = promotion.isActive
   const { _id, title, startDate, endDate, bannerImage, restaurant } = promotion
   const imageSrc = bannerImage || defaultRestImg
 
@@ -28,10 +29,12 @@ const PromotionCard = (promotion) => {
             e.target.src = defaultRestImg
           }}
         />
-        {(!hasStarted || hasEnded || !isAvailable) && (
+        {(!hasStarted || hasEnded || !isActive || !isAvailable) && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-m flex items-center justify-center text-gray-700 font-semibold text-lg rounded-lg">
             {!hasStarted
               ? "Promotion has not started"
+              : !isActive
+              ? "Promotion currently not active"
               : hasEnded
               ? "Promotion has ended"
               : !isAvailable

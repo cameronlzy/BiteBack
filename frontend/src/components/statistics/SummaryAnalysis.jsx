@@ -23,6 +23,7 @@ import LoadingSpinner from "../common/LoadingSpinner"
 import { toast } from "react-toastify"
 import SubmitButton from "../common/SubmitButton"
 import { isRestaurantClosed } from "@/utils/timeConverter"
+import { DateTime } from "luxon"
 
 const SummaryAnalysis = ({ restaurant }) => {
   const [unit, setUnit] = useState("day")
@@ -53,7 +54,14 @@ const SummaryAnalysis = ({ restaurant }) => {
     try {
       const params =
         unit === "day"
-          ? { date: format(selectedDate, "yyyy-MM-dd") }
+          ? {
+              date: encodeURIComponent(
+                DateTime.fromJSDate(selectedDate)
+                  .setZone("Asia/Singapore")
+                  .startOf("day")
+                  .toISO()
+              ),
+            }
           : { unit, amount: n }
 
       const response = await getSummary(restaurant._id, params)

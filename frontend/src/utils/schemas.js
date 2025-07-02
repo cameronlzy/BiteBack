@@ -452,3 +452,76 @@ export const promotionSchema = Joi.object({
       }),
   }).optional(),
 })
+
+export const pointUpdateSchema = Joi.object({
+  username: Joi.string().min(2).max(20).required().messages({
+    "any.required": "Username is required.",
+    "string.empty": "Username is required.",
+    "string.min": "Username must be at least 2 characters.",
+    "string.max": "Username must not exceed 20 characters.",
+  }),
+  points: Joi.number().integer().min(0).required().messages({
+    "number.base": "New Points must be a number.",
+    "number.integer": "New Points must be an integer.",
+    "number.min": "New Points must be at least 0.",
+    "any.required": "New Points is required.",
+  }),
+})
+
+export const rewardSchema = Joi.object({
+  restaurant: Joi.string()
+    .required()
+    .messages({
+      "any.required": "Restaurant is required.",
+      "string.base": "Restaurant must be a valid string.",
+    }),
+
+  title: Joi.string()
+    .min(3)
+    .required()
+    .messages({
+      "string.empty": "Title is required.",
+      "string.min": "Title must be at least 3 characters.",
+      "any.required": "Title is required.",
+    }),
+
+  points: Joi.number()
+  .integer()
+  .min(0)
+  .required()
+  .messages({
+    "number.base": "Points must be a number.",
+    "number.integer": "Points must be an integer.",
+    "number.min": "Points must be at least 0.",
+    "any.required": "Points is required.",
+  }),
+
+  description: Joi.string()
+    .min(5)
+    .required()
+    .messages({
+      "string.empty": "Description is required.",
+      "string.min": "Description must be at least 5 characters.",
+      "any.required": "Description is required.",
+    }),
+
+  startDate: Joi.string()
+    .isoDate()
+    .required()
+    .messages({
+      "string.empty": "Start date is required.",
+      "string.isoDate": "Start date must be in ISO format.",
+      "any.required": "Start date is required.",
+    }),
+
+  endDate: Joi.string()
+    .isoDate()
+    .required()
+    .messages({
+      "string.empty": "End date is required.",
+      "string.isoDate": "End date must be in ISO format.",
+      "any.required": "End date is required.",
+    }),
+
+  
+})

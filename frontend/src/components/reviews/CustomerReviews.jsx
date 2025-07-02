@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
-import { useConfirm } from "./common/ConfirmProvider"
+import { useConfirm } from "../common/ConfirmProvider"
 import { toast } from "react-toastify"
-import SortBy from "./common/SortBy"
+import SortBy from "../common/SortBy"
 import { getReviewsByCustomer, deleteReview } from "@/services/reviewService"
 import ReviewCard from "./ReviewCard"
 

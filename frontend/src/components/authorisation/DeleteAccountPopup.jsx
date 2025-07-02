@@ -1,19 +1,19 @@
 import { useForm, FormProvider } from "react-hook-form"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
+import { Button } from "../ui/button"
+import { Input } from "../ui/input"
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form"
-import { useConfirm } from "./common/ConfirmProvider"
+} from "../ui/form"
+import { useConfirm } from "../common/ConfirmProvider"
 import { useState } from "react"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
-import { deleteAccountSchema } from "../utils/schemas"
+import { deleteAccountSchema } from "../../utils/schemas"
 import { deleteAccount } from "@/services/userService"
-import LoadingSpinner from "./common/LoadingSpinner"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const DeleteAccountPopup = ({ onClose, role, isLoading }) => {
   const confirm = useConfirm()
@@ -34,7 +34,6 @@ const DeleteAccountPopup = ({ onClose, role, isLoading }) => {
       const confirmed = await confirm(
         "Are you sure you want to delete your account?"
       )
-
       if (!confirmed) return
       await deleteAccount(data, role)
       window.location = "/"

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 import { getPromotions } from "@/services/promotionService"
-import PromotionCard from "./common/PromotionCard"
-import Pagination from "./common/Pagination"
+import PromotionCard from "../common/PromotionCard"
+import Pagination from "../common/Pagination"
 import { toast } from "react-toastify"
-import SearchBar from "./SearchBar"
-import SortBy from "./common/SortBy"
-import LoadingSpinner from "./common/LoadingSpinner"
+import SearchBar from "../SearchBar"
+import SortBy from "../common/SortBy"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const Promotions = ({ user }) => {
   const [promotions, setPromotions] = useState([])
@@ -29,6 +29,7 @@ const Promotions = ({ user }) => {
         const { promotions, totalPages, totalCount } = await getPromotions(
           params
         )
+        console.log(promotions)
         setPromotions(promotions)
         setTotalPages(totalPages)
         setTotalCount(totalCount)

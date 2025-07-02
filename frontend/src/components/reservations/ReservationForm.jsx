@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Button } from "./ui/button"
+import { Button } from "../ui/button"
 import { useForm, FormProvider } from "react-hook-form"
 import {
   getRestaurant,
@@ -28,18 +28,18 @@ import { toast } from "react-toastify"
 import { readableTimeSettings } from "@/utils/timeConverter"
 import { getDay } from "date-fns"
 import { DateTime } from "luxon"
-import BackButton from "./common/BackButton"
-import ConfirmationPage from "./common/ConfirmationPage"
+import BackButton from "../common/BackButton"
+import ConfirmationPage from "../common/ConfirmationPage"
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form"
-import { Input } from "./ui/input"
-import CustomDay from "./common/CustomDay"
-import LoadingSpinner from "./common/LoadingSpinner"
+} from "../ui/form"
+import { Input } from "../ui/input"
+import CustomDay from "../common/CustomDay"
+import LoadingSpinner from "../common/LoadingSpinner"
 import { objectComparator } from "@/utils/objectComparator"
 
 const ReservationForm = ({ user }) => {
@@ -167,6 +167,11 @@ const ReservationForm = ({ user }) => {
     const fetchAvailability = async () => {
       const formatted =
         DateTime.fromJSDate(reservationDate).toFormat("yyyy-MM-dd")
+
+      //       const formatted = DateTime.fromJSDate(reservationDate)
+      // .setZone("Asia/Singapore")
+      // .startOf("day")
+      // .toISO()
       let slots = await getRestaurantAvailability(restaurantId, formatted)
       if (slots === -1) slots = []
 

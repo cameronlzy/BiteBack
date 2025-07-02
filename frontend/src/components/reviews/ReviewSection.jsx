@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import ReviewForm from "./ReviewForm"
 import ReviewCard from "./ReviewCard"
-import SortBy from "./common/SortBy"
+import SortBy from "../common/SortBy"
 
 const ReviewSection = ({
   restaurant,

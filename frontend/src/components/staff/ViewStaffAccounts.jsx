@@ -4,7 +4,7 @@ import { getStaffAccounts } from "@/services/userService"
 import { Eye, EyeOff } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "react-toastify"
-import SubmitButton from "./common/SubmitButton"
+import SubmitButton from "../common/SubmitButton"
 
 const ViewStaffAccounts = () => {
   const [password, setPassword] = useState("")

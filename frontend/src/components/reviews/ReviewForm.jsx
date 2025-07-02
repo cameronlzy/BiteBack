@@ -1,7 +1,7 @@
 import { useForm, FormProvider } from "react-hook-form"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { reviewSchema } from "@/utils/schemas"
-import { format } from "date-fns"
+import { DateTime } from "luxon"
 import { toast } from "react-toastify"
 import {
   FormField,
@@ -12,22 +12,49 @@ import {
 } from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
 import StarRatingInput from "@/components/common/StarRatingInput"
-import { Input } from "./ui/input"
-import { useState } from "react"
-import ImageUpload from "./common/ImageUpload"
-import { uploadReviewImages } from "@/services/reviewService"
-import SubmitButton from "./common/SubmitButton"
+import { useEffect, useState } from "react"
+import ImageUpload from "../common/ImageUpload"
+import {
+  getUnreviewedVisits,
+  uploadReviewImages,
+} from "@/services/reviewService"
+import SubmitButton from "../common/SubmitButton"
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
+import LoadingSpinner from "../common/LoadingSpinner"
+import { readableTimeSettings } from "@/utils/timeConverter"
 
 const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
   const [selectedFiles, setSelectedFiles] = useState([])
+  const [pastVisits, setPastVisits] = useState(null)
+
+  useEffect(() => {
+    const fetchVisits = async () => {
+      try {
+        const visits = await getUnreviewedVisits(restaurant._id)
+        setPastVisits(visits)
+      } catch (ex) {
+        toast.error("Failed to fetch past visits")
+        setPastVisits([])
+        console.log(ex)
+      }
+    }
+    fetchVisits()
+  }, [restaurant])
+
   const form = useForm({
     resolver: safeJoiResolver(reviewSchema),
     mode: "onSubmit",
     defaultValues: {
       restaurant: restaurant._id,
-      rating: undefined,
+      rating: null,
       reviewText: "",
-      dateVisited: undefined,
+      dateVisited: "",
     },
   })
 
@@ -35,7 +62,10 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
 
   const handleFormSubmit = async (data) => {
     try {
-      await ((ms) => new Promise((resolve) => setTimeout(resolve, ms)))(1000)
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      data.dateVisited = DateTime.fromISO(data.dateVisited)
+        .setZone("Asia/Singapore")
+        .toISO()
       const res = await onSubmit(data)
       const reviewId = res._id
       let images
@@ -53,6 +83,16 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
       toast.error("Failed to submit review")
       throw ex
     }
+  }
+
+  if (pastVisits === null) return <LoadingSpinner />
+
+  if (pastVisits.length === 0) {
+    return (
+      <div className="border p-4 rounded-md text-center text-muted-foreground">
+        <p className="text-lg">No unreviewed past visits</p>
+      </div>
+    )
   }
 
   return (
@@ -88,13 +128,11 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
             <FormItem>
               <FormLabel>Your Review</FormLabel>
               <FormControl>
-                <div>
-                  <Textarea
-                    {...field}
-                    placeholder="Write your thoughts (optional)..."
-                    rows={4}
-                  />
-                </div>
+                <Textarea
+                  {...field}
+                  placeholder="Write your thoughts (optional)..."
+                  rows={4}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -107,15 +145,24 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date Visited</FormLabel>
-              <FormControl>
-                <Input
-                  type="date"
-                  className="w-full"
-                  max={format(new Date(), "yyyy-MM-dd")}
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value)}
-                />
-              </FormControl>
+              <Select value={field.value || ""} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a visit date" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {pastVisits.map((date) => {
+                    return (
+                      <SelectItem key={date} value={date}>
+                        {DateTime.fromISO(date).toLocaleString(
+                          readableTimeSettings
+                        )}
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -123,7 +170,7 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
 
         <ImageUpload
           firstRequired={false}
-          message="Upload images of your experience (Optional) "
+          message="Upload images of your experience (Optional)"
           selectedFiles={selectedFiles}
           setSelectedFiles={setSelectedFiles}
         />

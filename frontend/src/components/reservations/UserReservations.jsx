@@ -6,11 +6,11 @@ import {
   deleteReservation,
 } from "@/services/reservationService"
 import { getRestaurant } from "@/services/restaurantService"
-import { useConfirm } from "./common/ConfirmProvider"
+import { useConfirm } from "../common/ConfirmProvider"
 import CalendarReservations from "./CalendarReservations"
 import ListReservations from "./ListReservations"
 import { Button } from "@/components/ui/button"
-import LoadingSpinner from "./common/LoadingSpinner"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const UserReservations = ({ user }) => {
   const [reservations, setReservations] = useState([])

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
 import { DateTime } from "luxon"
 import { readableTimeSettings } from "@/utils/timeConverter"
-import SortBy from "./common/SortBy"
+import SortBy from "../common/SortBy"
 
 const ListReservations = ({
   reservations,

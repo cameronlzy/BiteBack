@@ -26,10 +26,11 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from "./ui/select"
+} from "../ui/select"
 import { objectComparator } from "@/utils/objectComparator"
 import { DateTime } from "luxon"
-import BackButton from "./common/BackButton"
+import BackButton from "../common/BackButton"
+import { toSGTISO } from "@/utils/timeConverter"
 
 const PromotionForm = ({ user }) => {
   const navigate = useNavigate()
@@ -48,7 +49,6 @@ const PromotionForm = ({ user }) => {
   }, [user._id])
 
   useEffect(() => {
-    console.log(user)
     const fetchPromotion = async () => {
       if (!promotionId) return
       try {
@@ -164,6 +164,9 @@ const PromotionForm = ({ user }) => {
       if (isEdit) {
         payload._id = promotionId
       }
+
+      if (data.startDate) payload.startDate = toSGTISO(data.startDate)
+      if (data.endDate) payload.endDate = toSGTISO(data.endDate)
       const cleanedNoEmpty = Object.fromEntries(
         Object.entries({ ...payload }).filter(([_ignore, v]) => v !== "")
       )

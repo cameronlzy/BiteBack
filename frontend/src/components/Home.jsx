@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import bitebackImg from "@/assets/biteback-logo-full.png"
 import BannerCarousel from "./common/BannerCarousel"
+import CustomerPoints from "./rewards/CustomerPoints"
 
 const Home = ({ user }) => {
   return (
@@ -8,6 +9,11 @@ const Home = ({ user }) => {
       <div className="relative w-screen left-1/2 right-1/2 -mx-[50vw] px-9.5">
         <BannerCarousel />
       </div>
+      <CustomerPoints
+        customer={{
+          points: 560,
+        }}
+      />
       <main className="flex-grow flex items-center justify-center text-center px-4">
         <div className="max-w-2xl">
           <img

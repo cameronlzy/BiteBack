@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableHead,
   TableRow,
-} from "./ui/table"
+} from "../ui/table"
 import JoinQueue from "./JoinQueue"
 import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { getRestaurant } from "@/services/restaurantService"
@@ -16,8 +16,8 @@ import {
   getCurrentRestaurantQueue,
 } from "@/services/queueService"
 import { toast } from "react-toastify"
-import LoadingSpinner from "./common/LoadingSpinner"
-import BackButton from "./common/BackButton"
+import LoadingSpinner from "../common/LoadingSpinner"
+import BackButton from "../common/BackButton"
 import QueueStatus from "./QueueStatus"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import StatisticsCard from "./statistics/StatisticsCard"
+import StatisticsCard from "./StatisticsCard"
 import { getTodaySnapshot } from "@/services/analyticsService"
 import { toast } from "react-toastify"
 import { convertOpeningHoursToSGT } from "@/utils/timeConverter"

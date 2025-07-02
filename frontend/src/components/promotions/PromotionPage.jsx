@@ -16,7 +16,11 @@ import BackButton from "@/components/common/BackButton"
 import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
-import { getPromotionById, deletePromotion } from "@/services/promotionService"
+import {
+  getPromotionById,
+  deletePromotion,
+  savePromotion,
+} from "@/services/promotionService"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, ArrowRight } from "lucide-react"
 import { toast } from "react-toastify"
@@ -29,28 +33,28 @@ const PromotionPage = ({ user }) => {
   const { promotionId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const [normalizedFrom, setNormalizedFrom] = useState(
+  const [normalisedFrom, setNormalisedFrom] = useState(
     location.state?.from || "/promotions"
   )
 
   useEffect(() => {
     if (
-      normalizedFrom.startsWith("/restaurants/") &&
+      normalisedFrom.startsWith("/restaurants/") &&
       promotion?.restaurant?._id
     ) {
-      const segments = normalizedFrom.split("/")
+      const segments = normalisedFrom.split("/")
       const maybeRestaurantId = segments[2]
-      if (maybeRestaurantId === restaurant._id) {
-        setNormalizedFrom("/promotions")
+      if (maybeRestaurantId === promotion?.restaurant?._id) {
+        setNormalisedFrom("/promotions")
       }
     } else if (
-      normalizedFrom.startsWith("/promotions/edit/") &&
+      normalisedFrom.startsWith("/promotions/edit/") &&
       promotion?._id
     ) {
-      const segments = normalizedFrom.split("/")
+      const segments = normalisedFrom.split("/")
       const maybePromotionId = segments[3]
       if (maybePromotionId === promotion._id) {
-        setNormalizedFrom("/promotions")
+        setNormalisedFrom("/promotions")
       }
     }
     const isOwnedByUserCheck =
@@ -58,7 +62,7 @@ const PromotionPage = ({ user }) => {
       user?.profile.restaurants.some((r) => r._id === promotion?.restaurant._id)
 
     setIsOwnedByUser(isOwnedByUserCheck)
-  }, [promotion, normalizedFrom, user])
+  }, [promotion, normalisedFrom, user])
 
   useEffect(() => {
     const fetchPromotion = async () => {
@@ -82,6 +86,26 @@ const PromotionPage = ({ user }) => {
     }
     fetchPromotion()
   }, [promotionId])
+
+  const handleToggleActivate = async () => {
+    try {
+      const updated = await savePromotion({
+        _id,
+        isActive: !promotion.isActive,
+      })
+      toast.success(
+        `Promotion ${updated.isActive ? "activated" : "deactivated"}`
+      )
+      setPromotion((prev) => ({
+        ...prev,
+        ...updated,
+        restaurant: prev?.restaurant,
+      }))
+    } catch (ex) {
+      console.log(ex)
+      toast.error("Failed to toggle promotion status")
+    }
+  }
 
   const handleDeletePromotion = async () => {
     const confirmed = await confirm(
@@ -123,15 +147,23 @@ const PromotionPage = ({ user }) => {
 
   const isAvailable = isPromotionAvailable(promotion)
   const hasStarted = hasPromotionStarted(promotion)
+  const isActive = promotion.isActive
 
   return (
     <div className="max-w-3xl mx-auto mt-8 px-4 relative">
-      <BackButton from={normalizedFrom} />
+      <BackButton from={normalisedFrom} />
       {!hasStarted ? (
         <div className="bg-yellow-50 text-yellow-900 border-t-4 border-yellow-400 px-4 py-3 flex items-center justify-between rounded-t-md">
           <div className="flex items-center space-x-2">
             <AlertTriangle className="w-5 h-5" />
             <span className="font-medium">Promotion has not started yet</span>
+          </div>
+        </div>
+      ) : !isActive ? (
+        <div className="bg-gray-100 text-gray-800 border-t-4 border-gray-400 px-4 py-3 flex items-center justify-between rounded-t-md">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-medium">This promotion is inactive</span>
           </div>
         </div>
       ) : !isAvailable ? (
@@ -191,6 +223,15 @@ const PromotionPage = ({ user }) => {
                       }
                     >
                       Edit Promotion
+                    </DropdownMenuItem>
+                    {}
+                    <DropdownMenuItem
+                      onClick={handleToggleActivate}
+                      className="hover:bg-gray-100 text-gray-800"
+                    >
+                      {promotion.isActive
+                        ? "Deactivate Promotion"
+                        : "Activate Promotion"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleDeletePromotion}

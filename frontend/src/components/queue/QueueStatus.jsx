@@ -4,17 +4,17 @@ import {
   leaveQueue,
 } from "@/services/queueService"
 import React, { useEffect, useState } from "react"
-import { Button } from "./ui/button"
-import LoadingSpinner from "./common/LoadingSpinner"
+import { Button } from "../ui/button"
+import LoadingSpinner from "../common/LoadingSpinner"
 import {
   Card,
   CardHeader,
   CardTitle,
   CardDescription,
   CardContent,
-} from "./ui/card"
-import { Separator } from "./ui/separator"
-import { Badge } from "./ui/badge"
+} from "../ui/card"
+import { Separator } from "../ui/separator"
+import { Badge } from "../ui/badge"
 import { AlertCircle, CheckCircle2, Clock } from "lucide-react"
 
 const QueueStatus = ({

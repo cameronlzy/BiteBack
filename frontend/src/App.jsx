@@ -5,32 +5,34 @@ import { toast, ToastContainer } from "react-toastify"
 import auth from "./services/authService"
 import { getCustomerInfo, getOwnerInfo } from "./services/userService"
 import Home from "./components/Home"
-import LoginForm from "./components/LoginForm"
-import RegisterForm from "./components/RegisterForm"
+import LoginForm from "./components/authorisation/LoginForm"
+import RegisterForm from "./components/authorisation/RegisterForm"
 import Restaurants from "./components/RestaurantsPage"
 import NavBar from "./components/NavBar"
 import Restaurant from "./components/Restaurant"
-import ReservationForm from "./components/ReservationForm"
+import ReservationForm from "./components/reservations/ReservationForm"
 import NotFound from "./components/Not-Found"
-import ProtectedRoute from "@/components/common/ProtectedRoute"
+import ProtectedRoute from "./components/common/ProtectedRoute"
 import ProfilePage from "./components/ProfilePage"
 import RestaurantForm from "./components/RestaurantForm"
 import SearchAndDiscovery from "./components/SearchAndDiscovery"
 import GeneralProfilePage from "./components/GeneralProfilePage"
-import ForgotPassword from "./components/ForgotPassword"
-import ResetPassword from "./components/ResetPassword"
+import ForgotPassword from "./components/authorisation/ForgotPassword"
+import ResetPassword from "./components/authorisation/ResetPassword"
 import ImageShow from "./components/common/ImageShow"
-import OnlineQueue from "./components/OnlineQueue"
+import OnlineQueue from "./components/queue/OnlineQueue"
 import ProtectedStaffRoute from "./components/common/ProtectedStaffRoute"
 import StaffLogin from "./components/staff/StaffLogin"
 import StaffControlCenter from "./components/staff/StaffControlCenter"
-import PromotionForm from "./components/PromotionForm"
-import PromotionPage from "./components/PromotionPage"
-import Promotions from "./components/Promotions"
-import OwnerPromotions from "./components/OwnerPromotions"
+import PromotionForm from "./components/promotions/PromotionForm"
+import PromotionPage from "./components/promotions/PromotionPage"
+import Promotions from "./components/promotions/Promotions"
+import OwnerPromotions from "./components/promotions/OwnerPromotions"
 import OwnerRestaurants from "./components/OwnerRestaurants"
 import RestaurantPerformance from "./components/statistics/RestaurantPerformance"
 import LoadingSpinner from "./components/common/LoadingSpinner"
+import RestaurantRewardsStore from "./components/rewards/RestaurantRewardStore"
+import RewardPage from "./components/rewards/RewardPage"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -308,6 +310,11 @@ function App() {
               />
             }
           />
+          <Route
+            path="current-rewards/:restaurantId"
+            element={<RestaurantRewardsStore user={user} />}
+          />
+          <Route path="reward/:rewardId" element={<RewardPage user={user} />} />
           <Route path="not-found" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Route>

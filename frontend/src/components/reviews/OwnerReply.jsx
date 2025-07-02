@@ -13,7 +13,7 @@ import { toast } from "react-toastify"
 import { Trash2 } from "lucide-react"
 import { DateTime } from "luxon"
 import { readableTimeSettings } from "@/utils/timeConverter"
-import SubmitButton from "./common/SubmitButton"
+import SubmitButton from "../common/SubmitButton"
 
 const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
   const isOwnedByUser = user?.role === "owner" && user._id === restaurant?.owner
