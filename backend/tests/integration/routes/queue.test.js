@@ -10,6 +10,8 @@ import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestStaff } from '../../factories/staff.factory.js';
 import { serverPromise } from '../../../index.js';
 import User from '../../../models/user.model.js';
+import VisitHistory from '../../../models/visitHistory.model.js';
+import RewardPoint from '../../../models/rewardPoint.model.js';
 
 describe('queue test', () => {
     let server;
@@ -386,7 +388,7 @@ describe('queue test', () => {
                 customer: user.profile,
                 pax: 2,
                 queueGroup: 'small',
-                queueNumber: 1
+                queueNumber: 1,
             });
             await queueEntry.save();
             queueEntryId = queueEntry._id;
@@ -407,6 +409,11 @@ describe('queue test', () => {
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body.status).toEqual(newStatus);
             expect(res.body.statusTimestamps[newStatus]).toBeDefined();
+            const visitHistory = await VisitHistory.findOne({ customer: user.profile, restaurant: restaurant._id });
+            const normalizedDate = new Date(Math.floor(new Date(res.body.statusTimestamps.waiting).getTime() / 1000) * 1000);
+            expect(visitHistory.visits[0].visitDate).toEqual(normalizedDate);
+            const rewardPoints = await RewardPoint.findOne({ customer: user.profile, restaurant: restaurant._id });
+            expect(rewardPoints.points).toBe(100);
         });
     });
 

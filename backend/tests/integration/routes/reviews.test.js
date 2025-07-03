@@ -16,6 +16,7 @@ import Restaurant from '../../../models/restaurant.model.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
 import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
+import RewardPoint from '../../../models/rewardPoint.model.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -261,6 +262,8 @@ describe('review test', () => {
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            const points = await RewardPoint.findOne({ customer: profile._id, restaurant: restaurant._id });
+            expect(points.points).toBe(50);
         });
 	});
 

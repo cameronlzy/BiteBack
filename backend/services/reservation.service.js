@@ -1,8 +1,12 @@
 import Reservation from '../models/reservation.model.js';
 import Restaurant from '../models/restaurant.model.js';
+import User from '../models/user.model.js';
 import { DateTime } from 'luxon';
 import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
+import { addVisitToHistory } from './visitHistory.service.js';
+import { adjustPoints } from './rewardPoint.service.js';
 import { error, success } from '../helpers/response.js';
+import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
 // retired, might use for analytics
 // exports.getReservationsByOwner = async (ownerId, query) => {
@@ -104,10 +108,18 @@ export async function createReservation(user, data) {
 }
 
 export async function updateReservationStatus(reservation, status) {
-    reservation.status = status;
-    await reservation.save();
-    reservation.restaurant = reservation.restaurant._id;
-    return success(reservation.toObject());
+    return await withTransaction(async (session) => {
+        reservation.status = status;
+        await reservation.save(wrapSession(session));
+
+        if (status === 'completed') {
+            const user = await User.findById(reservation.user).lean();
+            await addVisitToHistory(user.profile, reservation.restaurant._id, reservation.reservationDate, session);
+            await adjustPoints(100, reservation.restaurant._id, user.profile, session);
+        }
+        reservation.restaurant = reservation.restaurant._id;
+        return success(reservation.toObject());
+    });
 }
 
 export async function updateReservation(reservation, update) {

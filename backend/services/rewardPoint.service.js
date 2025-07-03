@@ -3,6 +3,7 @@ import { error, success } from '../helpers/response.js';
 import RewardPoint from '../models/rewardPoint.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import User from '../models/user.model.js';
+import { wrapSession } from '../helpers/transaction.helper.js';
 
 export async function getAllPoints(authUser, query) {
     const { page, limit } = query;
@@ -42,17 +43,18 @@ export async function updatePoints(restaurant, update) {
 }
 
 // helper services
-export async function adjustPoints(change, restaurantId, customerId) {
-    const existing = await RewardPoint.findOne({ restaurant: restaurantId, customer: customerId });
+export async function adjustPoints(change, restaurant, customer, session = undefined) {
+    const existing = await RewardPoint.findOne({ restaurant, customer }).session(session);
 
     if (!existing) {
         if (change < 0) return false;
 
-        await RewardPoint.create({
-            restaurant: restaurantId,
-            customer: customerId,
-            points: change,
+        const rewardPoint = new RewardPoint({
+            restaurant,
+            customer,
+            points: change
         });
+        await rewardPoint.save(wrapSession(session));
         return true;
     }
 
@@ -60,7 +62,7 @@ export async function adjustPoints(change, restaurantId, customerId) {
     if (newPoints < 0) return false;
 
     existing.points = newPoints;
-    await existing.save();
+    await existing.save(wrapSession(session));
 
     return true;
 }

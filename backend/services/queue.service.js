@@ -4,6 +4,8 @@ import Restaurant from '../models/restaurant.model.js';
 import _ from 'lodash';
 import { findQueueGroup } from '../helpers/queue.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
+import { addVisitToHistory } from './visitHistory.service.js';
+import { adjustPoints } from './rewardPoint.service.js';
 // import { notifyClient } from '../helpers/sse.helper.js';
 import { error, success } from '../helpers/response.js';
 
@@ -120,12 +122,20 @@ export async function callNext(restaurant, queueGroup) {
 }
 
 export async function updateQueueEntryStatus(queueEntry, update) {
-    queueEntry.status = update.status;
-    queueEntry.statusTimestamps[update.status] = new Date();
-    queueEntry.restaurant = queueEntry.restaurant._id;
-    await queueEntry.save();
-    // notifyClient(queueEntry.customer.toString(), { queueEntry: queueEntry._id, status: queueEntry.status });
-    return success(queueEntry.toObject());
+    return await withTransaction(async (session) => {
+        queueEntry.status = update.status;
+        queueEntry.statusTimestamps[update.status] = new Date();
+        queueEntry.restaurant = queueEntry.restaurant._id;
+        await queueEntry.save(wrapSession(session));
+
+        if (update.status === 'seated') {
+            await addVisitToHistory(queueEntry.customer, queueEntry.restaurant, queueEntry.statusTimestamps.waiting, session);
+            await adjustPoints(100, queueEntry.restaurant, queueEntry.customer, session);
+        }
+
+        // notifyClient(queueEntry.customer.toString(), { queueEntry: queueEntry._id, status: queueEntry.status });
+        return success(queueEntry.toObject());
+    });
 }
 
 export async function toggleQueue(restaurant, enabled) {

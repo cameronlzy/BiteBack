@@ -54,7 +54,7 @@ export async function completeRedemption(authUser, code) {
         rewardRedemption.status = 'expired';
         rewardRedemption.code = undefined;
         await rewardRedemption.save();
-        return error(404, 'Reward redemption has expired');
+        return error(410, 'Reward redemption has expired');
     }
 
     rewardRedemption.status = 'completed';

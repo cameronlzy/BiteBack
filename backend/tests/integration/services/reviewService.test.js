@@ -8,7 +8,7 @@ import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { serverPromise } from '../../../index.js';
 import { createTestReview } from '../../factories/review.factory.js';
 
-describe('review test', () => {
+describe('review service test', () => {
     let server;
     beforeAll(async () => {
         server = await serverPromise;

@@ -13,6 +13,7 @@ import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import { DateTime } from 'luxon';
 
 describe('reward redemption test', () => {
     let server;
@@ -195,6 +196,13 @@ describe('reward redemption test', () => {
             cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);
+        });
+
+        it('should return 410 if expired', async () => {
+            rewardRedemption.activatedAt = DateTime.now().minus({ days: 1}).toJSDate();
+            await rewardRedemption.save();
+            const res = await exec();
+            expect(res.status).toBe(410);
         });
         
         it('should return 200 and message', async () => {

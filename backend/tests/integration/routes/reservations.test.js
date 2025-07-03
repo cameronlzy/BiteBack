@@ -6,11 +6,14 @@ import Restaurant from '../../../models/restaurant.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestStaff } from '../../factories/staff.factory.js';
+import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
 import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
 import { DateTime } from 'luxon';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import Staff from '../../../models/staff.model.js';
+import VisitHistory from '../../../models/visitHistory.model.js';
+import RewardPoint from '../../../models/rewardPoint.model.js';
 
 describe('reservation test', () => {
     let server;
@@ -317,7 +320,7 @@ describe('reservation test', () => {
 
     describe('PATCH /api/reservations/:id/status', () => {
         let token;
-        let user;
+        let user, profile;
         let userId;
         let restaurant;
         let restaurantId;
@@ -337,7 +340,10 @@ describe('reservation test', () => {
 
             // create a user
             user = await createTestUser('customer');
+            profile = createTestCustomerProfile(user);
+            user.profile = profile._id;
             await user.save();
+            await profile.save();
             userId = user._id;
 
             // create a restaurant
@@ -387,6 +393,11 @@ describe('reservation test', () => {
                 'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            const visitHistory = await VisitHistory.findOne({ customer: profile._id, restaurant: restaurantId });
+            const normalizedDate = new Date(Math.floor(reservationDate.getTime() / 1000) * 1000);
+            expect(visitHistory.visits[0].visitDate).toEqual(normalizedDate);
+            const rewardPoint = await RewardPoint.findOne({ customer: profile._id, restaurant: restaurantId });
+            expect(rewardPoint.points).toBe(100);
         });
     });
 
