@@ -31,7 +31,7 @@ export function subscribeToQueue(req, res) {
 }
 
 export async function getStatus(req, res) {
-    return res.status(200).json(req.queueEntry);
+    return res.status(200).json(req.queueEntry.toObject());
 };
 
 export async function joinQueue(req, res) {

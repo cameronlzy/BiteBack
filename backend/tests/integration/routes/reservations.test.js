@@ -127,8 +127,8 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create reservations
-            reservationDate1 = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
-            reservationDate2 = new DateTime(Date.now()).plus({weeks:4}).toJSDate(); // UTC
+            reservationDate1 = DateTime.now().plus({days:20}).toJSDate(); // UTC
+            reservationDate2 = DateTime.now().plus({weeks:4}).toJSDate(); // UTC
             remarks = '';
             pax = 10;
             const reservation1 = new Reservation({
@@ -198,7 +198,7 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create a reservation
-            reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
+            reservationDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
             pax = 10;
             const reservation = new Reservation({
                 user: userId, restaurant: restaurantId,
@@ -351,7 +351,7 @@ describe('reservation test', () => {
             cookie = setTokenCookie(token); 
 
             // create a reservation
-            reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
+            reservationDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
             remarks = '';
             pax = 10;
             const reservation = new Reservation({
@@ -423,7 +423,7 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create a reservation
-            reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
+            reservationDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
             remarks = '';
             pax = 10;
             const reservation = new Reservation({
@@ -432,7 +432,7 @@ describe('reservation test', () => {
             });
             await reservation.save();
             reservationId = reservation._id;
-            newReservationDate = new DateTime(Date.now()).plus({days:15}).setZone('Asia/Singapore').toJSDate(); // SGT
+            newReservationDate = DateTime.now().plus({days:15}).setZone('Asia/Singapore').toJSDate(); // SGT
             newRemarks = '';
             newPax = 5;
         });
@@ -496,7 +496,7 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create a reservation
-            reservationDate = new DateTime(Date.now()).plus({days:20}).toJSDate(); // UTC
+            reservationDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
             remarks = '';
             pax = 10;
             const reservation = new Reservation({

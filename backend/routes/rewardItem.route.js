@@ -1,5 +1,5 @@
 import express from 'express';
-import * as rewardsShopController from '../controllers/rewardsShop.controller.js';
+import * as rewardsShopController from '../controllers/rewardItem.controller.js';
 import auth from '../middleware/auth.js';
 import isOwner from '../middleware/isOwner.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';

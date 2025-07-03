@@ -10,8 +10,9 @@ import owners from '../routes/owner.route.js';
 import queue from '../routes/queue.route.js';
 import promotions from '../routes/promotion.route.js';
 import analytics from '../routes/analytics.route.js';
-import rewardsShop from '../routes/rewardsShop.route.js';
-import rewardsPoints from '../routes/rewardsPoints.route.js';
+import rewardItem from '../routes/rewardItem.route.js';
+import rewardPoint from '../routes/rewardPoint.route.js';
+import rewardRedemption from '../routes/rewardRedemption.route.js';
 
 export default function(app) {
   app.use(express.json());
@@ -25,8 +26,9 @@ export default function(app) {
   app.use('/api/queue', queue);
   app.use('/api/promotions', promotions);
   app.use('/api/analytics', analytics);
-  app.use('/api/rewards', rewardsShop);
-  app.use('/api/rewards', rewardsPoints);
+  app.use('/api/rewards', rewardItem);
+  app.use('/api/rewards', rewardPoint);
+  app.use('/api/rewards', rewardRedemption);
 
   // to log error
   app.use(error);

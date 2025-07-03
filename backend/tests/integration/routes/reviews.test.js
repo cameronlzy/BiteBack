@@ -54,7 +54,7 @@ describe('review test', () => {
             await profile.save();
 
             // create a review
-            review = createTestReview(profile, restaurant);
+            review = createTestReview(profile, restaurantId);
             await review.save();
 		});
 
@@ -108,7 +108,7 @@ describe('review test', () => {
             customerId = profile._id;
 
             // create a review
-            review = createTestReview(profile, restaurant);
+            review = createTestReview(profile, restaurant._id);
             await review.save();
 		});
 
@@ -166,7 +166,7 @@ describe('review test', () => {
             // create a review
             rating = 3;
             reviewText = "Good";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: user.username,
@@ -303,7 +303,7 @@ describe('review test', () => {
             // create a review
             rating = 3;
             reviewText = "Good";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: customer.username,
@@ -386,7 +386,7 @@ describe('review test', () => {
             rating = 3;
             reviewText = "Good";
             replyText = "test";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: customer.username,
@@ -532,7 +532,7 @@ describe('review test', () => {
             // create a review
             rating = 3;
             reviewText = "Good";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             images = [];
             review = new Review({
                 customer: profile._id,
@@ -614,7 +614,7 @@ describe('review test', () => {
             rating = 3;
             reviewText = "Good";
             replyText = "test";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: customer.username,
@@ -691,7 +691,7 @@ describe('review test', () => {
             rating = 3;
             reviewText = "Good";
             replyText = "test";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: customer.username,

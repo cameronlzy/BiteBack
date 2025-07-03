@@ -3,7 +3,7 @@ import VisitHistory from '../../models/visitHistory.model';
 
 export function createTestVisitHistory(restaurant = new mongoose.Types.ObjectId(), customer = new mongoose.Types.ObjectId()) {
     const visits = [{
-        visitDate: Date.now(),
+        visitDate: new Date(),
         reviewed: false,
     }];
 

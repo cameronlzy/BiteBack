@@ -8,10 +8,9 @@ import { serverPromise } from '../../../index.js';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import Restaurant from '../../../models/restaurant.model.js';
-import { it } from '@jest/globals';
 import User from '../../../models/user.model.js';
 
-describe('rewards shop test', () => {
+describe('reward item test', () => {
     let server;
     beforeAll(async () => {
         server = await serverPromise;

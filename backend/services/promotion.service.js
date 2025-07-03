@@ -132,7 +132,7 @@ export async function createPromotion(authUser, data) {
 }
 
 export async function updatePromotion(promotion, restaurant, update) {
-    if (promotion.endDate < Date.now()) {
+    if (promotion.endDate < new Date()) {
         return error(400, 'Promotion has expired');
     }
 
@@ -164,7 +164,7 @@ export async function updatePromotion(promotion, restaurant, update) {
 }
 
 export async function deletePromotion(promotion) {
-    if (promotion.endDate < Date.now()) {
+    if (promotion.endDate < new Date()) {
         return error(400, 'Promotion has expired');
     }
 

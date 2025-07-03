@@ -53,9 +53,10 @@ export async function getReservationsByRestaurant(restaurant) {
 
 export async function getUserReservations(userId) {
     // get reservations
+    const now = new Date();
     const reservations = await Reservation.find({
         user: userId,
-        reservationDate: { $gte: Date.now() }
+        reservationDate: { $gte: now }
     }).sort({ restaurant: 1 }).lean();
 
     return success(reservations);
@@ -63,7 +64,7 @@ export async function getUserReservations(userId) {
 
 export async function getSingleReservation(reservation) {
     // check if expired
-    if (reservation.reservationDate < Date.now()) {
+    if (reservation.reservationDate < new Date()) {
         return error(404, 'Reservation expired');
     }
     return success(reservation.toObject());
