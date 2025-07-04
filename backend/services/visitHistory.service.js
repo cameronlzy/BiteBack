@@ -1,4 +1,4 @@
-import VisitHistory from '../models/visitHistory.model';
+import VisitHistory from '../models/visitHistory.model.js';
 
 export async function addVisitToHistory(customer, restaurant, visitDate, session = undefined) {
     const normalizedDate = new Date(Math.floor(visitDate.getTime() / 1000) * 1000);

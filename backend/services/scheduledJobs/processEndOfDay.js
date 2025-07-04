@@ -1,6 +1,5 @@
 import { queueCleanup } from './queueCleanup.js';
 import { generateAnalytics } from './generateAnalytics.js';
-import { processVisitHistory } from './visitHistoryProcessor.js';
 import { cleanupPastReservations } from './cleanupPastReservations.js'
 import Restaurant from '../../models/restaurant.model.js';
 import DailyAnalytics from '../../models/dailyAnalytics.model.js';
@@ -49,9 +48,6 @@ export async function processEndOfDay(nowSGT) {
 
                 // analytics processing
                 const analyticsData = await generateAnalytics(restaurant, session);
-
-                // adds to visit history
-                await processVisitHistory(restaurant, session);
 
                 // clears queue
                 await queueCleanup(restaurant, session);

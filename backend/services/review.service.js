@@ -16,7 +16,7 @@ export async function getEligibleVisits(restaurantId, authUser) {
     if (!restaurant) return { status: 404, body: 'Restaurant not found' };
 
     // get visits by customer in restaurant
-    const visitHistory = await VisitHistory.find({ customer: authUser.profile, restaurant: restaurant._id }).lean();
+    const visitHistory = await VisitHistory.findOne({ customer: authUser.profile, restaurant: restaurant._id }).select('visits').lean();
     if (!visitHistory || visitHistory.visits.length === 0) return success([]);
 
     // filter out reviewed visits
@@ -24,7 +24,7 @@ export async function getEligibleVisits(restaurantId, authUser) {
         .filter(v => !v.reviewed)
         .map(v => ({ visitDate: v.visitDate }));
 
-    return success(unreviewedVisits.toObject());
+    return success(unreviewedVisits);
 }
 
 export async function getReviewsByRestaurant(restaurantId, authUser) {

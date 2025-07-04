@@ -17,6 +17,8 @@ import CustomerProfile from '../../../models/customerProfile.model.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
 import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
 import RewardPoint from '../../../models/rewardPoint.model.js';
+import VisitHistory from '../../../models/visitHistory.model.js';
+import { DateTime } from 'luxon';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,6 +31,63 @@ describe('review test', () => {
 	afterAll(async () => {
 		await mongoose.connection.close();
 		await server.close();
+	});
+
+    describe('GET /api/reviews/eligible-visits', () => {
+        let visitHistory;
+        let user, token, cookie;
+        let restaurant;
+        let restaurantId;
+        let profile;
+
+		beforeEach(async () => {
+			// clear all
+            await CustomerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+            await VisitHistory.deleteMany({});
+
+            // create restaurant
+            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+            await restaurant.save();
+            restaurantId = restaurant._id;
+            
+            // create customer 
+            user = await createTestUser('customer');
+            profile = createTestCustomerProfile(user);
+            user.profile = profile._id;
+            await profile.save();
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            visitHistory = new VisitHistory({
+                customer: profile._id, restaurant: restaurantId, 
+                visits: [
+                    { visitDate: new Date() },
+                    { visitDate: DateTime.now().minus({ days: 1 }).toJSDate(), reviewed: true }
+                ]
+            });
+            await visitHistory.save();
+		});
+
+        const exec = () => {
+            return request(server)
+            .get(`/api/reviews/eligible-visits?restaurantId=${restaurantId}`)
+            .set('Cookie', [cookie]);
+        };
+
+        it('should return 404 if restaurant does not exist', async () => {
+            restaurantId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 200 and correct visit date', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(1);
+            expect(res.body[0].visitDate).not.toBeUndefined();
+        });
 	});
 
     describe('GET /api/reviews/restaurant/:id', () => {

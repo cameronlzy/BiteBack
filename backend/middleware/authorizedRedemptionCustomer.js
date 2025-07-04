@@ -1,5 +1,5 @@
-import { wrapError } from '../helpers/response';
-import RewardRedemption from '../models/rewardRedemption.model';
+import { wrapError } from '../helpers/response.js';
+import RewardRedemption from '../models/rewardRedemption.model.js';
 
 export default async function (req, res, next) {
     const redemption = await RewardRedemption.findById(req.params.id);
