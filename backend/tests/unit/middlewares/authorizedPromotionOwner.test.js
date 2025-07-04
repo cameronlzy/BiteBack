@@ -23,7 +23,7 @@ describe('authorizedPromotionOwner middleware', () => {
   beforeEach(() => {
     req = {
       params: { id: 'promo123' },
-      user: { _id: 'owner123' },
+      user: { profile: 'owner123' },
     };
     res = {
       status: jest.fn().mockReturnThis(),

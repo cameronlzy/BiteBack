@@ -39,13 +39,13 @@ describe('analytics test', () => {
             await OwnerProfile.deleteMany({});
 
             user = await createTestUser('owner');
-            token = generateAuthToken(user);
-            cookie = setTokenCookie(token);
             profile = createTestOwnerProfile(user);
             user.profile = profile._id;
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
             await user.save();
             
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             restaurant.openingHours = convertOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
             profile.restaurants = [restaurant._id];
 
@@ -85,13 +85,13 @@ describe('analytics test', () => {
             await OwnerProfile.deleteMany({});
 
             user = await createTestUser('owner');
-            token = generateAuthToken(user);
-            cookie = setTokenCookie(token);
             profile = createTestOwnerProfile(user);
             user.profile = profile._id;
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
             await user.save();
             
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             profile.restaurants = [restaurant._id];
 
             await profile.save();
@@ -150,13 +150,13 @@ describe('analytics test', () => {
             await OwnerProfile.deleteMany({});
 
             user = await createTestUser('owner');
-            token = generateAuthToken(user);
-            cookie = setTokenCookie(token);
             profile = createTestOwnerProfile(user);
             user.profile = profile._id;
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
             await user.save();
             
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             restaurant.openingHours = convertOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
             profile.restaurants = [restaurant._id];
 

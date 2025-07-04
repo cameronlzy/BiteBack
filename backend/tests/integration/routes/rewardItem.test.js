@@ -94,7 +94,7 @@ describe('reward item test', () => {
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
         });
@@ -131,7 +131,7 @@ describe('reward item test', () => {
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
 
@@ -171,7 +171,7 @@ describe('reward item test', () => {
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
 

@@ -40,7 +40,7 @@ const tagList = [
 ];
 
 const restaurantSchema = new mongoose.Schema({
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'OwnerProfile', required: true },
   name: { type: String, required: true },
   location: {
     type: {

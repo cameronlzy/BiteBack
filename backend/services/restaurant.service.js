@@ -281,7 +281,7 @@ export async function createRestaurantHelper(authUser, data, session = undefined
   // create restaurant
   const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website', 'tags']));
   restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
-  restaurant.owner = authUser._id;
+  restaurant.owner = authUser.profile;
   restaurant.openingHours = convertOpeningHoursToUTC(data.openingHours);
 
   // create staff account for restaurant

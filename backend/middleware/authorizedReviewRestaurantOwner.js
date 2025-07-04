@@ -7,7 +7,7 @@ export default async function checkReviewOwnership(req, res, next) {
     if (!review) return res.status(404).json(wrapError('Review not found'));
 
     const restaurantOwnerId = review.restaurant.owner.toString();
-    if (restaurantOwnerId !== req.user._id) {
+    if (restaurantOwnerId !== req.user.profile) {
       return res.status(403).json(wrapError("Review's restaurant does not belong to owner"));
     }
     req.review = review;

@@ -15,6 +15,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
 import RewardPoint from '../../../models/rewardPoint.model.js';
+import { expect } from '@jest/globals';
 
 describe('reward redemption test', () => {
     let server;
@@ -29,7 +30,7 @@ describe('reward redemption test', () => {
 
     describe('GET /api/rewards/redemptions', () => {
         let user, profile, token, cookie;
-        let rewardRedemption, rewardItem;
+        let rewardRedemption, rewardItem, active;
 
         beforeEach(async () => {
             await RewardRedemption.deleteMany({});
@@ -48,12 +49,14 @@ describe('reward redemption test', () => {
             await rewardRedemption.save();
 
             rewardRedemption = createTestRewardRedemption(profile._id, new mongoose.Types.ObjectId(), rewardItem);
+            rewardRedemption.status = 'expired';
             await rewardRedemption.save();
+            active = true;
         });
 
         const exec = () => {
             return request(server)
-                .get('/api/rewards/redemptions')
+                .get(`/api/rewards/redemptions?active=${active}`)
                 .set('Cookie', [cookie]);
         };
         
@@ -64,6 +67,7 @@ describe('reward redemption test', () => {
                 const requiredKeys = ['customer', 'restaurant', 'rewardItemSnapshot', 'status'];
                 expect(Object.keys(redemption)).toEqual(expect.arrayContaining(requiredKeys));
             });
+            expect(res.body.redemptions.length).toBe(1);
         });
     });
 

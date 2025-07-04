@@ -583,7 +583,7 @@ describe('restaurant test', () => {
             await owner.save();
 
             // creating a restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
 
@@ -633,7 +633,7 @@ describe('restaurant test', () => {
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             restaurant.images = [
                 'https://res.cloudinary.com/drmcljacy/image/upload/v1749107618/biteback/restaurants/icpacpiowpwwvsvieec8.jpg', // image 1 (to be deleted)
                 'https://res.cloudinary.com/drmcljacy/image/upload/v1749118205/biteback/restaurants/uxtab5rmjomf57ouznni.jpg', // image 2
@@ -715,7 +715,7 @@ describe('restaurant test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
 
@@ -760,10 +760,6 @@ describe('restaurant test', () => {
         let restaurantId;
         let token;
         let owner;
-        let email;
-        let username;
-        let password;
-        let role;
         let ownerProfile;
         let cookie;
 
@@ -772,20 +768,7 @@ describe('restaurant test', () => {
             await User.deleteMany({});
             await OwnerProfile.deleteMany({});
 
-            // create an owner
-            email = "myOwner@gmail.com";
-            username = "myOwner";
-            password = "myPassword@123";
-            role = "owner";
-            owner = await User({
-                email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
-            });
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-
-            // creating a restaurant
-            restaurant = createTestRestaurant(owner._id);
-            await restaurant.save();
+            owner = await createTestUser('owner');
 
             // creating an ownerProfile
             ownerProfile = createTestOwnerProfile(owner);
@@ -793,9 +776,11 @@ describe('restaurant test', () => {
 
             owner.profile = ownerProfile._id;
             await owner.save();
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
         });

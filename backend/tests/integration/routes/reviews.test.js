@@ -354,7 +354,7 @@ describe('review test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             
             // create customer 
@@ -666,7 +666,7 @@ describe('review test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             
             // create customer 

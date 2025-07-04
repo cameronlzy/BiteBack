@@ -10,9 +10,19 @@ export async function getAllRedemptions(authUser, query) {
     const { page, limit } = query;
     const skip = (page - 1) * limit;
 
+    const filter = {
+        customer: authUser.profile,
+    };
+
+    if (query.active === true) {
+        filter.status = 'active';
+    } else if (query.active === false) {
+        filter.status = { $ne: 'active' };
+    }
+
     const [redemptions, total] = await Promise.all([
-        RewardRedemption.find({ customer: authUser.profile }).skip(skip).limit(limit).lean(),
-        RewardRedemption.countDocuments({ customer: authUser.profile }),
+        RewardRedemption.find(filter).skip(skip).limit(limit).lean(),
+        RewardRedemption.countDocuments(filter),
     ]);
 
     return success({

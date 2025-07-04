@@ -1,4 +1,12 @@
 import Joi from 'joi';
+import { paginationSchema } from './pagination.validator.js';
+
+export function validateHistory(history) {
+    const schema = paginationSchema.keys({
+        active: Joi.boolean().required()
+    });
+    return schema.validate(history);
+}
 
 export function validateRedemption(redemption) {
     const schema = Joi.object({

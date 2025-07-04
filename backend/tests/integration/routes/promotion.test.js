@@ -325,7 +325,7 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             // create promotion
@@ -389,7 +389,7 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             // create promotion
@@ -445,7 +445,7 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);
@@ -507,7 +507,7 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);

@@ -10,7 +10,7 @@ const rewardRedemptionSchema = new mongoose.Schema({
         pointsRequired: { type: Number },
     },
     redeemedAt: { type: Date, default: Date.now },
-    status: { type: String, enum: ['pending', 'activated', 'completed', 'expired'], default: 'pending' },
+    status: { type: String, enum: ['active', 'activated', 'completed', 'expired'], default: 'active' },
     code: { type: String, match: /^\d{6}$/ },
     activatedAt: { type: Date },
     usedAt: { type: Date }

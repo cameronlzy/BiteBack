@@ -16,7 +16,7 @@ describe('authorizedRestaurantOwner middleware', () => {
   beforeEach(() => {
     req = {
       params: { id: 'resto123' },
-      user: { _id: 'owner123' },
+      user: { profile: 'owner123' },
     };
     res = {
       status: jest.fn().mockReturnThis(),

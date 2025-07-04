@@ -8,7 +8,7 @@ export default async function (req, res, next) {
     
     const restaurant = await Restaurant.findById(promotion.restaurant);
     if (!restaurant) return res.status(404).json(wrapError('Restaurant not found'));
-    if (restaurant.owner.toString() !== req.user._id) return res.status(403).json(wrapError('Promotion not owned by owner'));
+    if (restaurant.owner.toString() !== req.user.profile) return res.status(403).json(wrapError('Promotion not owned by owner'));
     
     req.restaurant = restaurant;
     req.promotion = promotion;
