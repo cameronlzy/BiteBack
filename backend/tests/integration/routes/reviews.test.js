@@ -491,6 +491,8 @@ describe('review test', () => {
         it('should return 200 and badgeIndex', async () => {
             const res = await exec();
             expect(typeof res.body).toBe('number');
+            const points = await RewardPoint.findOne({ customer: profile._id, restaurant: restaurant._id });
+            expect(points.points).toBe(2);
         });
 	});
 
@@ -725,7 +727,7 @@ describe('review test', () => {
         let badgeVote;
         let otherCustomer;
         let otherCustomerProfile;
-        let replyText;
+        let replyText, point;
 
 		beforeEach(async () => {
 			// clear all
@@ -733,6 +735,7 @@ describe('review test', () => {
             await CustomerProfile.deleteMany({});
             await Restaurant.deleteMany({});
             await OwnerProfile.deleteMany({});
+            await RewardPoint.deleteMany({});
 
             // create restaurant owner
             owner = await createTestUser('owner');
@@ -777,6 +780,13 @@ describe('review test', () => {
             token = generateAuthToken(otherCustomer);
             cookie = setTokenCookie(token);
 
+            point = new RewardPoint({
+                customer: profile._id,
+                restaurant: restaurant._id,
+                points: 50
+            });
+            await point.save();
+
             // create badgeIndex vote
             badgeVote = await ReviewBadgeVote({
                 customer: otherCustomerProfile._id,
@@ -805,6 +815,8 @@ describe('review test', () => {
 
             const voteInDb = await ReviewBadgeVote.findById(reviewId);
             expect(voteInDb).toBeNull();
+            const rewardPoint = await RewardPoint.findOne({ customer: profile._id, restaurant: restaurant._id });
+            expect(rewardPoint.points).toBe(48);
         });
 	});
 });

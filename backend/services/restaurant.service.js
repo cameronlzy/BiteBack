@@ -196,17 +196,18 @@ export async function createRestaurant(authUser, data) {
 
 export async function createRestaurantBulk(authUser, data) {
   return await withTransaction(async (session) => {
-    // create restaurants
+    // update owner
+    const user = await User.findById(authUser._id).populate('profile').session(session);
+    if (!user) return error(404, 'User not found');
+    if (!user.profile) return error(404, 'Owner Profile not found');
+
+      // create restaurants
     const restaurantIds = [];
     for (const item of data) {
       const restaurant = await createRestaurantHelper(authUser, item, session);
       restaurantIds.push(restaurant._id);
     }
 
-    // update owner
-    const user = await User.findById(authUser._id).populate('profile').session(session);
-    if (!user) return error(404, 'User not found');
-    if (!user.profile) return error(404, 'Owner Profile not found');
     user.profile.restaurants = restaurantIds;
     await user.profile.save(wrapSession(session));
 
@@ -287,7 +288,7 @@ export async function createRestaurantHelper(authUser, data, session = undefined
   const staff = await createStaffForRestaurant(restaurant, session);
   restaurant.staff = staff._id;
 
-  await restaurant.save(session ? { session } : undefined);
+  await restaurant.save(wrapSession(session));
   return restaurant;
 }
 
@@ -300,7 +301,7 @@ export async function createStaffForRestaurant(restaurant, session = undefined) 
     encryptedPassword, restaurant: restaurant._id, role: 'staff'
   });
   
-  await staff.save(session ? { session } : undefined);
+  await staff.save(wrapSession(session));
   return staff;
 }
 

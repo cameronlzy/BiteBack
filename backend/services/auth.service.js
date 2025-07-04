@@ -85,8 +85,8 @@ export async function registerCustomer(data) {
         // if user exists
         let existingUser = await User.findOne({
           $or: [
-            { email: data.email },
-            { username: data.username }
+                { email: data.email },
+                { username: data.username }
           ]
         }).session(session).lean();
         if (existingUser) {
@@ -126,8 +126,8 @@ export async function registerOwner(data) {
         // if user exists
         let existingUser = await User.findOne({
             $or: [
-            { email: data.email },
-            { username: data.username }
+                { email: data.email },
+                { username: data.username }
             ]
         }).session(session).lean();
         if (existingUser) {

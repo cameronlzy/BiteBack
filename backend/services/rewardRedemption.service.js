@@ -1,8 +1,10 @@
 import _ from 'lodash';
 import RewardRedemption from '../models/rewardRedemption.model.js';
 import RewardItem from '../models/rewardItem.model.js';
+import { adjustPoints } from '../services/rewardPoint.service.js';
 import { error, success } from '../helpers/response.js';
 import { DateTime } from 'luxon';
+import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
 export async function getAllRedemptions(authUser, query) {
     const { page, limit } = query;
@@ -23,22 +25,34 @@ export async function getAllRedemptions(authUser, query) {
 }
 
 export async function createRedemption(authUser, data) {
-    const rewardItem = await RewardItem.findById(data.rewardItem).select('_id restaurant category description pointsRequired').lean();
-    if (!rewardItem) return error(404, 'Reward item not found');
+    return await withTransaction(async (session) => {
+        const rewardItem = await RewardItem.findById(data.rewardItem).select('_id restaurant category description pointsRequired stock').session(session);
+        if (!rewardItem) return error(404, 'Reward item not found');
 
-    const redemption = new RewardRedemption();
-    redemption.customer = authUser.profile;
-    redemption.restaurant = rewardItem.restaurant;
-    redemption.rewardItemSnapshot = {
-        itemId: rewardItem._id,
-        category: rewardItem.category,
-        description: rewardItem.description,
-        pointsRequired: rewardItem.pointsRequired
-    };
+        if (rewardItem.stock !== null) {
+            if (rewardItem.stock <= 0) return error(400, 'Reward item out of stock');
+            rewardItem.stock -= 1;
+        }
 
-    await redemption.save();
+        const passed = await adjustPoints(-rewardItem.pointsRequired, rewardItem.restaurant, authUser.profile, session);
+        if (!passed) return error(400, 'Insufficient balance');
 
-    return success(redemption);
+        const redemption = new RewardRedemption({
+            customer: authUser.profile,
+            restaurant: rewardItem.restaurant,
+            rewardItemSnapshot: {
+                itemId: rewardItem._id,
+                category: rewardItem.category,
+                description: rewardItem.description,
+                pointsRequired: rewardItem.pointsRequired
+            }
+        });
+
+        await redemption.save(wrapSession(session));
+        await rewardItem.save(wrapSession(session));
+
+        return success(redemption);
+    });
 }
 
 export async function completeRedemption(authUser, code) {

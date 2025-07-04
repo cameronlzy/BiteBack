@@ -154,31 +154,35 @@ export async function createReply(data, review, authUser) {
 }
 
 export async function addBadge(data, reviewId, authUser) {
-    // find review
-    const review = await Review.findById(reviewId).lean();
-    if (!review) return error(404, 'Review with this ID not found');
+    return await withTransaction(async (session) => {
+        // find review
+        const review = await Review.findById(reviewId).session(session).lean();
+        if (!review) return error(404, 'Review with this ID not found');
 
-    // check if customer has made a badgeVote for this review
-    const badgeVote = await ReviewBadgeVote.findOne({
-        customer: authUser.profile,
-        review: review._id
-    });
-
-    // if it exists, change the vote
-    if (badgeVote) {
-        badgeVote.badgeIndex = data.badgeIndex;
-        await badgeVote.save();
-    } else {
-        const newBadgeVote = new ReviewBadgeVote({
+        // check if customer has made a badgeVote for this review
+        const badgeVote = await ReviewBadgeVote.findOne({
             customer: authUser.profile,
-            review: review._id,
-            restaurant: review.restaurant,
-            badgeIndex: data.badgeIndex
-        });
-        await newBadgeVote.save();
-    }
+            review: review._id
+        }).session(session);
 
-    return success(data.badgeIndex);
+        // if it exists, change the vote
+        if (badgeVote) {
+            badgeVote.badgeIndex = data.badgeIndex;
+            await badgeVote.save(wrapSession(session));
+        } else {
+            const newBadgeVote = new ReviewBadgeVote({
+                customer: authUser.profile,
+                review: review._id,
+                restaurant: review.restaurant,
+                badgeIndex: data.badgeIndex
+            });
+            await newBadgeVote.save(wrapSession(session));
+
+            await adjustPoints(2, review.restaurant, review.customer, session);
+        }
+
+        return success(data.badgeIndex);
+    });
 }
 
 export async function deleteReview(review) {
@@ -199,20 +203,23 @@ export async function deleteReply(review) {
 }
 
 export async function deleteBadge(reviewId, authUser) {
-    // find review
-    const review = await Review.findById(reviewId).lean();
-    if (!review) return error(404, 'Review with this ID not found');
+    return await withTransaction(async (session) => {
+        // find review
+        const review = await Review.findById(reviewId).session(session).lean();
+        if (!review) return error(404, 'Review with this ID not found');
 
-    // find badgeVote
-    const badgeVote = await ReviewBadgeVote.findOne({
-        customer: authUser.profile,
-        review: review._id
+        // find badgeVote
+        const badgeVote = await ReviewBadgeVote.findOne({
+            customer: authUser.profile,
+            review: review._id
+        }).session(session);
+        if (!badgeVote) return error(404, 'Vote does not exist');
+        const badgeIndex = badgeVote.badgeIndex;
+        await badgeVote.deleteOne(wrapSession(session));
+        await adjustPoints(-2, review.restaurant, review.customer, session); // deducts if the reviewer has enough points
+
+        return success(badgeIndex);
     });
-    if (!badgeVote) return error(404, 'Vote does not exist');
-    const badgeIndex = badgeVote.badgeIndex;
-    await badgeVote.deleteOne();
-
-    return success(badgeIndex);
 }
 
 // utlity services

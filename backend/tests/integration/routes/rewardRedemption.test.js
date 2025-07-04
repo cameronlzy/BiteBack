@@ -14,6 +14,7 @@ import { serverPromise } from '../../../index.js';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
+import RewardPoint from '../../../models/rewardPoint.model.js';
 
 describe('reward redemption test', () => {
     let server;
@@ -105,7 +106,7 @@ describe('reward redemption test', () => {
 
     describe('POST /api/rewards/redemptions', () => {
         let user, profile, token, cookie;
-        let rewardItem, rewardItemId;
+        let rewardItem, rewardItemId, rewardPoint;
 
         beforeEach(async () => {
             await RewardItem.deleteMany({});
@@ -117,8 +118,15 @@ describe('reward redemption test', () => {
             cookie = setTokenCookie(token);
 
             rewardItem = createTestRewardItem();
+            rewardItem.stock = 10;
+            rewardItem.pointsRequired = 100;
             await rewardItem.save();
             rewardItemId = rewardItem._id;
+
+            rewardPoint = new RewardPoint({
+                customer: profile._id, restaurant: rewardItem.restaurant, points: 150
+            });
+            await rewardPoint.save();
         });
 
         const exec = () => {
@@ -135,12 +143,30 @@ describe('reward redemption test', () => {
             const res = await exec();
             expect(res.status).toBe(404);
         });
+
+        it('should return 400 if no stock', async () => {
+            rewardItem.stock = 0;
+            await rewardItem.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if insufficient balance', async () => {
+            rewardPoint.points = 50;
+            await rewardPoint.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
         
         it('should return 200 and reward redemptions', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = ['customer', 'restaurant', 'rewardItemSnapshot', 'status'];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            const rewardPointInDb = await RewardPoint.findOne({ customer: profile._id, restaurant: rewardItem.restaurant });
+            expect(rewardPointInDb.points).toBe(50);
+            const rewardItemInDb = await RewardItem.findById(rewardItemId);
+            expect(rewardItemInDb.stock).toBe(9);
         });
     });
 
