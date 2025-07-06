@@ -34,7 +34,7 @@ const RestaurantRewardStore = ({ user }) => {
           limit: 8,
         })
 
-        const restaurant = await getRestaurant(data.items[0]?.restaurant)
+        const restaurant = await getRestaurant(restaurantId)
         const ownerCheck = ownedByUser(restaurant, user)
 
         setIsOwner(ownerCheck)
