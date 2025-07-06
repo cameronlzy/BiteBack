@@ -23,6 +23,7 @@ import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
 import defaultRestImg from "@/assets/default-restaurant-img.png"
+import { ownedByUserWithId } from "@/utils/ownerCheck"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -40,9 +41,7 @@ const Restaurant = ({ user }) => {
 
   const [restaurant, setRestaurant] = useState(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
-  console.log(user)
-  console.log(restaurant)
-  const isOwnedByUser = restaurant?.owner === user?._id
+  const isOwnedByUser = ownedByUserWithId(restaurant._id, user)
   const imageShow = location.state?.imageShow
   useEffect(() => {
     if (sessionStorage.getItem("restaurant_cache") && imageShow) {
