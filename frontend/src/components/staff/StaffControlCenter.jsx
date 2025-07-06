@@ -1,13 +1,7 @@
-import React, { useState } from "react"
+import React from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  ClipboardList,
-  CalendarDays,
-  Gift,
-  Settings,
-  LogOut,
-} from "lucide-react"
+import { ClipboardList, CalendarDays, Gift, Settings } from "lucide-react"
 import authService from "@/services/authService"
 import StaffQueue from "./StaffQueue"
 import StaffBookings from "./StaffBookings"
