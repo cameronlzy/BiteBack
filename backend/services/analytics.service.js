@@ -316,7 +316,10 @@ export async function getTrends(restaurant, days) {
     const cacheKey = `analytics:trends:${restaurant._id}:days:${days}`;
 
     const cached = await redisClient.get(cacheKey);
-    if (cached) return JSON.parse(cached);
+    if (cached) {
+        console.log('Cached value used');
+        return JSON.parse(cached);
+    }
 
     const now = DateTime.now().setZone(restaurant.timezone);
     const today = now.startOf('day');

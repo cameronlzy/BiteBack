@@ -5,10 +5,11 @@ import Restaurant from '../models/restaurant.model.js';
 import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
 import VisitHistory from '../models/visitHistory.model.js';
-import { adjustPoints } from '../services/rewardPoint.service.js';
+import { adjustPoints } from './rewardPoint.service.js';
 import { deleteImagesFromDocument } from './image.service.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 import { error, success } from '../helpers/response.js';
+import { updateVisitReviewedStatus } from './visitHistory.service.js';
 
 export async function getEligibleVisits(restaurantId, authUser) {
     // check if restaurant exists
@@ -332,7 +333,8 @@ export async function deleteReviewAndAssociations(review, session = undefined) {
     // delete reviews and it's associations
     await Promise.all([
         ReviewBadgeVote.deleteMany({ review: review._id }).session(session),
-        updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session)
+        updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session),
+        updateVisitReviewedStatus(review.customer, review.restaurant, review.dateVisited, false, session)
     ]);
 
     // delete review after children deleted

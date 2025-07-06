@@ -36,3 +36,22 @@ export async function addVisitToHistory(customer, restaurant, visitDate, session
         );
     }
 }
+
+export async function updateVisitReviewedStatus(customer, restaurant, visitDate, status, session = undefined) {
+    const normalizedDate = new Date(Math.floor(visitDate.getTime() / 1000) * 1000);
+
+    await VisitHistory.findOneAndUpdate(
+        {
+            customer,
+            restaurant,
+            'visits.visitDate': normalizedDate
+        },
+        {
+            $set: { 'visits.$.reviewed': status }
+        },
+        {
+            new: true,
+            session
+        }
+    );
+}
