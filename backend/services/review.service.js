@@ -141,7 +141,7 @@ export async function createReview(data, user) {
 export async function createReply(data, review, authUser) {
     // add reply to review
     review.reply = {
-        owner: authUser._id,
+        owner: authUser.profile,
         replyText: data.replyText
     };
     await review.save();
@@ -278,9 +278,9 @@ export async function getAverageRatingsForRestaurants(restaurants) {
         { $match: { restaurant: { $in: restaurantIds } } },
         {
             $group: {
-            _id: '$restaurant',
-            averageRating: { $avg: '$rating' },
-            reviewCount: { $sum: 1 }
+                _id: '$restaurant',
+                averageRating: { $avg: '$rating' },
+                reviewCount: { $sum: 1 }
             }
         }
     ]);

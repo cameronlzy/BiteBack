@@ -133,7 +133,7 @@ describe('owner test', () => {
             });
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             staff = await createTestStaff(restaurant._id);
 
             // create owner profile
@@ -189,7 +189,7 @@ describe('owner test', () => {
             username = user.username;
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             // create owner profile

@@ -53,7 +53,7 @@ describe('reservation test', () => {
             await owner.save();           
 
             // create a restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             staff = await createTestStaff(restaurant._id);
             restaurant.staff = staff._id;
             await restaurant.save();
@@ -254,7 +254,7 @@ describe('reservation test', () => {
             await owner.save();
 
             // create a restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
 

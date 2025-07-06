@@ -80,7 +80,7 @@ export async function createReservation(user, data) {
     if (!restaurant) return error(404, 'Restaurant not found');
 
     // if owner, can only reserve their own restaurants
-    if (user.role === 'owner' && !restaurant.owner.equals(user._id)) return error(403, 'Owners can only reserve their own restaurants');
+    if (user.role === 'owner' && !restaurant.owner.equals(user.profile)) return error(403, 'Owners can only reserve their own restaurants');
 
     // check availability
     const date = DateTime.fromISO(data.reservationDate, { zone: restaurant.timezone });

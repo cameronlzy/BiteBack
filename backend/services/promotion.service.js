@@ -89,7 +89,7 @@ export async function searchPromotions(filters) {
 }
 
 export async function getPromotionsByOwner(authUser) {
-    const restaurants = await Restaurant.find({ owner: authUser._id }).lean();
+    const restaurants = await Restaurant.find({ owner: authUser.profile }).lean();
     const restaurantIds = restaurants.map(r => r._id);
     const promotions = await Promotion.find({
         restaurant: { $in: restaurantIds }
@@ -107,7 +107,7 @@ export async function getPromotionById(promotionId) {
 export async function createPromotion(authUser, data) {
     const restaurant = await Restaurant.findById(data.restaurant).select('timezone owner').lean();
     if (!restaurant) return error(404, 'Restaurant not found');
-    if (restaurant.owner.toString() != authUser._id) return error(403, 'Restaurant does not belong to owner');
+    if (restaurant.owner.toString() != authUser.profile) return error(403, 'Restaurant does not belong to owner');
 
     const promotion = new Promotion(_.pick(data, ['restaurant', 'title', 'description']));
     promotion.startDate = DateTime.fromISO(data.startDate, { zone: restaurant.timezone }).toUTC().toJSDate();
