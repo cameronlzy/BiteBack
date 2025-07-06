@@ -9,18 +9,22 @@ import { iconMap } from "@/utils/rewardUtils"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import Pagination from "@/components/common/Pagination"
 import { DateTime } from "luxon"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const CustomerCurrentRewards = () => {
   const [rewards, setRewards] = useState([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const fetchRewards = async () => {
+      setLoading(true)
       try {
         const params = { page, limit: 8, status: "activated,active" }
         const data = await getRedemptionHistory(params)
+        console.log(data)
         data.redemptions = data.redemptions.sort((r1, r2) => {
           return (r2.status === "activated") - (r1.status === "activated")
         })
@@ -30,6 +34,8 @@ const CustomerCurrentRewards = () => {
       } catch (ex) {
         console.error("Failed to fetch rewards", ex)
         toast.error("Failed to fetch rewards")
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -49,6 +55,8 @@ const CustomerCurrentRewards = () => {
       toast.error("Failed to activate reward")
     }
   }
+
+  if (loading) return <LoadingSpinner />
 
   return (
     <div className="max-w-5xl mx-auto mt-10 px-4">

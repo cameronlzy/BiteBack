@@ -25,6 +25,7 @@ import BackButton from "./common/BackButton"
 import ConfirmationPage from "./common/ConfirmationPage"
 import { objectComparator } from "@/utils/objectComparator"
 import ImageUpload from "./common/ImageUpload"
+import { ownedByUser } from "@/utils/ownerCheck"
 
 const RestaurantForm = ({ user }) => {
   const { restaurantId } = useParams()
@@ -80,8 +81,7 @@ const RestaurantForm = ({ user }) => {
 
       try {
         const restaurant = await getRestaurant(restaurantId)
-
-        if (!restaurant || restaurant.owner !== user._id) {
+        if (!restaurant || !ownedByUser(restaurant, user)) {
           toast.error("Unauthorized to edit this restaurant.")
           return navigate("/restaurants", { replace: true })
         }

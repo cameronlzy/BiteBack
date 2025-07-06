@@ -56,7 +56,7 @@ const TransactionCard = ({
     <Card
       key={_id}
       className={`mb-4 shadow ${
-        isExpired ? "opacity-60 pointer-events-none" : ""
+        isExpired && rewardCode ? "opacity-60 pointer-events-none" : ""
       }`}
     >
       {currencyType === "points" && iconComponent ? (

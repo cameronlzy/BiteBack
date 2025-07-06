@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LayoutDashboard, Calendar, Star, Clock, BarChart } from "lucide-react"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { isOpenToday, isWithinOpeningHours } from "@/utils/timeConverter"
+import { ownedByUser, userIsOwner } from "@/utils/ownerCheck"
 
 const RestaurantPerformance = ({ user }) => {
   const navigate = useNavigate()
@@ -56,8 +57,8 @@ const RestaurantPerformance = ({ user }) => {
   }, [restaurantId, navigate])
   useEffect(() => {
     if (!restaurant) return
-
-    if (user.role !== "owner" || restaurant.owner !== user._id) {
+    console.log(restaurant)
+    if (!userIsOwner(user) || !ownedByUser(restaurant, user)) {
       navigate("/restaurants")
       toast.error(
         "Only Restaurant Owners are allowed to view the Restaurant Statistics",

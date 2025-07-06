@@ -46,6 +46,11 @@ const ProfilePage = ({ user, isLoading }) => {
       content: "Delete Account",
       onClick: () => setShowDeletePopup(true),
     },
+    {
+      content: "Add Restaurant",
+      onClick: () =>
+        navigate("/restaurants/new", { state: { from: location.pathname } }),
+    },
   ]
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,9 +103,6 @@ const ProfilePage = ({ user, isLoading }) => {
       {user.role === "owner" && (
         <div className="w-full flex flex-col gap-6 items-center">
           <ViewStaffAccounts />
-          <div className="w-full max-w-[650px] flex flex-col gap-6">
-            <OwnerStatistics user={user} />
-          </div>
         </div>
       )}
     </div>

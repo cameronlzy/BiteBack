@@ -35,6 +35,7 @@ import RestaurantRewardsStore from "./components/rewards/RestaurantRewardStore"
 import RewardPage from "./components/rewards/RewardPage"
 import CustomerRewards from "./components/rewards/CustomerRewards"
 import RewardForm from "./components/rewards/RewardForm"
+import OwnerStatistics from "./components/statistics/OwnerStatistics"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -119,6 +120,15 @@ function App() {
                       },
                     ]
                   : [
+                      ...(user?.role === "owner"
+                        ? [
+                            {
+                              type: "link",
+                              path: "/analytics",
+                              name: "Analytics",
+                            },
+                          ]
+                        : []),
                       {
                         type: "link",
                         path: "/restaurants",
@@ -128,7 +138,7 @@ function App() {
                         type: "link",
                         path: "/promotions",
                         name:
-                          user && user.role === "owner"
+                          user?.role === "owner"
                             ? "Manage Promotions"
                             : "Promotions",
                       },
@@ -299,6 +309,16 @@ function App() {
                 loading={loading}
                 user={user}
                 element={<PromotionForm user={user} />}
+              />
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<OwnerStatistics user={user} />}
               />
             }
           />

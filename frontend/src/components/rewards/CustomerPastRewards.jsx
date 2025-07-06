@@ -5,6 +5,7 @@ import TransactionCard from "@/components/common/TransactionCard"
 import { iconMap } from "@/utils/rewardUtils"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import Pagination from "@/components/common/Pagination"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const CustomerPastRewards = () => {
   const [rewards, setRewards] = useState([])
@@ -12,8 +13,11 @@ const CustomerPastRewards = () => {
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 
+  const [loading, setLoading] = useState(false)
+
   useEffect(() => {
     const fetchRewards = async () => {
+      setLoading(true)
       try {
         const params = { page, limit: 8, status: "completed,expired" }
         const data = await getRedemptionHistory(params)
@@ -23,11 +27,15 @@ const CustomerPastRewards = () => {
       } catch (ex) {
         console.error("Failed to fetch rewards", ex)
         toast.error("Failed to fetch rewards")
+      } finally {
+        setLoading(false)
       }
     }
 
     fetchRewards()
   }, [page])
+
+  if (loading) return <LoadingSpinner />
 
   return (
     <div className="max-w-5xl mx-auto mt-10 px-4">

@@ -67,9 +67,7 @@ const CustomerPoints = ({ restaurant }) => {
         <CardTitle className="text-xl font-semibold mb-1">
           Your Reward Progress
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Track your points to see how close you are to your next reward
-        </p>
+        {/* <p className="text-sm text-muted-foreground">Track your points</p> */}
       </CardHeader>
       <CardContent className="px-6">
         <TooltipProvider>

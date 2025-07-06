@@ -3,10 +3,13 @@ import StatisticsCard from "./StatisticsCard"
 import { getTodaySnapshot } from "@/services/analyticsService"
 import { toast } from "react-toastify"
 import { convertOpeningHoursToSGT } from "@/utils/timeConverter"
+import { userIsOwner } from "@/utils/ownerCheck"
+import { useNavigate } from "react-router-dom"
 
 const OwnerStatistics = ({ user }) => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   const fetchSnapshots = async () => {
     if (!user?.profile?.restaurants?.length) return
@@ -38,6 +41,19 @@ const OwnerStatistics = ({ user }) => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!userIsOwner(user)) {
+      navigate("/restaurants")
+      toast.error(
+        "Only Restaurant Owners are allowed to view the Restaurant Statistics",
+        {
+          toastId: "nonOwnedStatsView",
+        }
+      )
+      return
+    }
+  }, [user])
 
   useEffect(() => {
     fetchSnapshots()
