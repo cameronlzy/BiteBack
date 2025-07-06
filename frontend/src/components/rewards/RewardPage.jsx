@@ -18,7 +18,7 @@ import {
   redeemRewardItem,
 } from "@/services/rewardService"
 import { iconMap } from "@/utils/rewardUtils"
-import { ownedByUser } from "@/utils/ownerCheck"
+import { ownedByUserWithId } from "@/utils/ownerCheck"
 import { getRestaurant } from "@/services/restaurantService"
 import { getCustomerPointsForRestaurant } from "@/services/rewardService"
 
@@ -63,14 +63,14 @@ const RewardPage = ({ user }) => {
   }, [rewardId, user])
 
   useEffect(() => {
-    if (normalisedFrom.startsWith("/restaurants/") && reward?.restaurant?._id) {
+    if (normalisedFrom.startsWith("/restaurants/") && reward?.restaurant) {
       const segments = normalisedFrom.split("/")
       const maybeRestaurantId = segments[2]
-      if (maybeRestaurantId === reward?.restaurant?._id) {
-        setNormalisedFrom("/current-rewards/" + reward.restaurant._id)
+      if (maybeRestaurantId === reward?.restaurant) {
+        setNormalisedFrom("/current-rewards/" + reward.restaurant)
       }
     }
-    const isOwnedByUserCheck = ownedByUser(reward?.restaurant, user)
+    const isOwnedByUserCheck = ownedByUserWithId(reward?.restaurant, user)
     setIsOwnedByUser(isOwnedByUserCheck)
   }, [reward, normalisedFrom, user])
 
@@ -80,9 +80,9 @@ const RewardPage = ({ user }) => {
     )
     if (confirmed) {
       try {
-        await deleteReward(reward.restaurant._id, reward._id)
+        await deleteReward(reward.restaurant, reward._id)
         toast.success("Reward deleted")
-        navigate(`/current-rewards/${reward.restaurant._id}`, { replace: true })
+        navigate(`/current-rewards/${reward.restaurant}`, { replace: true })
       } catch (ex) {
         toast.error("Failed to delete reward")
         throw ex
