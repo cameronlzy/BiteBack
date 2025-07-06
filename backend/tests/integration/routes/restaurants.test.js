@@ -200,6 +200,12 @@ describe('restaurant test', () => {
             .get(url);
         };
 
+        it('shoud return 400 if invalid request', async () => {
+            url = '/api/restaurants/discover?radius=500';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
         it('should return only restaurants with Chinese cuisine and rating >= 2', async () => {
             url = `/api/restaurants/discover?cuisines=Chinese&minRating=2`;
             const res = await exec();

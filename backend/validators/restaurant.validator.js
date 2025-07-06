@@ -136,7 +136,10 @@ export function validateDiscover(filters) {
     }),
     radius: Joi.number().integer().min(1),
     openNow: Joi.boolean(),
-  }).min(1);
+  })
+  .min(1)
+  .with('location', 'radius')
+  .with('radius', 'location');
   return schema.validate(filters);
 }
 
