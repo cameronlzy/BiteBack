@@ -6,6 +6,7 @@ import { getOpeningHoursToday } from '../helpers/restaurant.helper.js';
 import { groupVisitLoadByWeekdayPattern, computeMode, getPeriodFromLabel, getCurrentOpeningPattern, matchesCurrentHours } from '../helpers/analytics.helper.js';
 import { DateTime } from 'luxon';
 import _ from 'lodash';
+import { getRedisClient } from '../startup/redisClient.js';
 
 export async function getSnapshot(restaurant) {
     const openHour = getOpeningHoursToday(restaurant);
@@ -311,6 +312,12 @@ export async function getSummary(restaurant, query) {
 }
 
 export async function getTrends(restaurant, days) {
+    const redisClient = await getRedisClient();
+    const cacheKey = `analytics:trends:${restaurant._id}:days:${days}`;
+
+    const cached = await redisClient.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
     const now = DateTime.now().setZone(restaurant.timezone);
     const today = now.startOf('day');
     const todayUTC = today.toUTC();
@@ -337,10 +344,14 @@ export async function getTrends(restaurant, days) {
     .sort({ date: 1 })
     .lean();
 
-    return success({
+    const response = success({
         days,
         startDate: start.toISODate(),
         endDate: end.toISODate(),
         entries: docs
     });
+
+    await redisClient.set(cacheKey, JSON.stringify(response), { EX: 86400 });
+
+    return response;
 }

@@ -1,9 +1,11 @@
 import Joi from 'joi';
 import { paginationSchema } from './pagination.validator.js';
 
+const allowedStatuses = ['active', 'activated', 'completed', 'expired'];
+
 export function validateHistory(history) {
     const schema = paginationSchema.keys({
-        active: Joi.boolean().required()
+        status: Joi.array().items(Joi.string().valid(...allowedStatuses)).optional(),
     });
     return schema.validate(history);
 }

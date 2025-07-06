@@ -80,10 +80,10 @@ export async function searchRestaurants(filters) {
 export async function discoverRestaurants(filters) {
   const {
     cuisines,
-    minRating = 0,
+    minRating,
     location,
-    radius = 3000,
-    openNow = false,
+    radius,
+    openNow,
     tags
   } = filters;
 
@@ -123,11 +123,13 @@ export async function discoverRestaurants(filters) {
   }
 
   // filter by minimum rating
-  pipeline.push({
-    $match: {
-      averageRating: { $gte: minRating }
-    }
-  });
+  if (minRating) {
+    pipeline.push({
+      $match: {
+        averageRating: { $gte: minRating }
+      }
+    });
+  }
 
   // sort by distance ascending
   if (location) pipeline.push({ $sort: { distance: 1 } });

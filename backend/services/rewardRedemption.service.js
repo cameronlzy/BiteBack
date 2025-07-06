@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import mongoose from 'mongoose';
 import RewardRedemption from '../models/rewardRedemption.model.js';
 import RewardItem from '../models/rewardItem.model.js';
 import { adjustPoints } from '../services/rewardPoint.service.js';
@@ -7,30 +8,52 @@ import { DateTime } from 'luxon';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
 export async function getAllRedemptions(authUser, query) {
-    const { page, limit } = query;
+    const { page, limit, status } = query;
     const skip = (page - 1) * limit;
 
     const filter = {
-        customer: authUser.profile,
+        customer: new mongoose.Types.ObjectId(authUser.profile),
     };
 
-    if (query.active === true) {
-        filter.status = 'active';
-    } else if (query.active === false) {
-        filter.status = { $ne: 'active' };
+    if (status && status.length > 0) {
+        filter.status = { $in: status };
     }
 
-    const [redemptions, total] = await Promise.all([
-        RewardRedemption.find(filter).skip(skip).limit(limit).lean(),
-        RewardRedemption.countDocuments(filter),
+    if (!status || status.length <= 1) {
+        const [redemptions, total] = await Promise.all([
+            RewardRedemption.find(filter).sort({ status: 1 }).skip(skip).limit(limit).lean(),
+            RewardRedemption.countDocuments(filter),
+        ]);
+        return success({
+            redemptions,
+            page,
+            limit,
+            totalCount: total,
+            totalPages: Math.ceil(total / limit),
+        });
+    }
+
+    const redemptionsAgg = await RewardRedemption.aggregate([
+        { $match: filter },
+        {
+            $addFields: {
+                statusOrder: { $indexOfArray: [status, '$status'] }
+            }
+        },
+        { $match: { statusOrder: { $gte: 0 } } },
+        { $sort: { statusOrder: 1 } },
+        { $skip: skip },
+        { $limit: limit }
     ]);
 
+    const total = await RewardRedemption.countDocuments(filter);
+
     return success({
-        redemptions,
+        redemptions: redemptionsAgg,
         page,
         limit,
         totalCount: total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
     });
 }
 

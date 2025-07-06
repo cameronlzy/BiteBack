@@ -127,13 +127,15 @@ export function validateImages(images) {
 
 export function validateDiscover(filters) {
   const schema = Joi.object({
-    cuisines: Joi.string(),
+    cuisines: Joi.array().items(Joi.string().valid(...cuisineList)),
+    tags: Joi.array().items(Joi.string().valid(...tagList)),
     minRating: Joi.number().min(0).max(5).precision(1),
-    lat: Joi.number(),
-    lng: Joi.number(),
-    radius: Joi.number().integer(),
+    location: Joi.object({
+      lat: Joi.number().min(-90).max(90).required(),
+      lng: Joi.number().min(-180).max(180).required(),
+    }),
+    radius: Joi.number().integer().min(1),
     openNow: Joi.boolean(),
-    tags: Joi.string()
   }).min(1);
   return schema.validate(filters);
 }

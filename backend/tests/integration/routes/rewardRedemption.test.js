@@ -30,7 +30,7 @@ describe('reward redemption test', () => {
 
     describe('GET /api/rewards/redemptions', () => {
         let user, profile, token, cookie;
-        let rewardRedemption, rewardItem, active;
+        let rewardRedemption, rewardItem, status;
 
         beforeEach(async () => {
             await RewardRedemption.deleteMany({});
@@ -51,23 +51,36 @@ describe('reward redemption test', () => {
             rewardRedemption = createTestRewardRedemption(profile._id, new mongoose.Types.ObjectId(), rewardItem);
             rewardRedemption.status = 'expired';
             await rewardRedemption.save();
-            active = true;
+            status = 'active,activated';
         });
 
         const exec = () => {
             return request(server)
-                .get(`/api/rewards/redemptions?active=${active}`)
+                .get(`/api/rewards/redemptions?status=${status}`)
                 .set('Cookie', [cookie]);
         };
         
+        it('should return 200 and all active reward redemptions', async () => {
+            status = 'active';
+            const res = await exec();
+            expect(res.status).toBe(200);
+            res.body.redemptions.forEach(redemption => {    
+                const requiredKeys = ['customer', 'restaurant', 'rewardItemSnapshot', 'status'];
+                expect(Object.keys(redemption)).toEqual(expect.arrayContaining(requiredKeys));
+                expect(redemption.status).toBe(status);
+            });
+            expect(res.body.redemptions.length).toBe(1);
+        });
+
         it('should return 200 and all reward redemptions', async () => {
+            status = 'active,expired';
             const res = await exec();
             expect(res.status).toBe(200);
             res.body.redemptions.forEach(redemption => {    
                 const requiredKeys = ['customer', 'restaurant', 'rewardItemSnapshot', 'status'];
                 expect(Object.keys(redemption)).toEqual(expect.arrayContaining(requiredKeys));
             });
-            expect(res.body.redemptions.length).toBe(1);
+            expect(res.body.redemptions.length).toBe(2);
         });
     });
 

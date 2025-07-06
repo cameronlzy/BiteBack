@@ -26,20 +26,29 @@ export async function searchRestaurants(req, res) {
 };
 
 export async function discoverRestaurants(req, res) {
-    // validate query
-    const { error } = validateDiscover(req.query);
-    if (error) return res.status(400).json(wrapError(error.details[0].message));
-
-    const { cuisines, minRating, lat, lng, radius, openNow, tags } = req.query;
+    const {
+        cuisines,
+        tags,
+        minRating,
+        lat,
+        lng,
+        radius,
+        openNow,
+    } = req.query;
 
     const filters = {
-        cuisines: cuisines ? cuisines.split(',') : null,
-        minRating: parseFloat(minRating) || 0,
-        location: lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null,
-        radius: parseInt(radius) || 5000,
+        cuisines: cuisines ? cuisines.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+        tags: tags ? tags.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+        minRating: minRating !== undefined ? parseFloat(minRating) : undefined,
+        location: (lat !== undefined && lng !== undefined)
+            ? { lat: parseFloat(lat), lng: parseFloat(lng) }
+            : undefined,
+        radius: radius !== undefined ? parseInt(radius) : undefined,
         openNow: openNow === 'true',
-        tags: tags ? tags.split(',') : null,
     };
+
+    const { error } = validateDiscover(filters);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
     
     const { status, body } = await restaurantService.discoverRestaurants(filters);
     return res.status(status).json(body);
