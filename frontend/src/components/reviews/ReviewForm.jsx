@@ -53,7 +53,7 @@ const ReviewForm = ({
     if (user) {
       fetchVisits()
     }
-  }, [restaurant])
+  }, [restaurant, user])
 
   const form = useForm({
     resolver: safeJoiResolver(reviewSchema),
