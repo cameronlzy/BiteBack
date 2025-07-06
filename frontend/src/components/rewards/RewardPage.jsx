@@ -46,7 +46,6 @@ const RewardPage = ({ user }) => {
 
         if (user?.role === "customer") {
           const data = await getCustomerPointsForRestaurant(restaurant._id)
-          console.log(data)
           setPoints(data?.points || 0)
         }
       } catch (ex) {

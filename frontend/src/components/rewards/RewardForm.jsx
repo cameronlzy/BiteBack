@@ -26,11 +26,13 @@ import { categoryOptions } from "@/utils/rewardUtils"
 import { objectComparator } from "@/utils/objectComparator"
 import { ownedByUser } from "@/utils/ownerCheck"
 import { getRestaurant } from "@/services/restaurantService"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const RewardForm = ({ user }) => {
   const navigate = useNavigate()
   const { rewardId, restaurantId } = useParams()
   const [existingReward, setExistingReward] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const form = useForm({
     resolver: safeJoiResolver(rewardSchema),
@@ -70,6 +72,9 @@ const RewardForm = ({ user }) => {
   useEffect(() => {
     const fetchReward = async () => {
       if (!rewardId) return
+
+      setLoading(true)
+
       try {
         const reward = await getRewardById(rewardId)
         if (reward.restaurant !== restaurantId) {
@@ -90,8 +95,11 @@ const RewardForm = ({ user }) => {
       } catch {
         toast.error("Failed to fetch reward")
         navigate("/not-found", { replace: true })
+      } finally {
+        setLoading(false)
       }
     }
+
     fetchReward()
   }, [rewardId, restaurantId])
 
@@ -126,6 +134,8 @@ const RewardForm = ({ user }) => {
       toast.error("Failed to save reward")
     }
   }
+
+  if (loading) return <LoadingSpinner />
 
   return (
     <div className="max-w-xl mx-auto mt-10 space-y-6">
