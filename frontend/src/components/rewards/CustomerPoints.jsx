@@ -123,8 +123,12 @@ const CustomerPoints = ({ restaurant }) => {
           <Button
             onClick={() =>
               restaurant?._id
-                ? navigate(`/restaurants/${restaurant._id}`)
-                : navigate("/restaurants")
+                ? navigate(`/restaurants/${restaurant._id}`, {
+                    state: { from: location.pathname },
+                  })
+                : navigate("/restaurants", {
+                    state: { from: location.pathname },
+                  })
             }
             className="flex items-center gap-2 bg-blue-400 hover:bg-blue-500 text-white"
           >

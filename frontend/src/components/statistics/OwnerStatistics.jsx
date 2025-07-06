@@ -5,6 +5,7 @@ import { toast } from "react-toastify"
 import { convertOpeningHoursToSGT } from "@/utils/timeConverter"
 import { userIsOwner } from "@/utils/ownerCheck"
 import { useNavigate } from "react-router-dom"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const OwnerStatistics = ({ user }) => {
   const [data, setData] = useState([])
@@ -63,7 +64,7 @@ const OwnerStatistics = ({ user }) => {
     <div className="p-6 space-y-6 flex flex-col items-center">
       <h1 className="text-2xl font-bold">Statistics Overview</h1>
       {loading ? (
-        <p>Loading...</p>
+        <LoadingSpinner />
       ) : (
         data.map((d) => (
           <StatisticsCard

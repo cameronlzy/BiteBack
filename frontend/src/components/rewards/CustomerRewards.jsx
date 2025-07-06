@@ -21,7 +21,6 @@ const CustomerRewards = ({ user }) => {
   }, [user._id])
 
   const from = location.state?.from || "/me"
-  console.log(location.state?.from)
   return (
     <>
       <BackButton from={from} />

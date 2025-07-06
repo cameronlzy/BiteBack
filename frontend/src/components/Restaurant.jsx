@@ -31,13 +31,17 @@ const Restaurant = ({ user }) => {
   const navigate = useNavigate()
   const confirm = useConfirm()
   const location = useLocation()
-  let from = location?.state?.from || "/restaurants"
+  const [normalisedFrom, setNormalisedFrom] = useState(
+    location?.state?.from || "/restaurants"
+  )
 
   if (
-    (from?.startsWith("/online-queue/") || from?.startsWith("/reservation/")) &&
-    from?.split("/")[2] === id
+    (normalisedFrom?.startsWith("/online-queue/") ||
+      normalisedFrom?.startsWith("/reservation/") ||
+      normalisedFrom?.startsWith("/current-rewards/")) &&
+    normalisedFrom?.split("/")[2] === id
   ) {
-    from = "/restaurants"
+    setNormalisedFrom("/restaurants")
   }
 
   const [restaurant, setRestaurant] = useState(null)
@@ -112,7 +116,7 @@ const Restaurant = ({ user }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto mt-6 px-4">
-      <BackButton from={from} />
+      <BackButton from={normalisedFrom} />
       <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-md">
         <Link
           to={`/images/${encodeURIComponent(images?.[0])}`}

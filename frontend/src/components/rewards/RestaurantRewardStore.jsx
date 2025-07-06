@@ -26,6 +26,15 @@ const RestaurantRewardStore = ({ user }) => {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [normalisedFrom, setNormalisedFrom] = useState(
+    location.state?.from || `/restaurants/${restaurantId}`
+  )
+
+  useEffect(() => {
+    if (normalisedFrom.startsWith("/my-rewards")) {
+      setNormalisedFrom(`/restaurants/${restaurantId}`)
+    }
+  }, [restaurant, normalisedFrom])
 
   useEffect(() => {
     const fetchRewardsAndRestaurant = async () => {
@@ -53,8 +62,6 @@ const RestaurantRewardStore = ({ user }) => {
     fetchRewardsAndRestaurant()
   }, [restaurantId, page])
 
-  const from = location.state?.from || `/restaurants/${restaurantId}`
-
   if (!rewards) return <LoadingSpinner className="my-10" />
 
   return (
@@ -62,7 +69,7 @@ const RestaurantRewardStore = ({ user }) => {
       <h1 className="text-2xl font-bold mb-6 text-center">
         Rewards @ {restaurant?.name} - {getShortAddress(restaurant?.address)}
       </h1>
-      <BackButton from={from} />
+      <BackButton from={normalisedFrom} />
       {isOwner ? (
         <div className="flex justify-center mb-4">
           <Button onClick={() => navigate(`/rewards/${restaurantId}/new`)}>

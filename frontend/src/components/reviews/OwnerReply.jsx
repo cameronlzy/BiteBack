@@ -54,7 +54,7 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
       throw ex
     }
   }
-
+  console.log(review)
   return (
     <div className="mt-4">
       {review.reply && (
@@ -73,7 +73,7 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
                 })}
               </span>
 
-              {review.reply.owner === user?._id && (
+              {review.reply.owner === user?.profile && (
                 <Button
                   type="button"
                   variant="destructive"
