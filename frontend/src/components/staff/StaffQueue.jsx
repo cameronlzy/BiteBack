@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { handle401 } from "@/utils/handleStaffTimeout"
+import { getShortAddress } from "@/utils/stringRegexUtils"
 
 const StaffQueue = () => {
   const [queue, setQueue] = useState(null)

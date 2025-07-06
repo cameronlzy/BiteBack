@@ -55,12 +55,10 @@ const SummaryAnalysis = ({ restaurant }) => {
       const params =
         unit === "day"
           ? {
-              date: encodeURIComponent(
-                DateTime.fromJSDate(selectedDate)
-                  .setZone("Asia/Singapore")
-                  .startOf("day")
-                  .toISO()
-              ),
+              date: DateTime.fromJSDate(selectedDate)
+                .setZone("Asia/Singapore")
+                .startOf("day")
+                .toISO(),
             }
           : { unit, amount: n }
 

@@ -62,11 +62,8 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
 
   const handleFormSubmit = async (data) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      data.dateVisited = DateTime.fromISO(data.dateVisited)
-        .setZone("Asia/Singapore")
-        .toISO()
       const res = await onSubmit(data)
+      console.log(res)
       const reviewId = res._id
       let images
       if (selectedFiles.length > 0) {
@@ -152,10 +149,10 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {pastVisits.map((date) => {
+                  {pastVisits.map((visitDate) => {
                     return (
-                      <SelectItem key={date} value={date}>
-                        {DateTime.fromISO(date).toLocaleString(
+                      <SelectItem key={visitDate} value={visitDate}>
+                        {DateTime.fromISO(visitDate).toLocaleString(
                           readableTimeSettings
                         )}
                       </SelectItem>

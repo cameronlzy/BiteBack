@@ -1,5 +1,6 @@
+import { completeRedemption } from "@/services/rewardService"
+import { rewardClaimSchema } from "@/utils/schemas"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
-import { pointUpdateSchema } from "@/utils/schemas"
 import { FormProvider, useForm } from "react-hook-form"
 import {
   FormField,
@@ -11,71 +12,50 @@ import {
 import { Input } from "@/components/ui/input"
 import SubmitButton from "@/components/common/SubmitButton"
 import { toast } from "react-toastify"
-import { updateCustomerPoints } from "@/services/rewardService"
 
-const StaffPointUpdate = () => {
-  const restaurantId = localStorage.getItem("restaurant")
-
+const StaffRewardCompletion = () => {
   const form = useForm({
-    resolver: safeJoiResolver(pointUpdateSchema),
+    resolver: safeJoiResolver(rewardClaimSchema),
     defaultValues: {
-      username: "",
-      change: "",
+      code: "",
     },
     mode: "onChange",
   })
 
   const onSubmit = async (data) => {
     try {
-      await updateCustomerPoints(restaurantId, data)
-      toast.success("Successfully updated customer points")
+      await completeRedemption(data)
+      toast.success("Successfully claimed redemption")
       form.reset()
     } catch (ex) {
       if (ex.response?.status === 400 || ex.response?.status === 404) {
         const message = ex.response.data.error
-        form.setError("username", {
+        form.setError("code", {
           type: "manual",
-          message: message || "Submission failed",
+          message: message || "Claim failed",
         })
-        toast.error("Submission failed: " + message)
+        toast.error("Claim failed: " + message)
       }
     }
   }
   return (
     <div className="border rounded-xl p-5 my-6 shadow-sm space-y-4 mx-5.5">
-      <h1 className="text-2xl font-bold">Customer Point Update</h1>
+      <h1 className="text-2xl font-bold">Customer Reward Completion</h1>
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
-            name="username"
+            name="code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Customer Username</FormLabel>
+                <FormLabel>Reward Code</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    placeholder="Ask Customer for their Username"
-                    type="text"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="change"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>New Points</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="New Points"
-                    type="number"
-                    min={0}
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="\d*"
+                    placeholder="Ask Customer for their Reward Code"
                   />
                 </FormControl>
                 <FormMessage />
@@ -95,4 +75,4 @@ const StaffPointUpdate = () => {
   )
 }
 
-export default StaffPointUpdate
+export default StaffRewardCompletion

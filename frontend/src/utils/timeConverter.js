@@ -5,13 +5,15 @@ export const toSGT = (utcString) =>
 
 export const toSGTISO = (utcString) => DateTime.fromISO(utcString, { zone: "Asia/Singapore" }).toISO()
 
-export const convertSlotTimesToSGT = (slots, reservationDate) =>
-  slots.map((s) => ({
+export const convertSlotTimesToSGT = (slots, reservationDate) => {
+  const dateOnly = DateTime.fromISO(reservationDate, { zone: "utc" }).toFormat("yyyy-MM-dd")
+  return slots.map((s) => ({
     ...s,
-    time: DateTime.fromISO(`${reservationDate}T${s.time}:00`, { zone: "utc" })
+    time: DateTime.fromISO(`${dateOnly}T${s.time}:00`, { zone: "utc" })
       .setZone("Asia/Singapore")
       .toFormat("HH:mm"),
   }))
+}
 
 export const readableTimeSettings = {
   weekday: "long",

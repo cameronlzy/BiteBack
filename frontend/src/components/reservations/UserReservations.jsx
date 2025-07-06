@@ -11,6 +11,7 @@ import CalendarReservations from "./CalendarReservations"
 import ListReservations from "./ListReservations"
 import { Button } from "@/components/ui/button"
 import LoadingSpinner from "../common/LoadingSpinner"
+import { userIsOwner } from "@/utils/ownerCheck"
 
 const UserReservations = ({ user }) => {
   const [reservations, setReservations] = useState([])
@@ -23,7 +24,7 @@ const UserReservations = ({ user }) => {
   const navigate = useNavigate()
   const confirm = useConfirm()
 
-  const isOwner = user?.role === "owner"
+  const isOwner = userIsOwner(user)
   const label = isOwner ? "Event" : "Reservation"
   const labelPlural = isOwner ? "Events" : "Reservations"
 

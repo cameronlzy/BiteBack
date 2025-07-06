@@ -41,6 +41,7 @@ import { Input } from "../ui/input"
 import CustomDay from "../common/CustomDay"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { objectComparator } from "@/utils/objectComparator"
+import { ownedByUser } from "@/utils/ownerCheck"
 
 const ReservationForm = ({ user }) => {
   const [showReservation, setShowReservation] = useState(false)
@@ -101,7 +102,7 @@ const ReservationForm = ({ user }) => {
     fetchRestaurant()
   }, [restaurantId, navigate])
 
-  const isOwnedByUser = user?.role === "owner" && restaurant?.owner === user._id
+  const isOwnedByUser = ownedByUser(restaurant, user)
 
   useEffect(() => {
     if (!restaurant || !user) return
@@ -165,13 +166,10 @@ const ReservationForm = ({ user }) => {
     if (!reservationDate || !restaurant) return
 
     const fetchAvailability = async () => {
-      const formatted =
-        DateTime.fromJSDate(reservationDate).toFormat("yyyy-MM-dd")
-
-      //       const formatted = DateTime.fromJSDate(reservationDate)
-      // .setZone("Asia/Singapore")
-      // .startOf("day")
-      // .toISO()
+      const formatted = DateTime.fromJSDate(reservationDate)
+        .setZone("Asia/Singapore")
+        .startOf("day")
+        .toISO()
       let slots = await getRestaurantAvailability(restaurantId, formatted)
       if (slots === -1) slots = []
 

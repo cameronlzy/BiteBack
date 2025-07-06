@@ -460,7 +460,7 @@ export const pointUpdateSchema = Joi.object({
     "string.min": "Username must be at least 2 characters.",
     "string.max": "Username must not exceed 20 characters.",
   }),
-  points: Joi.number().integer().min(0).required().messages({
+  change: Joi.number().integer().min(0).required().messages({
     "number.base": "New Points must be a number.",
     "number.integer": "New Points must be an integer.",
     "number.min": "New Points must be at least 0.",
@@ -469,32 +469,14 @@ export const pointUpdateSchema = Joi.object({
 })
 
 export const rewardSchema = Joi.object({
-  restaurant: Joi.string()
+  category: Joi.string()
+    .valid("percentage", "monetary", "freeItem", "buyXgetY")
     .required()
     .messages({
-      "any.required": "Restaurant is required.",
-      "string.base": "Restaurant must be a valid string.",
+      "any.only": "Category must be one of: percentage, monetary, freeItem, buyXgetY.",
+      "any.required": "Category is required.",
+      "string.base": "Category must be a string.",
     }),
-
-  title: Joi.string()
-    .min(3)
-    .required()
-    .messages({
-      "string.empty": "Title is required.",
-      "string.min": "Title must be at least 3 characters.",
-      "any.required": "Title is required.",
-    }),
-
-  points: Joi.number()
-  .integer()
-  .min(0)
-  .required()
-  .messages({
-    "number.base": "Points must be a number.",
-    "number.integer": "Points must be an integer.",
-    "number.min": "Points must be at least 0.",
-    "any.required": "Points is required.",
-  }),
 
   description: Joi.string()
     .min(5)
@@ -505,23 +487,33 @@ export const rewardSchema = Joi.object({
       "any.required": "Description is required.",
     }),
 
-  startDate: Joi.string()
-    .isoDate()
+  pointsRequired: Joi.number()
+    .integer()
+    .min(0)
     .required()
     .messages({
-      "string.empty": "Start date is required.",
-      "string.isoDate": "Start date must be in ISO format.",
-      "any.required": "Start date is required.",
+      "number.base": "Points must be a number.",
+      "number.integer": "Points must be an integer.",
+      "number.min": "Points must be at least 0.",
+      "any.required": "Points are required.",
     }),
 
-  endDate: Joi.string()
-    .isoDate()
-    .required()
-    .messages({
-      "string.empty": "End date is required.",
-      "string.isoDate": "End date must be in ISO format.",
-      "any.required": "End date is required.",
-    }),
+  stock: Joi.number()
+  .integer()
+  .min(0)
+  .allow(null)
+  .allow("")
+  .optional()
+  .messages({
+    "number.base": "Stock must be a number.",
+    "number.integer": "Stock must be an integer.",
+    "number.min": "Stock must be at least 0.",
+  }),
+})
 
-  
+export const rewardClaimSchema = Joi.object({
+  code: Joi.string().pattern(/^\d{6}$/).required().messages({
+    "string.pattern.base": "Code must be a 6-digit number",
+    "string.empty": "Code is required",
+  }),
 })

@@ -77,6 +77,7 @@ const Restaurants = () => {
         }
 
         const data = await getRestaurants(cleanParams)
+        console.log(data)
         setRestaurants(data.restaurants)
         setTotalPages(data.totalPages)
         setTotalCount(data.totalCount)

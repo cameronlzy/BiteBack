@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, ArrowRight } from "lucide-react"
 import { toast } from "react-toastify"
+import { ownedByUser } from "@/utils/ownerCheck"
 
 const PromotionPage = ({ user }) => {
   const [promotion, setPromotion] = useState(null)
@@ -57,11 +58,8 @@ const PromotionPage = ({ user }) => {
         setNormalisedFrom("/promotions")
       }
     }
-    const isOwnedByUserCheck =
-      user?.role === "owner" &&
-      user?.profile.restaurants.some((r) => r._id === promotion?.restaurant._id)
 
-    setIsOwnedByUser(isOwnedByUserCheck)
+    setIsOwnedByUser(ownedByUser(promotion.restaurant._id, user))
   }, [promotion, normalisedFrom, user])
 
   useEffect(() => {

@@ -32,10 +32,12 @@ const LoginForm = ({ user, loading }) => {
       window.location = from
       toast.success("Login Successful")
     } catch (ex) {
+      console.log(ex)
       if (ex.response?.status === 400) {
+        const message = ex.response?.data?.error
         form.setError("identifier", {
           type: "manual",
-          message: "Invalid email/username or password",
+          message: message || "Invalid email/username or password",
         })
       }
     }

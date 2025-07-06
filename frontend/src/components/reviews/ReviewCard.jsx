@@ -86,7 +86,7 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
   }
 
   return (
-    <Card key={review._id}>
+    <Card key={review._id} className="mb-4">
       <CardHeader>
         <CardTitle className="flex flex-wrap justify-between items-start">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">

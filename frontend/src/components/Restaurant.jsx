@@ -12,7 +12,7 @@ import { useEffect, useState } from "react"
 import { useConfirm } from "./common/ConfirmProvider"
 import { toast } from "react-toastify"
 import ReviewSection from "./reviews/ReviewSection"
-import { Calendar, Settings, Star, Users } from "lucide-react"
+import { Calendar, Settings, Star, Store, Users } from "lucide-react"
 import LoadingSpinner from "./common/LoadingSpinner"
 import { DropdownMenu, DropdownMenuItem } from "./ui/dropdown-menu"
 import {
@@ -40,8 +40,9 @@ const Restaurant = ({ user }) => {
 
   const [restaurant, setRestaurant] = useState(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
-
-  const isOwnedByUser = user?.role == "owner" && user._id === restaurant?.owner
+  console.log(user)
+  console.log(restaurant)
+  const isOwnedByUser = restaurant?.owner === user?._id
   const imageShow = location.state?.imageShow
   useEffect(() => {
     if (sessionStorage.getItem("restaurant_cache") && imageShow) {
@@ -349,6 +350,31 @@ const Restaurant = ({ user }) => {
                 <Users className="w-5 h-5" />
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
                   View Queue
+                </span>
+              </Button>
+            </Link>
+            <Link
+              to={`/current-rewards/${restid}`}
+              state={{ from: location.pathname }}
+              className="group"
+            >
+              <Button
+                className="bg-indigo-600 text-white h-11 w-11 group-hover:w-[140px]
+              hover:bg-indigo-700 
+                transition-all 
+                duration-300 
+                ease-in-out 
+                rounded-full 
+                overflow-hidden 
+                shadow 
+                flex 
+                items-center 
+                justify-start 
+                gap-2"
+              >
+                <Store className="w-5 h-5" />
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                  View Rewards
                 </span>
               </Button>
             </Link>

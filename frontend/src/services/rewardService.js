@@ -2,7 +2,7 @@ import http from "./httpService"
 
 const apiEndpoint = import.meta.env.VITE_API_URL + "/rewards"
 
-// Points
+// Points Routes
 export async function getCustomerPointsAll() {
   const { data } = await http.get(`${apiEndpoint}/points`)
   return data
@@ -13,14 +13,14 @@ export async function getCustomerPointsForRestaurant(restaurantId) {
   return data
 }
 
-export async function updateCustomerPoints(restaurantId, points) {
-  const { data } = await http.post(`${apiEndpoint}/restaurant/${restaurantId}/points`, points)
+export async function updateCustomerPoints(restaurantId, newPoints) {
+  const { data } = await http.patch(`${apiEndpoint}/restaurant/${restaurantId}/points`, newPoints)
   return data
 }
 
-// Redemptions
-export async function getRedemptionHistory() {
-  const { data } = await http.get(`${apiEndpoint}/redemptions`)
+// Redemptions Routes
+export async function getRedemptionHistory(params = {page: 1, limit: 8}) {
+  const { data } = await http.get(`${apiEndpoint}/redemptions`, { params })
   return data
 }
 
@@ -29,13 +29,23 @@ export async function getRedemptionById(id) {
   return data
 }
 
-export async function redeemRewardItem(customerDetails) {
-  const { data } = await http.post(`${apiEndpoint}/redemptions`, customerDetails)
+export async function redeemRewardItem(payload) {
+  const { data } = await http.post(`${apiEndpoint}/redemptions`, payload)
   return data
 }
 
-// Shop
-export async function getRewardsForRestaurant(restaurantId, params = {}) {
+export async function activateRedemption(id) {
+    const { data } = await http.patch(`${apiEndpoint}/redemptions/${id}`)
+    return data
+}
+
+export async function completeRedemption(payload) {
+    const { data } = await http.patch(`${apiEndpoint}/redemptions/complete`, payload)
+    return data
+}
+
+// Shop Routes
+export async function getRewardsForRestaurant(restaurantId, params = {page: 1, limit: 8}) {
   const { data } = await http.get(`${apiEndpoint}/restaurant/${restaurantId}/shop`, { params })
   return data
 }

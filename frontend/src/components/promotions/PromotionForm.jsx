@@ -31,6 +31,7 @@ import { objectComparator } from "@/utils/objectComparator"
 import { DateTime } from "luxon"
 import BackButton from "../common/BackButton"
 import { toSGTISO } from "@/utils/timeConverter"
+import { ownedByUser } from "@/utils/ownerCheck"
 
 const PromotionForm = ({ user }) => {
   const navigate = useNavigate()
@@ -55,9 +56,7 @@ const PromotionForm = ({ user }) => {
         const promotion = await getPromotionById(promotionId)
         setPromotion(promotion)
 
-        const isOwned = user?.profile.restaurants.some(
-          (r) => r._id === promotion.restaurant._id
-        )
+        const isOwned = ownedByUser(promotion.restaurant._id, user)
 
         if (!isOwned) {
           toast.error("You are not authorized to edit this promotion")

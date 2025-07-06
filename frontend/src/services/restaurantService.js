@@ -31,10 +31,13 @@ export async function getOwnerRestaurants() {
 }
 
 export async function getRestaurantAvailability(restaurantId, date) {
+  const encoded = encodeURIComponent(date)
   try {
-    const { data } = await http.get(`${apiEndpoint}/${restaurantId}/availability?date=${date}`)
+    const { data } = await http.get(`${apiEndpoint}/${restaurantId}/availability?date=${encoded}`)
     if (!Array.isArray(data)) return []
-    return convertSlotTimesToSGT(data, date)
+    const result = convertSlotTimesToSGT(data, date)
+    console.log(result)
+    return result
   } catch {
     return []
   }

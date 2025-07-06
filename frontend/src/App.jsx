@@ -33,6 +33,8 @@ import RestaurantPerformance from "./components/statistics/RestaurantPerformance
 import LoadingSpinner from "./components/common/LoadingSpinner"
 import RestaurantRewardsStore from "./components/rewards/RestaurantRewardStore"
 import RewardPage from "./components/rewards/RewardPage"
+import CustomerRewards from "./components/rewards/CustomerRewards"
+import RewardForm from "./components/rewards/RewardForm"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -314,7 +316,40 @@ function App() {
             path="current-rewards/:restaurantId"
             element={<RestaurantRewardsStore user={user} />}
           />
-          <Route path="reward/:rewardId" element={<RewardPage user={user} />} />
+          <Route
+            path="rewards/:rewardId"
+            element={<RewardPage user={user} />}
+          />
+          <Route
+            path="rewards/:restaurantId/new"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<RewardForm user={user} />}
+              />
+            }
+          />
+          <Route
+            path="rewards/:restaurantId/edit/:rewardId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<RewardForm user={user} />}
+              />
+            }
+          />
+          <Route
+            path="my-rewards"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<CustomerRewards user={user} />}
+              />
+            }
+          />
           <Route path="not-found" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Route>

@@ -4,6 +4,13 @@ import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import { Input } from "@/components/ui/input"
 import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
+import {
   FormField,
   FormItem,
   FormLabel,
@@ -13,133 +20,110 @@ import {
 import SubmitButton from "@/components/common/SubmitButton"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { rewardSchema } from "@/utils/schemas"
-import {
-  saveReward,
-  getRewardById,
-  updateRewardImage,
-} from "@/services/rewardService"
+import { saveReward, getRewardById } from "@/services/rewardService"
 import BackButton from "@/components/common/BackButton"
+import { categoryOptions } from "@/utils/rewardUtils"
+import { objectComparator } from "@/utils/objectComparator"
+import { ownedByUser } from "@/utils/ownerCheck"
+import { getRestaurant } from "@/services/restaurantService"
 
 const RewardForm = ({ user }) => {
   const navigate = useNavigate()
-  const [mainImageFile, setMainImageFile] = useState(null)
-  const { rewardId } = useParams()
-  const defaultRestaurantId = user.profile.restaurants?.[0]?._id || ""
+  const { rewardId, restaurantId } = useParams()
+  const [existingReward, setExistingReward] = useState(null)
 
   const form = useForm({
     resolver: safeJoiResolver(rewardSchema),
     defaultValues: {
-      name: "",
+      category: "",
       description: "",
-      price: "",
-      restaurant: defaultRestaurantId,
+      pointsRequired: "",
+      stock: "",
     },
   })
 
-  const { control, handleSubmit, formState } = form
+  const { control, handleSubmit, formState, setError, reset } = form
 
   useEffect(() => {
-    if (user.role !== "owner") {
-      toast.error("Unauthorized access to reward form")
-      navigate("/restaurants", { replace: true })
+    const userCheckForOwnership = async () => {
+      try {
+        if (user.role !== "owner") {
+          toast.error("Unauthorized")
+          return navigate("/restaurants", { replace: true })
+        }
+        const restaurant = await getRestaurant(restaurantId)
+        const isOwned = ownedByUser(restaurant, user)
+        if (!isOwned) {
+          toast.error("Not your restaurant", { toastId: "notRestaurant" })
+          return navigate("/restaurants", { replace: true })
+        }
+      } catch (ex) {
+        if (ex?.response?.status == 404) {
+          toast.error("Restaurant Not Found")
+          navigate("/not-found", { replace: true })
+        }
+      }
     }
-  }, [user])
+    userCheckForOwnership()
+  }, [user, restaurantId])
 
   useEffect(() => {
     const fetchReward = async () => {
       if (!rewardId) return
       try {
         const reward = await getRewardById(rewardId)
-
-        const isOwned = user?.profile.restaurants.some(
-          (r) => r._id === reward.restaurant._id
-        )
-
-        if (!isOwned) {
-          toast.error("You are not authorized to edit this reward")
-          return navigate(`/rewards/${rewardId}`, { replace: true })
+        if (reward.restaurant !== restaurantId) {
+          toast.error("Reward not in restaurant", {
+            toastId: "rewardNotInRestaurant",
+          })
+          return navigate("/not-found", { replace: true })
         }
 
-        form.reset({
-          name: reward.name,
-          description: reward.description,
-          price: reward.price,
-          restaurant: reward.restaurant._id,
-        })
+        setExistingReward(reward)
 
-        if (reward.image) setMainImageFile(reward.image)
+        reset({
+          category: reward.category,
+          description: reward.description,
+          pointsRequired: reward.pointsRequired,
+          stock: reward.stock || "",
+        })
       } catch {
         toast.error("Failed to fetch reward")
         navigate("/not-found", { replace: true })
       }
     }
     fetchReward()
-  }, [rewardId])
+  }, [rewardId, restaurantId])
 
   const onSubmit = async (data) => {
     try {
-      if (!mainImageFile) {
-        toast.error("Image required")
-        return
+      let payload = { ...data }
+
+      if (payload.stock === "") {
+        delete payload.stock
       }
 
-      const isEdit = !!rewardId
-      const selectedRestaurant = user.profile.restaurants?.find(
-        (r) => r._id === data.restaurant
-      )
-
-      if (!selectedRestaurant) {
-        toast.error("Invalid restaurant selected")
-        return
-      }
-
-      const payload = { ...data }
-      if (isEdit) {
+      if (rewardId) {
+        payload = objectComparator(existingReward, payload)
+        if (Object.keys(payload).length === 0) {
+          toast.info("No Change to Reward")
+          navigate(`/current-rewards/${restaurantId}`, { replace: true })
+          return
+        }
         payload._id = rewardId
       }
 
-      const cleanedNoEmpty = Object.fromEntries(
-        Object.entries(payload).filter(([_k, v]) => v !== "")
-      )
-
-      const changes = isEdit
-        ? objectComparator(reward, cleanedNoEmpty)
-        : cleanedNoEmpty
-
-      if (changes.restaurant === reward?.restaurant?._id) {
-        delete changes.restaurant
-      }
-
-      if (
-        Object.keys(changes).length === 0 &&
-        !(mainImageFile instanceof File)
-      ) {
-        toast.info("No changes made")
-        navigate(`/rewards/${rewardId}`, { replace: true })
-        return
-      }
-
-      if (isEdit) changes._id = rewardId
-
-      const newReward = await saveReward(changes)
-
-      if (mainImageFile instanceof File) {
-        await updateRewardImage(newReward._id, { image: mainImageFile })
-      }
-
-      toast.success(isEdit ? "Reward updated" : "Reward created")
-      navigate("/rewards", { replace: true })
+      await saveReward(restaurantId, payload)
+      toast.success(rewardId ? "Reward updated" : "Reward created")
+      navigate(`/current-rewards/${restaurantId}`, { replace: true })
     } catch (ex) {
       if (ex.response?.status === 400) {
-        const message = ex.response.data?.error
-        form.setError("startDate", {
+        setError("description", {
           type: "manual",
-          message: message || "Reward creation failed",
+          message: ex.response.data?.error || "Error saving reward",
         })
       }
       toast.error("Failed to save reward")
-      console.error(ex)
-      throw ex
     }
   }
 
@@ -154,18 +138,47 @@ const RewardForm = ({ user }) => {
 
           <FormField
             control={control}
-            name="Title"
+            name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Reward Title" />
-                </FormControl>
+                <FormLabel>Reward Type</FormLabel>
+                {rewardId ? (
+                  <FormControl>
+                    <Input
+                      {...field}
+                      readOnly
+                      disabled
+                      value={
+                        categoryOptions.find((opt) => opt.value === field.value)
+                          ?.label || field.value
+                      }
+                    />
+                  </FormControl>
+                ) : (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {categoryOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          {rewardId && (
+            <p className="text-muted-foreground text-sm mb-0">
+              Category for Reward not allowed to be edited
+            </p>
+          )}
           <FormField
             control={control}
             name="description"
@@ -182,10 +195,10 @@ const RewardForm = ({ user }) => {
 
           <FormField
             control={control}
-            name="price"
+            name="pointsRequired"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price (in points)</FormLabel>
+                <FormLabel>Points Required</FormLabel>
                 <FormControl>
                   <Input type="number" min={1} {...field} />
                 </FormControl>
@@ -196,31 +209,18 @@ const RewardForm = ({ user }) => {
 
           <FormField
             control={control}
-            name="startDate"
+            name="stock"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Start Date & Time</FormLabel>
+                <FormLabel>Stock (optional)</FormLabel>
                 <FormControl>
-                  <Input type="datetime-local" {...field} min={localMin} />
+                  <Input type="number" min={0} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <FormField
-            control={control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Date & Time</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} min={localMin} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <SubmitButton
             type="submit"
             className="w-full"

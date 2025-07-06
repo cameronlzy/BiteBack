@@ -60,7 +60,10 @@ const RestaurantPerformance = ({ user }) => {
     if (user.role !== "owner" || restaurant.owner !== user._id) {
       navigate("/restaurants")
       toast.error(
-        "Only Restaurant owner is allowed to view the Restaurant Statistics"
+        "Only Restaurant Owners are allowed to view the Restaurant Statistics",
+        {
+          toastId: "nonOwnedStatsView",
+        }
       )
       return
     }

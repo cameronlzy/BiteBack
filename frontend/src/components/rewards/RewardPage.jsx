@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom"
-import { DateTime } from "luxon"
 import { toast } from "react-toastify"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,96 +8,46 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu"
-import {
-  Settings,
-  ArrowRight,
-  Gift,
-  ShoppingBag,
-  CircleDollarSign,
-  TicketPercent,
-  DollarSign,
-} from "lucide-react"
+import { Settings, ArrowRight, DollarSign } from "lucide-react"
 import BackButton from "@/components/common/BackButton"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import { useConfirm } from "@/components/common/ConfirmProvider"
 import {
   getRewardById,
   deleteReward,
-  saveReward,
+  redeemRewardItem,
 } from "@/services/rewardService"
-import { readableTimeSettings } from "@/utils/timeConverter"
-import { redeemRewardItem } from "@/services/rewardService"
-
-const iconMap = {
-  percentage: {
-    icon: TicketPercent,
-    colour: "text-rose-500",
-    bgColour: "bg-rose-100",
-  },
-  fixed: {
-    icon: CircleDollarSign,
-    colour: "text-yellow-600",
-    bgColour: "bg-yellow-100",
-  },
-  freeItem: {
-    icon: Gift,
-    colour: "text-green-600",
-    bgColour: "bg-green-100",
-  },
-  buyXgetY: {
-    icon: ShoppingBag,
-    colour: "text-blue-500",
-    bgColour: "bg-sky-100",
-  },
-}
+import { iconMap } from "@/utils/rewardUtils"
+import { ownedByUser } from "@/utils/ownerCheck"
+import { getRestaurant } from "@/services/restaurantService"
+import { getCustomerPointsForRestaurant } from "@/services/rewardService"
 
 const RewardPage = ({ user }) => {
   const [reward, setReward] = useState(null)
+  const [restaurant, setRestaurant] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isOwnedByUser, setIsOwnedByUser] = useState(false)
+  const [points, setPoints] = useState(0)
   const confirm = useConfirm()
   const { rewardId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const [normalisedFrom, setNormalisedFrom] = useState(
-    location.state?.from || "/restaurant"
+    location.state?.from || "/restaurants"
   )
 
   useEffect(() => {
-    if (normalisedFrom.startsWith("/restaurants/") && reward?.restaurant?._id) {
-      const segments = normalisedFrom.split("/")
-      const maybeRestaurantId = segments[2]
-      if (maybeRestaurantId === reward?.restaurant?._id) {
-        setNormalisedFrom("/rewards")
-      }
-    }
-    const isOwnedByUserCheck =
-      user?.role === "owner" &&
-      user?.profile.restaurants.some((r) => r._id === reward?.restaurant._id)
-
-    setIsOwnedByUser(isOwnedByUserCheck)
-  }, [reward, normalisedFrom, user])
-
-  useEffect(() => {
-    const fetchReward = async () => {
-      const dummyReward = {
-        _id: "reward123",
-        title: "10% Off Your Next Meal",
-        startDate: "2025-06-01T00:00:00.000Z",
-        endDate: "2025-12-31T23:59:59.000Z",
-        type: "percentage",
-        restaurant: {
-          _id: "resto456",
-          name: "BiteBack Bistro",
-        },
-        description:
-          "Enjoy a 10% discount on your next visit to BiteBack Bistro.\nValid for dine-in only. Not stackable with other promotions.",
-        price: 100,
-        isActive: true,
-      }
+    const fetchRewardAndRestaurant = async () => {
       try {
-        // const response = await getRewardById(rewardId)
-        setReward(dummyReward)
+        const reward = await getRewardById(rewardId)
+        const restaurant = await getRestaurant(reward?.restaurant)
+        setReward(reward)
+        setRestaurant(restaurant)
+
+        if (user?.role === "customer") {
+          const data = await getCustomerPointsForRestaurant(restaurant._id)
+          setPoints(data.points || 0)
+        }
       } catch (ex) {
         if (ex.response?.status === 404 || ex.response?.status === 400) {
           toast.error("Reward not found")
@@ -110,55 +59,57 @@ const RewardPage = ({ user }) => {
         setLoading(false)
       }
     }
-    fetchReward()
-  }, [rewardId])
+    fetchRewardAndRestaurant()
+  }, [rewardId, user])
 
-  const handleRedeemReward = async () => {
-    const confirmed = await confirm(
-      `Are you sure you want to use ${reward.price} points to redeem the reward "${reward?.title}"?`
-    )
-    if (confirmed) {
-      console.log("Redeemed")
+  useEffect(() => {
+    if (normalisedFrom.startsWith("/restaurants/") && reward?.restaurant?._id) {
+      const segments = normalisedFrom.split("/")
+      const maybeRestaurantId = segments[2]
+      if (maybeRestaurantId === reward?.restaurant?._id) {
+        setNormalisedFrom("/current-rewards/" + reward.restaurant._id)
+      }
     }
-    //   try {
-    //     await redeemRewardItem({
-    //       user: user,
-    //     })
-    //     toast.success("Successfully redeemed Reward")
-    //     navigate(normalisedFrom, { replace: true })
-    //   } catch (ex) {
-    //     toast.error("Failed to redeem reward")
-    //     throw ex
-    //   }
-    // }
-  }
-
-  //   const handleToggleActivate = async () => {
-  //     try {
-  //       const updated = await saveReward({
-  //         _id: reward._id,
-  //         isActive: !reward.isActive,
-  //       })
-  //       toast.success(`Reward ${updated.isActive ? "activated" : "deactivated"}`)
-  //       setReward((prev) => ({ ...prev, ...updated }))
-  //     } catch (ex) {
-  //       toast.error("Failed to toggle reward status")
-  //     }
-  //   }
+    const isOwnedByUserCheck = ownedByUser(reward?.restaurant, user)
+    setIsOwnedByUser(isOwnedByUserCheck)
+  }, [reward, normalisedFrom, user])
 
   const handleDeleteReward = async () => {
     const confirmed = await confirm(
-      `Are you sure you want to delete the reward "${reward?.title}"?`
+      `Are you sure you want to delete the reward "${reward?.description}"?`
     )
     if (confirmed) {
       try {
-        await deleteReward(reward._id)
+        await deleteReward(reward.restaurant._id, reward._id)
         toast.success("Reward deleted")
-        window.location = "/rewards"
+        navigate(`/current-rewards/${reward.restaurant._id}`, { replace: true })
       } catch (ex) {
         toast.error("Failed to delete reward")
         throw ex
       }
+    }
+  }
+
+  const handleRedeemReward = async () => {
+    if (points < reward.pointsRequired) {
+      const shortfall = reward.pointsRequired - points
+      toast.info(`You are ${shortfall} points short to redeem this reward.`)
+      return
+    }
+
+    const confirmed = await confirm(
+      `Are you sure you want to use ${reward.pointsRequired} points to redeem this reward?`
+    )
+    if (!confirmed) return
+
+    try {
+      console.log(reward)
+      await redeemRewardItem({ rewardItem: reward._id })
+      toast.success("Reward redeemed successfully")
+      navigate("/my-rewards", { replace: true })
+    } catch (ex) {
+      toast.error("Failed to redeem reward")
+      throw ex
     }
   }
 
@@ -181,22 +132,14 @@ const RewardPage = ({ user }) => {
     )
   }
 
-  const {
-    _id,
-    title,
-    startDate,
-    endDate,
-    type,
-    restaurant,
-    description,
-    price,
-  } = reward
+  const { _id, category, description, pointsRequired, stock, isActive } = reward
+
   const backup = {
     colour: "text-gray-500",
     bgColour: "bg-gray-100",
   }
 
-  const { icon: Icon, colour, bgColour } = iconMap[type] ?? backup
+  const { icon: Icon, colour, bgColour } = iconMap[category] ?? backup
 
   return (
     <div className="max-w-3xl mx-auto mt-8 px-4 relative">
@@ -204,7 +147,9 @@ const RewardPage = ({ user }) => {
 
       <Card className="mt-4 shadow-xl border relative">
         <CardHeader className="flex flex-row items-start justify-between gap-4">
-          <CardTitle className="text-2xl font-bold">{title}</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            {category.charAt(0).toUpperCase() + category.slice(1)} Reward
+          </CardTitle>
           <Link
             to={`/restaurants/${restaurant._id}`}
             state={{ from: location.pathname }}
@@ -228,7 +173,7 @@ const RewardPage = ({ user }) => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="bg-white/20 hover:bg-white/30 text-white"
+                      className="text-gray-700 hover:bg-gray-100"
                     >
                       <Settings className="w-5 h-5" />
                     </Button>
@@ -236,26 +181,18 @@ const RewardPage = ({ user }) => {
 
                   <DropdownMenuContent
                     align="end"
-                    className="w-40 bg-white shadow-lg rounded-md"
+                    className="w-40 bg-white shadow-md rounded-md"
                   >
                     <DropdownMenuItem
                       className="hover:bg-gray-100 text-gray-800"
                       onClick={() =>
-                        navigate(`/rewards/edit/${_id}`, {
+                        navigate(`/rewards/${restaurant._id}/edit/${_id}`, {
                           state: { from: location.pathname },
                         })
                       }
                     >
                       Edit Reward
                     </DropdownMenuItem>
-                    {/* <DropdownMenuItem
-                      onClick={handleToggleActivate}
-                      className="hover:bg-gray-100 text-gray-800"
-                    >
-                      {reward.isActive
-                        ? "Deactivate Reward"
-                        : "Activate Reward"}
-                    </DropdownMenuItem> */}
                     <DropdownMenuItem
                       onClick={handleDeleteReward}
                       className="text-red-600 hover:bg-red-50 focus:bg-red-100 focus:text-red-700 font-medium"
@@ -273,33 +210,30 @@ const RewardPage = ({ user }) => {
           </p>
 
           <div className="text-sm text-gray-600 space-y-1">
-            <p>
-              Available from{" "}
-              <strong>
-                {DateTime.fromISO(startDate).toLocaleString(
-                  readableTimeSettings
-                )}
-              </strong>
-              {" to "}
-              <strong>
-                {DateTime.fromISO(endDate).toLocaleString(readableTimeSettings)}
-              </strong>
-            </p>
-            {(!user || user.role !== "customer") && (
+            {user?.role !== "customer" && (
               <p>
-                Redeemable for <strong>{price} points</strong>
+                Redeemable for <strong>{pointsRequired} points</strong>
               </p>
             )}
+            {stock != null && (
+              <p>
+                Stock available: <strong>{stock}</strong>
+              </p>
+            )}
+            {!isActive && <p className="text-red-500">Inactive reward</p>}
           </div>
-          {user?.role === "customer" ? (
-            <Button variant="outline" size="sm" onClick={handleRedeemReward}>
-              <DollarSign className="w-6 h-6" />
-              Redeem Reward for<strong>{price} points</strong>
+
+          {user?.role === "customer" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={handleRedeemReward}
+            >
+              <DollarSign className="w-5 h-5 mr-2" />
+              Redeem Reward for{" "}
+              <strong className="ml-1">{pointsRequired} points</strong>
             </Button>
-          ) : (
-            <p className="text-muted-foreground">
-              Please login to redeem reward
-            </p>
           )}
         </CardContent>
       </Card>

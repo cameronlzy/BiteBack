@@ -14,6 +14,7 @@ import DeleteAccountPopup from "./authorisation/DeleteAccountPopup"
 import { useState } from "react"
 import ViewStaffAccounts from "./staff/ViewStaffAccounts"
 import OwnerStatistics from "./statistics/OwnerStatistics"
+import CustomerPoints from "./rewards/CustomerPoints"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -91,6 +92,7 @@ const ProfilePage = ({ user, isLoading }) => {
       {user.role === "customer" && (
         <div className="w-full">
           <CustomerReviews viewedCustomer={user} user={user} />
+          <CustomerPoints />
         </div>
       )}
       {user.role === "owner" && (

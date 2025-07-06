@@ -14,9 +14,10 @@ import { Trash2 } from "lucide-react"
 import { DateTime } from "luxon"
 import { readableTimeSettings } from "@/utils/timeConverter"
 import SubmitButton from "../common/SubmitButton"
+import { ownedByUser } from "@/utils/ownerCheck"
 
 const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
-  const isOwnedByUser = user?.role === "owner" && user._id === restaurant?.owner
+  const isOwnedByUser = ownedByUser(restaurant, user)
 
   const form = useForm({
     defaultValues: {
