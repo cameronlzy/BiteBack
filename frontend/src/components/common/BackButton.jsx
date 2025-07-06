@@ -10,7 +10,7 @@ const BackButton = ({ from, confirming, setConfirming }) => {
     <Button
       type="button"
       variant="ghost"
-      className="p-0 text-sm text-gray-600 hover:text-black flex items-center gap-2"
+      className="p-0 text-sm mb-2 text-gray-600 hover:text-black flex items-center gap-2"
       onClick={() =>
         confirming
           ? setConfirming(false)

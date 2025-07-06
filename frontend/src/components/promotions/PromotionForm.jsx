@@ -55,7 +55,7 @@ const PromotionForm = ({ user }) => {
       try {
         const promotion = await getPromotionById(promotionId)
         setPromotion(promotion)
-        const isOwned = ownedByUser(promotion?.restaurant?._id, user)
+        const isOwned = ownedByUser(promotion?.restaurant, user)
 
         if (!isOwned) {
           toast.error("You are not authorized to edit this promotion")

@@ -44,6 +44,7 @@ const ReviewSection = ({
 
   const handleReviewSubmit = async (newReview) => {
     try {
+      console.log(newReview)
       const savedReview = await saveReview(newReview)
       savedReview.badgesCount = [0, 0, 0, 0]
       setShowReviewForm(false)

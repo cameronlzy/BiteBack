@@ -14,6 +14,7 @@ import { getRestaurant } from "@/services/restaurantService"
 import { ownedByUser } from "@/utils/ownerCheck"
 import CustomerPoints from "./CustomerPoints"
 import Pagination from "../common/Pagination"
+import BackButton from "../common/BackButton"
 
 const RestaurantRewardStore = ({ user }) => {
   const { restaurantId } = useParams()
@@ -52,6 +53,8 @@ const RestaurantRewardStore = ({ user }) => {
     fetchRewardsAndRestaurant()
   }, [restaurantId, page])
 
+  const from = location.state?.from || `/restaurants/${restaurantId}`
+
   if (!rewards) return <LoadingSpinner className="my-10" />
 
   return (
@@ -59,7 +62,7 @@ const RestaurantRewardStore = ({ user }) => {
       <h1 className="text-2xl font-bold mb-6 text-center">
         Rewards @ {restaurant?.name} - {getShortAddress(restaurant?.address)}
       </h1>
-
+      <BackButton from={from} />
       {isOwner ? (
         <div className="flex justify-center mb-4">
           <Button onClick={() => navigate(`/rewards/${restaurantId}/new`)}>

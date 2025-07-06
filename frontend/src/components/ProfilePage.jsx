@@ -13,7 +13,6 @@ import CustomerReviews from "./reviews/CustomerReviews"
 import DeleteAccountPopup from "./authorisation/DeleteAccountPopup"
 import { useState } from "react"
 import ViewStaffAccounts from "./staff/ViewStaffAccounts"
-import OwnerStatistics from "./statistics/OwnerStatistics"
 import CustomerPoints from "./rewards/CustomerPoints"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
@@ -46,11 +45,17 @@ const ProfilePage = ({ user, isLoading }) => {
       content: "Delete Account",
       onClick: () => setShowDeletePopup(true),
     },
-    {
-      content: "Add Restaurant",
-      onClick: () =>
-        navigate("/restaurants/new", { state: { from: location.pathname } }),
-    },
+    ...(user?.role === "owner"
+      ? [
+          {
+            content: "Add Restaurant",
+            onClick: () =>
+              navigate("/restaurants/new", {
+                state: { from: location.pathname },
+              }),
+          },
+        ]
+      : []),
   ]
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

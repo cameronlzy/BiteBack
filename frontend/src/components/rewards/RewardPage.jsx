@@ -17,7 +17,7 @@ import {
   deleteReward,
   redeemRewardItem,
 } from "@/services/rewardService"
-import { iconMap } from "@/utils/rewardUtils"
+import { categoryOptions, iconMap } from "@/utils/rewardUtils"
 import { ownedByUserWithId } from "@/utils/ownerCheck"
 import { getRestaurant } from "@/services/restaurantService"
 import { getCustomerPointsForRestaurant } from "@/services/rewardService"
@@ -148,7 +148,9 @@ const RewardPage = ({ user }) => {
       <Card className="mt-4 shadow-xl border relative">
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <CardTitle className="text-2xl font-bold">
-            {category.charAt(0).toUpperCase() + category.slice(1)} Reward
+            {categoryOptions.find((opt) => opt.value === reward.category)
+              ?.label || reward.category}{" "}
+            Reward
           </CardTitle>
           <Link
             to={`/restaurants/${restaurant._id}`}

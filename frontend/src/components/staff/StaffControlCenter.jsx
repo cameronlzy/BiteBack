@@ -1,12 +1,24 @@
-import React from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ClipboardList, CalendarDays, LogOut, Gift } from "lucide-react"
+import {
+  ClipboardList,
+  CalendarDays,
+  Gift,
+  Settings,
+  LogOut,
+} from "lucide-react"
 import authService from "@/services/authService"
 import StaffQueue from "./StaffQueue"
 import StaffBookings from "./StaffBookings"
 import StaffPointUpdate from "./StaffPointUpdate"
 import StaffRewardCompletion from "./StaffRewardCompletion"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
 
 const StaffControlCenter = ({ user }) => {
   const handleLogout = async () => {
@@ -14,19 +26,39 @@ const StaffControlCenter = ({ user }) => {
     window.location = "/"
   }
 
+  const dropdownContent = [
+    {
+      content: "Logout",
+      onClick: handleLogout,
+    },
+  ]
+
   return (
     <div className="w-full mt-6 flex flex-col items-center">
-      <div className="w-full max-w-6xl flex justify-between items-start mb-6">
-        <div>
+      <div className="w-full max-w-6xl mb-6 relative">
+        <div className="absolute top-0 right-0 flex">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Settings className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {dropdownContent.map(({ content, onClick }) => (
+                <DropdownMenuItem key={content} onClick={onClick}>
+                  {content}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="text-center mt-2">
           <h1 className="text-2xl font-bold">Staff Control Center</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Central Area for Queues, Bookings, Rewards and Points
           </p>
         </div>
-        <Button variant="ghost" onClick={handleLogout}>
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
       </div>
 
       <Tabs defaultValue="queue" className="w-full max-w-6xl">

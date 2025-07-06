@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Progress } from "../ui/progress"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import {
   Tooltip,
   TooltipContent,
@@ -18,6 +18,7 @@ import { getRestaurant } from "@/services/restaurantService"
 
 const CustomerPoints = ({ restaurant }) => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [points, setPoints] = useState(0)
   const [topRestaurants, setTopRestaurants] = useState([])
 
@@ -67,7 +68,6 @@ const CustomerPoints = ({ restaurant }) => {
         <CardTitle className="text-xl font-semibold mb-1">
           Your Reward Progress
         </CardTitle>
-        {/* <p className="text-sm text-muted-foreground">Track your points</p> */}
       </CardHeader>
       <CardContent className="px-6">
         <TooltipProvider>
@@ -133,7 +133,9 @@ const CustomerPoints = ({ restaurant }) => {
           </Button>
           <Button
             variant="secondary"
-            onClick={() => navigate("/my-rewards")}
+            onClick={() =>
+              navigate("/my-rewards", { state: { from: location.pathname } })
+            }
             className="flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-white"
           >
             <Ticket className="w-5 h-5" />

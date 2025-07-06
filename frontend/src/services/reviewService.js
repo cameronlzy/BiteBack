@@ -23,7 +23,6 @@ export async function getUnreviewedVisits(restaurantId) {
   const { data } = await http.get(apiEndpoint+ "/eligible-visits", {
     params: { restaurantId },
   })
-  console.log(data)
   const converted = data.map((d) => toSGTISO(d.visitDate))
   return converted
 }

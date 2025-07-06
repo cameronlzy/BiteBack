@@ -310,7 +310,7 @@ const Restaurant = ({ user }) => {
               </Link>
             )}
 
-            {user?.role === "customer" && (
+            {user?.role !== "owner" && (
               <>
                 <RoundedActionButton
                   to={`/online-queue/${restid}`}

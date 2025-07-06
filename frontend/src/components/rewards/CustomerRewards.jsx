@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import CustomerPastRewards from "./CustomerPastRewards"
 import CustomerCurrentRewards from "./CustomerCurrentRewards"
 import { Button } from "@/components/ui/button"
+import BackButton from "../common/BackButton"
 
 const CustomerRewards = ({ user }) => {
   const [showPast, setShowPast] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     if (user.role !== "customer") {
@@ -18,18 +20,26 @@ const CustomerRewards = ({ user }) => {
     }
   }, [user._id])
 
+  const from = location.state?.from || "/me"
+  console.log(location.state?.from)
   return (
-    <div className="max-w-5xl mx-auto mt-10 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">
-          {showPast ? "Your Past Rewards" : "Your Current Rewards"}
-        </h2>
-        <Button variant="outline" onClick={() => setShowPast((prev) => !prev)}>
-          {showPast ? "Show Current" : "Show Past"}
-        </Button>
+    <>
+      <BackButton from={from} />
+      <div className="max-w-5xl mx-auto mt-10 px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">
+            {showPast ? "Your Past Rewards" : "Your Current Rewards"}
+          </h2>
+          <Button
+            variant="outline"
+            onClick={() => setShowPast((prev) => !prev)}
+          >
+            {showPast ? "Show Current" : "Show Past"}
+          </Button>
+        </div>
+        {showPast ? <CustomerPastRewards /> : <CustomerCurrentRewards />}
       </div>
-      {showPast ? <CustomerPastRewards /> : <CustomerCurrentRewards />}
-    </div>
+    </>
   )
 }
 

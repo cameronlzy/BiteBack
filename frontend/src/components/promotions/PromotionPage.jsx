@@ -58,14 +58,15 @@ const PromotionPage = ({ user }) => {
         setNormalisedFrom("/promotions")
       }
     }
-    setIsOwnedByUser(ownedByUser(promotion?.restaurant?._id, user))
+    const result = ownedByUser(promotion?.restaurant, user)
+    console.log(result)
+    setIsOwnedByUser(result)
   }, [promotion, normalisedFrom, user])
 
   useEffect(() => {
     const fetchPromotion = async () => {
       try {
         const response = await getPromotionById(promotionId)
-        console.log(response)
         setPromotion(response)
       } catch (ex) {
         if (ex.response?.status === 404 || ex.response?.status === 400) {

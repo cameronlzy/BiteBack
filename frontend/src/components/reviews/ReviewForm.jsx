@@ -70,8 +70,10 @@ const ReviewForm = ({
 
   const handleFormSubmit = async (data) => {
     try {
+      data.dateVisited = DateTime.fromISO(data.dateVisited)
+        .setZone("Asia/Singapore")
+        .toISO()
       const res = await onSubmit(data)
-      console.log(res)
       const reviewId = res._id
       let images
       if (selectedFiles.length > 0) {
@@ -157,15 +159,13 @@ const ReviewForm = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {pastVisits.map((visitDate) => {
-                    return (
-                      <SelectItem key={visitDate} value={visitDate}>
-                        {DateTime.fromISO(visitDate).toLocaleString(
-                          readableTimeSettings
-                        )}
-                      </SelectItem>
-                    )
-                  })}
+                  {pastVisits.map((visitDate) => (
+                    <SelectItem key={visitDate} value={visitDate}>
+                      {DateTime.fromISO(visitDate).toLocaleString(
+                        readableTimeSettings
+                      )}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
