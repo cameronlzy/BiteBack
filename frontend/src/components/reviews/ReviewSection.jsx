@@ -79,6 +79,7 @@ const ReviewSection = ({
               onSubmit={handleReviewSubmit}
               setReviews={setReviews}
               setSortedReviews={setSortedReviews}
+              user={user}
             />
           </div>
         </div>

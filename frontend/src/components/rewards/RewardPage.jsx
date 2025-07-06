@@ -46,7 +46,8 @@ const RewardPage = ({ user }) => {
 
         if (user?.role === "customer") {
           const data = await getCustomerPointsForRestaurant(restaurant._id)
-          setPoints(data.points || 0)
+          console.log(data)
+          setPoints(data?.points || 0)
         }
       } catch (ex) {
         if (ex.response?.status === 404 || ex.response?.status === 400) {

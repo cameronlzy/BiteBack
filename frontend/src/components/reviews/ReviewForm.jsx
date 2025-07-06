@@ -29,7 +29,13 @@ import {
 import LoadingSpinner from "../common/LoadingSpinner"
 import { readableTimeSettings } from "@/utils/timeConverter"
 
-const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
+const ReviewForm = ({
+  restaurant,
+  onSubmit,
+  setReviews,
+  setSortedReviews,
+  user,
+}) => {
   const [selectedFiles, setSelectedFiles] = useState([])
   const [pastVisits, setPastVisits] = useState(null)
 
@@ -44,7 +50,9 @@ const ReviewForm = ({ restaurant, onSubmit, setReviews, setSortedReviews }) => {
         console.log(ex)
       }
     }
-    fetchVisits()
+    if (user) {
+      fetchVisits()
+    }
   }, [restaurant])
 
   const form = useForm({

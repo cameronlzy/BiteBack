@@ -1,5 +1,5 @@
 export const userIsOwner = (user) => {
-    return user.role === "owner"
+    return user?.role === "owner"
 }
 
 export const ownedByUser = (restaurant, user) => {
@@ -11,5 +11,5 @@ export const ownedByUser = (restaurant, user) => {
 }
 
 export const ownedByUserWithId = (restaurantId, user) => {
-    return user?.profile?.restaurants.some(r => r._id === restaurantId)
+    return user?.profile?.restaurants?.some(r => r._id === restaurantId)
 }
