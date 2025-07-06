@@ -265,7 +265,7 @@ describe('review test', () => {
         let profile;
         let rating;
         let reviewText;
-        let dateVisited;
+        let dateVisited, visitDate;
         let cookie;
         let token;
         let visitHistory;
@@ -292,7 +292,11 @@ describe('review test', () => {
             rating = 3;
             reviewText = "Good";
 
+            visitDate = DateTime.now().minus({ days: 3 }).toJSDate();
+            visitDate = new Date(Math.floor(visitDate.getTime() / 1000) * 1000);
+
             visitHistory = createTestVisitHistory(restaurant._id, profile._id);
+            visitHistory.visits[0].visitDate = visitDate;
             await visitHistory.save();
             dateVisited = visitHistory.visits[0].visitDate.toISOString();
 		});

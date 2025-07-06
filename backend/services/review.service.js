@@ -92,14 +92,17 @@ export async function createReview(data, user) {
         const restaurant = await Restaurant.findById(data.restaurant).select('timezone').lean();
         if (!restaurant) return error(404, 'Restaurant not found');
 
-        const visitDate = DateTime.fromISO(data.dateVisited, { zone: restaurant.timezone }).toUTC().toJSDate();
+        const visitDate = new Date(Math.floor(DateTime.fromISO(data.dateVisited, { zone: restaurant.timezone }).toUTC().toJSDate().getTime() / 1000) * 1000);
 
         // validate eligibility
-        const visitHistory = await VisitHistory.findOne({
-            customer: user.profile,
-            restaurant: data.restaurant,
-            'visits.visitDate': visitDate
-        }, { 'visits.$': 1 }).session(session).lean();
+        const visitHistory = await VisitHistory.findOne(
+            {
+                customer: user.profile,
+                restaurant: data.restaurant,
+                visits: { $elemMatch: { visitDate } }
+            },
+            { 'visits.$': 1 }
+        ).session(session).lean();
 
         if (!visitHistory || visitHistory.visits.length === 0) return error(400, 'Visit not found for selected date');
 

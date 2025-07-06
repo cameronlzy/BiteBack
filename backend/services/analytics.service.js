@@ -317,7 +317,6 @@ export async function getTrends(restaurant, days) {
 
     const cached = await redisClient.get(cacheKey);
     if (cached) {
-        console.log('Cached value used');
         return JSON.parse(cached);
     }
 
