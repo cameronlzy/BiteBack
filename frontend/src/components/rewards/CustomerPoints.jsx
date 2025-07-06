@@ -68,7 +68,7 @@ const CustomerPoints = ({ restaurant }) => {
           Your Reward Progress
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Track your points to see how close you are to your next reward
+          Keep track of your points
         </p>
       </CardHeader>
       <CardContent className="px-6">
