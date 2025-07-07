@@ -31,7 +31,10 @@ const RestaurantRewardStore = ({ user }) => {
   )
 
   useEffect(() => {
-    if (normalisedFrom.startsWith("/my-rewards")) {
+    if (
+      normalisedFrom.startsWith("/my-rewards") ||
+      normalisedFrom.startsWith("/rewards")
+    ) {
       setNormalisedFrom(`/restaurants/${restaurantId}`)
     }
   }, [restaurant, normalisedFrom])

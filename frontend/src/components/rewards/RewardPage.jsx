@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react"
-import { useParams, useNavigate, useLocation, Link } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { toast } from "react-toastify"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import {
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@radix-ui/react-dropdown-menu"
-import { Settings, ArrowRight, DollarSign } from "lucide-react"
 import BackButton from "@/components/common/BackButton"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import { useConfirm } from "@/components/common/ConfirmProvider"
@@ -21,6 +13,8 @@ import { categoryOptions, iconMap } from "@/utils/rewardUtils"
 import { ownedByUserWithId } from "@/utils/ownerCheck"
 import { getRestaurant } from "@/services/restaurantService"
 import { getCustomerPointsForRestaurant } from "@/services/rewardService"
+import RestaurantRelatedItemUI from "../common/RestaurantRelatedUI"
+import { DollarSign } from "lucide-react"
 
 const RewardPage = ({ user }) => {
   const [reward, setReward] = useState(null)
@@ -142,104 +136,48 @@ const RewardPage = ({ user }) => {
   const { icon: Icon, colour, bgColour } = iconMap[category] ?? backup
 
   return (
-    <div className="max-w-3xl mx-auto mt-8 px-4 relative">
-      <BackButton from={normalisedFrom} />
-
-      <Card className="mt-4 shadow-xl border relative">
-        <CardHeader className="flex flex-row items-start justify-between gap-4">
-          <CardTitle className="text-2xl font-bold">
-            {categoryOptions.find((opt) => opt.value === reward.category)
-              ?.label || reward.category}{" "}
-            Reward
-          </CardTitle>
-          <Link
-            to={`/restaurants/${restaurant._id}`}
-            state={{ from: location.pathname }}
-          >
-            <Button variant="outline" size="sm">
-              To {restaurant.name || "Restaurant"}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="relative flex items-center justify-center p-6">
-            <div className={`${bgColour} rounded-full p-6 border`}>
-              <Icon className={`w-16 h-16 ${colour}`} />
-            </div>
-
-            {isOwnedByUser && (
-              <div className="absolute top-2 right-2 z-10">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-gray-700 hover:bg-gray-100"
-                    >
-                      <Settings className="w-5 h-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-40 bg-white shadow-md rounded-md"
-                  >
-                    <DropdownMenuItem
-                      className="hover:bg-gray-100 text-gray-800"
-                      onClick={() =>
-                        navigate(`/rewards/${restaurant._id}/edit/${_id}`, {
-                          state: { from: location.pathname },
-                        })
-                      }
-                    >
-                      Edit Reward
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleDeleteReward}
-                      className="text-red-600 hover:bg-red-50 focus:bg-red-100 focus:text-red-700 font-medium"
-                    >
-                      Delete Reward
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
-
-          <p className="text-gray-700 text-base font-semibold whitespace-pre-line">
-            {description}
+    <RestaurantRelatedItemUI
+      type="Reward"
+      item={reward}
+      bgColour={bgColour}
+      restaurant={restaurant}
+      from={normalisedFrom}
+      title={`${
+        categoryOptions.find((opt) => opt.value === category)?.label || category
+      } Reward`}
+      icon={<Icon className={`w-16 h-16 ${colour}`} />}
+      categoryLabel={category}
+      description={description}
+      metaContent={
+        <>
+          <p>
+            Redeemable for <strong>{pointsRequired} points</strong>
           </p>
-
-          <div className="text-sm text-gray-600 space-y-1">
-            {user?.role !== "customer" && (
-              <p>
-                Redeemable for <strong>{pointsRequired} points</strong>
-              </p>
-            )}
-            {stock != null && (
-              <p>
-                Stock available: <strong>{stock}</strong>
-              </p>
-            )}
-            {!isActive && <p className="text-red-500">Inactive reward</p>}
-          </div>
-
-          {user?.role === "customer" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={handleRedeemReward}
-            >
-              <DollarSign className="w-5 h-5 mr-2" />
-              Redeem Reward for{" "}
-              <strong className="ml-1">{pointsRequired} points</strong>
-            </Button>
+          {stock != null && (
+            <p>
+              Stock available: <strong>{stock}</strong>
+            </p>
           )}
-        </CardContent>
-      </Card>
-    </div>
+          {!isActive && <p className="text-red-500">Inactive reward</p>}
+        </>
+      }
+      isOwnedByUser={isOwnedByUser}
+      onEdit={() =>
+        navigate(`/rewards/${restaurant._id}/edit/${_id}`, {
+          state: { from: location.pathname },
+        })
+      }
+      onDelete={handleDeleteReward}
+      onClick={
+        user?.role === "customer"
+          ? {
+              onClick: handleRedeemReward,
+              icon: <DollarSign className="w-5 h-5" />,
+              label: `Redeem for ${pointsRequired} points`,
+            }
+          : null
+      }
+    />
   )
 }
 

@@ -94,6 +94,7 @@ const StaffBookings = () => {
                   <div>
                     <Button
                       size="sm"
+                      className="mr-2"
                       onClick={() => handleStatusUpdate(b._id, "completed")}
                     >
                       Mark Completed
