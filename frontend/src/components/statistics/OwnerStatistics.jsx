@@ -18,7 +18,6 @@ const OwnerStatistics = ({ user }) => {
     try {
       const snapshots = await Promise.all(
         user.profile?.restaurants.map(async (restaurant) => {
-          console.log(restaurant)
           const snapshot = await getTodaySnapshot(restaurant._id)
 
           const openingHoursSGT = restaurant.openingHours

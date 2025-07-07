@@ -47,7 +47,7 @@ const ReviewForm = ({
       } catch (ex) {
         toast.error("Failed to fetch past visits")
         setPastVisits([])
-        console.log(ex)
+        throw ex
       }
     }
     if (user) {

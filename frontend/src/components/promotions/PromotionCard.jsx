@@ -9,14 +9,30 @@ import {
   readableTimeSettings,
 } from "@/utils/timeConverter"
 
-const PromotionCard = (promotion) => {
+const PromotionCard = ({
+  _id,
+  title,
+  startDate,
+  endDate,
+  bannerImage,
+  restaurant,
+  isActive,
+  timeWindow,
+}) => {
+  const promotion = {
+    _id,
+    title,
+    startDate,
+    endDate,
+    bannerImage,
+    restaurant,
+    isActive,
+    timeWindow,
+  }
   const isAvailable = isPromotionAvailable(promotion)
   const hasStarted = hasPromotionStarted(promotion)
   const hasEnded = hasPromotionEnded(promotion)
-  const isActive = promotion.isActive
-  const { _id, title, startDate, endDate, bannerImage, restaurant } = promotion
   const imageSrc = bannerImage || defaultRestImg
-
   return (
     <Card className="w-full p-4 rounded-xl shadow-md">
       <div className="relative">

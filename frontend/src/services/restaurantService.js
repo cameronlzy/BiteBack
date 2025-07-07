@@ -36,7 +36,6 @@ export async function getRestaurantAvailability(restaurantId, date) {
     const { data } = await http.get(`${apiEndpoint}/${restaurantId}/availability?date=${encoded}`)
     if (!Array.isArray(data)) return []
     const result = convertSlotTimesToSGT(data, date)
-    console.log(result)
     return result
   } catch {
     return []

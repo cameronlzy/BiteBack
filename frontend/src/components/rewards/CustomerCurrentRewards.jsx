@@ -24,7 +24,6 @@ const CustomerCurrentRewards = () => {
       try {
         const params = { page, limit: 8, status: "activated,active" }
         const data = await getRedemptionHistory(params)
-        console.log(data)
         data.redemptions = data.redemptions.sort((r1, r2) => {
           return (r2.status === "activated") - (r1.status === "activated")
         })

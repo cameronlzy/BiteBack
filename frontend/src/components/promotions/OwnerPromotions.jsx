@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from "react"
 import { getOwnerPromotions } from "@/services/promotionService"
-import PromotionCard from "../common/PromotionCard"
+import PromotionCard from "./PromotionCard"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { hasPromotionEnded } from "@/utils/timeConverter"

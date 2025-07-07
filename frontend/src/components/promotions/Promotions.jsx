@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { getPromotions } from "@/services/promotionService"
-import PromotionCard from "../common/PromotionCard"
+import PromotionCard from "./PromotionCard"
 import Pagination from "../common/Pagination"
 import { toast } from "react-toastify"
 import SearchBar from "../SearchBar"
@@ -29,7 +29,6 @@ const Promotions = ({ user }) => {
         const { promotions, totalPages, totalCount } = await getPromotions(
           params
         )
-        console.log(promotions)
         setPromotions(promotions)
         setTotalPages(totalPages)
         setTotalCount(totalCount)

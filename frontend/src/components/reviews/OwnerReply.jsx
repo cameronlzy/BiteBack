@@ -54,7 +54,6 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
       throw ex
     }
   }
-  console.log(review)
   return (
     <div className="mt-4">
       {review.reply && (

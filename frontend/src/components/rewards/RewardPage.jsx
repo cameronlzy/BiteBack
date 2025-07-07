@@ -97,7 +97,6 @@ const RewardPage = ({ user }) => {
     if (!confirmed) return
 
     try {
-      console.log(reward)
       await redeemRewardItem({ rewardItem: reward._id })
       toast.success("Reward redeemed successfully")
       navigate("/my-rewards", { replace: true })

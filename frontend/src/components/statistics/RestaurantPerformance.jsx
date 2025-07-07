@@ -57,7 +57,6 @@ const RestaurantPerformance = ({ user }) => {
   }, [restaurantId, navigate])
   useEffect(() => {
     if (!restaurant) return
-    console.log(restaurant)
     if (!userIsOwner(user) || !ownedByUser(restaurant, user)) {
       navigate("/restaurants")
       toast.error(

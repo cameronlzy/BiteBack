@@ -93,8 +93,8 @@ const PromotionPage = ({ user }) => {
         restaurant: prev?.restaurant,
       }))
     } catch (ex) {
-      console.log(ex)
       toast.error("Failed to toggle promotion status")
+      throw ex
     }
   }
 
@@ -135,7 +135,6 @@ const PromotionPage = ({ user }) => {
 
   const { _id, title, startDate, endDate, mainImage, restaurant, description } =
     promotion
-
   const isAvailable = isPromotionAvailable(promotion)
   const hasStarted = hasPromotionStarted(promotion)
   const isActive = promotion.isActive
