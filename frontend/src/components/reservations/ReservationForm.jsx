@@ -252,7 +252,7 @@ const ReservationForm = ({ user }) => {
         reservationDate: DateTime.fromJSDate(data.reservationDate)
           .setZone("Asia/Singapore")
           .toISO(),
-        customer: user._id,
+        customer: user.profile._id,
         remarks: data.remarks || "",
       }
       const originalReservation = existingReservations.find(
@@ -265,6 +265,7 @@ const ReservationForm = ({ user }) => {
         })
       }
       result._id = reservationId
+      console.log(result)
       reservationId
         ? await saveReservation(result, true)
         : await saveReservation(finalReservation, false)
