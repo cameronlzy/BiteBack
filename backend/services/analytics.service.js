@@ -137,11 +137,11 @@ export async function getSummary(restaurant, query) {
         groupFormat = '%Y-%m-%d';
     } else if (unit === 'week') {
         end = now.endOf('week');
-        start = end.minus({ weeks: amount - 1 }).startOf('week');
+        start = now.startOf('week').minus({ weeks: amount - 1 });
         groupFormat = '%G-W%V';
     } else if (unit === 'month') {
         end = now.endOf('month');
-        start = end.minus({ months: amount - 1 }).startOf('month');
+        start = now.startOf('month').minus({ months: amount - 1 });
         groupFormat = '%Y-%m';
     } else {
         return error(400, 'Invalid unit. Use "day", "week", or "month"');

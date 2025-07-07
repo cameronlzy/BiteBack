@@ -91,11 +91,9 @@ export async function createReview(data, user) {
     return await withTransaction(async (session) => {
         const restaurant = await Restaurant.findById(data.restaurant).select('timezone').lean();
         if (!restaurant) return error(404, 'Restaurant not found');
-        console.log("timezone: ", restaurant.timezone);
 
         const visitDate = DateTime.fromISO(data.dateVisited, { zone: restaurant.timezone }).toUTC().toJSDate();
 
-        console.log("date received: ", visitDate);
         // validate eligibility
         const visitHistory = await VisitHistory.findOne(
             {

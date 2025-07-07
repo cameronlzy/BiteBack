@@ -5,21 +5,20 @@ await jest.unstable_mockModule('../../../startup/redisClient.js', async () => {
     return { getRedisClient };
 });
 
-
-const mongoose             = (await import('mongoose')).default;
-const request              = (await import('supertest')).default;
-const { DateTime }         = await import('luxon');
-const { serverPromise }    = await import('../../../index.js');
+const mongoose = (await import('mongoose')).default;
+const request = (await import('supertest')).default;
+const { DateTime } = await import('luxon');
+const { serverPromise } = await import('../../../index.js');
 const { generateAuthToken } = await import('../../../helpers/token.helper.js');
-const { setTokenCookie }   = await import('../../../helpers/cookie.helper.js');
-const { createTestUser }   = await import('../../factories/user.factory.js');
+const { setTokenCookie } = await import('../../../helpers/cookie.helper.js');
+const { createTestUser } = await import('../../factories/user.factory.js');
 const { createTestRestaurant } = await import('../../factories/restaurant.factory.js');
 const { createTestOwnerProfile } = await import('../../factories/ownerProfile.factory.js');
 const { createTestAnalytics } = await import('../../factories/dailyAnalytics.factory.js');
-const User               = (await import('../../../models/user.model.js')).default;
-const DailyAnalytics     = (await import('../../../models/dailyAnalytics.model.js')).default;
-const Restaurant         = (await import('../../../models/restaurant.model.js')).default;
-const OwnerProfile       = (await import('../../../models/ownerProfile.model.js')).default;
+const User = (await import('../../../models/user.model.js')).default;
+const DailyAnalytics = (await import('../../../models/dailyAnalytics.model.js')).default;
+const Restaurant = (await import('../../../models/restaurant.model.js')).default;
+const OwnerProfile = (await import('../../../models/ownerProfile.model.js')).default;
 const { convertOpeningHoursToUTC } = await import('../../../helpers/restaurant.helper.js');
 const { getRedisClient } = await import('../../../startup/redisClient.js');
 

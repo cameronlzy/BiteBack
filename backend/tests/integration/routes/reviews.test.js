@@ -294,7 +294,6 @@ describe('review test', () => {
 
             visitHistory = createTestVisitHistory(restaurant._id, profile._id);
             await visitHistory.save();
-            // console.log("IN DB: ", visitHistory.visits[0].visitDate);
             dateVisited = DateTime.fromJSDate(visitHistory.visits[0].visitDate).setZone('Asia/Singapore').toISO();
 		});
 
