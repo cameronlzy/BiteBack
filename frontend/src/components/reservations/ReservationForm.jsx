@@ -252,7 +252,7 @@ const ReservationForm = ({ user }) => {
         reservationDate: DateTime.fromJSDate(data.reservationDate)
           .setZone("Asia/Singapore")
           .toISO(),
-        user: user._id,
+        customer: user._id,
         remarks: data.remarks || "",
       }
       const originalReservation = existingReservations.find(

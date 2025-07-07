@@ -57,6 +57,7 @@ const StaffBookings = () => {
           <p className="text-sm text-muted-foreground">No Current Bookings</p>
         ) : (
           bookings.map((b) => (
+            // Take note for events syntax may change
             <div
               key={b._id}
               className="border rounded-md p-4 mb-3 flex justify-between items-start"
@@ -66,9 +67,9 @@ const StaffBookings = () => {
                   <p className="font-semibold">Booked By Owner</p>
                 ) : (
                   <>
-                    <p className="font-semibold">Name: {b.user?.name}</p>
+                    <p className="font-semibold">Name: {b.customer?.name}</p>
                     <p className="font-semibold">
-                      Number: {b.user.contactNumber}
+                      Number: {b.customer.contactNumber}
                     </p>
                   </>
                 )}
