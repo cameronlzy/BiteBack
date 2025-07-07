@@ -146,7 +146,6 @@ const ReservationForm = ({ user }) => {
         setPreloadedPax(reservation.pax)
 
         setValue("reservationDate", newReservationDate)
-        setValue("pax", reservation.pax)
         setTimeout(() => {
           updateTime(DateTime.fromJSDate(newReservationDate).toFormat("HH:mm"))
         }, 100)
@@ -159,6 +158,14 @@ const ReservationForm = ({ user }) => {
 
     preloadReservation()
   }, [reservationId, restaurant])
+
+  useEffect(() => {
+    if (!preloadedPax || availableSlots.length === 0) return
+
+    if (!getValues("pax")) {
+      setValue("pax", preloadedPax)
+    }
+  }, [availableSlots, preloadedPax])
 
   const reservationDate = watch("reservationDate")
 
