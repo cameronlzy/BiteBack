@@ -107,7 +107,7 @@ const EventForm = ({ user }) => {
   })
 
   const { control, handleSubmit, formState, setError } = form
-  const localMin = DateTime.local().toFormat("yyyy-LL-dd'T'HH:mm")
+  const localMin = DateTime.local().toFormat("yyyy-MM-dd")
 
   useEffect(() => {
     return () => {

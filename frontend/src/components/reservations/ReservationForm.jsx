@@ -125,7 +125,7 @@ const ReservationForm = ({ user }) => {
       try {
         const reservation = await getIndividualReservation(reservationId)
 
-        if (String(reservation?.user) !== String(user._id)) {
+        if (String(reservation?.customer) !== String(user.profile._id)) {
           toast.error("You are not authorised to view this reservation", {
             toastId: "unauthorised-reservation",
           })
