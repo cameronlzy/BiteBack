@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 
 const reservationSchema = new mongoose.Schema({
-    user: { 
+    customer: { 
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'CustomerProfile',
         required: true,
     },
     restaurant: {

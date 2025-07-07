@@ -13,6 +13,7 @@ import path, { dirname } from 'path';
 import { DateTime } from 'luxon';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
+import { createTestReservation } from '../../factories/reservation.factory.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -309,12 +310,11 @@ describe('restaurant test', () => {
 
     describe('GET /api/restaurants/:id/availability', () => {
         let user;
-        let userId;
+        let reservation;
         let restaurant;
         let restaurantId;
         let reservationDate;
         let queryDateSG;
-        let pax;
         let url;
 
         beforeEach(async () => {
@@ -325,7 +325,6 @@ describe('restaurant test', () => {
             // create a user
             user = await createTestUser('customer');
             await user.save();
-            userId = user._id;
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -335,11 +334,8 @@ describe('restaurant test', () => {
             // create a reservation
             reservationDate = new Date('2025-05-17T11:00'); // UTC date
             queryDateSG = encodeURIComponent(DateTime.fromJSDate(reservationDate, { zone: 'utc' }).setZone('Asia/Singapore').startOf('day').toISO());
-            pax = 10;
-            const reservation = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate, pax
-            });
+            reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
+            reservation.reservationDate = reservationDate;
             await reservation.save();
 
             // create url

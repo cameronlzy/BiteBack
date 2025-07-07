@@ -1,6 +1,6 @@
 import Reservation from '../models/reservation.model.js';
 import Restaurant from '../models/restaurant.model.js';
-import User from '../models/user.model.js';
+import CustomerProfile from '../models/customerProfile.model.js';
 import { DateTime } from 'luxon';
 import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
 import { addVisitToHistory } from './visitHistory.service.js';
@@ -8,23 +8,7 @@ import { adjustPoints } from './rewardPoint.service.js';
 import { error, success } from '../helpers/response.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
-// retired, might use for analytics
-// exports.getReservationsByOwner = async (ownerId, query) => {
-//     const startDate = convertToUTCStart(query.startDate);
-//     const endDate = query.endDate ? convertToUTCEnd(query.endDate) : null;
-
-//     // find all restaurants owned by owner
-//     const restaurantIds = (await Restaurant.find({ owner: ownerId }).select('_id').lean()).map(r => r._id);
-
-//     // find all the reservations for these restaurants
-//     const reservations = await Reservation.find({
-//         restaurant: { $in: restaurantIds },
-//         reservationDate: endDate ? { $gte: startDate, $lte: endDate } : { $gte: startDate }
-//     }).sort({ restaurant: 1 }).lean();
-
-//     return { status: 200, body: reservations };
-// };
-
+// needs changes
 export async function getReservationsByRestaurant(restaurant) {
     const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
     if (!timeSlotStartUTC) return success([]);
@@ -34,32 +18,25 @@ export async function getReservationsByRestaurant(restaurant) {
             $gte: timeSlotStartUTC.toJSDate(),
             $lte: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate()
         }
-    }).populate({
-        path: 'user',
-        select: '',
-        populate: {
-            path: 'profile',
-            select: 'name contactNumber'
-        }
-    }).lean();
+    }).populate('customer', 'name contactNumber').lean();
 
-    const mappedReservations = reservations.map(reservation => {
-        return {
-            ...reservation,
-            user: {
-                name: reservation.user?.profile?.name,
-                contactNumber: reservation.user?.profile?.contactNumber
-            }
-        };
-    });
-    return success(mappedReservations);
+    // const mappedReservations = reservations.map(reservation => {
+    //     return {
+    //         ...reservation,
+    //         customer: {
+    //             name: reservation.user?.profile?.name,
+    //             contactNumber: reservation.user?.profile?.contactNumber
+    //         }
+    //     };
+    // });
+    return success(reservations);
 }
 
-export async function getUserReservations(userId) {
+export async function getUserReservations(profile) {
     // get reservations
     const now = new Date();
     const reservations = await Reservation.find({
-        user: userId,
+        customer: profile,
         reservationDate: { $gte: now }
     }).sort({ restaurant: 1 }).lean();
 
@@ -74,13 +51,10 @@ export async function getSingleReservation(reservation) {
     return success(reservation.toObject());
 }
 
-export async function createReservation(user, data) {
+export async function createReservation(authUser, data) {
     // get restaurant
     const restaurant = await Restaurant.findById(data.restaurant).lean();
     if (!restaurant) return error(404, 'Restaurant not found');
-
-    // if owner, can only reserve their own restaurants
-    if (user.role === 'owner' && !restaurant.owner.equals(user.profile)) return error(403, 'Owners can only reserve their own restaurants');
 
     // check availability
     const date = DateTime.fromISO(data.reservationDate, { zone: restaurant.timezone });
@@ -96,12 +70,11 @@ export async function createReservation(user, data) {
 
     // create reservation
     const reservation = new Reservation({
-        user: user._id,
+        customer: authUser.profile,
         restaurant: data.restaurant,
         reservationDate: UTCdate.toJSDate(),
         remarks: data.remarks,
         pax: data.pax,
-        status: user.role === 'owner' ? 'event' : 'booked'
     });
     await reservation.save();
     return success(reservation.toObject());
@@ -113,9 +86,9 @@ export async function updateReservationStatus(reservation, status) {
         await reservation.save(wrapSession(session));
 
         if (status === 'completed') {
-            const user = await User.findById(reservation.user).lean();
-            await addVisitToHistory(user.profile, reservation.restaurant._id, reservation.reservationDate, session);
-            await adjustPoints(100, reservation.restaurant._id, user.profile, session);
+            const customer = await CustomerProfile.findById(reservation.customer).lean();
+            await addVisitToHistory(customer, reservation.restaurant._id, reservation.reservationDate, session);
+            await adjustPoints(100, reservation.restaurant._id, customer, session);
         }
         reservation.restaurant = reservation.restaurant._id;
         return success(reservation.toObject());

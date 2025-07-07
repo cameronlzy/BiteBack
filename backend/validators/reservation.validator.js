@@ -3,7 +3,7 @@ import { futureDateFullOnly } from '../helpers/time.helper.js';
 
 export function validateReservation(reservation) {
     const schema = Joi.object({
-        user: Joi.objectId(),
+        customer: Joi.objectId(),
         restaurant: Joi.objectId().required(),
         reservationDate: futureDateFullOnly.required(),
         remarks: Joi.string().allow('').custom((value, helpers) => {

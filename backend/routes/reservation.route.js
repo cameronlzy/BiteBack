@@ -1,8 +1,9 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
 import validateObjectId from '../middleware/validateObjectId.js';
+import isCustomer from '../middleware/isCustomer.js';
 import isStaff from '../middleware/isStaff.js';
-import authorizedReservationUser from '../middleware/authorizedReservationUser.js';
+import authorizedReservationCustomer from '../middleware/authorizedReservationCustomer.js';
 import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
 import authorizedReservationStaff from '../middleware/authorizedReservationStaff.js'
 import * as reservationController from '../controllers/reservation.controller.js';
@@ -17,18 +18,18 @@ router.get('/restaurant/:id', [validateObjectId(), auth, isStaff, authorizedRest
 router.get('/', [auth], reservationController.getUserReservations);
 
 // [User] - Get user's individual reservation
-router.get('/:id', [validateObjectId(), auth, authorizedReservationUser], reservationController.getSingleReservation);
+router.get('/:id', [validateObjectId(), auth, authorizedReservationCustomer], reservationController.getSingleReservation);
 
 // [User] - Create reservation
-router.post('/', [auth], reservationController.createReservation);
+router.post('/', [auth, isCustomer], reservationController.createReservation);
 
 // [Staff] - Update reservation status
 router.patch('/:id/status', [validateObjectId(), auth, isStaff, authorizedReservationStaff], reservationController.updateReservationStatus);
 
 // [User] - Update reservation
-router.patch('/:id', [validateObjectId(), auth, authorizedReservationUser], reservationController.updateReservation);
+router.patch('/:id', [validateObjectId(), auth, authorizedReservationCustomer], reservationController.updateReservation);
 
 // [User] - Delete reservation
-router.delete('/:id', [validateObjectId(), auth, authorizedReservationUser], reservationController.deleteReservation);
+router.delete('/:id', [validateObjectId(), auth, authorizedReservationCustomer], reservationController.deleteReservation);
 
 export default router;

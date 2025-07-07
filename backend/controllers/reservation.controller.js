@@ -8,7 +8,7 @@ export async function getReservationsByRestaurant(req, res) {
 };
 
 export async function getUserReservations(req, res) {
-  const { status, body } = await reservationService.getUserReservations(req.user._id);
+  const { status, body } = await reservationService.getUserReservations(req.user.profile);
   return res.status(status).json(body);
 };
 

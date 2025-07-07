@@ -6,6 +6,7 @@ import Restaurant from '../../../models/restaurant.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestStaff } from '../../factories/staff.factory.js';
+import { createTestReservation } from '../../factories/reservation.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
 import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
 import { DateTime } from 'luxon';
@@ -29,24 +30,19 @@ describe('reservation test', () => {
 
     describe('GET /api/reservations/restaurant/:id', () => {
         let token;
-        let userId;
         let owner;
         let restaurant;
         let restaurantId;
         let reservationDate1;
         let reservationDate2;
-        let pax;
         let staff;
-        let remarks;
         let cookie;
+        let reservation;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
             await User.deleteMany({});
             await Reservation.deleteMany({});
-
-            // create a user
-            userId = new mongoose.Types.ObjectId();
 
             // create an owner
             owner = await createTestUser('owner');
@@ -66,18 +62,13 @@ describe('reservation test', () => {
             // create reservations (in UTC)
             reservationDate1 = DateTime.utc().toJSDate();
             reservationDate2 = DateTime.utc().plus({ minute: restaurant.slotDuration }).toJSDate();
-            remarks = '';
-            pax = 10;
-            const reservation1 = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate: reservationDate1, remarks, pax
-            });
-            await reservation1.save();
-            const reservation2 = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate: reservationDate2, remarks, pax
-            });
-            await reservation2.save();
+            reservation = createTestReservation({ restaurant: restaurantId });
+            reservation.reservationDate = reservationDate1;
+            await reservation.save();
+
+            reservation = createTestReservation({ restaurant: restaurantId });
+            reservation.reservationDate = reservationDate2;
+            await reservation.save();
         });
 
         const exec = () => {
@@ -91,7 +82,7 @@ describe('reservation test', () => {
             expect(res.status).toBe(200);
             expect(res.body.length).toBe(1);
             res.body.forEach(reservation => {
-                expect(reservation).toHaveProperty('user');
+                expect(reservation).toHaveProperty('customer');
                 expect(reservation).toHaveProperty('restaurant');
                 expect(reservation).toHaveProperty('reservationDate');
                 expect(reservation).toHaveProperty('remarks');
@@ -103,14 +94,12 @@ describe('reservation test', () => {
     describe('GET /api/reservations', () => {
         let token;
         let user;
-        let userId;
         let restaurant;
         let restaurantId;
         let reservationDate1;
         let reservationDate2;
-        let remarks;
-        let pax;
         let cookie;
+        let reservation;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -120,7 +109,6 @@ describe('reservation test', () => {
             // create a user
             user = await createTestUser('customer');
             await user.save();
-            userId = user._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
@@ -132,18 +120,13 @@ describe('reservation test', () => {
             // create reservations
             reservationDate1 = DateTime.now().plus({days:20}).toJSDate(); // UTC
             reservationDate2 = DateTime.now().plus({weeks:4}).toJSDate(); // UTC
-            remarks = '';
-            pax = 10;
-            const reservation1 = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate: reservationDate1, remarks, pax
-            });
-            await reservation1.save();
-            const reservation2 = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate: reservationDate2, remarks, pax
-            });
-            await reservation2.save();
+            reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
+            reservation.reservationDate = reservationDate1;
+            await reservation.save();
+
+            reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
+            reservation.reservationDate = reservationDate2;
+            await reservation.save();
         });
 
         const exec = () => {
@@ -157,7 +140,7 @@ describe('reservation test', () => {
             expect(res.status).toBe(200);
             expect(res.body.length).toBe(2);
             res.body.forEach(reservation => {
-                expect(reservation).toHaveProperty('user');
+                expect(reservation).toHaveProperty('customer');
                 expect(reservation).toHaveProperty('restaurant');
                 expect(reservation).toHaveProperty('reservationDate');
                 expect(reservation).toHaveProperty('remarks');
@@ -175,12 +158,9 @@ describe('reservation test', () => {
     describe('GET /api/reservations/:id', () => {
         let token;
         let user;
-        let userId;
         let restaurant;
         let restaurantId;
-        let reservationDate;
-        let pax;
-        let reservationId;
+        let reservation, reservationId;
         let cookie;
 
         beforeEach(async () => {
@@ -191,7 +171,6 @@ describe('reservation test', () => {
             // create a user
             user = await createTestUser('customer');
             await user.save();
-            userId = user._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
@@ -201,12 +180,7 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create a reservation
-            reservationDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
-            pax = 10;
-            const reservation = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate, pax
-            });
+            reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
             await reservation.save();
             reservationId = reservation._id;
         });
@@ -221,7 +195,7 @@ describe('reservation test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+                'customer', 'restaurant', 'reservationDate', 'remarks', 'pax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -287,7 +261,7 @@ describe('reservation test', () => {
             expect(res.status).toBe(400);
         });
 
-        it('should return 403 if owner does not own restaurant', async () => {
+        it('should return 403 if owner', async () => {
             owner = await createTestUser('owner');
             token = generateAuthToken(owner);
             cookie = setTokenCookie(token);
@@ -299,35 +273,20 @@ describe('reservation test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+                'customer', 'restaurant', 'reservationDate', 'remarks', 'pax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body.status).toBe('booked');
-        });
-
-        it('should return 200 if valid request, owner', async () => {
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-            const res = await exec();
-            expect(res.status).toBe(200);
-            const requiredKeys = [
-                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            expect(res.body.status).toBe('event');
         });
     });
 
     describe('PATCH /api/reservations/:id/status', () => {
         let token;
         let user, profile;
-        let userId;
         let restaurant;
         let restaurantId;
         let reservationDate;
-        let remarks;
-        let pax;
-        let reservationId;
+        let reservation, reservationId;
         let cookie;
         let newStatus;
         let staff;
@@ -344,7 +303,6 @@ describe('reservation test', () => {
             user.profile = profile._id;
             await user.save();
             await profile.save();
-            userId = user._id;
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -358,12 +316,8 @@ describe('reservation test', () => {
 
             // create a reservation
             reservationDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
-            remarks = '';
-            pax = 10;
-            const reservation = new Reservation({
-                user: userId, restaurant: restaurantId, remarks,
-                reservationDate, pax
-            });
+            reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
+            reservation.reservationDate = reservationDate;
             await reservation.save();
             reservationId = reservation._id;
             newStatus = 'completed';
@@ -390,7 +344,7 @@ describe('reservation test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+                'customer', 'restaurant', 'reservationDate', 'remarks', 'pax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             const visitHistory = await VisitHistory.findOne({ customer: profile._id, restaurant: restaurantId });
@@ -404,13 +358,9 @@ describe('reservation test', () => {
     describe('PATCH /api/reservations/:id', () => {
         let token;
         let user;
-        let userId;
         let restaurant;
         let restaurantId;
-        let reservationDate;
-        let remarks;
-        let pax;
-        let reservationId;
+        let reservation, reservationId;
         let newReservationDate;
         let newRemarks;
         let newPax;
@@ -424,7 +374,6 @@ describe('reservation test', () => {
             // create a user
             user = await createTestUser('customer');
             await user.save();
-            userId = user._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
@@ -434,13 +383,7 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create a reservation
-            reservationDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
-            remarks = '';
-            pax = 10;
-            const reservation = new Reservation({
-                user: userId, restaurant: restaurantId, remarks,
-                reservationDate, pax
-            });
+            reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
             await reservation.save();
             reservationId = reservation._id;
             newReservationDate = DateTime.now().plus({days:15}).setZone('Asia/Singapore').toJSDate(); // SGT
@@ -471,7 +414,7 @@ describe('reservation test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+                'customer', 'restaurant', 'reservationDate', 'remarks', 'pax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -480,13 +423,9 @@ describe('reservation test', () => {
     describe('DELETE /api/reservations/:id', () => {
         let token;
         let user;
-        let userId;
         let restaurant;
         let restaurantId;
-        let reservationDate;
-        let remarks;
-        let pax;
-        let reservationId;
+        let reservation, reservationId;
         let cookie;
 
         beforeEach(async () => {
@@ -497,7 +436,6 @@ describe('reservation test', () => {
             // create a user
             user = await createTestUser('customer');
             await user.save();
-            userId = user._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
@@ -507,13 +445,7 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create a reservation
-            reservationDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
-            remarks = '';
-            pax = 10;
-            const reservation = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate, remarks, pax
-            });
+            reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
             await reservation.save();
             reservationId = reservation._id;
         });
@@ -529,7 +461,7 @@ describe('reservation test', () => {
             expect(res.status).toBe(200);
             
             const requiredKeys = [
-                'user', 'restaurant', 'reservationDate', 'remarks', 'pax'
+                'customer', 'restaurant', 'reservationDate', 'remarks', 'pax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
 
