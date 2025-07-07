@@ -23,6 +23,7 @@ import LoadingSpinner from "../common/LoadingSpinner"
 import { toast } from "react-toastify"
 import SubmitButton from "../common/SubmitButton"
 import { isRestaurantClosed } from "@/utils/timeConverter"
+import { DateTime } from "luxon"
 
 const SummaryAnalysis = ({ restaurant }) => {
   const [unit, setUnit] = useState("day")
@@ -53,7 +54,12 @@ const SummaryAnalysis = ({ restaurant }) => {
     try {
       const params =
         unit === "day"
-          ? { date: format(selectedDate, "yyyy-MM-dd") }
+          ? {
+              date: DateTime.fromJSDate(selectedDate)
+                .setZone("Asia/Singapore")
+                .startOf("day")
+                .toISO(),
+            }
           : { unit, amount: n }
 
       const response = await getSummary(restaurant._id, params)
@@ -62,11 +68,11 @@ const SummaryAnalysis = ({ restaurant }) => {
       }
       setData(response)
     } catch (ex) {
-      console.log(ex)
       toast.error("Failed to fetch summary", {
         toastId: "fetch-summary-fail",
       })
       setData(null)
+      throw ex
     } finally {
       setLoading(false)
     }
@@ -93,7 +99,6 @@ const SummaryAnalysis = ({ restaurant }) => {
       : Array.isArray(data?.entries) && data.entries.length > 0
       ? data.entries[0].aggregated
       : null
-  console.log(data)
   return (
     <Card className="w-full mt-6">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

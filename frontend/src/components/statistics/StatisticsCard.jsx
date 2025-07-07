@@ -14,7 +14,6 @@ const urgencyColours = {
 const StatisticsCard = ({ restaurant, today }) => {
   const navigate = useNavigate()
   const location = useLocation()
-  console.log(today)
   const averageWaitTime =
     today?.queue?.averageWaitTime != null ? today.queue.averageWaitTime : "--"
 

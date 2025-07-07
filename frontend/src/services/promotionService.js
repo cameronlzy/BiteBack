@@ -108,7 +108,6 @@ export async function updatePromotionImage(promotionId, updates) {
 
 export async function getPromotions(params = {}) {
   const { data } = await http.get(apiEndpoint, { params })
-
   const promotions = data.promotions.map(convertPromotion)
   return { ...data, promotions }
 }
@@ -120,7 +119,8 @@ export async function getPromotionById(id) {
 
 export async function getOwnerPromotions() {
   const { data } = await http.get(`${apiEndpoint}/owner`)
-  return convertPromotion(data)
+  const result = data.map(convertPromotion)
+  return result
 }
 
 export async function deletePromotion(id) {

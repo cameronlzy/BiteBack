@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { handle401 } from "@/utils/handleStaffTimeout"
+import { getShortAddress } from "@/utils/stringRegexUtils"
 
 const StaffQueue = () => {
   const [queue, setQueue] = useState(null)
@@ -118,7 +119,7 @@ const StaffQueue = () => {
             <h2 className="text-xl font-semibold">
               {restaurant.name}{" "}
               <span className="text-muted-foreground">
-                @ {restaurant.address}
+                @ {getShortAddress(restaurant.address)}
               </span>
             </h2>
           ) : (

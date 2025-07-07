@@ -452,3 +452,68 @@ export const promotionSchema = Joi.object({
       }),
   }).optional(),
 })
+
+export const pointUpdateSchema = Joi.object({
+  username: Joi.string().min(2).max(20).required().messages({
+    "any.required": "Username is required.",
+    "string.empty": "Username is required.",
+    "string.min": "Username must be at least 2 characters.",
+    "string.max": "Username must not exceed 20 characters.",
+  }),
+  change: Joi.number().integer().min(0).required().messages({
+    "number.base": "New Points must be a number.",
+    "number.integer": "New Points must be an integer.",
+    "number.min": "New Points must be at least 0.",
+    "any.required": "New Points is required.",
+  }),
+})
+
+export const rewardSchema = Joi.object({
+  category: Joi.string()
+    .valid("percentage", "monetary", "freeItem", "buyXgetY")
+    .required()
+    .messages({
+      "any.only": "Category must be one of: percentage, monetary, freeItem, buyXgetY.",
+      "any.required": "Category is required.",
+      "string.base": "Category must be a string.",
+    }),
+
+  description: Joi.string()
+    .min(5)
+    .required()
+    .messages({
+      "string.empty": "Description is required.",
+      "string.min": "Description must be at least 5 characters.",
+      "any.required": "Description is required.",
+    }),
+
+  pointsRequired: Joi.number()
+    .integer()
+    .min(0)
+    .required()
+    .messages({
+      "number.base": "Points must be a number.",
+      "number.integer": "Points must be an integer.",
+      "number.min": "Points must be at least 0.",
+      "any.required": "Points are required.",
+    }),
+
+  stock: Joi.number()
+  .integer()
+  .min(0)
+  .allow(null)
+  .allow("")
+  .optional()
+  .messages({
+    "number.base": "Stock must be a number.",
+    "number.integer": "Stock must be an integer.",
+    "number.min": "Stock must be at least 0.",
+  }),
+})
+
+export const rewardClaimSchema = Joi.object({
+  code: Joi.string().pattern(/^\d{6}$/).required().messages({
+    "string.pattern.base": "Code must be a 6-digit number",
+    "string.empty": "Code is required",
+  }),
+})

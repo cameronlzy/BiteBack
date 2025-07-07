@@ -32,7 +32,7 @@ const SortBy = ({ options, items, onSorted, backendHandle = false }) => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="rounded-full">
+        <Button variant="outline" className="rounded-full mb-2">
           Sort By <ChevronDown className="ml-2 w-4 h-4" />
         </Button>
       </PopoverTrigger>

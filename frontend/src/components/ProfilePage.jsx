@@ -1,4 +1,4 @@
-import UserReservation from "@/components/UserReservations"
+import UserReservation from "@/components/reservations/UserReservations"
 import authService from "@/services/authService"
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
@@ -9,11 +9,11 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 import { useLocation, useNavigate } from "react-router-dom"
-import CustomerReviews from "./CustomerReviews"
-import DeleteAccountPopup from "./DeleteAccountPopup"
+import CustomerReviews from "./reviews/CustomerReviews"
+import DeleteAccountPopup from "./authorisation/DeleteAccountPopup"
 import { useState } from "react"
-import ViewStaffAccounts from "./ViewStaffAccounts"
-import OwnerStatistics from "./OwnerStatistics"
+import ViewStaffAccounts from "./staff/ViewStaffAccounts"
+import CustomerPoints from "./rewards/CustomerPoints"
 const ProfilePage = ({ user, isLoading }) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -45,6 +45,17 @@ const ProfilePage = ({ user, isLoading }) => {
       content: "Delete Account",
       onClick: () => setShowDeletePopup(true),
     },
+    ...(user?.role === "owner"
+      ? [
+          {
+            content: "Add Restaurant",
+            onClick: () =>
+              navigate("/restaurants/new", {
+                state: { from: location.pathname },
+              }),
+          },
+        ]
+      : []),
   ]
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -91,14 +102,12 @@ const ProfilePage = ({ user, isLoading }) => {
       {user.role === "customer" && (
         <div className="w-full">
           <CustomerReviews viewedCustomer={user} user={user} />
+          <CustomerPoints />
         </div>
       )}
       {user.role === "owner" && (
         <div className="w-full flex flex-col gap-6 items-center">
           <ViewStaffAccounts />
-          <div className="w-full max-w-[650px] flex flex-col gap-6">
-            <OwnerStatistics user={user} />
-          </div>
         </div>
       )}
     </div>

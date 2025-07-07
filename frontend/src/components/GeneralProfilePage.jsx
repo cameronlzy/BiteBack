@@ -3,7 +3,7 @@ import { DateTime } from "luxon"
 import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify"
-import CustomerReviews from "./CustomerReviews"
+import CustomerReviews from "./reviews/CustomerReviews"
 import { getGeneralCustomerInfo } from "@/services/userService"
 import LoadingSpinner from "./common/LoadingSpinner"
 

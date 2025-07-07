@@ -11,8 +11,8 @@ import { deleteRestaurant, getRestaurant } from "@/services/restaurantService"
 import { useEffect, useState } from "react"
 import { useConfirm } from "./common/ConfirmProvider"
 import { toast } from "react-toastify"
-import ReviewSection from "./ReviewSection"
-import { Calendar, Settings, Star, Users } from "lucide-react"
+import ReviewSection from "./reviews/ReviewSection"
+import { Calendar, Settings, Star, Store, Users } from "lucide-react"
 import LoadingSpinner from "./common/LoadingSpinner"
 import { DropdownMenu, DropdownMenuItem } from "./ui/dropdown-menu"
 import {
@@ -23,25 +23,30 @@ import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
 import defaultRestImg from "@/assets/default-restaurant-img.png"
+import { ownedByUser } from "@/utils/ownerCheck"
+import RoundedActionButton from "./common/RoundedActionButton"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
   const navigate = useNavigate()
   const confirm = useConfirm()
   const location = useLocation()
-  let from = location?.state?.from || "/restaurants"
+  const [normalisedFrom, setNormalisedFrom] = useState(
+    location?.state?.from || "/restaurants"
+  )
 
   if (
-    (from?.startsWith("/online-queue/") || from?.startsWith("/reservation/")) &&
-    from?.split("/")[2] === id
+    (normalisedFrom?.startsWith("/online-queue/") ||
+      normalisedFrom?.startsWith("/reservation/") ||
+      normalisedFrom?.startsWith("/current-rewards/")) &&
+    normalisedFrom?.split("/")[2] === id
   ) {
-    from = "/restaurants"
+    setNormalisedFrom("/restaurants")
   }
 
   const [restaurant, setRestaurant] = useState(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
-
-  const isOwnedByUser = user?.role == "owner" && user._id === restaurant?.owner
+  const isOwnedByUser = ownedByUser(restaurant, user)
   const imageShow = location.state?.imageShow
   useEffect(() => {
     if (sessionStorage.getItem("restaurant_cache") && imageShow) {
@@ -111,7 +116,7 @@ const Restaurant = ({ user }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto mt-6 px-4">
-      <BackButton from={from} />
+      <BackButton from={normalisedFrom} />
       <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-md">
         <Link
           to={`/images/${encodeURIComponent(images?.[0])}`}
@@ -289,23 +294,18 @@ const Restaurant = ({ user }) => {
                 <Button
                   className={`bg-black text-white h-11 w-11 ${
                     isOwnedByUser
-                      ? "group-hover:w-[140px]"
-                      : "group-hover:w-[180px]"
+                      ? "group-hover:w-[130px]"
+                      : "group-hover:w-[170px]"
                   } transition-all duration-300 ease-in-out rounded-full overflow-hidden shadow flex items-center gap-2 px-0.75`}
                 >
                   <div
                     className="flex items-center justify-left group-hover:justify-start 
-                  w-full 
-                  px-3
-                  transition-all 
-                  duration-300"
+                    w-full px-3 transition-all duration-300"
                   >
                     <Calendar className="w-5 h-5" />
                     <span
                       className="ml-2 opacity-0 group-hover:opacity-100 
-                    transition-opacity 
-                    duration-300 
-                    whitespace-nowrap"
+                      transition-opacity duration-300 whitespace-nowrap"
                     >
                       {isOwnedByUser ? "Book Event" : "Make Reservation"}
                     </span>
@@ -313,45 +313,38 @@ const Restaurant = ({ user }) => {
                 </Button>
               </Link>
             )}
-            <Link
-              to={`/online-queue/${restid}`}
-              state={{ from: location.pathname }}
-              className="group"
-              onClick={(e) =>
-                (!isWithinOpeningHours(openingHours) ||
-                  !restaurant.queueEnabled) &&
-                e.preventDefault()
-              }
-            >
-              <Button
-                className={`bg-white text-black h-11 px-3 w-11 group-hover:w-[140px]
-                hover:bg-gray-100 
-                transition-all 
-                duration-300 
-                ease-in-out 
-                rounded-full 
-                overflow-hidden 
-                shadow 
-                flex 
-                items-center 
-                justify-start 
-                gap-2
-                ${
-                  !isWithinOpeningHours(openingHours)
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
-                disabled={
-                  !isWithinOpeningHours(openingHours) ||
-                  !restaurant.queueEnabled
-                }
-              >
-                <Users className="w-5 h-5" />
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-                  View Queue
-                </span>
-              </Button>
-            </Link>
+
+            {user?.role !== "owner" && (
+              <>
+                <RoundedActionButton
+                  to={`/online-queue/${restid}`}
+                  icon={Users}
+                  label="View Queue"
+                  bgColor="bg-white"
+                  hoverColor="hover:bg-gray-100"
+                  textColor="text-black"
+                  expandedWidth="w-[140px]"
+                  disabled={
+                    !isWithinOpeningHours(openingHours) ||
+                    !restaurant.queueEnabled
+                  }
+                  preventNavigation={
+                    !isWithinOpeningHours(openingHours) ||
+                    !restaurant.queueEnabled
+                  }
+                />
+
+                <RoundedActionButton
+                  to={`/current-rewards/${restid}`}
+                  icon={Store}
+                  label="View Rewards"
+                  bgColor="bg-indigo-600"
+                  hoverColor="hover:bg-indigo-700"
+                  expandedWidth="w-[140px]"
+                />
+              </>
+            )}
+
             {user?.role !== "owner" && (
               <div className="group">
                 <Button
@@ -360,31 +353,16 @@ const Restaurant = ({ user }) => {
                     showReviewForm
                       ? "group-hover:w-[100px]"
                       : "group-hover:w-[160px]"
-                  }
-                    transition-all 
-                    duration-300 
-                    ease-in-out 
-                    rounded-full 
-                    overflow-hidden 
-                    shadow 
-                    flex 
-                    items-center 
-                    gap-2 
-                    px-0.75 group`}
+                  } transition-all duration-300 ease-in-out rounded-full overflow-hidden shadow flex items-center gap-2 px-0.75`}
                 >
                   <div
                     className="flex items-center justify-left group-hover:justify-start 
-                    w-full 
-                    px-3 
-                    transition-all 
-                    duration-300"
+                    w-full px-3 transition-all duration-300"
                   >
                     <Star className="w-5 h-5" />
                     <span
                       className="ml-2 opacity-0 group-hover:opacity-100  
-                    transition-opacity 
-                    duration-300 
-                    whitespace-nowrap"
+                      transition-opacity duration-300 whitespace-nowrap"
                     >
                       {showReviewForm ? "Cancel" : "Leave a Review"}
                     </span>

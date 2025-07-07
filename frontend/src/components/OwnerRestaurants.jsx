@@ -1,11 +1,13 @@
 import { Fragment, useEffect, useState } from "react"
-import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
+import RoundedActionButton from "@/components/common/RoundedActionButton"
+import { Eye, Users, Store } from "lucide-react"
 
-const OwnerRestaurants = ({ user }) => {
+const RestaurantsDashboard = ({ user }) => {
   const [restaurants, setRestaurants] = useState([])
   const navigate = useNavigate()
+
   useEffect(() => {
     if (user.role !== "owner") {
       navigate("/not-found", { replace: true })
@@ -14,16 +16,9 @@ const OwnerRestaurants = ({ user }) => {
     setRestaurants(user.profile.restaurants || [])
   }, [user._id])
 
-  const handleSelect = (restId) => {
-    return navigate(`/restaurants/${restId}`, { replace: true })
-  }
-
   return (
-    <div className="max-w-2xl mx-auto mt-10">
-      <h2 className="text-2xl font-bold mb-6">Restaurants Owned</h2>
-      <Button className="mb-4" onClick={() => navigate("/restaurants/new")}>
-        Add New Restaurant
-      </Button>
+    <div className="max-w-3xl mx-auto mt-10">
+      <h2 className="text-2xl font-bold mb-6">Restaurants Dashboard</h2>
 
       {restaurants.length === 0 ? (
         <p className="text-gray-500">No Owned Restaurants</p>
@@ -34,13 +29,40 @@ const OwnerRestaurants = ({ user }) => {
               <CardHeader>
                 <CardTitle className="flex justify-between items-center">
                   <span>{res.name}</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleSelect(res._id)}
-                  >
-                    See Details
-                  </Button>
+                  <div className="flex gap-2">
+                    <div className="group">
+                      <RoundedActionButton
+                        to={`/restaurants/${res._id}`}
+                        icon={Eye}
+                        label="Details"
+                        bgColor="bg-white"
+                        hoverColor="hover:bg-gray-100"
+                        textColor="text-black"
+                        expandedWidth="w-[100px]"
+                      />
+                    </div>
+                    <div className="group">
+                      <RoundedActionButton
+                        to={`/online-queue/${res._id}`}
+                        icon={Users}
+                        label="Queue"
+                        bgColor="bg-white"
+                        hoverColor="hover:bg-gray-100"
+                        textColor="text-black"
+                        expandedWidth="w-[100px]"
+                      />
+                    </div>
+                    <div className="group">
+                      <RoundedActionButton
+                        to={`/current-rewards/${res._id}`}
+                        icon={Store}
+                        label="Rewards"
+                        bgColor="bg-indigo-600"
+                        hoverColor="hover:bg-indigo-700"
+                        expandedWidth="w-[110px]"
+                      />
+                    </div>
+                  </div>
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -51,4 +73,4 @@ const OwnerRestaurants = ({ user }) => {
   )
 }
 
-export default OwnerRestaurants
+export default RestaurantsDashboard

@@ -5,7 +5,6 @@ import { Users, ChevronLeft, ChevronRight } from "lucide-react"
 const weekdayMap = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 const FootFall = ({ data, mode = "day", width = 160, height = 100 }) => {
-  // console.log(data)
   const chartRef = useRef()
   const isMultiDay = mode !== "day"
   const isMonth = mode === "month"
