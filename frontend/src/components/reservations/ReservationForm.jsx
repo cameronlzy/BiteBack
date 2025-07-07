@@ -146,9 +146,9 @@ const ReservationForm = ({ user }) => {
         setPreloadedPax(reservation.pax)
 
         setValue("reservationDate", newReservationDate)
+        setValue("pax", reservation.pax)
         setTimeout(() => {
           updateTime(DateTime.fromJSDate(newReservationDate).toFormat("HH:mm"))
-          setValue("pax", reservation.pax)
         }, 100)
       } catch (ex) {
         if (ex.response?.status === 404) {
