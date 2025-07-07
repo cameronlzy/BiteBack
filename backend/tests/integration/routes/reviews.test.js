@@ -1,12 +1,12 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
-import { DateTime } from 'luxon';
 import Review from '../../../models/review.model.js';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
+import { createTestVisitHistory } from '../../factories/visitHistory.factory.js';
 import { createTestReview } from '../../factories/review.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
@@ -16,6 +16,9 @@ import Restaurant from '../../../models/restaurant.model.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
 import ReviewBadgeVote from '../../../models/reviewBadgeVote.model.js';
+import RewardPoint from '../../../models/rewardPoint.model.js';
+import VisitHistory from '../../../models/visitHistory.model.js';
+import { DateTime } from 'luxon';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,6 +31,63 @@ describe('review test', () => {
 	afterAll(async () => {
 		await mongoose.connection.close();
 		await server.close();
+	});
+
+    describe('GET /api/reviews/eligible-visits', () => {
+        let visitHistory;
+        let user, token, cookie;
+        let restaurant;
+        let restaurantId;
+        let profile;
+
+		beforeEach(async () => {
+			// clear all
+            await CustomerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+            await VisitHistory.deleteMany({});
+
+            // create restaurant
+            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+            await restaurant.save();
+            restaurantId = restaurant._id;
+            
+            // create customer 
+            user = await createTestUser('customer');
+            profile = createTestCustomerProfile(user);
+            user.profile = profile._id;
+            await profile.save();
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            visitHistory = new VisitHistory({
+                customer: profile._id, restaurant: restaurantId, 
+                visits: [
+                    { visitDate: new Date() },
+                    { visitDate: DateTime.now().minus({ days: 1 }).toJSDate(), reviewed: true }
+                ]
+            });
+            await visitHistory.save();
+		});
+
+        const exec = () => {
+            return request(server)
+            .get(`/api/reviews/eligible-visits?restaurantId=${restaurantId}`)
+            .set('Cookie', [cookie]);
+        };
+
+        it('should return 404 if restaurant does not exist', async () => {
+            restaurantId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 200 and correct visit date', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(1);
+            expect(res.body[0].visitDate).not.toBeUndefined();
+        });
 	});
 
     describe('GET /api/reviews/restaurant/:id', () => {
@@ -54,7 +114,7 @@ describe('review test', () => {
             await profile.save();
 
             // create a review
-            review = createTestReview(profile, restaurant);
+            review = createTestReview(profile, restaurantId);
             await review.save();
 		});
 
@@ -108,7 +168,7 @@ describe('review test', () => {
             customerId = profile._id;
 
             // create a review
-            review = createTestReview(profile, restaurant);
+            review = createTestReview(profile, restaurant._id);
             await review.save();
 		});
 
@@ -166,7 +226,7 @@ describe('review test', () => {
             // create a review
             rating = 3;
             reviewText = "Good";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: user.username,
@@ -208,6 +268,7 @@ describe('review test', () => {
         let dateVisited;
         let cookie;
         let token;
+        let visitHistory;
 
 		beforeEach(async () => {
 			// clear all
@@ -221,15 +282,19 @@ describe('review test', () => {
             
             // create customer 
             user = await createTestUser('customer');
+            profile = createTestCustomerProfile(user);
+            user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
-            profile = createTestCustomerProfile(user);
             await profile.save();
 
             // create a review
             rating = 3;
             reviewText = "Good";
-            dateVisited = DateTime.now().toISODate();
+
+            visitHistory = createTestVisitHistory(restaurant._id, profile._id);
+            await visitHistory.save();
+            dateVisited = DateTime.fromJSDate(visitHistory.visits[0].visitDate).setZone('Asia/Singapore').toISO();
 		});
 
         const exec = () => {
@@ -256,6 +321,8 @@ describe('review test', () => {
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            const points = await RewardPoint.findOne({ customer: profile._id, restaurant: restaurant._id });
+            expect(points.points).toBe(50);
         });
 	});
 
@@ -287,7 +354,7 @@ describe('review test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             
             // create customer 
@@ -298,7 +365,7 @@ describe('review test', () => {
             // create a review
             rating = 3;
             reviewText = "Good";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: customer.username,
@@ -367,7 +434,7 @@ describe('review test', () => {
             await owner.save();
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             
             // create customer 
@@ -381,7 +448,7 @@ describe('review test', () => {
             rating = 3;
             reviewText = "Good";
             replyText = "test";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: customer.username,
@@ -424,6 +491,8 @@ describe('review test', () => {
         it('should return 200 and badgeIndex', async () => {
             const res = await exec();
             expect(typeof res.body).toBe('number');
+            const points = await RewardPoint.findOne({ customer: profile._id, restaurant: restaurant._id });
+            expect(points.points).toBe(2);
         });
 	});
 
@@ -448,7 +517,7 @@ describe('review test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             // create review
@@ -527,7 +596,7 @@ describe('review test', () => {
             // create a review
             rating = 3;
             reviewText = "Good";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             images = [];
             review = new Review({
                 customer: profile._id,
@@ -597,7 +666,7 @@ describe('review test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             
             // create customer 
@@ -609,7 +678,7 @@ describe('review test', () => {
             rating = 3;
             reviewText = "Good";
             replyText = "test";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: customer.username,
@@ -658,7 +727,7 @@ describe('review test', () => {
         let badgeVote;
         let otherCustomer;
         let otherCustomerProfile;
-        let replyText;
+        let replyText, point;
 
 		beforeEach(async () => {
 			// clear all
@@ -666,13 +735,14 @@ describe('review test', () => {
             await CustomerProfile.deleteMany({});
             await Restaurant.deleteMany({});
             await OwnerProfile.deleteMany({});
+            await RewardPoint.deleteMany({});
 
             // create restaurant owner
             owner = await createTestUser('owner');
             await owner.save();
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             
             // create customer 
@@ -686,7 +756,7 @@ describe('review test', () => {
             rating = 3;
             reviewText = "Good";
             replyText = "test";
-            dateVisited = Date.now();
+            dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
                 username: customer.username,
@@ -709,6 +779,13 @@ describe('review test', () => {
             await otherCustomerProfile.save();
             token = generateAuthToken(otherCustomer);
             cookie = setTokenCookie(token);
+
+            point = new RewardPoint({
+                customer: profile._id,
+                restaurant: restaurant._id,
+                points: 50
+            });
+            await point.save();
 
             // create badgeIndex vote
             badgeVote = await ReviewBadgeVote({
@@ -738,6 +815,8 @@ describe('review test', () => {
 
             const voteInDb = await ReviewBadgeVote.findById(reviewId);
             expect(voteInDb).toBeNull();
+            const rewardPoint = await RewardPoint.findOne({ customer: profile._id, restaurant: restaurant._id });
+            expect(rewardPoint.points).toBe(48);
         });
 	});
 });

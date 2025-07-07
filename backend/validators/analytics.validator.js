@@ -1,11 +1,11 @@
 import Joi from 'joi';
-import { ISOdate } from '../helpers/time.helper.js';
+import { dateFullOnly } from '../helpers/time.helper.js';
 
 export function validateSummaryQuery(query) {
     const schema = Joi.object({
         unit: Joi.string().valid('day', 'week', 'month'),
         amount: Joi.number().integer().min(1),
-        date: ISOdate
+        date: dateFullOnly
     }).xor('date', 'unit')
     .with('unit', 'amount')
     .with('amount', 'unit');

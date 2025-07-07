@@ -1,11 +1,11 @@
 import Joi from 'joi';
-import { dateFullOnly } from '../helpers/time.helper.js';
+import { futureDateFullOnly } from '../helpers/time.helper.js';
 
 export function validateReservation(reservation) {
     const schema = Joi.object({
         user: Joi.objectId(),
         restaurant: Joi.objectId().required(),
-        reservationDate: dateFullOnly.required(),
+        reservationDate: futureDateFullOnly.required(),
         remarks: Joi.string().allow('').custom((value, helpers) => {
             if (value.trim() === '') return value;
 
@@ -22,7 +22,7 @@ export function validateReservation(reservation) {
 
 export function validatePatch(update) {
     const schema = Joi.object({
-        reservationDate: dateFullOnly,
+        reservationDate: futureDateFullOnly,
         remarks: Joi.string().allow('').custom((value, helpers) => {
             if (value.trim() === '') return value;
 

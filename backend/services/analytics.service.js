@@ -6,16 +6,17 @@ import { getOpeningHoursToday } from '../helpers/restaurant.helper.js';
 import { groupVisitLoadByWeekdayPattern, computeMode, getPeriodFromLabel, getCurrentOpeningPattern, matchesCurrentHours } from '../helpers/analytics.helper.js';
 import { DateTime } from 'luxon';
 import _ from 'lodash';
+import { getRedisClient } from '../startup/redisClient.js';
 
 export async function getSnapshot(restaurant) {
     const openHour = getOpeningHoursToday(restaurant);
     if (openHour === 'x') return success(null);
 
-    const now = DateTime.now().setZone('Asia/Singapore');
-    const todaySGT = now.startOf('day');
-    const tomorrowSGT = todaySGT.plus({ days: 1 });
-    const todayUTC = todaySGT.toUTC().toJSDate();
-    const tomorrowUTC = tomorrowSGT.toUTC().toJSDate();
+    const now = DateTime.now().setZone(restaurant.timezone);
+    const today = now.startOf('day');
+    const tomorrow = today.plus({ days: 1 });
+    const todayUTC = today.toUTC().toJSDate();
+    const tomorrowUTC = tomorrow.toUTC().toJSDate();
     const nowUTC = now.toUTC();
 
     // look for existing entry
@@ -115,10 +116,10 @@ export async function getSummary(restaurant, query) {
     const { unit, amount, date } = query;
 
     if (date) {
-        const dateUTC = DateTime.fromISO(date, { zone: 'Asia/Singapore' })
-        .startOf('day')
-        .toUTC()
-        .toJSDate();
+        const dateUTC = DateTime.fromISO(date, { zone: restaurant.timezone })
+            .startOf('day')
+            .toUTC()
+            .toJSDate();
         const entry = await DailyAnalytics.findOne({
             restaurant: restaurant._id,
             date: dateUTC
@@ -126,7 +127,7 @@ export async function getSummary(restaurant, query) {
         return success({ type: 'single', date, aggregated: entry ?? null });
     }
 
-    const now = DateTime.now().setZone('Asia/Singapore');
+    const now = DateTime.now().setZone(restaurant.timezone);
     const currentPattern = getCurrentOpeningPattern(restaurant);
     let start, end, groupFormat;
 
@@ -136,11 +137,11 @@ export async function getSummary(restaurant, query) {
         groupFormat = '%Y-%m-%d';
     } else if (unit === 'week') {
         end = now.endOf('week');
-        start = end.minus({ weeks: amount - 1 }).startOf('week');
+        start = now.startOf('week').minus({ weeks: amount - 1 });
         groupFormat = '%G-W%V';
     } else if (unit === 'month') {
         end = now.endOf('month');
-        start = end.minus({ months: amount - 1 }).startOf('month');
+        start = now.startOf('month').minus({ months: amount - 1 });
         groupFormat = '%Y-%m';
     } else {
         return error(400, 'Invalid unit. Use "day", "week", or "month"');
@@ -163,7 +164,7 @@ export async function getSummary(restaurant, query) {
                     $dateToString: {
                         date: '$date',
                         format: groupFormat,
-                        timezone: 'Asia/Singapore'
+                        timezone: restaurant.timezone
                     }
                 }
             }
@@ -311,9 +312,17 @@ export async function getSummary(restaurant, query) {
 }
 
 export async function getTrends(restaurant, days) {
-    const now = DateTime.now().setZone('Asia/Singapore');
-    const todaySGT = now.startOf('day');
-    const todayUTC = todaySGT.toUTC();
+    const redisClient = await getRedisClient();
+    const cacheKey = `analytics:trends:${restaurant._id}:days:${days}`;
+
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+        return JSON.parse(cached);
+    }
+
+    const now = DateTime.now().setZone(restaurant.timezone);
+    const today = now.startOf('day');
+    const todayUTC = today.toUTC();
     let end;
     const openHour = getOpeningHoursToday(restaurant);
     if (!openHour || openHour === 'x') {
@@ -337,10 +346,14 @@ export async function getTrends(restaurant, days) {
     .sort({ date: 1 })
     .lean();
 
-    return success({
+    const response = success({
         days,
         startDate: start.toISODate(),
         endDate: end.toISODate(),
         entries: docs
     });
+
+    await redisClient.set(cacheKey, JSON.stringify(response), { EX: 86400 });
+
+    return response;
 }

@@ -167,10 +167,10 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create 2 restaurant
-            restaurant1 = createTestRestaurant(user._id);
+            restaurant1 = createTestRestaurant(user.profile);
             restaurant1.name = 'Bennys';
             await restaurant1.save();
-            restaurant2 = createTestRestaurant(user._id);
+            restaurant2 = createTestRestaurant(user.profile);
             restaurant2.name = 'Pizza';
             await restaurant2.save();
             restaurants = [restaurant1._id, restaurant2._id];
@@ -260,7 +260,8 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create promotion
-            restaurant = new mongoose.Types.ObjectId();
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
             title = 'title';
             description = 'description';
             startDate = DateTime.now().plus({ days: 1 }).toJSDate();
@@ -272,7 +273,7 @@ describe('promotion test', () => {
             .post('/api/promotions')
             .set('Cookie', [cookie])
             .send({
-                restaurant, title, description, startDate, endDate
+                restaurant: restaurant._id, title, description, startDate, endDate
             });
         };
 
@@ -280,6 +281,19 @@ describe('promotion test', () => {
             startDate = '';
             const res = await exec();
             expect(res.status).toBe(400);
+        });
+
+        it('should return 404 if restaurant not found', async () => {
+            restaurant = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);
+        });
+
+        it('should return 403 if restaurant does not belong to owner', async () => {
+            restaurant = createTestRestaurant();
+            await restaurant.save();
+            const res = await exec();
+            expect(res.status).toBe(403);
         });
 
         it('should return 200 and promotion object with required properties', async () => {
@@ -311,7 +325,7 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             // create promotion
@@ -375,7 +389,7 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             // create promotion
@@ -431,7 +445,7 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);
@@ -455,6 +469,16 @@ describe('promotion test', () => {
             const res = await exec();
             expect(res.status).toBe(400);
         });
+
+        it('should return 400 if promotion has expired', async () => {
+            promotion = createTestPromotion(restaurant._id);
+            promotion.endDate = DateTime.now().minus({ days: 5 }).toJSDate();
+            await promotion.save();
+            promotionId = promotion._id;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
 
         it('should return 200 and promotion object with required properties', async () => {
             const res = await exec();
@@ -483,7 +507,7 @@ describe('promotion test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);

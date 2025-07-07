@@ -4,10 +4,29 @@ import Review from '../models/review.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
-// import VisitHistory from '../models/visitHistory.model.js';
+import VisitHistory from '../models/visitHistory.model.js';
+import { adjustPoints } from './rewardPoint.service.js';
 import { deleteImagesFromDocument } from './image.service.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 import { error, success } from '../helpers/response.js';
+import { updateVisitReviewedStatus } from './visitHistory.service.js';
+
+export async function getEligibleVisits(restaurantId, authUser) {
+    // check if restaurant exists
+    const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
+    if (!restaurant) return { status: 404, body: 'Restaurant not found' };
+
+    // get visits by customer in restaurant
+    const visitHistory = await VisitHistory.findOne({ customer: authUser.profile, restaurant: restaurant._id }).select('visits').lean();
+    if (!visitHistory || visitHistory.visits.length === 0) return success([]);
+
+    // filter out reviewed visits
+    const unreviewedVisits = visitHistory.visits
+        .filter(v => !v.reviewed)
+        .map(v => ({ visitDate: v.visitDate }));
+
+    return success(unreviewedVisits);
+}
 
 export async function getReviewsByRestaurant(restaurantId, authUser) {
     // check if restaurant exists
@@ -70,14 +89,49 @@ export async function getReviewById(reviewId) {
 
 export async function createReview(data, user) {
     return await withTransaction(async (session) => {
+        const restaurant = await Restaurant.findById(data.restaurant).select('timezone').lean();
+        if (!restaurant) return error(404, 'Restaurant not found');
+
+        const visitDate = DateTime.fromISO(data.dateVisited, { zone: restaurant.timezone }).toUTC().toJSDate();
+
+        // validate eligibility
+        const visitHistory = await VisitHistory.findOne(
+            {
+                customer: user.profile,
+                restaurant: data.restaurant,
+                visits: { $elemMatch: { visitDate } }
+            },
+            { 'visits.$': 1 }
+        ).session(session).lean();
+
+        if (!visitHistory || visitHistory.visits.length === 0) return error(400, 'Visit not found for selected date');
+
+        const visit = visitHistory.visits[0];
+        if (visit.reviewed) return error(400, 'Visit has already been reviewed');
+
         // create review
         const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
-        review.dateVisited = DateTime.fromISO(data.dateVisited, { zone: 'Asia/Singapore' }).startOf('day').toUTC().toJSDate();
+        review.dateVisited = visitDate;
         review.customer = user.profile;
         await review.save(wrapSession(session));
 
         // update restaurant ratings
         await updateRatingForRestaurant(review.restaurant, review.rating, 1, session);
+
+        // update visitHistory to reviewed
+        await VisitHistory.updateOne(
+            {
+                customer: user.profile,
+                restaurant: data.restaurant,
+                'visits.visitDate': visitDate
+            },
+            {
+                $set: { 'visits.$.reviewed': true }
+            }
+        ).session(session);
+
+        // add points to customer
+        await adjustPoints(50, restaurant._id, user.profile, session);
 
         const returnedReview = {
             ...review.toObject(),
@@ -91,7 +145,7 @@ export async function createReview(data, user) {
 export async function createReply(data, review, authUser) {
     // add reply to review
     review.reply = {
-        owner: authUser._id,
+        owner: authUser.profile,
         replyText: data.replyText
     };
     await review.save();
@@ -104,31 +158,35 @@ export async function createReply(data, review, authUser) {
 }
 
 export async function addBadge(data, reviewId, authUser) {
-    // find review
-    const review = await Review.findById(reviewId).lean();
-    if (!review) return error(404, 'Review with this ID not found');
+    return await withTransaction(async (session) => {
+        // find review
+        const review = await Review.findById(reviewId).session(session).lean();
+        if (!review) return error(404, 'Review with this ID not found');
 
-    // check if customer has made a badgeVote for this review
-    const badgeVote = await ReviewBadgeVote.findOne({
-        customer: authUser.profile,
-        review: review._id
-    });
-
-    // if it exists, change the vote
-    if (badgeVote) {
-        badgeVote.badgeIndex = data.badgeIndex;
-        await badgeVote.save();
-    } else {
-        const newBadgeVote = new ReviewBadgeVote({
+        // check if customer has made a badgeVote for this review
+        const badgeVote = await ReviewBadgeVote.findOne({
             customer: authUser.profile,
-            review: review._id,
-            restaurant: review.restaurant,
-            badgeIndex: data.badgeIndex
-        });
-        await newBadgeVote.save();
-    }
+            review: review._id
+        }).session(session);
 
-    return success(data.badgeIndex);
+        // if it exists, change the vote
+        if (badgeVote) {
+            badgeVote.badgeIndex = data.badgeIndex;
+            await badgeVote.save(wrapSession(session));
+        } else {
+            const newBadgeVote = new ReviewBadgeVote({
+                customer: authUser.profile,
+                review: review._id,
+                restaurant: review.restaurant,
+                badgeIndex: data.badgeIndex
+            });
+            await newBadgeVote.save(wrapSession(session));
+
+            await adjustPoints(2, review.restaurant, review.customer, session);
+        }
+
+        return success(data.badgeIndex);
+    });
 }
 
 export async function deleteReview(review) {
@@ -149,20 +207,23 @@ export async function deleteReply(review) {
 }
 
 export async function deleteBadge(reviewId, authUser) {
-    // find review
-    const review = await Review.findById(reviewId).lean();
-    if (!review) return error(404, 'Review with this ID not found');
+    return await withTransaction(async (session) => {
+        // find review
+        const review = await Review.findById(reviewId).session(session).lean();
+        if (!review) return error(404, 'Review with this ID not found');
 
-    // find badgeVote
-    const badgeVote = await ReviewBadgeVote.findOne({
-        customer: authUser.profile,
-        review: review._id
+        // find badgeVote
+        const badgeVote = await ReviewBadgeVote.findOne({
+            customer: authUser.profile,
+            review: review._id
+        }).session(session);
+        if (!badgeVote) return error(404, 'Vote does not exist');
+        const badgeIndex = badgeVote.badgeIndex;
+        await badgeVote.deleteOne(wrapSession(session));
+        await adjustPoints(-2, review.restaurant, review.customer, session); // deducts if the reviewer has enough points
+
+        return success(badgeIndex);
     });
-    if (!badgeVote) return error(404, 'Vote does not exist');
-    const badgeIndex = badgeVote.badgeIndex;
-    await badgeVote.deleteOne();
-
-    return success(badgeIndex);
 }
 
 // utlity services
@@ -221,9 +282,9 @@ export async function getAverageRatingsForRestaurants(restaurants) {
         { $match: { restaurant: { $in: restaurantIds } } },
         {
             $group: {
-            _id: '$restaurant',
-            averageRating: { $avg: '$rating' },
-            reviewCount: { $sum: 1 }
+                _id: '$restaurant',
+                averageRating: { $avg: '$rating' },
+                reviewCount: { $sum: 1 }
             }
         }
     ]);
@@ -275,7 +336,8 @@ export async function deleteReviewAndAssociations(review, session = undefined) {
     // delete reviews and it's associations
     await Promise.all([
         ReviewBadgeVote.deleteMany({ review: review._id }).session(session),
-        updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session)
+        updateRatingForRestaurant(review.restaurant, -1 * review.rating, -1, session),
+        updateVisitReviewedStatus(review.customer, review.restaurant, review.dateVisited, false, session)
     ]);
 
     // delete review after children deleted

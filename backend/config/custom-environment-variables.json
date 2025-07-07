@@ -11,5 +11,8 @@
 		"apiSecret": "CLOUDINARY_API_SECRET"
 	},
   "mapboxToken": "MAPBOX_TOKEN",
-  "encryptionSecret": "ENCRYPTION_SECRET"
+  "encryptionSecret": "ENCRYPTION_SECRET",
+  "redis": {
+    "url": "REDIS_URL"
+  }
 }

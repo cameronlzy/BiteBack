@@ -8,7 +8,7 @@ import Promotion from '../models/promotion.model.js';
 import Staff from '../models/staff.model.js';
 import { DateTime } from 'luxon';
 import * as reservationService from '../services/reservation.service.js';
-import { createSlots, convertSGTOpeningHoursToUTC, filterOpenRestaurants } from '../helpers/restaurant.helper.js';
+import { createSlots, convertOpeningHoursToUTC, filterOpenRestaurants } from '../helpers/restaurant.helper.js';
 import { generateStaffUsername, generateStaffHashedPassword } from '../helpers/staff.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
@@ -80,10 +80,10 @@ export async function searchRestaurants(filters) {
 export async function discoverRestaurants(filters) {
   const {
     cuisines,
-    minRating = 0,
+    minRating,
     location,
-    radius = 3000,
-    openNow = false,
+    radius,
+    openNow,
     tags
   } = filters;
 
@@ -123,11 +123,13 @@ export async function discoverRestaurants(filters) {
   }
 
   // filter by minimum rating
-  pipeline.push({
-    $match: {
-      averageRating: { $gte: minRating }
-    }
-  });
+  if (minRating) {
+    pipeline.push({
+      $match: {
+        averageRating: { $gte: minRating }
+      }
+    });
+  }
 
   // sort by distance ascending
   if (location) pipeline.push({ $sort: { distance: 1 } });
@@ -152,15 +154,15 @@ export async function getRestaurantById(restaurantId) {
 
 export async function getAvailability(restaurantId, query) {
   // find restaurant
-  const restaurant = await Restaurant.findById(restaurantId).select('+_id').lean();
+  const restaurant = await Restaurant.findById(restaurantId).select('+_id +timezone').lean();
   if (!restaurant) return error(404, 'Restaurant not found');
 
   // get reservations on query date
   const reservations = await reservationService.getReservationsByRestaurantByDate(restaurant._id, query.date);
 
   // create time slots
-  const SGTdate = DateTime.fromISO(query.date, { zone: 'Asia/Singapore' });
-  const timeSlots = createSlots(restaurant.openingHours, SGTdate);
+  const date = DateTime.fromISO(query.date, { zone: restaurant.timezone });
+  const timeSlots = createSlots(restaurant.openingHours, date);
   if (Array.isArray(timeSlots) && timeSlots.length === 0) return success([]);
 
   // calculate availability for each slot
@@ -196,17 +198,18 @@ export async function createRestaurant(authUser, data) {
 
 export async function createRestaurantBulk(authUser, data) {
   return await withTransaction(async (session) => {
-    // create restaurants
+    // update owner
+    const user = await User.findById(authUser._id).populate('profile').session(session);
+    if (!user) return error(404, 'User not found');
+    if (!user.profile) return error(404, 'Owner Profile not found');
+
+      // create restaurants
     const restaurantIds = [];
     for (const item of data) {
       const restaurant = await createRestaurantHelper(authUser, item, session);
       restaurantIds.push(restaurant._id);
     }
 
-    // update owner
-    const user = await User.findById(authUser._id).populate('profile').session(session);
-    if (!user) return error(404, 'User not found');
-    if (!user.profile) return error(404, 'Owner Profile not found');
     user.profile.restaurants = restaurantIds;
     await user.profile.save(wrapSession(session));
 
@@ -236,7 +239,7 @@ export async function updateRestaurant(restaurant, update) {
   // selectively update only the fields that are defined
   for (const key in update) {
     if (key === 'openingHours') {
-      restaurant.openingHours = convertSGTOpeningHoursToUTC(update.openingHours);
+      restaurant.openingHours = convertOpeningHoursToUTC(update.openingHours);
     } else if (key === 'address') {
       // get longitude and latitude
       const fullAddress = update[key].replace(/S(\d{6})$/i, 'Singapore $1');
@@ -280,14 +283,14 @@ export async function createRestaurantHelper(authUser, data, session = undefined
   // create restaurant
   const restaurant = new Restaurant(_.pick(data, ['name', 'address', 'contactNumber', 'cuisines', 'maxCapacity', 'email', 'website', 'tags']));
   restaurant.location = { type: 'Point', coordinates: [longitude, latitude] };
-  restaurant.owner = authUser._id;
-  restaurant.openingHours = convertSGTOpeningHoursToUTC(data.openingHours);
+  restaurant.owner = authUser.profile;
+  restaurant.openingHours = convertOpeningHoursToUTC(data.openingHours);
 
   // create staff account for restaurant
   const staff = await createStaffForRestaurant(restaurant, session);
   restaurant.staff = staff._id;
 
-  await restaurant.save(session ? { session } : undefined);
+  await restaurant.save(wrapSession(session));
   return restaurant;
 }
 
@@ -300,7 +303,7 @@ export async function createStaffForRestaurant(restaurant, session = undefined) 
     encryptedPassword, restaurant: restaurant._id, role: 'staff'
   });
   
-  await staff.save(session ? { session } : undefined);
+  await staff.save(wrapSession(session));
   return staff;
 }
 

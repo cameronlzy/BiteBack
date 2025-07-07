@@ -1,13 +1,13 @@
 import Joi from 'joi';
-import { dateFullOnly, timeString } from '../helpers/time.helper.js';
+import { futureDateFullOnly, timeString } from '../helpers/time.helper.js';
 
 export function validatePromotion(promotion) {
     const schema = Joi.object({
         restaurant: Joi.objectId().required(),
         title: Joi.string().required(),
         description: Joi.string().required(),
-        startDate: dateFullOnly.required(),
-        endDate: dateFullOnly.required(),
+        startDate: futureDateFullOnly.required(),
+        endDate: futureDateFullOnly.required(),
         timeWindow: Joi.object({
             startTime: timeString.required(),
             endTime: timeString.required()
@@ -32,12 +32,13 @@ export function validatePatch(update) {
     const schema = Joi.object({
         title: Joi.string(),
         description: Joi.string(),
-        startDate: dateFullOnly,
-        endDate: dateFullOnly,
+        startDate: futureDateFullOnly,
+        endDate: futureDateFullOnly,
         timeWindow: Joi.object({
             startTime: timeString.required(),
             endTime: timeString.required()
         }).optional(),
+        isActive: Joi.boolean()
     }).min(1);
     return schema.validate(update);
 }

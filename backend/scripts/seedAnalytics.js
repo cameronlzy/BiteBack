@@ -3,6 +3,8 @@ import config from 'config';
 import { DateTime } from 'luxon';
 import DailyAnalytics from '../models/dailyAnalytics.model.js';
 import Restaurant from '../models/restaurant.model.js';
+import Review from '../models/review.model.js';
+import CustomerProfile from '../models/customerProfile.model.js';
 import { getOpeningWindow } from '../helpers/restaurant.helper.js';
 
 function getRandomInt(min, max) {
@@ -15,38 +17,63 @@ function roundToDP(value, dp) {
 }
 
 function smoothValue(prev, trend = 0, volatility = 0.1, min = 0, max = Infinity) {
-    const randomNoise = 1 + (Math.random() - 0.5) * 2 * volatility; // e.g., ±10%
+    const randomNoise = 1 + (Math.random() - 0.5) * 2 * volatility;
     const value = prev * (1 + trend) * randomNoise;
     return Math.min(Math.max(value, min), max);
 }
 
-function generateTrendedAnalytics(restaurantId, date, prev) {
-    const reservationTotal = smoothValue(prev.reservations.total, 0.01, 0.1, 10, 120);
+async function createReviewsForDay(restaurantId, date, customers, numReviews = getRandomInt(1, 4)) {
+    const reviews = [];
+
+    for (let i = 0; i < numReviews; i++) {
+        const rating = getRandomInt(1, 5);
+        const randomCustomerId = customers[Math.floor(Math.random() * customers.length)];
+        const review = new Review({
+            customer: randomCustomerId,
+            restaurant: restaurantId,
+            rating,
+            dateVisited: date.toJSDate(),
+            isVisible: true,
+        });
+        reviews.push(review);
+    }
+
+    await Review.insertMany(reviews);
+    return reviews;
+}
+
+function generateTrendedAnalytics(restaurantId, date, prev, reviewStats, visitLoadByHour) {
+    const reservationTotal = smoothValue(prev.reservations.total, 0.01, 0.1, 10, 50);
     const reservationAttended = smoothValue(prev.reservations.attended, 0.01, 0.1, 0, reservationTotal);
     const averagePax = reservationAttended > 0 ? smoothValue(prev.reservations.averagePax, 0, 0.05, 1, 6) : 0;
     const noShowRate = reservationTotal > 0 ? (reservationTotal - reservationAttended) / reservationTotal : 0;
 
-    const reviewCount = smoothValue(prev.reviews.count, 0, 0.2, 0, 50);
-    const averageRating = reviewCount > 0 ? smoothValue(prev.reviews.averageRating, 0, 0.05, 2, 5) : 0;
-    const ratingMode = reviewCount > 0 ? getRandomInt(1, 5) : undefined;
-
-    const queueTotal = smoothValue(prev.queue.total, 0.005, 0.1, 20, 200);
+    const queueTotal = smoothValue(prev.queue.total, 0.005, 0.1, 20, 120);
     const queueAttended = smoothValue(prev.queue.attended, 0.005, 0.1, 0, queueTotal);
     const abandonmentRate = queueTotal > 0 ? (queueTotal - queueAttended) / queueTotal : 0;
     const averageWaitTime = queueAttended > 0 ? smoothValue(prev.queue.averageWaitTime, 0, 0.1, 2, 20) : 0;
 
     const queueGroups = ['small', 'medium', 'large'];
+
+    const rawSplits = [Math.random(), Math.random(), Math.random()];
+    const totalSplit = rawSplits.reduce((a, b) => a + b, 0);
+    const proportions = rawSplits.map(split => split / totalSplit);
+
+    const groupTotals = proportions.map(p => Math.round(queueTotal * p));
+
+    const discrepancy = queueTotal - groupTotals.reduce((a, b) => a + b, 0);
+    groupTotals[0] += discrepancy;
+
     const byQueueGroup = {};
-    for (const group of queueGroups) {
-        const total = smoothValue(prev.queue.byQueueGroup[group].total, 0, 0.2, 0, 60);
-        const attended = smoothValue(prev.queue.byQueueGroup[group].attended, 0, 0.2, 0, total);
+    for (let i = 0; i < queueGroups.length; i++) {
+        const group = queueGroups[i];
+        const total = groupTotals[i];
+        const attended = smoothValue(
+            prev.queue.byQueueGroup[group].attended,
+            0, 0.2, 0, total
+        );
         byQueueGroup[group] = { total, attended };
     }
-
-    const visitLoadByHour = {
-        startHour: 9,
-        load: prev.visitLoadByHour.load.map(load => Math.max(0, smoothValue(load, 0, 0.3, 0, 20)))
-    };
 
     const totalVisits = visitLoadByHour.load.reduce((sum, x) => sum + x, 0);
 
@@ -61,11 +88,7 @@ function generateTrendedAnalytics(restaurantId, date, prev) {
             averagePax,
             noShowRate,
         },
-        reviews: {
-            count: reviewCount,
-            averageRating,
-            ratingMode,
-        },
+        reviews: reviewStats,
         queue: {
             total: queueTotal,
             attended: queueAttended,
@@ -76,20 +99,21 @@ function generateTrendedAnalytics(restaurantId, date, prev) {
     });
 }
 
-async function seedAnalytics(days, restaurantIdArg) {
+async function seedAnalytics(days, restaurantIdArg, timezone) {
     await mongoose.connect(config.get('mongoURI'), {
         autoIndex: false,
     });
 
-    const restaurant = await Restaurant.findById(restaurantIdArg);
+    const restaurant = await Restaurant.findById(restaurantIdArg).lean();
     if (!restaurant) throw new Error(`Restaurant with ID ${restaurantIdArg} not found.`);
 
-    const today = DateTime.now().setZone('Asia/Singapore').startOf('day').toUTC();
+    const customers = (await CustomerProfile.find().select('_id').lean()).map(c => c._id);
+
+    const today = DateTime.now().setZone(timezone).startOf('day').toUTC();
     const analyticsData = [];
 
     let prevEntry = {
         reservations: { total: 30, attended: 25, averagePax: 2.5 },
-        reviews: { count: 10, averageRating: 3.0 },
         queue: {
             total: 90,
             attended: 80,
@@ -100,10 +124,6 @@ async function seedAnalytics(days, restaurantIdArg) {
                 large: { total: 30, attended: 26 },
             }
         },
-        visitLoadByHour: {
-            startHour: 9,
-            load: Array.from({ length: 12 }, () => getRandomInt(1, 10))
-        }
     };
 
     for (let i = days - 1; i >= 0; i--) {
@@ -111,18 +131,45 @@ async function seedAnalytics(days, restaurantIdArg) {
         const window = getOpeningWindow(date, restaurant.openingHours);
 
         if (!window) continue;
-
+        
+        // create visit load
         const visitLoadByHour = {
             startHour: window.startHourUTC,
             load: Array.from({ length: window.spanHours }, () => getRandomInt(1, 10)),
         };
+        const totalVisits = visitLoadByHour.load.reduce((sum, x) => sum + x, 0);
 
-        const raw = generateTrendedAnalytics(restaurant._id, date, prevEntry);
+        // create mock reviews and get stats for those reviews
+        const reviewsForDay = await createReviewsForDay(restaurant._id, date, customers);
+        const reviewCount = reviewsForDay.length;
+        const ratingSum = reviewsForDay.reduce((sum, r) => sum + r.rating, 0);
+        const ratingFreq = [0, 0, 0, 0, 0];
+
+        for (const r of reviewsForDay) {
+            ratingFreq[r.rating - 1]++;
+        }
+
+        const ratingModeIndex = ratingFreq.indexOf(Math.max(...ratingFreq));
+        const averageRating = reviewCount ? ratingSum / reviewCount : 0;
+        const ratingMode = reviewCount ? ratingModeIndex + 1 : undefined;
+
+        const raw = generateTrendedAnalytics(
+            restaurant._id,
+            date.toJSDate(),
+            prevEntry,
+            { count: reviewCount, averageRating, ratingMode },
+            visitLoadByHour
+        );
+
+        prevEntry = {
+            reservations: raw.reservations,
+            queue: raw.queue,
+        };
 
         const rounded = new DailyAnalytics({
             restaurant: raw.restaurant,
             date: raw.date,
-            totalVisits: Math.round(raw.totalVisits),
+            totalVisits,
             visitLoadByHour: {
                 startHour: visitLoadByHour.startHour,
                 load: visitLoadByHour.load.map(Math.round),
@@ -169,10 +216,11 @@ async function seedAnalytics(days, restaurantIdArg) {
 
 const daysArg = parseInt(process.argv[2], 10) || 180;
 const restaurantIdArg = process.argv[3] || null;
+const timezone = process.argv[4] || 'Asia/Singapore';
 
 (async () => {
     try {
-        await seedAnalytics(daysArg, restaurantIdArg);
+        await seedAnalytics(daysArg, restaurantIdArg, timezone);
     } catch (err) {
         console.error(err);
         process.exit(1);

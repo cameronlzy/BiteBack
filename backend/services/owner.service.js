@@ -111,7 +111,7 @@ export async function updateMe(update, authUser) {
 export async function deleteMe(user) {
     return await withTransaction(async (session) => {
         // find restaurants owned by owner
-        const restaurants = await Restaurant.find({ owner: user._id }).session(session);
+        const restaurants = await Restaurant.find({ owner: user.profile }).session(session);
 
         // delete each restaurant and its reservations + reviews
         await Promise.all(
@@ -122,7 +122,7 @@ export async function deleteMe(user) {
 
         // delete reservations and profile
         await Promise.all([
-            Reservation.deleteMany({ customer: user._id }).session(session),
+            Reservation.deleteMany({ user: user._id }).session(session),
             OwnerProfile.findByIdAndDelete(user.profile._id).session(session)
         ]);
 

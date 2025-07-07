@@ -36,10 +36,11 @@ export async function forgotPassword(credentials) {
 
 export async function resetPassword(data, token)  {
     const hash = crypto.createHash('sha256').update(token).digest('hex');
+    const now = new Date();
 
     const user = await User.findOne({
         resetPasswordToken: hash,
-        resetPasswordExpires: { $gt: Date.now() },
+        resetPasswordExpires: { $gt: now },
     });
 
     if (!user) return error(400, 'Token is invalid or expired');
@@ -84,8 +85,8 @@ export async function registerCustomer(data) {
         // if user exists
         let existingUser = await User.findOne({
           $or: [
-            { email: data.email },
-            { username: data.username }
+                { email: data.email },
+                { username: data.username }
           ]
         }).session(session).lean();
         if (existingUser) {
@@ -125,8 +126,8 @@ export async function registerOwner(data) {
         // if user exists
         let existingUser = await User.findOne({
             $or: [
-            { email: data.email },
-            { username: data.username }
+                { email: data.email },
+                { username: data.username }
             ]
         }).session(session).lean();
         if (existingUser) {

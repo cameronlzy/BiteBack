@@ -200,6 +200,12 @@ describe('restaurant test', () => {
             .get(url);
         };
 
+        it('shoud return 400 if invalid request', async () => {
+            url = '/api/restaurants/discover?radius=500';
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
         it('should return only restaurants with Chinese cuisine and rating >= 2', async () => {
             url = `/api/restaurants/discover?cuisines=Chinese&minRating=2`;
             const res = await exec();
@@ -328,7 +334,7 @@ describe('restaurant test', () => {
 
             // create a reservation
             reservationDate = new Date('2025-05-17T11:00'); // UTC date
-            queryDateSG = DateTime.fromJSDate(reservationDate, { zone: 'utc' }).setZone('Asia/Singapore').toISODate(); // SG date
+            queryDateSG = encodeURIComponent(DateTime.fromJSDate(reservationDate, { zone: 'utc' }).setZone('Asia/Singapore').startOf('day').toISO());
             pax = 10;
             const reservation = new Reservation({
                 user: userId, restaurant: restaurantId,
@@ -364,7 +370,7 @@ describe('restaurant test', () => {
         });
 
         it('should return 200 if valid token, restaurant closed', async () => {
-            const sunday = DateTime.fromISO('2025-05-18').setZone('Asia/Singapore').toISODate();
+            const sunday = encodeURIComponent(DateTime.fromISO('2025-05-18').setZone('Asia/Singapore').startOf('day').toISO());
             url = `/api/restaurants/${restaurantId}/availability?date=${sunday}`;
             const res = await exec();
             expect(res.status).toBe(200);
@@ -583,7 +589,7 @@ describe('restaurant test', () => {
             await owner.save();
 
             // creating a restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
 
@@ -633,7 +639,7 @@ describe('restaurant test', () => {
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             restaurant.images = [
                 'https://res.cloudinary.com/drmcljacy/image/upload/v1749107618/biteback/restaurants/icpacpiowpwwvsvieec8.jpg', // image 1 (to be deleted)
                 'https://res.cloudinary.com/drmcljacy/image/upload/v1749118205/biteback/restaurants/uxtab5rmjomf57ouznni.jpg', // image 2
@@ -715,7 +721,7 @@ describe('restaurant test', () => {
             cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
 
@@ -760,10 +766,6 @@ describe('restaurant test', () => {
         let restaurantId;
         let token;
         let owner;
-        let email;
-        let username;
-        let password;
-        let role;
         let ownerProfile;
         let cookie;
 
@@ -772,20 +774,7 @@ describe('restaurant test', () => {
             await User.deleteMany({});
             await OwnerProfile.deleteMany({});
 
-            // create an owner
-            email = "myOwner@gmail.com";
-            username = "myOwner";
-            password = "myPassword@123";
-            role = "owner";
-            owner = await User({
-                email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
-            });
-            token = generateAuthToken(owner);
-            cookie = setTokenCookie(token);
-
-            // creating a restaurant
-            restaurant = createTestRestaurant(owner._id);
-            await restaurant.save();
+            owner = await createTestUser('owner');
 
             // creating an ownerProfile
             ownerProfile = createTestOwnerProfile(owner);
@@ -793,9 +782,11 @@ describe('restaurant test', () => {
 
             owner.profile = ownerProfile._id;
             await owner.save();
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
 
             // create restaurant
-            restaurant = createTestRestaurant(owner._id);
+            restaurant = createTestRestaurant(owner.profile);
             await restaurant.save();
             restaurantId = restaurant._id;
         });

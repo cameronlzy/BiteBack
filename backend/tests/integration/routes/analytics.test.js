@@ -1,18 +1,26 @@
-import mongoose from 'mongoose';
-import request from 'supertest';
-import { DateTime } from 'luxon';
-import { serverPromise } from '../../../index.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
-import { setTokenCookie } from '../../../helpers/cookie.helper.js';
-import { createTestUser } from '../../factories/user.factory.js';
-import { createTestRestaurant } from '../../factories/restaurant.factory.js';
-import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
-import { createTestAnalytics } from '../../factories/dailyAnalytics.factory.js';
-import User from '../../../models/user.model.js';
-import DailyAnalytics from '../../../models/dailyAnalytics.model.js';
-import Restaurant from '../../../models/restaurant.model.js';
-import OwnerProfile from '../../../models/ownerProfile.model.js';
-import { convertSGTOpeningHoursToUTC } from '../../../helpers/restaurant.helper.js';
+import { jest } from '@jest/globals';
+
+await jest.unstable_mockModule('../../../startup/redisClient.js', async () => {
+    const { getRedisClient } = await import('../../mocks/redisClientMock.js');
+    return { getRedisClient };
+});
+
+const mongoose = (await import('mongoose')).default;
+const request = (await import('supertest')).default;
+const { DateTime } = await import('luxon');
+const { serverPromise } = await import('../../../index.js');
+const { generateAuthToken } = await import('../../../helpers/token.helper.js');
+const { setTokenCookie } = await import('../../../helpers/cookie.helper.js');
+const { createTestUser } = await import('../../factories/user.factory.js');
+const { createTestRestaurant } = await import('../../factories/restaurant.factory.js');
+const { createTestOwnerProfile } = await import('../../factories/ownerProfile.factory.js');
+const { createTestAnalytics } = await import('../../factories/dailyAnalytics.factory.js');
+const User = (await import('../../../models/user.model.js')).default;
+const DailyAnalytics = (await import('../../../models/dailyAnalytics.model.js')).default;
+const Restaurant = (await import('../../../models/restaurant.model.js')).default;
+const OwnerProfile = (await import('../../../models/ownerProfile.model.js')).default;
+const { convertOpeningHoursToUTC } = await import('../../../helpers/restaurant.helper.js');
+const { getRedisClient } = await import('../../../startup/redisClient.js');
 
 describe('analytics test', () => {
     let server;
@@ -39,14 +47,14 @@ describe('analytics test', () => {
             await OwnerProfile.deleteMany({});
 
             user = await createTestUser('owner');
-            token = generateAuthToken(user);
-            cookie = setTokenCookie(token);
             profile = createTestOwnerProfile(user);
             user.profile = profile._id;
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
             await user.save();
             
-            restaurant = createTestRestaurant(user._id);
-            restaurant.openingHours = convertSGTOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
+            restaurant = createTestRestaurant(user.profile);
+            restaurant.openingHours = convertOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
             profile.restaurants = [restaurant._id];
 
             await profile.save();
@@ -85,13 +93,13 @@ describe('analytics test', () => {
             await OwnerProfile.deleteMany({});
 
             user = await createTestUser('owner');
-            token = generateAuthToken(user);
-            cookie = setTokenCookie(token);
             profile = createTestOwnerProfile(user);
             user.profile = profile._id;
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
             await user.save();
             
-            restaurant = createTestRestaurant(user._id);
+            restaurant = createTestRestaurant(user.profile);
             profile.restaurants = [restaurant._id];
 
             await profile.save();
@@ -109,7 +117,7 @@ describe('analytics test', () => {
             }
 
             await DailyAnalytics.insertMany(analyticsDocs);
-            date = DateTime.now().setZone('Asia/Singapore').startOf('day').minus({ days: 3 }).toISODate();
+            date = encodeURIComponent(DateTime.now().setZone('Asia/Singapore').startOf('day').minus({ days: 3 }).toISO());
             unit = 'week';
             amount = 3;
             url = `/api/analytics/restaurant/${restaurantId}/summary?unit=${unit}&amount=${amount}`;
@@ -128,7 +136,7 @@ describe('analytics test', () => {
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
 
-        it('should return 200 and a summary object for range query', async () => {
+        it('should return 200 and a summary object for date query', async () => {
             url = `/api/analytics/restaurant/${restaurantId}/summary?date=${date}`;
             const res = await exec();
             expect(res.status).toBe(200);
@@ -142,6 +150,7 @@ describe('analytics test', () => {
         let restaurant, restaurantId;
         let user, profile;
         let days;
+        let redisClient;
 
         beforeEach(async () => {
             await Restaurant.deleteMany({});
@@ -149,15 +158,18 @@ describe('analytics test', () => {
             await User.deleteMany({});
             await OwnerProfile.deleteMany({});
 
+            redisClient = await getRedisClient();
+            await redisClient.flushall();
+
             user = await createTestUser('owner');
-            token = generateAuthToken(user);
-            cookie = setTokenCookie(token);
             profile = createTestOwnerProfile(user);
             user.profile = profile._id;
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
             await user.save();
             
-            restaurant = createTestRestaurant(user._id);
-            restaurant.openingHours = convertSGTOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
+            restaurant = createTestRestaurant(user.profile);
+            restaurant.openingHours = convertOpeningHoursToUTC('09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00|09:00-19:00');
             profile.restaurants = [restaurant._id];
 
             await profile.save();
@@ -191,6 +203,30 @@ describe('analytics test', () => {
             res.body.entries.forEach(entry => {
                 expect(Object.keys(entry)).toEqual(expect.arrayContaining(requiredKeys));
             });
+        });
+
+        it('should cache the analytics result in Redis after first request', async () => {
+            const cacheKey = `analytics:trends:${restaurantId}:days:${days}`;
+            await redisClient.del(cacheKey);
+
+            const setSpy = jest.spyOn(redisClient, 'set');
+            const getSpy = jest.spyOn(redisClient, 'get');
+
+            const res1 = await exec();
+            expect(res1.status).toBe(200);
+
+            expect(setSpy).toHaveBeenCalledWith(
+                cacheKey,
+                expect.any(String),
+                { EX: expect.any(Number) }
+            );
+
+            const res2 = await exec();
+            expect(res2.status).toBe(200);
+            expect(getSpy).toHaveBeenCalledWith(expect.stringContaining(cacheKey));
+
+            setSpy.mockRestore();
+            getSpy.mockRestore();
         });
     });
 });

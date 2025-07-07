@@ -1,4 +1,9 @@
 import mongoose from 'mongoose';
+import { getRedisClient } from '../startup/redisClient.js';
+import logger from '../startup/logging.js';
+import { DateTime } from 'luxon';
+
+const DAYS_TO_CHECK = [1, 7, 30, 180];
 
 const dailyAnalyticsSchema = new mongoose.Schema({
   restaurant: {
@@ -51,6 +56,41 @@ const dailyAnalyticsSchema = new mongoose.Schema({
     },
   },
 }, { versionKey: false });
+
+async function clearCacheForRestaurant(restaurantId, daysArray) {
+  const redisClient = await getRedisClient();
+
+  for (const days of daysArray) {
+    const cacheKey = `analytics:trends:${restaurantId}:days:${days}`;
+    await redisClient.del(cacheKey);
+  }
+}
+
+dailyAnalyticsSchema.pre('save', function (next) {
+  this._wasNew = this.isNew;
+  next();
+});
+
+dailyAnalyticsSchema.post('save', async function (doc) {
+  try {
+    const now = DateTime.now().startOf('day');
+    const maxDays = Math.max(...DAYS_TO_CHECK);
+    const cutoff = now.minus({ days: maxDays });
+
+    const isRecent = DateTime.fromJSDate(doc.date).startOf('day') >= cutoff;
+
+    if (doc._wasNew || isRecent) {
+      await clearCacheForRestaurant(doc.restaurant, DAYS_TO_CHECK);
+    }
+  } catch (err) {
+    logger.error('Redis cache clearing failed in DailyAnalytics post-save hook', {
+      error: err,
+      restaurantId: doc.restaurant?.toString(),
+      analyticsDate: doc.date?.toISOString(),
+    });
+    console.error(err);
+  }
+});
 
 dailyAnalyticsSchema.index({ restaurant: 1 });
 dailyAnalyticsSchema.index({ date: 1 });

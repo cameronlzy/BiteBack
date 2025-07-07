@@ -11,24 +11,24 @@ import wrapRoutes from '../helpers/wrapRoutes.js';
 const router = wrapRoutes(express.Router());
 
 // [Staff] - Get reservations at restaurant for current timeslot
-router.get('/restaurant/:id', [validateObjectId, auth, isStaff, authorizedRestaurantStaff], reservationController.getReservationsByRestaurant);
+router.get('/restaurant/:id', [validateObjectId(), auth, isStaff, authorizedRestaurantStaff], reservationController.getReservationsByRestaurant);
 
 // [User] - Get all of user's reservations
-router.get('/', auth, reservationController.getUserReservations);
+router.get('/', [auth], reservationController.getUserReservations);
 
 // [User] - Get user's individual reservation
-router.get('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.getSingleReservation);
+router.get('/:id', [validateObjectId(), auth, authorizedReservationUser], reservationController.getSingleReservation);
 
 // [User] - Create reservation
-router.post('/', auth, reservationController.createReservation);
+router.post('/', [auth], reservationController.createReservation);
 
 // [Staff] - Update reservation status
-router.patch('/:id/status', [validateObjectId, auth, isStaff, authorizedReservationStaff], reservationController.updateReservationStatus);
+router.patch('/:id/status', [validateObjectId(), auth, isStaff, authorizedReservationStaff], reservationController.updateReservationStatus);
 
 // [User] - Update reservation
-router.patch('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.updateReservation);
+router.patch('/:id', [validateObjectId(), auth, authorizedReservationUser], reservationController.updateReservation);
 
 // [User] - Delete reservation
-router.delete('/:id', [validateObjectId, auth, authorizedReservationUser], reservationController.deleteReservation);
+router.delete('/:id', [validateObjectId(), auth, authorizedReservationUser], reservationController.deleteReservation);
 
 export default router;

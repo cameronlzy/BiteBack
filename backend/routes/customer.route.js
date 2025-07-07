@@ -11,7 +11,7 @@ const router = wrapRoutes(express.Router());
 router.get('/me', [auth, isCustomer], customerController.getMe);
 
 // [Public] - Get information for public profile page
-router.get('/:id', validateObjectId, customerController.publicProfile);
+router.get('/:id', [validateObjectId()], customerController.publicProfile);
 
 // [Customer] - Update customer information
 router.patch('/me', [auth, isCustomer], customerController.updateMe);

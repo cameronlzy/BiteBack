@@ -6,8 +6,9 @@ import { createTestUser } from '../../factories/user.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { serverPromise } from '../../../index.js';
+import { createTestReview } from '../../factories/review.factory.js';
 
-describe('review test', () => {
+describe('review service test', () => {
     let server;
     beforeAll(async () => {
         server = await serverPromise;
@@ -18,32 +19,16 @@ describe('review test', () => {
     });
 
     describe('getBadgesCount service test', () => {
-        let reviews;
-        let review1;
-        let review2;
+        let reviews, review1, review2;
 
         beforeEach(async () => {
             await Review.deleteMany({});
             await ReviewBadgeVote.deleteMany({});
 
             // create 2 reviews
-            review1 = new Review({
-                customer: new mongoose.Types.ObjectId(),
-                username: 'user1',
-                restaurant: new mongoose.Types.ObjectId(),
-                rating: 3, 
-                reviewText: 'Test',
-                dateVisited: Date.now(),
-            })
+            review1 = createTestReview();
             await review1.save();
-            review2 = new Review({
-                customer: new mongoose.Types.ObjectId(),
-                username: 'user2',
-                restaurant: new mongoose.Types.ObjectId(),
-                rating: 5, 
-                reviewText: 'Test',
-                dateVisited: Date.now(),
-            })
+            review2 = createTestReview();
             await review2.save();
             reviews = [review1.toObject(), review2.toObject()];
 
@@ -128,21 +113,21 @@ describe('review test', () => {
                     username: "username",
                     restaurant: restaurant1._id, 
                     rating: 5, reviewText: "test", 
-                    dateVisited: Date.now() 
+                    dateVisited: new Date()
                 },
                 { 
                     customer: new mongoose.Types.ObjectId(),
                     username: "username",
                     restaurant: restaurant1._id, 
                     rating: 3, reviewText: "test", 
-                    dateVisited: Date.now() 
+                    dateVisited: new Date()
                 },
                 { 
                     customer: new mongoose.Types.ObjectId(),
                     username: "username",
                     restaurant: restaurant2._id, 
                     rating: 3, reviewText: "test", 
-                    dateVisited: Date.now() 
+                    dateVisited: new Date() 
                 },
             ]);
         });

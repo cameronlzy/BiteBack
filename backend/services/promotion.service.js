@@ -89,7 +89,7 @@ export async function searchPromotions(filters) {
 }
 
 export async function getPromotionsByOwner(authUser) {
-    const restaurants = await Restaurant.find({ owner: authUser._id }).lean();
+    const restaurants = await Restaurant.find({ owner: authUser.profile }).lean();
     const restaurantIds = restaurants.map(r => r._id);
     const promotions = await Promotion.find({
         restaurant: { $in: restaurantIds }
@@ -98,26 +98,30 @@ export async function getPromotionsByOwner(authUser) {
 }
 
 export async function getPromotionById(promotionId) {
-    const promotion = await Promotion.findById(promotionId).populate('restaurant', 'name').lean();
+    const promotion = await Promotion.findById(promotionId).populate('restaurant', 'name owner').lean();
     if (!promotion) return error(404, 'Promotion not found');
-    if (promotion.endDate < new Date() || !promotion.isActive) return error(404, 'Promotion expired');
+    if (promotion.endDate < new Date()) return error(404, 'Promotion expired');
     return success(promotion);
 }
 
-export async function createPromotion(data) {
+export async function createPromotion(authUser, data) {
+    const restaurant = await Restaurant.findById(data.restaurant).select('timezone owner').lean();
+    if (!restaurant) return error(404, 'Restaurant not found');
+    if (restaurant.owner.toString() != authUser.profile) return error(403, 'Restaurant does not belong to owner');
+
     const promotion = new Promotion(_.pick(data, ['restaurant', 'title', 'description']));
-    promotion.startDate = DateTime.fromISO(data.startDate, { zone: 'Asia/Singapore' }).toUTC().toJSDate();
-    promotion.endDate = DateTime.fromISO(data.endDate, { zone: 'Asia/Singapore' }).toUTC().toJSDate();
+    promotion.startDate = DateTime.fromISO(data.startDate, { zone: restaurant.timezone }).toUTC().toJSDate();
+    promotion.endDate = DateTime.fromISO(data.endDate, { zone: restaurant.timezone }).toUTC().toJSDate();
     if (data.timeWindow) {
-        const todaySGT = DateTime.now().setZone('Asia/Singapore').toISODate();
+        const today = DateTime.now().setZone(restaurant.timezone).toISODate();
 
         if (data.timeWindow.startTime) {
-            const dtStart = DateTime.fromISO(`${todaySGT}T${data.timeWindow.startTime}`, { zone: 'Asia/Singapore' }).toUTC();
+            const dtStart = DateTime.fromISO(`${today}T${data.timeWindow.startTime}`, { zone: restaurant.timezone }).toUTC();
             data.timeWindow.startTime = dtStart.toFormat('HH:mm');
         }
 
         if (data.timeWindow.endTime) {
-            const dtEnd = DateTime.fromISO(`${todaySGT}T${data.timeWindow.endTime}`, { zone: 'Asia/Singapore' }).toUTC();
+            const dtEnd = DateTime.fromISO(`${today}T${data.timeWindow.endTime}`, { zone: restaurant.timezone }).toUTC();
             data.timeWindow.endTime = dtEnd.toFormat('HH:mm');
         }
         promotion.timeWindow = data.timeWindow;
@@ -127,26 +131,26 @@ export async function createPromotion(data) {
     return success(promotion.toObject());
 }
 
-export async function updatePromotion(promotion, update) {
-    if (promotion.endDate < Date.now()) {
+export async function updatePromotion(promotion, restaurant, update) {
+    if (promotion.endDate < new Date()) {
         return error(400, 'Promotion has expired');
     }
 
     for (const key in update) {
         if (key === 'startDate') {
-            promotion.startDate = DateTime.fromISO(update.startDate, { zone: 'Asia/Singapore' }).toUTC().toJSDate();
+            promotion.startDate = DateTime.fromISO(update.startDate, { zone: restaurant.timezone }).toUTC().toJSDate();
         } else if (key === 'endDate') {
-            promotion.endDate = DateTime.fromISO(update.endDate, { zone: 'Asia/Singapore' }).toUTC().toJSDate();
+            promotion.endDate = DateTime.fromISO(update.endDate, { zone: restaurant.timezone }).toUTC().toJSDate();
         } else if (key === 'timeWindow') {
-            const todaySGT = DateTime.now().setZone('Asia/Singapore').toISODate();
+            const today = DateTime.now().setZone(restaurant.timezone).toISODate();
 
             if (update.timeWindow.startTime) {
-                const dtStart = DateTime.fromISO(`${todaySGT}T${update.timeWindow.startTime}`, { zone: 'Asia/Singapore' }).toUTC();
+                const dtStart = DateTime.fromISO(`${today}T${update.timeWindow.startTime}`, { zone: restaurant.timezone }).toUTC();
                 update.timeWindow.startTime = dtStart.toFormat('HH:mm');
             }
 
             if (update.timeWindow.endTime) {
-                const dtEnd = DateTime.fromISO(`${todaySGT}T${update.timeWindow.endTime}`, { zone: 'Asia/Singapore' }).toUTC();
+                const dtEnd = DateTime.fromISO(`${today}T${update.timeWindow.endTime}`, { zone: restaurant.timezone }).toUTC();
                 update.timeWindow.endTime = dtEnd.toFormat('HH:mm');
             }
             promotion.timeWindow = update.timeWindow;
@@ -160,7 +164,7 @@ export async function updatePromotion(promotion, update) {
 }
 
 export async function deletePromotion(promotion) {
-    if (promotion.endDate < Date.now()) {
+    if (promotion.endDate < new Date()) {
         return error(400, 'Promotion has expired');
     }
 

@@ -36,7 +36,7 @@ export async function createPromotion(req, res) {
     const { error } = validatePromotion(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await promotionService.createPromotion(req.body);
+    const { status, body } = await promotionService.createPromotion(req.user, req.body);
     return res.status(status).json(body);
 }
 
@@ -90,7 +90,7 @@ export async function updatePromotion(req, res) {
     const { error } = validatePatch(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await promotionService.updatePromotion(req.promotion, req.body);
+    const { status, body } = await promotionService.updatePromotion(req.promotion, req.restaurant, req.body);
     return res.status(status).json(body);
 }
 
