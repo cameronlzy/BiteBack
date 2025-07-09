@@ -7,8 +7,8 @@ export async function getAllItems(restaurant, query) {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-        RewardItem.find({ restaurant, isDeleted: false }).skip(skip).limit(limit).lean(),
-        RewardItem.countDocuments({ restaurant, isDeleted: false }),
+        RewardItem.find({ restaurant }).skip(skip).limit(limit).lean(),
+        RewardItem.countDocuments({ restaurant }),
     ]);
 
     return success({
@@ -46,8 +46,7 @@ export async function updateItem(update, rewardItem) {
 }
 
 export async function deleteItem(rewardItem) {
-    rewardItem.isDeleted = true;
-    rewardItem.isActive = false;
-    await rewardItem.save();
-    return success(rewardItem.toObject());
+    const deletedItem = rewardItem.toObject();
+    await rewardItem.deleteOne();
+    return success(deletedItem);
 }

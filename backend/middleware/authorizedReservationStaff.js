@@ -6,7 +6,8 @@ export default async function (req, res, next) {
     if (!reservation) return res.status(404).json(wrapError('Reservation not found'));
     if (reservation.restaurant.staff.toString() !== req.user._id) return res.status(403).json(wrapError('Staff cannot manage reservation' ));
     
-    req.reservation = reservation;
     req.restaurant = reservation.restaurant;
+    reservation.restaurant = reservation.restaurant._id;
+    req.reservation = reservation;
     next();
 }

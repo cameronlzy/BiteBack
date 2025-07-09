@@ -55,7 +55,6 @@ const customerProfileSchema = new mongoose.Schema({
       }
     ]
   },
-  points: { type: Number, required: true, default: 0 },
   totalBadges: {
     type: [Number],
     required: true,

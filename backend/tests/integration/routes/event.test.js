@@ -1,0 +1,348 @@
+import Event from '../../../models/event.model.js';
+import { createTestUser } from '../../factories/user.factory.js';
+import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestEvent } from '../../factories/event.factory.js';
+import { createTestReservation } from '../../factories/reservation.factory.js';
+import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { setTokenCookie } from '../../../helpers/cookie.helper.js';
+import { serverPromise } from '../../../index.js';
+import request from 'supertest';
+import mongoose from 'mongoose';
+import { DateTime } from 'luxon';
+import Restaurant from '../../../models/restaurant.model.js';
+import Reservation from '../../../models/reservation.model.js';
+
+describe('event test', () => {
+    let server;
+    beforeAll(async () => {
+        server = await serverPromise;
+    });
+
+    afterAll(async () => {
+        await mongoose.connection.close();
+        await server.close();
+    });
+
+    describe('GET /api/events', () => {
+        let event;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+
+            event = createTestEvent();
+            await event.save();
+            event = createTestEvent();
+            await event.save();
+            // past event
+            event = createTestEvent({ 
+                startDate: DateTime.now().minus({ weeks: 2 }).toJSDate(), 
+                endDate: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+            });
+            await event.save();
+        });
+
+        const exec = () => {
+            return request(server)
+                .get('/api/events');
+        };
+        
+        it('should return 200 and all events', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            res.body.events.forEach(event => {    
+                const requiredKeys = [
+                    'restaurant',
+                    'title',
+                    'description',
+                    'startDate',
+                    'endDate',
+                    'paxLimit',
+                    'status',
+                    'remarks',
+                    'reservedPax'
+                ];
+                expect(Object.keys(event)).toEqual(expect.arrayContaining(requiredKeys));
+            });
+            expect(res.body.events.length).toBe(2);
+        });
+    });
+
+    describe('GET /api/events/restaurant/:id', () => {
+        let event, restaurant;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+
+            restaurant = new mongoose.Types.ObjectId();
+
+            event = createTestEvent({ restaurant });
+            await event.save();
+            event = createTestEvent({ restaurant });
+            await event.save();
+            // past event not belonging to restaurant
+            event = createTestEvent({ 
+                startDate: DateTime.now().minus({ weeks: 2 }).toJSDate(), 
+                endDate: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+            });
+            await event.save();
+            // past event belonging to restaurant
+            event = createTestEvent({ 
+                restaurant,
+                startDate: DateTime.now().minus({ weeks: 2 }).toJSDate(), 
+                endDate: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+            });
+        });
+
+        const exec = () => {
+            return request(server)
+                .get(`/api/events/restaurant/${restaurant}`);
+        };
+        
+        it('should return 200 and all events belonging to restaurant', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            res.body.events.forEach(event => {    
+                const requiredKeys = [
+                    'restaurant',
+                    'title',
+                    'description',
+                    'startDate',
+                    'endDate',
+                    'paxLimit',
+                    'status',
+                    'remarks',
+                    'reservedPax'
+                ];
+                expect(Object.keys(event)).toEqual(expect.arrayContaining(requiredKeys));
+            });
+            expect(res.body.events.length).toBe(2);
+        });
+    });
+
+    describe('GET /api/events/:id', () => {
+        let event, eventId;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+
+            event = createTestEvent();
+            await event.save();
+            eventId = event._id;
+        });
+
+        const exec = () => {
+            return request(server)
+                .get(`/api/events/${eventId}`);
+        };
+
+        it('should return 404 if no event with ID', async () => {
+            eventId = new mongoose.Types.ObjectId();
+            const res = await exec();
+            expect(res.status).toBe(404);  
+        });
+
+        it('should return 404 if past event', async () => {
+            event = createTestEvent({ 
+                startDate: DateTime.now().minus({ weeks: 2 }).toJSDate(), 
+                endDate: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+            });
+            await event.save();
+            eventId = event._id;
+            const res = await exec();
+            expect(res.status).toBe(404);  
+        });
+        
+        it('should return 200 and event', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);  
+            const requiredKeys = [
+                'restaurant',
+                'title',
+                'description',
+                'startDate',
+                'endDate',
+                'paxLimit',
+                'status',
+                'remarks',
+                'reservedPax'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/events', () => {
+        let event, restaurant;
+        let user, token, cookie;
+        let title, description, startDate, endDate, paxLimit, remarks;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            user = await createTestUser('owner');
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            event = createTestEvent({ restaurant: restaurant._id });
+            title = event.title;
+            description = event.description;
+            startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
+            endDate = event.endDate;;
+            paxLimit = event.paxLimit;
+            remarks = event.remarks;
+        });
+
+        const exec = () => {
+            return request(server)
+                .post('/api/events')
+                .set('Cookie', [cookie])
+                .send({
+                    restaurant: restaurant._id, title, description, startDate, endDate, paxLimit, remarks
+                });
+        };
+        
+        it('should return 200 and event', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);  
+            const requiredKeys = [
+                'restaurant',
+                'title',
+                'description',
+                'startDate',
+                'endDate',
+                'paxLimit',
+                'status',
+                'remarks'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('PATCH /api/events/:id', () => {
+        let event, eventId;
+        let restaurant;
+        let user, token, cookie;
+        let newStartDate, newPaxLimit;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+            await Restaurant.deleteMany({});
+            await Reservation.deleteMany({});
+
+            user = await createTestUser('owner');
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            event = createTestEvent({ restaurant: restaurant._id, startDate: DateTime.now().plus({ days: 1 }).toJSDate() });
+            await event.save();
+            eventId = event._id;
+            newStartDate = DateTime.now().plus({ days: 1, minutes: 20 }).setZone('Asia/Singapore').toISO();
+            newPaxLimit = 10;
+        });
+
+        const exec = () => {
+            return request(server)
+                .patch(`/api/events/${eventId}`)
+                .set('Cookie', [cookie])
+                .send({
+                    startDate: newStartDate, paxLimit: newPaxLimit
+                });
+        };
+
+        it('should return 400 if trying to change startDate when event has started', async () => {
+            event.startDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            await event.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if paxLimit is reduced below existing reservations', async () => {
+            newPaxLimit = 1;
+            let reservation = createTestReservation({ event: eventId });
+            await reservation.save();
+            reservation = createTestReservation({ event: eventId });
+            await reservation.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+        
+        it('should return 200 and event', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);  
+            const requiredKeys = [
+                'restaurant',
+                'title',
+                'description',
+                'startDate',
+                'endDate',
+                'paxLimit',
+                'status',
+                'remarks'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('DELETE /api/events/:id', () => {
+        let event, eventId;
+        let restaurant;
+        let user, token, cookie;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+            await Restaurant.deleteMany({});
+            await Reservation.deleteMany({});
+
+            user = await createTestUser('owner');
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            event = createTestEvent({ restaurant: restaurant._id, startDate: DateTime.now().plus({ days: 1 }).toJSDate() });
+            event.startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
+            await event.save();
+            eventId = event._id;
+        });
+
+        const exec = () => {
+            return request(server)
+                .delete(`/api/events/${eventId}`)
+                .set('Cookie', [cookie])
+        };
+
+        it('should return 400 if event has started', async () => {
+            event.startDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            await event.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if event has ended', async () => {
+            event.endDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            await event.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+        
+        it('should return 200 and event', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);  
+            const requiredKeys = [
+                'restaurant',
+                'title',
+                'description',
+                'startDate',
+                'endDate',
+                'paxLimit',
+                'status',
+                'remarks'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+});

@@ -138,6 +138,9 @@ export async function updatePromotion(promotion, restaurant, update) {
 
     for (const key in update) {
         if (key === 'startDate') {
+            if (promotion.startDate < new Date()) {
+                return error(400, 'Promotion has already started');
+            }
             promotion.startDate = DateTime.fromISO(update.startDate, { zone: restaurant.timezone }).toUTC().toJSDate();
         } else if (key === 'endDate') {
             promotion.endDate = DateTime.fromISO(update.endDate, { zone: restaurant.timezone }).toUTC().toJSDate();
@@ -164,6 +167,9 @@ export async function updatePromotion(promotion, restaurant, update) {
 }
 
 export async function deletePromotion(promotion) {
+    if (promotion.startDate < new Date()) {
+        return error(400, 'Promotion has started');
+    }
     if (promotion.endDate < new Date()) {
         return error(400, 'Promotion has expired');
     }

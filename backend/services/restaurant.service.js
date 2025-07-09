@@ -274,7 +274,7 @@ export async function deleteRestaurant(restaurant, authUser) {
   });
 }
 
-// utility services
+// helper services
 export async function createRestaurantHelper(authUser, data, session = undefined) {
   // get longitude and latitude
   const fullAddress = data.address.replace(/S(\d{6})$/i, 'Singapore $1');

@@ -8,7 +8,6 @@ import { adjustPoints } from './rewardPoint.service.js';
 import { error, success } from '../helpers/response.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
-// needs changes
 export async function getReservationsByRestaurant(restaurant) {
     const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
     if (!timeSlotStartUTC) return success([]);
@@ -19,16 +18,6 @@ export async function getReservationsByRestaurant(restaurant) {
             $lte: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate()
         }
     }).populate('customer', 'name contactNumber').lean();
-
-    // const mappedReservations = reservations.map(reservation => {
-    //     return {
-    //         ...reservation,
-    //         customer: {
-    //             name: reservation.user?.profile?.name,
-    //             contactNumber: reservation.user?.profile?.contactNumber
-    //         }
-    //     };
-    // });
     return success(reservations);
 }
 

@@ -430,7 +430,7 @@ describe('promotion test', () => {
 
     describe('PATCH /api/promotions/:id', () => {
         let user, token, cookie;
-        let restaurant, title;
+        let restaurant, title, newStartDate;
         let promotion, promotionId;
 
         beforeEach(async () => {
@@ -449,10 +449,12 @@ describe('promotion test', () => {
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);
+            promotion.startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
             await promotion.save();
             promotionId = promotion._id;
 
-            title = 'newTitle';         
+            title = 'newTitle';
+            newStartDate = DateTime.now().plus({ days: 2 }).toJSDate();  
         });
 
         const exec = () => {
@@ -460,7 +462,7 @@ describe('promotion test', () => {
             .patch(`/api/promotions/${promotionId}`)
             .set('Cookie', [cookie])
             .send({
-                title
+                title, startDate: newStartDate
             });
         };
 
@@ -470,15 +472,19 @@ describe('promotion test', () => {
             expect(res.status).toBe(400);
         });
 
-        it('should return 400 if promotion has expired', async () => {
-            promotion = createTestPromotion(restaurant._id);
-            promotion.endDate = DateTime.now().minus({ days: 5 }).toJSDate();
+        it('should return 400 if promotion has started', async () => {
+            promotion.startDate = DateTime.now().minus({ hours: 1 }).toJSDate();
             await promotion.save();
-            promotionId = promotion._id;
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
+        it('should return 400 if promotion has expired', async () => {
+            promotion.endDate = DateTime.now().minus({ days: 5 }).toJSDate();
+            await promotion.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
 
         it('should return 200 and promotion object with required properties', async () => {
             const res = await exec();
@@ -511,6 +517,7 @@ describe('promotion test', () => {
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);
+            promotion.startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
             await promotion.save();
             promotionId = promotion._id;      
         });
@@ -520,6 +527,20 @@ describe('promotion test', () => {
             .delete(`/api/promotions/${promotionId}`)
             .set('Cookie', [cookie]);
         };
+
+        it('should return 400 if promotion has started', async () => {
+            promotion.startDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            await promotion.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if promotion has expired', async () => {
+            promotion.endDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            await promotion.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
 
         it('should return 200 and promotion object with required properties', async () => {
             const res = await exec();

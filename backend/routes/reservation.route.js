@@ -14,22 +14,22 @@ const router = wrapRoutes(express.Router());
 // [Staff] - Get reservations at restaurant for current timeslot
 router.get('/restaurant/:id', [validateObjectId(), auth, isStaff, authorizedRestaurantStaff], reservationController.getReservationsByRestaurant);
 
-// [User] - Get all of user's reservations
+// [Customer] - Get all of customer's reservations
 router.get('/', [auth], reservationController.getUserReservations);
 
-// [User] - Get user's individual reservation
+// [Customer] - Get customer's individual reservation
 router.get('/:id', [validateObjectId(), auth, authorizedReservationCustomer], reservationController.getSingleReservation);
 
-// [User] - Create reservation
+// [Customer] - Create reservation
 router.post('/', [auth, isCustomer], reservationController.createReservation);
 
 // [Staff] - Update reservation status
 router.patch('/:id/status', [validateObjectId(), auth, isStaff, authorizedReservationStaff], reservationController.updateReservationStatus);
 
-// [User] - Update reservation
+// [Customer] - Update reservation
 router.patch('/:id', [validateObjectId(), auth, authorizedReservationCustomer], reservationController.updateReservation);
 
-// [User] - Delete reservation
+// [Customer] - Delete reservation
 router.delete('/:id', [validateObjectId(), auth, authorizedReservationCustomer], reservationController.deleteReservation);
 
 export default router;
