@@ -9,6 +9,8 @@ const eventSchema = new mongoose.Schema({
     paxLimit: { type: Number, required: true },
     maxPaxPerCustomer: { type: Number, default: 1 },
     status: { type: String, enum: ['scheduled', 'cancelled', 'completed'], default: 'scheduled' },
+    mainImage: { type: String },
+    bannerImage: { type: String },
     remarks: {
         type: String,
         default: "",

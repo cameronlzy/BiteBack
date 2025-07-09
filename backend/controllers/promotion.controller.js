@@ -1,5 +1,5 @@
 import * as promotionService from '../services/promotion.service.js';
-import * as imageService from '../services/image.service.js';
+import { addImage, deleteImagesFromDocument } from '../services/image.service.js';
 import Promotion from '../models/promotion.model.js';
 import { validatePromotion, validateSearch, validatePatch } from '../validators/promotion.validator.js';
 import { wrapError } from '../helpers/response.js';
@@ -49,8 +49,8 @@ export async function addPromotionImages(req, res) {
     }
     
     const [mainResult, bannerResult] = await Promise.all([
-        imageService.addImage(Promotion, req.promotion._id, mainImage, 'mainImage'),
-        imageService.addImage(Promotion, req.promotion._id, bannerImage, 'bannerImage'),
+        addImage(Promotion, req.promotion._id, mainImage, 'mainImage'),
+        addImage(Promotion, req.promotion._id, bannerImage, 'bannerImage'),
     ]);
 
     const failed = [mainResult, bannerResult].find(res => res?.status !== 200);
@@ -68,13 +68,20 @@ export async function updatePromotionImages(req, res) {
 
     if (!mainImage && !bannerImage) return res.status(400).json(wrapError('Please provide at least one image'));
 
-    const updateOps = {};
-    if (mainImage) updateOps.mainImage = mainImage;
-    if (bannerImage) updateOps.bannerImage = bannerImage;
+    const promotion = req.promotion;
+
+    const deleteOldImages = [];
+    if (mainImage && promotion.mainImage) {
+        deleteOldImages.push(deleteImagesFromDocument(promotion, 'mainImage'));
+    }
+    if (bannerImage && promotion.bannerImage) {
+        deleteOldImages.push(deleteImagesFromDocument(promotion, 'bannerImage'));
+    }
+    await Promise.all(deleteOldImages);
 
     const [mainResult, bannerResult] = await Promise.all([
-      mainImage ? imageService.addImage(Promotion, req.promotion._id, mainImage, 'mainImage') : Promise.resolve(null),
-      bannerImage ? imageService.addImage(Promotion, req.promotion._id, bannerImage, 'bannerImage') : Promise.resolve(null)
+        mainImage ? addImage(Promotion, promotion._id, mainImage, 'mainImage') : Promise.resolve(null),
+        bannerImage ? addImage(Promotion, promotion._id, bannerImage, 'bannerImage') : Promise.resolve(null)
     ]);
 
     const failed = [mainResult, bannerResult].find(res => res?.status !== 200);

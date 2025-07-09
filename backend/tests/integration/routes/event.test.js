@@ -1,4 +1,12 @@
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import request from 'supertest';
+import mongoose from 'mongoose';
+import { DateTime } from 'luxon';
+import Restaurant from '../../../models/restaurant.model.js';
+import Reservation from '../../../models/reservation.model.js';
 import Event from '../../../models/event.model.js';
+import User from '../../../models/user.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestEvent } from '../../factories/event.factory.js';
@@ -6,11 +14,9 @@ import { createTestReservation } from '../../factories/reservation.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
-import request from 'supertest';
-import mongoose from 'mongoose';
-import { DateTime } from 'luxon';
-import Restaurant from '../../../models/restaurant.model.js';
-import Reservation from '../../../models/reservation.model.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('event test', () => {
     let server;
@@ -217,6 +223,125 @@ describe('event test', () => {
                 'remarks'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/events/:id/images', () => {
+        let user, token, cookie;
+        let event, eventId;
+        let filePath;
+        let restaurant;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+            await User.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
+
+            // create event
+            event = createTestEvent({ restaurant: restaurant._id });
+            await event.save();
+            eventId = event._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .post(`/api/events/${eventId}/images`)
+            .set('Cookie', [cookie])
+            .attach('mainImage', filePath)
+            .attach('bannerImage', filePath);
+        };
+
+        it('should return 403 if event does not belong to user', async () => {
+            let otherUser = await createTestUser('owner');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await request(server)
+                .post(`/api/events/${eventId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(403);
+        });
+
+        // skip to avoid sending test images to cloudinary
+        it.skip('should return 200 if valid request', async () => { 
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('mainImage');
+            expect(res.body).toHaveProperty('bannerImage');
+
+            expect(typeof res.body.mainImage).toBe('string');
+            expect(typeof res.body.bannerImage).toBe('string');
+
+            const urlRegex = /^https?:\/\/.+|^\/.+/;
+            expect(res.body.mainImage).toMatch(urlRegex);
+            expect(res.body.bannerImage).toMatch(urlRegex);
+        });
+    });
+
+    describe('PATCH /api/events/:id/images', () => {
+        let user, token, cookie;
+        let event, eventId;
+        let filePath;
+        let restaurant;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+            await User.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
+
+            // create event
+            event = createTestEvent({ restaurant: restaurant._id });
+            await event.save();
+            eventId = event._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .patch(`/api/events/${eventId}/images`)
+            .set('Cookie', [cookie])
+            .attach('mainImage', filePath)
+        };
+
+        it('should return 400 if no images attached', async () => {
+            const res = await request(server)
+                .patch(`/api/events/${eventId}/images`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(400);
+        });
+
+        // skip to avoid sending test images to cloudinary
+        it.skip('should return 200 if valid request', async () => { 
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('mainImage');
+
+            expect(typeof res.body.mainImage).toBe('string');
+
+            const urlRegex = /^https?:\/\/.+|^\/.+/;
+            expect(res.body.mainImage).toMatch(urlRegex);
         });
     });
 
