@@ -15,7 +15,7 @@ export async function generateAnalytics(restaurant, session) {
         {
         $match: {
                 restaurant: restaurantId,
-                reservationDate: { $gte: todayUTC, $lt: tomorrowUTC }
+                startDate: { $gte: todayUTC, $lt: tomorrowUTC }
             }
         },
         {
@@ -130,9 +130,9 @@ export async function generateAnalytics(restaurant, session) {
 
         const attendedReservations = await Reservation.find({
             restaurant: restaurantId,
-            reservationDate: { $gte: todayUTC, $lt: tomorrowUTC },
+            startDate: { $gte: todayUTC, $lt: tomorrowUTC },
             status: { $in: ['completed', 'event'] }
-        }).select('reservationDate').session(session);
+        }).select('startDate').session(session);
 
         const seatedQueues = await QueueEntry.find({
             restaurant: restaurantId,
@@ -141,7 +141,7 @@ export async function generateAnalytics(restaurant, session) {
         }).select('statusTimestamps.waiting').session(session);
 
         for (const res of attendedReservations) {
-            let i = Math.abs(DateTime.fromJSDate(res.reservationDate, { zone: 'utc' }).hour - oh);
+            let i = Math.abs(DateTime.fromJSDate(res.startDate, { zone: 'utc' }).hour - oh);
             if (i >= 0 && i < loadArray.length) loadArray[i]++;
         }
 

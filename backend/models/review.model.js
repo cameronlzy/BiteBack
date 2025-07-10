@@ -20,7 +20,7 @@ const reviewSchema = new mongoose.Schema({
     reviewText: {
         type: String,
         maxlength: 1000,
-        default: ''
+        default: undefined,
     },
     dateVisited: {
         type: Date, required: true

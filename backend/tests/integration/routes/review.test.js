@@ -135,7 +135,6 @@ describe('review test', () => {
             res.body.forEach(review => {    
                 expect(review).toHaveProperty('username');
                 expect(review).toHaveProperty('rating');
-                expect(review).toHaveProperty('reviewText');
                 expect(review).toHaveProperty('dateVisited');
                 expect(review).toHaveProperty('createdAt');
                 expect(review).toHaveProperty('badgesCount');
@@ -189,7 +188,6 @@ describe('review test', () => {
             res.body.forEach(review => {    
                 expect(review).toHaveProperty('username');
                 expect(review).toHaveProperty('rating');
-                expect(review).toHaveProperty('reviewText');
                 expect(review).toHaveProperty('dateVisited');
                 expect(review).toHaveProperty('createdAt');
                 expect(review).toHaveProperty('badgesCount');
@@ -252,7 +250,7 @@ describe('review test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'username', 'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -317,7 +315,7 @@ describe('review test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'username', 'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -395,7 +393,7 @@ describe('review test', () => {
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'username', 'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -628,7 +626,7 @@ describe('review test', () => {
             expect(res.status).toBe(200);
 
             const requiredKeys = [
-                'rating', 'reviewText', 'dateVisited',
+                'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -703,7 +701,7 @@ describe('review test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'rating', 'reviewText', 'dateVisited',
+                'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));

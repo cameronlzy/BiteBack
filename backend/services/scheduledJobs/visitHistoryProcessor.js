@@ -13,7 +13,7 @@ export async function processVisitHistory(restaurant, session) {
     // get fulfilled reservations for today
     const reservations = await Reservation.find({
         restaurant: restaurant._id,
-        reservationDate: { $gte: todayUTC, $lt: tomorrowUTC },
+        startDate: { $gte: todayUTC, $lt: tomorrowUTC },
         status: 'completed'
     }).populate('user').session(session);
 
@@ -28,7 +28,7 @@ export async function processVisitHistory(restaurant, session) {
     const allVisits = [
         ...reservations.map(r => ({
             customer: r.user.profile.toString(),
-            visitDate: new Date(Math.floor(r.reservationDate.getTime() / 1000) * 1000)
+            visitDate: new Date(Math.floor(r.startDate.getTime() / 1000) * 1000)
         })),
         ...queueEntries.map(q => ({
             customer: q.customer.toString(),

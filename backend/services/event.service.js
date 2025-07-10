@@ -83,7 +83,33 @@ export async function updateEvent(event, restaurant, update) {
             const booked = await getBookedPaxForEvent(event._id);
             if (update[key] < booked) {
                 return error(400, 'Pax limit must be greater than exisiting reservations');
+            } 
+            event[key] = update[key];
+        } else if (key === 'status') {
+            const newStatus = update[key];
+
+            if (event.startDate <= new Date()) {
+                return error(400, 'Cannot change status after event has started');
             }
+
+            if (newStatus === 'cancelled') {
+                await Reservation.updateMany(
+                    { event: event._id },
+                    { $set: { status: 'cancelled' } }
+                );
+            }
+
+            if (newStatus === 'scheduled') {
+                await Reservation.updateMany(
+                    {
+                        event: event._id,
+                        status: 'cancelled',
+                    },
+                    { $set: { status: 'booked' } }
+                );
+            }
+
+            event.status = newStatus;
         } else if (update[key] !== undefined) {
             event[key] = update[key];
         }

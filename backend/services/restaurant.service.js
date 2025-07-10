@@ -6,10 +6,13 @@ import Review from '../models/review.model.js';
 import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import Promotion from '../models/promotion.model.js';
 import Staff from '../models/staff.model.js';
+import VisitHistory from '../models/visitHistory.model.js';
 import { DateTime } from 'luxon';
+import mongoose from 'mongoose';
 import * as reservationService from '../services/reservation.service.js';
 import { createSlots, convertOpeningHoursToUTC, filterOpenRestaurants } from '../helpers/restaurant.helper.js';
 import { generateStaffUsername, generateStaffHashedPassword } from '../helpers/staff.helper.js';
+import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
 import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.service.js';
@@ -158,7 +161,7 @@ export async function getAvailability(restaurantId, query) {
   if (!restaurant) return error(404, 'Restaurant not found');
 
   // get reservations on query date
-  const reservations = await reservationService.getReservationsByRestaurantByDate(restaurant._id, query.date);
+  const reservations = await reservationService.getReservationsByRestaurantByDate(restaurant, query.date);
 
   // create time slots
   const date = DateTime.fromISO(query.date, { zone: restaurant.timezone });
@@ -168,15 +171,63 @@ export async function getAvailability(restaurantId, query) {
   // calculate availability for each slot
   const availabilityMap = {};
   timeSlots.forEach(slot => availabilityMap[slot] = restaurant.maxCapacity);
-  reservations.forEach(({ reservationDate, pax }) => {
-    const slotTime = DateTime.fromJSDate(reservationDate).toUTC().toFormat('HH:mm');
-    if (availabilityMap[slotTime]) availabilityMap[slotTime] -= pax;
+  reservations.forEach(({ startDate, endDate, pax }) => {
+    const start = DateTime.fromJSDate(startDate);
+    const end = DateTime.fromJSDate(endDate);
+
+    for (let dt = start; dt < end; dt = dt.plus({ hours: 1 })) {
+      const slotTime = dt.toFormat('HH:mm');
+      if (availabilityMap[slotTime] !== undefined) {
+        availabilityMap[slotTime] -= pax;
+      }
+    }
   });
 
   return success(timeSlots.map(slot => ({
     time: slot,
     available: Math.max(0, availabilityMap[slot])
   })));
+}
+
+export async function getVisitCount(authUser, restaurant) {
+  const result = await VisitHistory.aggregate([
+    {
+      $match: {
+        customer: new mongoose.Types.ObjectId(authUser.profile),
+        restaurant: new mongoose.Types.ObjectId(restaurant),
+      }
+    },
+    {
+      $project: {
+        visitCount: { $size: '$visits' }
+      }
+    }
+  ]);
+
+  const visitCount = result[0]?.visitCount ?? 0;
+  return success({ visitCount });
+}
+
+export async function getReservationsByRestaurant(restaurant, query) {
+    const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
+    if (!timeSlotStartUTC) return success([]);
+
+    const baseFilter = {
+        restaurant: restaurant._id,
+        startDate: { $lt: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate() },
+        endDate: { $gt: timeSlotStartUTC.toJSDate() }
+    };
+
+    if (query.event === 'true') {
+        baseFilter.event = { $ne: undefined };
+    }
+
+    const reservations = await Reservation.find(baseFilter)
+        .populate('customer', 'name contactNumber')
+        .populate('event', '_id title')
+        .lean();
+
+    return success(reservations);
 }
 
 export async function createRestaurant(authUser, data) {

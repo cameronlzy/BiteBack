@@ -11,19 +11,21 @@ const reservationSchema = new mongoose.Schema({
         ref: 'Restaurant',
         required: true,
     },
-    reservationDate: {
+    startDate: {
+        type: Date,
+        required: true
+    },
+    endDate: {
         type: Date,
         required: true
     },
     remarks: {
         type: String,
-        default: "",
+        default: undefined,
         validate: {
             validator: function (value) {
+                if (value == null) return true;
                 if (typeof value !== 'string') return false;
-
-                // Allow empty string
-                if (value.trim() === '') return true;
 
                 // Count words
                 const wordCount = value.trim().split(/\s+/).length;
@@ -33,11 +35,12 @@ const reservationSchema = new mongoose.Schema({
         }
     },
     pax: { type: Number, required: true },
-    status: { type: String, enum: ['booked', 'no-show', 'completed'], default: 'booked' },
+    status: { type: String, enum: ['booked', 'no-show', 'cancelled', 'completed'], default: 'booked' },
     event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: undefined },
 }, { versionKey: false });
 
-reservationSchema.index({ user: 1 });
+reservationSchema.index({ customer: 1 });
+reservationSchema.index({ customer: 1, startDate: 1 });
 reservationSchema.index({ restaurant: 1 });
 
 const Reservation = mongoose.model('Reservation', reservationSchema);

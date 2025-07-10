@@ -7,6 +7,6 @@ export async function cleanupPastReservations(restaurant, session) {
 
     await Reservation.deleteMany({
         restaurant: restaurant._id,
-        reservationDate: { $lt: nowUTC }
+        startDate: { $lt: nowUTC }
     }).session(session);
 }

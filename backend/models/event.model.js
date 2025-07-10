@@ -8,18 +8,17 @@ const eventSchema = new mongoose.Schema({
     endDate: { type: Date, required: true },
     paxLimit: { type: Number, required: true },
     maxPaxPerCustomer: { type: Number, default: 1 },
+    minVisits: { type: Number, default: 0 },
     status: { type: String, enum: ['scheduled', 'cancelled', 'completed'], default: 'scheduled' },
     mainImage: { type: String },
     bannerImage: { type: String },
     remarks: {
         type: String,
-        default: "",
+        default: undefined,
         validate: {
             validator: function (value) {
+                if (value == null) return true;
                 if (typeof value !== 'string') return false;
-
-                // Allow empty string
-                if (value.trim() === '') return true;
 
                 // Count words
                 const wordCount = value.trim().split(/\s+/).length;

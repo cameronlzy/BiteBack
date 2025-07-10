@@ -7,13 +7,15 @@ export function createTestReservation({
     restaurant = new mongoose.Types.ObjectId(), 
     event = undefined,
 } = {}) {
-    const reservationDate = DateTime.now().plus({ days: 3 }).toJSDate();
+    const startDate = DateTime.now().plus({ days: 3 }).toJSDate();
+    const endDate = DateTime.fromJSDate(startDate).plus({ hours: 1 }).toJSDate();
     const pax = 3;
 
     const reservation = new Reservation({
         customer,
         restaurant,
-        reservationDate,
+        startDate,
+        endDate,
         pax,
         event,
     });

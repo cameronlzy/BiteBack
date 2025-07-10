@@ -64,7 +64,6 @@ describe('event test', () => {
                     'endDate',
                     'paxLimit',
                     'status',
-                    'remarks',
                     'reservedPax'
                 ];
                 expect(Object.keys(event)).toEqual(expect.arrayContaining(requiredKeys));
@@ -116,7 +115,6 @@ describe('event test', () => {
                     'endDate',
                     'paxLimit',
                     'status',
-                    'remarks',
                     'reservedPax'
                 ];
                 expect(Object.keys(event)).toEqual(expect.arrayContaining(requiredKeys));
@@ -169,7 +167,6 @@ describe('event test', () => {
                 'endDate',
                 'paxLimit',
                 'status',
-                'remarks',
                 'reservedPax'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -219,8 +216,7 @@ describe('event test', () => {
                 'startDate',
                 'endDate',
                 'paxLimit',
-                'status',
-                'remarks'
+                'status'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -405,8 +401,7 @@ describe('event test', () => {
                 'startDate',
                 'endDate',
                 'paxLimit',
-                'status',
-                'remarks'
+                'status'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -464,8 +459,7 @@ describe('event test', () => {
                 'startDate',
                 'endDate',
                 'paxLimit',
-                'status',
-                'remarks'
+                'status'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });

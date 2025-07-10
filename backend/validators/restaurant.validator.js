@@ -153,3 +153,10 @@ export function validateSearch(filters) {
   });
   return schema.validate(filters);
 }
+
+export function validateEventQuery(query) {
+  const schema = Joi.object({
+    event: Joi.boolean()
+  });
+  return schema.validate(query);
+}

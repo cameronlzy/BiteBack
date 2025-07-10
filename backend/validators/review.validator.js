@@ -5,7 +5,7 @@ export function validateReview(review) {
     const schema = Joi.object({
         restaurant: Joi.objectId().required(),
         rating: Joi.number().integer().min(0).max(5).required(),
-        reviewText: Joi.string().allow('').min(0).max(1000).required(),
+        reviewText: Joi.string().min(0).max(1000),
         dateVisited: dateFullOnly.required()
     });
     return schema.validate(review);

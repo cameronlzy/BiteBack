@@ -1,7 +1,7 @@
 import * as restaurantService from '../services/restaurant.service.js';
 import * as imageService from '../services/image.service.js';
 import Restaurant from '../models/restaurant.model.js';
-import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch } from '../validators/restaurant.validator.js';
+import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch, validateEventQuery } from '../validators/restaurant.validator.js';
 import Joi from 'joi';
 import { dateFullOnly } from '../helpers/time.helper.js';
 import { wrapError } from '../helpers/response.js';
@@ -67,6 +67,19 @@ export async function getAvailability(req, res) {
 
     const data = await restaurantService.getAvailability(req.params.id, req.query);
     return res.status(data.status).json(data.body);
+};
+
+export async function getVisitCount(req, res) {
+    const data = await restaurantService.getVisitCount(req.user, req.params.id);
+    return res.status(data.status).json(data.body);
+};
+
+export async function getReservationsByRestaurant(req, res) {
+  const { error } = validateEventQuery(req.query);
+  if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+  const { status, body } = await restaurantService.getReservationsByRestaurant(req.restaurant, req.query);
+  return res.status(status).json(body);
 };
 
 export async function createRestaurant(req, res) {

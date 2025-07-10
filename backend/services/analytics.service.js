@@ -32,7 +32,7 @@ export async function getSnapshot(restaurant) {
         {
             $match: {
                 restaurant: restaurant._id,
-                reservationDate: { $gte: todayUTC, $lt: tomorrowUTC }
+                startDate: { $gte: todayUTC, $lt: tomorrowUTC }
             }
         },
         {
@@ -41,7 +41,7 @@ export async function getSnapshot(restaurant) {
                 total: { $sum: 1 },
                 upcoming: {
                     $sum: {
-                        $cond: [{ $gt: ['$reservationDate', nowUTC] }, 1, 0]
+                        $cond: [{ $gt: ['$startDate', nowUTC] }, 1, 0]
                     }
                 }
             }

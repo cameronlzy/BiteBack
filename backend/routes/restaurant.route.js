@@ -1,11 +1,14 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
 import isOwner from '../middleware/isOwner.js';
+import isStaff from '../middleware/isStaff.js';
 import authorizedRestaurantOwner from '../middleware/authorizedRestaurantOwner.js';
+import authorizedRestaurantStaff from '../middleware/authorizedRestaurantStaff.js';
 import parser from '../middleware/cloudinaryUpload.js';
 import * as restaurantController from '../controllers/restaurant.controller.js';
 import validateObjectId from '../middleware/validateObjectId.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
+import isCustomer from '../middleware/isCustomer.js';
 
 const router = wrapRoutes(express.Router());
 
@@ -22,6 +25,12 @@ router.get('/:id', [validateObjectId()], restaurantController.getRestaurantById)
 
 // [Public] - Get availability of restaurant by date
 router.get('/:id/availability', [validateObjectId()], restaurantController.getAvailability);
+
+// [Customer] - Get customer's number of visits to restaurant
+router.get('/:id/visits', [validateObjectId(), auth, isCustomer], restaurantController.getVisitCount);
+
+// [Staff] - Get reservations at restaurant for current timeslot
+router.get('/:id/reservations', [validateObjectId(), auth, isStaff, authorizedRestaurantStaff], restaurantController.getReservationsByRestaurant);
 
 // [Owner] - Create new restaurant
 router.post('/', [auth, isOwner], restaurantController.createRestaurant);
