@@ -1,11 +1,11 @@
 import * as eventService from '../services/event.service.js';
 import { addImage, deleteImagesFromDocument } from '../services/image.service.js';
 import validatePagination from '../validators/pagination.validator.js';
-import { validateEvent, validatePatch } from '../validators/event.validator.js';
+import { validateEvent, validatePatch, validateOwnerQuery } from '../validators/event.validator.js';
 import { wrapError } from '../helpers/response.js';
 import Event from '../models/event.model.js';
 
-export async function getAllEvents(req, res) {
+export async function getAllPublicEvents(req, res) {
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 8);
     const query = { page, limit };
@@ -13,11 +13,25 @@ export async function getAllEvents(req, res) {
     const { error } = validatePagination(query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await eventService.getAllEvents(query);
+    const { status, body } = await eventService.getAllPublicEvents(query);
     return res.status(status).json(body);
 }
 
-export async function getEventsByRestaurant(req, res) {
+export async function getEventsByOwner(req, res) {
+    const query = {
+        page: Number(req.query.page ?? 1),
+        limit: Number(req.query.limit ?? 8),
+        status: req.query.status,
+    };
+
+    const { error } = validateOwnerQuery(query);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+    const { status: httpStatus, body } = await eventService.getEventsByOwner(req.user, query);
+    return res.status(httpStatus).json(body);
+}
+
+export async function getPrivateEventsByRestaurant(req, res) {
     const page = Number(req.query.page ?? 1);
     const limit = Number(req.query.limit ?? 8);
     const query = { page, limit };
@@ -25,7 +39,7 @@ export async function getEventsByRestaurant(req, res) {
     const { error } = validatePagination(query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await eventService.getEventsByRestaurant(req.params.id, query);
+    const { status, body } = await eventService.getPrivateEventsByRestaurant(req.params.id, query);
     return res.status(status).json(body);
 }
 

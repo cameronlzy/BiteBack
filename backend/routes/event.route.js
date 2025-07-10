@@ -11,11 +11,14 @@ const router = wrapRoutes(express.Router());
 
 const eventParser = parser('events');
 
-// [Public] - Get all events
-router.get('/', eventController.getAllEvents);
+// [Public] - Get all public events
+router.get('/', eventController.getAllPublicEvents);
 
-// [Public] - Get restaurant's events
-router.get('/restaurant/:id', [validateObjectId()], eventController.getEventsByRestaurant);
+// [Owner] - Get all events by owner
+router.get('/owner', [auth, isOwner], eventController.getEventsByOwner);
+
+// [Public] - Get restaurant's private events
+router.get('/restaurant/:id', [validateObjectId()], eventController.getPrivateEventsByRestaurant);
 
 // [Public] - Get event by ID
 router.get('/:id', [validateObjectId()], eventController.getEventById);

@@ -88,13 +88,38 @@ export async function searchPromotions(filters) {
     });
 }
 
-export async function getPromotionsByOwner(authUser) {
+export async function getPromotionsByOwner(authUser, query) {
+    const { page, limit, status } = query;
+    const skip = (page - 1) * limit;
+
+    const now = new Date();
     const restaurants = await Restaurant.find({ owner: authUser.profile }).lean();
     const restaurantIds = restaurants.map(r => r._id);
-    const promotions = await Promotion.find({
-        restaurant: { $in: restaurantIds }
-    }).populate('restaurant', 'name').lean();
-    return success(promotions);
+    const baseFilter = { restaurant: { $in: restaurantIds } };
+
+    if (status === 'past') {
+        baseFilter.endDate = { $lt: now };
+    } else if (status === 'upcoming') {
+        baseFilter.endDate = { $gte: now };
+    }
+
+    const [promotions, total] = await Promise.all([
+        Promotion.find(baseFilter)
+            .populate('restaurant', 'name')
+            .sort({ startDate: 1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        Promotion.countDocuments(baseFilter),
+    ]);
+
+    return success({
+        promotions,
+        page,
+        limit,
+        totalCount: total,
+        totalPages: Math.ceil(total / limit),
+    });
 }
 
 export async function getPromotionById(promotionId) {

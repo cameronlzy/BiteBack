@@ -2,16 +2,17 @@ import _ from 'lodash';
 import { DateTime } from 'luxon';
 import Event from '../models/event.model.js';
 import Reservation from '../models/reservation.model.js';
+import Restaurant from '../models/restaurant.model.js';
 import { error, success } from '../helpers/response.js';
 
-export async function getAllEvents(query) {
+export async function getAllPublicEvents(query) {
     const { page, limit } = query;
     const skip = (page - 1) * limit;
     const now = new Date();
 
     const [events, total] = await Promise.all([
-        Event.find({ endDate: { $gt: now }}).skip(skip).limit(limit).lean(),
-        Event.countDocuments({ endDate: { $gt: now }}),
+        Event.find({ endDate: { $gt: now }, minVisits: 0 }).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
+        Event.countDocuments({ endDate: { $gt: now }, minVisits: 0 }),
     ]);
 
     const eventsWithPax = await Promise.all(events.map(async e => {
@@ -28,14 +29,52 @@ export async function getAllEvents(query) {
     });
 }
 
-export async function getEventsByRestaurant(restaurant, query) {
+export async function getEventsByOwner(authUser, query) {
+    const { page, limit, status } = query;
+    const skip = (page - 1) * limit;
+
+    const now = new Date();
+    const restaurants = await Restaurant.find({ owner: authUser.profile }).lean();
+    const restaurantIds = restaurants.map(r => r._id);
+    const baseFilter = { restaurant: { $in: restaurantIds } };
+
+    if (status === 'past') {
+        baseFilter.endDate = { $lt: now };
+    } else if (status === 'upcoming') {
+        baseFilter.endDate = { $gte: now };
+    }
+
+    const [events, total] = await Promise.all([
+        Event.find(baseFilter)
+            .sort({ startDate: 1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+        Event.countDocuments(baseFilter),
+    ]);
+
+    const eventsWithPax = await Promise.all(events.map(async e => {
+        const reservedPax = await getBookedPaxForEvent(e._id)
+        return { ...e, reservedPax }
+    }));
+
+    return success({
+        events: eventsWithPax,
+        page,
+        limit,
+        totalCount: total,
+        totalPages: Math.ceil(total / limit),
+    });
+}
+
+export async function getPrivateEventsByRestaurant(restaurant, query) {
     const { page, limit } = query;
     const skip = (page - 1) * limit;
     const now = new Date();
 
     const [events, total] = await Promise.all([
-        Event.find({ restaurant, endDate: { $gt: now }}).skip(skip).limit(limit).lean(),
-        Event.countDocuments({ restaurant, endDate: { $gt: now }}),
+        Event.find({ restaurant, endDate: { $gt: now }, minVisits: { $gt: 0 }}).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
+        Event.countDocuments({ restaurant, endDate: { $gt: now }, minVisits: { $gt: 0 }}),
     ]);
 
     const eventsWithPax = await Promise.all(events.map(async e => {

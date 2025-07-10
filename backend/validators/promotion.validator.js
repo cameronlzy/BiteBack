@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { futureDateFullOnly, timeString } from '../helpers/time.helper.js';
+import { paginationSchema } from './pagination.validator.js';
 
 export function validatePromotion(promotion) {
     const schema = Joi.object({
@@ -41,4 +42,11 @@ export function validatePatch(update) {
         isActive: Joi.boolean()
     }).min(1);
     return schema.validate(update);
+}
+
+export function validateOwnerQuery(query) {
+    const schema = paginationSchema.keys({
+        status: Joi.string().valid('past', 'upcoming').optional(),
+    });
+    return schema.validate(query);
 }

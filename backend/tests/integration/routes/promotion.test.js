@@ -138,11 +138,8 @@ describe('promotion test', () => {
     });
 
     describe('GET /api/promotions/owner', () => {
-        let titles;
-        let descriptions;
         let restaurants;
         let promotion;
-        let endDates;
         let restaurant1, restaurant2;
         let user, profile, token, cookie;
 
@@ -151,12 +148,6 @@ describe('promotion test', () => {
             await Restaurant.deleteMany({});
             await User.deleteMany({});
             await OwnerProfile.deleteMany({});
-
-            // create 2 titles
-            titles = ['Alpha', 'Zebra'];
-
-            // create 2 ratings
-            descriptions = ['Buy one get one free', 'Half off second purchase'];
 
             // create owner
             user = await createTestUser('owner');
@@ -168,29 +159,18 @@ describe('promotion test', () => {
 
             // create 2 restaurant
             restaurant1 = createTestRestaurant(user.profile);
-            restaurant1.name = 'Bennys';
             await restaurant1.save();
+            promotion = createTestPromotion(restaurant1._id);
+            await promotion.save();
+
             restaurant2 = createTestRestaurant(user.profile);
-            restaurant2.name = 'Pizza';
             await restaurant2.save();
+            promotion = createTestPromotion(restaurant2._id);
+            await promotion.save();
+            
             restaurants = [restaurant1._id, restaurant2._id];
             profile.restaurants = restaurants;
             await profile.save();
-
-            // create 2 endDates
-            endDates = [
-                DateTime.now().plus({ weeks: 1}).toJSDate(), 
-                DateTime.now().plus({ weeks: 2 }).toJSDate()
-            ];
-
-            // create 2 promotions
-            for (let i = 0; i < 2; i++) {
-                promotion = createTestPromotion(restaurants[i]);
-                promotion.title = titles[i];
-                promotion.description = descriptions[i];
-                promotion.endDate = endDates[i];
-                await promotion.save();
-            }
         });
 
         const exec = () => {
@@ -202,8 +182,8 @@ describe('promotion test', () => {
         it('should return 200 if valid request', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(res.body.length).toBe(2);
-            res.body.forEach(promotion => {    
+            expect(res.body.promotions.length).toBe(2);
+            res.body.promotions.forEach(promotion => {    
                 expect(promotion).toHaveProperty('restaurant');
                 expect(promotion).toHaveProperty('title');
                 expect(promotion).toHaveProperty('description');

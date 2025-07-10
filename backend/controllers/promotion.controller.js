@@ -1,7 +1,7 @@
 import * as promotionService from '../services/promotion.service.js';
 import { addImage, deleteImagesFromDocument } from '../services/image.service.js';
 import Promotion from '../models/promotion.model.js';
-import { validatePromotion, validateSearch, validatePatch } from '../validators/promotion.validator.js';
+import { validatePromotion, validateSearch, validatePatch, validateOwnerQuery } from '../validators/promotion.validator.js';
 import { wrapError } from '../helpers/response.js';
 
 export async function searchPromotions(req, res) {
@@ -23,8 +23,17 @@ export async function searchPromotions(req, res) {
 }
 
 export async function getPromotionsByOwner(req, res) {
-    const { status, body } = await promotionService.getPromotionsByOwner(req.user);
-    return res.status(status).json(body);
+    const query = {
+        page: Number(req.query.page ?? 1),
+        limit: Number(req.query.limit ?? 8),
+        status: req.query.status,
+    };
+
+    const { error } = validateOwnerQuery(query);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+    const { status: httpStatus, body } = await promotionService.getPromotionsByOwner(req.user, query);
+    return res.status(httpStatus).json(body);
 }
 
 export async function getPromotionById(req, res) {

@@ -7,8 +7,10 @@ import Restaurant from '../../../models/restaurant.model.js';
 import Reservation from '../../../models/reservation.model.js';
 import Event from '../../../models/event.model.js';
 import User from '../../../models/user.model.js';
+import OwnerProfile from '../../../models/ownerProfile.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
 import { createTestEvent } from '../../factories/event.factory.js';
 import { createTestReservation } from '../../factories/reservation.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
@@ -38,6 +40,7 @@ describe('event test', () => {
             event = createTestEvent();
             await event.save();
             event = createTestEvent();
+            event.minVisits = 1;
             await event.save();
             // past event
             event = createTestEvent({ 
@@ -68,7 +71,69 @@ describe('event test', () => {
                 ];
                 expect(Object.keys(event)).toEqual(expect.arrayContaining(requiredKeys));
             });
+            expect(res.body.events.length).toBe(1);
+        });
+    });
+
+    describe('GET /api/events/owner', () => {
+        let restaurants;
+        let event;
+        let restaurant1, restaurant2;
+        let user, profile, token, cookie;
+
+        beforeEach(async () => {
+            await Event.deleteMany({});
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            profile = createTestOwnerProfile(user);
+            user.profile = profile._id;
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create 2 restaurant
+            restaurant1 = createTestRestaurant(user.profile);
+            await restaurant1.save();
+            event = createTestEvent({ restaurant: restaurant1._id });
+            await event.save();
+
+            restaurant2 = createTestRestaurant(user.profile);
+            await restaurant2.save();
+            event = createTestEvent({ restaurant: restaurant2._id });
+            await event.save();
+
+            restaurants = [restaurant1._id, restaurant2._id];
+            profile.restaurants = restaurants;
+            await profile.save();
+        });
+
+        const exec = () => {
+            return request(server)
+            .get('/api/events/owner')
+            .set('Cookie', [cookie]);
+        };
+
+        it('should return 200 if valid request', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
             expect(res.body.events.length).toBe(2);
+            res.body.events.forEach(event => {    
+                const requiredKeys = [
+                    'restaurant',
+                    'title',
+                    'description',
+                    'startDate',
+                    'endDate',
+                    'paxLimit',
+                    'status',
+                    'reservedPax'
+                ];
+                expect(Object.keys(event)).toEqual(expect.arrayContaining(requiredKeys));
+            });
         });
     });
 
@@ -83,6 +148,7 @@ describe('event test', () => {
             event = createTestEvent({ restaurant });
             await event.save();
             event = createTestEvent({ restaurant });
+            event.minVisits = 1;
             await event.save();
             // past event not belonging to restaurant
             event = createTestEvent({ 
@@ -119,7 +185,7 @@ describe('event test', () => {
                 ];
                 expect(Object.keys(event)).toEqual(expect.arrayContaining(requiredKeys));
             });
-            expect(res.body.events.length).toBe(2);
+            expect(res.body.events.length).toBe(1);
         });
     });
 
