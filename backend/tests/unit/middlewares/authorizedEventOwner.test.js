@@ -40,7 +40,7 @@ describe('authorizedEventOwner middleware', () => {
         await authorizedEventOwner(req, res, next);
 
         expect(res.status).toHaveBeenCalledWith(404);
-        expect(res.json).toHaveBeenCalledWith(wrapError('Promotion not found'));
+        expect(res.json).toHaveBeenCalledWith(wrapError('Event not found'));
         expect(next).not.toHaveBeenCalled();
     });
 

@@ -12,8 +12,10 @@ export function validateEvent(event) {
         paxLimit: Joi.number().integer().required(),
         maxPaxPerCustomer: Joi.number().integer().min(1).optional(),
         minVisits: Joi.number().integer().min(0).optional(),
-        remarks: Joi.string().custom((value, helpers) => {
-            const wordCount = value.trim().split(/\s+/).length;
+        remarks: Joi.string().optional().custom((value, helpers) => {
+            const trimmed = value.trim();
+            if (trimmed === '') return helpers.message('"remarks" must not be empty');
+            const wordCount = trimmed.split(/\s+/).length;
             if (wordCount > 50) {
                 return helpers.message('Remarks must not exceed 50 words');
             }

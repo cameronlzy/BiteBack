@@ -32,10 +32,10 @@ router.post('/:id/images', [validateObjectId(), auth, isOwner, authorizedEventOw
 // [Owner] - Update images for event
 router.patch('/:id/images', [validateObjectId(), auth, isOwner, authorizedEventOwner, eventParser.fields([{ name: 'mainImage', maxCount: 1 }, { name: 'bannerImage', maxCount: 1 }])], eventController.updateEventImages);
 
-// [Customer] - Update event
-router.patch('/:id', [validateObjectId(), auth, authorizedEventOwner], eventController.updateEvent);
+// [Owner] - Update event
+router.patch('/:id', [validateObjectId(), auth, isOwner, authorizedEventOwner], eventController.updateEvent);
 
-// [Customer] - Delete event
-router.delete('/:id', [validateObjectId(), auth, authorizedEventOwner], eventController.deleteEvent);
+// [Owner] - Delete event
+router.delete('/:id', [validateObjectId(), auth, isOwner, authorizedEventOwner], eventController.deleteEvent);
 
 export default router;

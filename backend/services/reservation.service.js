@@ -195,7 +195,7 @@ export async function deleteReservation(reservation) {
     }
     if (reservation.event) {
         const event = await Event.findById(reservation.event).select('startDate').lean();
-        if (event.startDate > new Date()) {
+        if (event.startDate < new Date()) {
             return error(400, 'Event has started');
         }
     }
