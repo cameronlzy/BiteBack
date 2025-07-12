@@ -3,11 +3,12 @@ import { DateTime } from "luxon"
 import { Link } from "react-router-dom"
 import defaultRestImg from "@/assets/default-restaurant-img.png"
 import {
-  hasPromotionEnded,
-  hasPromotionStarted,
+  hasItemEnded,
+  hasItemStarted,
   isPromotionAvailable,
   readableTimeSettings,
 } from "@/utils/timeConverter"
+import DisabledBlur from "../common/disabledBlur"
 
 const PromotionCard = ({
   _id,
@@ -30,35 +31,27 @@ const PromotionCard = ({
     timeWindow,
   }
   const isAvailable = isPromotionAvailable(promotion)
-  const hasStarted = hasPromotionStarted(promotion)
-  const hasEnded = hasPromotionEnded(promotion)
+  const hasStarted = hasItemStarted(promotion)
+  const hasEnded = hasItemEnded(promotion)
   const imageSrc = bannerImage || defaultRestImg
   return (
     <Card className="w-full p-4 rounded-xl shadow-md">
-      <div className="relative">
-        <img
-          src={imageSrc}
-          alt={title}
-          className="w-full h-auto object-cover rounded-lg border border-gray-200 shadow-sm"
-          onError={(e) => {
-            e.target.onerror = null
-            e.target.src = defaultRestImg
-          }}
-        />
-        {(!hasStarted || hasEnded || !isActive || !isAvailable) && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-m flex items-center justify-center text-gray-700 font-semibold text-lg rounded-lg">
-            {!hasStarted
-              ? "Promotion has not started"
-              : !isActive
-              ? "Promotion currently not active"
-              : hasEnded
-              ? "Promotion has ended"
-              : !isAvailable
-              ? "Not Available at this time"
-              : null}
-          </div>
-        )}
-      </div>
+      <DisabledBlur
+        component={imageSrc}
+        isImage={true}
+        disabled={!hasStarted || hasEnded || !isActive || !isAvailable}
+        disabledMessage={
+          !hasStarted
+            ? "Promotion has not started"
+            : !isActive
+            ? "Promotion currently not active"
+            : hasEnded
+            ? "Promotion has ended"
+            : !isAvailable
+            ? "Not Available at this time"
+            : ""
+        }
+      />
 
       <div className="text-left space-y-2 w-full">
         <CardTitle className="text-2xl font-semibold">

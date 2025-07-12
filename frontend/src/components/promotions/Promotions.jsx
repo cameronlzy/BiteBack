@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { getPromotions } from "@/services/promotionService"
 import PromotionCard from "./PromotionCard"
 import Pagination from "../common/Pagination"
@@ -9,26 +10,32 @@ import LoadingSpinner from "../common/LoadingSpinner"
 
 const Promotions = ({ user }) => {
   const [promotions, setPromotions] = useState([])
-  const [params, setParams] = useState({
-    page: 1,
-    limit: 10,
-    sortBy: "startDate",
-    order: "asc",
-    search: null,
-  })
   const [searchInput, setSearchInput] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [triggeredSearch, setTriggeredSearch] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parseInt(searchParams.get("page")) || 1
+  const sortBy = searchParams.get("sortBy") || "startDate"
+  const order = searchParams.get("order") || "asc"
+  const search = searchParams.get("search") || ""
+
+  useEffect(() => {
+    setSearchInput(search)
+  }, [search])
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true)
       try {
-        const { promotions, totalPages, totalCount } = await getPromotions(
-          params
-        )
+        const { promotions, totalPages, totalCount } = await getPromotions({
+          page,
+          limit: 10,
+          sortBy,
+          order,
+          search: search.trim() === "" ? null : search,
+        })
         setPromotions(promotions)
         setTotalPages(totalPages)
         setTotalCount(totalCount)
@@ -36,38 +43,38 @@ const Promotions = ({ user }) => {
         toast.error("Failed to fetch promotions")
       } finally {
         setLoading(false)
-        if (triggeredSearch) {
-          setIsSubmitting(false)
-          setTriggeredSearch(false)
-        }
       }
     }
+
     fetchData()
-  }, [params])
+  }, [page, sortBy, order, search])
 
   const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > totalPages) return
-    setParams((prev) => ({ ...prev, page: newPage }))
+    setSearchParams({
+      page: newPage,
+      sortBy,
+      order,
+      search,
+    })
   }
 
-  const handleSearchSubmit = async (e) => {
+  const handleSearchSubmit = (e) => {
     e.preventDefault()
-    setIsSubmitting(true)
-    setTriggeredSearch(true)
-    setParams((prev) => ({
-      ...prev,
-      search: searchInput.trim() === "" ? null : searchInput.trim(),
+    setSearchParams({
       page: 1,
-    }))
+      sortBy,
+      order,
+      search: searchInput.trim(),
+    })
   }
 
   const handleSort = ({ value, direction }) => {
-    setParams((prev) => ({
-      ...prev,
+    setSearchParams({
+      page: 1,
+      search,
       sortBy: value,
       order: direction,
-      page: 1,
-    }))
+    })
   }
 
   const options = [
@@ -90,7 +97,6 @@ const Promotions = ({ user }) => {
           value={searchInput}
           onChange={setSearchInput}
           onSubmit={handleSearchSubmit}
-          isSubmitting={isSubmitting}
         />
 
         <SortBy
@@ -109,7 +115,7 @@ const Promotions = ({ user }) => {
 
       <div className="mt-8">
         <Pagination
-          currentPage={params.page}
+          currentPage={page}
           totalPages={totalPages}
           totalCount={totalCount}
           onPageChange={handlePageChange}

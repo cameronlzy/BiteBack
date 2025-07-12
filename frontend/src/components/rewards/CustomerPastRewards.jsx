@@ -6,10 +6,12 @@ import { iconMap } from "@/utils/rewardUtils"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import Pagination from "@/components/common/Pagination"
 import LoadingSpinner from "../common/LoadingSpinner"
+import { useSearchParams } from "react-router-dom"
 
 const CustomerPastRewards = () => {
   const [rewards, setRewards] = useState([])
-  const [page, setPage] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parseInt(searchParams.get("page")) || 1
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 
@@ -69,7 +71,7 @@ const CustomerPastRewards = () => {
         currentPage={page}
         totalPages={totalPages}
         totalCount={totalCount}
-        onPageChange={(p) => setPage(p)}
+        onPageChange={(p) => setSearchParams({ page: p })}
       />
     </div>
   )

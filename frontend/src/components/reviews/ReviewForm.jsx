@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { readableTimeSettings } from "@/utils/timeConverter"
+import { objectCleaner } from "@/utils/objectComparator"
 
 const ReviewForm = ({
   restaurant,
@@ -73,6 +74,8 @@ const ReviewForm = ({
       data.dateVisited = DateTime.fromISO(data.dateVisited)
         .setZone("Asia/Singapore")
         .toISO()
+      // const payload = objectCleaner(data)
+      // rmb change
       const res = await onSubmit(data)
       const reviewId = res._id
       let images

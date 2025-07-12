@@ -18,7 +18,7 @@ import { eventSchema } from "@/utils/schemas"
 import {
   saveEvent,
   getEventById,
-  updateEventImage,
+  updateEventImages,
 } from "@/services/eventService"
 import {
   Select,
@@ -27,11 +27,13 @@ import {
   SelectItem,
   SelectTrigger,
 } from "../ui/select"
-import { objectComparator } from "@/utils/objectComparator"
+import { objectCleaner, objectComparator } from "@/utils/objectComparator"
 import { DateTime } from "luxon"
 import BackButton from "../common/BackButton"
 import { toSGTISO } from "@/utils/timeConverter"
-import { ownedByUser } from "@/utils/ownerCheck"
+import { ownedByUserWithId } from "@/utils/ownerCheck"
+import { uploadEventImages } from "@/services/eventService"
+import { Info } from "lucide-react"
 
 const EventForm = ({ user }) => {
   const navigate = useNavigate()
@@ -40,55 +42,17 @@ const EventForm = ({ user }) => {
   const [event, setEvent] = useState(null)
   const { eventId } = useParams()
   const location = useLocation()
+  console.log(location.state)
   const from = location.state?.from || "/events"
 
   useEffect(() => {
     if (user.role !== "owner") {
-      toast.error("Unauthorized access to events form")
+      toast.error("Only Owners can access the Events Form", {
+        toastId: "event-form-unauthorised-access",
+      })
       navigate("/restaurants", { replace: true })
     }
   }, [user._id])
-
-  useEffect(() => {
-    const fetchEvent = async () => {
-      if (!eventId) return
-      try {
-        const event = await getEventById(eventId)
-        setEvent(event)
-        const isOwned = ownedByUser(event?.restaurant, user)
-
-        if (!isOwned) {
-          toast.error("You are not authorized to edit this event")
-          return navigate(`/events/${eventId}`, { replace: true })
-        }
-
-        form.reset({
-          title: event.title || "",
-          description: event.description || "",
-          startDate: event.startDate?.slice(0, 16),
-          endDate: event.endDate?.slice(0, 16),
-          timeWindow: {
-            startTime: event.timeWindow?.startTime || "",
-            endTime: event.timeWindow?.endTime || "",
-          },
-          restaurant: event.restaurant._id,
-        })
-        if (event.mainImage) {
-          setMainImageFile(event.mainImage)
-        }
-        if (event.bannerImage) {
-          setBannerImageFile(event.bannerImage)
-        }
-      } catch {
-        toast.error("Failed to fetch event")
-        navigate("/not-found", { replace: true })
-      }
-    }
-
-    fetchEvent()
-  }, [eventId])
-
-  const defaultRestaurantId = user.profile.restaurants?.[0]?._id || ""
 
   const form = useForm({
     resolver: safeJoiResolver(eventSchema),
@@ -97,17 +61,47 @@ const EventForm = ({ user }) => {
       description: "",
       startDate: "",
       endDate: "",
-      timeWindow: {
-        startTime: "",
-        endTime: "",
-      },
-      restaurant: defaultRestaurantId,
+      paxLimit: 1,
+      maxPaxPerCustomer: 1,
+      remarks: "",
+      minVisits: 0,
+      restaurant: user.profile.restaurants?.[0]?._id || "",
     },
     mode: "onSubmit",
   })
 
-  const { control, handleSubmit, formState, setError } = form
-  const localMin = DateTime.local().toFormat("yyyy-MM-dd")
+  const { control, handleSubmit, formState } = form
+
+  useEffect(() => {
+    const fetchEvent = async () => {
+      if (!eventId) return
+      try {
+        const event = await getEventById(eventId)
+        setEvent(event)
+        const isOwned = ownedByUserWithId(event?.restaurant, user)
+        if (!isOwned) {
+          toast.error("You are not authorised to edit this event")
+          return navigate(`/events/${eventId}`, { replace: true })
+        }
+        form.reset({
+          title: event.title || "",
+          description: event.description || "",
+          startDate: event.startDate?.slice(0, 16),
+          endDate: event.endDate?.slice(0, 16),
+          paxLimit: event.paxLimit,
+          maxPaxPerCustomer: event.maxPaxPerCustomer,
+          remarks: event.remarks || "",
+          restaurant: event.restaurant._id,
+        })
+        if (event.mainImage) setMainImageFile(event.mainImage)
+        if (event.bannerImage) setBannerImageFile(event.bannerImage)
+      } catch {
+        toast.error("Failed to fetch event")
+        navigate("/not-found", { replace: true })
+      }
+    }
+    fetchEvent()
+  }, [eventId])
 
   useEffect(() => {
     return () => {
@@ -116,7 +110,33 @@ const EventForm = ({ user }) => {
     }
   }, [mainImageFile, bannerImageFile])
 
+  const localMin = DateTime.local().toFormat("yyyy-LL-dd'T'HH:mm")
+
   const onSubmit = async (data) => {
+    if (event && data.paxLimit < event.reservedPax) {
+      form.setError("paxLimit", {
+        type: "manual",
+        message: `Cannot reduce pax limit below current ${event.reservedPax} reserved pax`,
+      })
+      return
+    }
+    if (event && DateTime.fromISO(event.startDate) < DateTime.now()) {
+      if (data.startDate !== event.startDate?.slice(0, 16)) {
+        form.setError("startDate", {
+          type: "manual",
+          message: "Cannot edit start date after the event has started",
+        })
+        return
+      }
+
+      if (data.maxPaxPerCustomer > data.paxLimit) {
+        form.setError("maxPaxPerCustomer", {
+          type: "manual",
+          message: "Max guests per booking cannot exceed total pax limit",
+        })
+        return
+      }
+    }
     try {
       if (!mainImageFile || !bannerImageFile) {
         toast.error("Both Main and Banner images are required")
@@ -124,56 +144,19 @@ const EventForm = ({ user }) => {
       }
 
       const isEdit = !!eventId
-      const selectedRestaurant = user.profile.restaurants?.find(
-        (r) => r._id === data.restaurant
-      )
-
-      if (!selectedRestaurant) {
-        toast.error("Invalid restaurant selected")
-        return
-      }
-
-      const payload = {
-        ...data,
-      }
-
-      const { startTime, endTime } = data.timeWindow || {}
-
-      const hasStart = !!startTime?.trim()
-      const hasEnd = !!endTime?.trim()
-
-      if (hasStart && !hasEnd) {
-        setError("timeWindow.endTime", {
-          type: "manual",
-          message: "End time is required if start time is set.",
-        })
-        return
-      } else if (!hasStart && hasEnd) {
-        setError("timeWindow.startTime", {
-          type: "manual",
-          message: "Start time is required if end time is set.",
-        })
-        return
-      }
-
-      if (!hasStart && !hasEnd) {
-        delete payload.timeWindow
-      }
-      if (isEdit) {
-        payload._id = eventId
-      }
+      const payload = { ...data }
 
       if (data.startDate) payload.startDate = toSGTISO(data.startDate)
       if (data.endDate) payload.endDate = toSGTISO(data.endDate)
-      const cleanedNoEmpty = Object.fromEntries(
-        Object.entries({ ...payload }).filter(([_ignore, v]) => v !== "")
-      )
-      let changes = eventId
-        ? objectComparator(event, cleanedNoEmpty)
-        : cleanedNoEmpty
+      if (isEdit) payload._id = eventId
+
+      const cleaned = objectCleaner(payload)
+
+      let changes = eventId ? objectComparator(event, cleaned) : cleaned
       if (changes.restaurant === event?.restaurant?._id) {
         delete changes.restaurant
       }
+
       if (
         Object.keys(changes).length === 0 &&
         !(mainImageFile instanceof File) &&
@@ -183,33 +166,37 @@ const EventForm = ({ user }) => {
         navigate(`/events/${eventId}`, { replace: true })
         return
       }
-      eventId ? (changes._id = eventId) : delete changes._id
+
+      if (eventId) changes._id = eventId
+
       const newevent = await saveEvent(changes)
 
       const changedImages = {}
-      if (mainImageFile instanceof File) {
-        changedImages.mainImage = mainImageFile
-      }
-      if (bannerImageFile instanceof File) {
+      if (mainImageFile instanceof File) changedImages.mainImage = mainImageFile
+      if (bannerImageFile instanceof File)
         changedImages.bannerImage = bannerImageFile
-      }
-
       if (Object.keys(changedImages).length > 0) {
-        await updateEventImage(newevent._id, changedImages)
+        if (isEdit) {
+          await updateEventImages(newevent._id, changedImages)
+        } else {
+          await uploadEventImages(newevent._id, [
+            mainImageFile,
+            bannerImageFile,
+          ])
+        }
       }
 
-      toast.success(isEdit ? "event updated" : "event created")
-      navigate(`/events`, { replace: true })
+      toast.success(isEdit ? "Event updated" : "Event created")
+      navigate(`/owner/events-promos`, { replace: true })
     } catch (ex) {
       if (ex.response?.status === 400) {
         const message = ex.response.data?.error
         form.setError("startDate", {
           type: "manual",
-          message: message || "Reservation failed",
+          message: message || "Failed",
         })
       }
       toast.error("Failed to save event")
-      console.error(ex)
       throw ex
     }
   }
@@ -218,10 +205,7 @@ const EventForm = ({ user }) => {
     <div className="space-y-6 max-w-xl mx-auto mt-10">
       <BackButton from={from} />
       <FormProvider {...form}>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-6 max-w-xl mx-auto mt-10"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <h2 className="text-2xl font-bold mb-4">
             {eventId ? "Edit Event Details" : "Create New Event"}
           </h2>
@@ -256,12 +240,12 @@ const EventForm = ({ user }) => {
 
           <FormField
             control={control}
-            name="date"
+            name="startDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Event Date</FormLabel>
+                <FormLabel>Start Date & Time</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} min={localMin} />
+                  <Input type="datetime-local" {...field} min={localMin} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -270,12 +254,12 @@ const EventForm = ({ user }) => {
 
           <FormField
             control={control}
-            name="timeWindow.startTime"
+            name="endDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Event Start Time (HH:mm) - Optional</FormLabel>
+                <FormLabel>End Date & Time</FormLabel>
                 <FormControl>
-                  <Input type="time" {...field} />
+                  <Input type="datetime-local" {...field} min={localMin} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -284,12 +268,40 @@ const EventForm = ({ user }) => {
 
           <FormField
             control={control}
-            name="timeWindow.endTime"
+            name="paxLimit"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Event End Time (HH:mm) - Optional</FormLabel>
+                <FormLabel>Total Pax Limit</FormLabel>
                 <FormControl>
-                  <Input type="time" {...field} />
+                  <Input type="number" min="1" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="maxPaxPerCustomer"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Max Guests per Booking</FormLabel>
+                <FormControl>
+                  <Input type="number" min="1" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={control}
+            name="remarks"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Remarks (max 50 words)</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Any remarks (optional)" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -324,6 +336,29 @@ const EventForm = ({ user }) => {
             )}
           />
 
+          <FormField
+            control={control}
+            name="minVisits"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Minimum Visits Required (optional)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    {...field}
+                    value={field.value ?? 0}
+                  />
+                </FormControl>
+                <FormMessage />
+                <div className="flex items-start text-sm text-muted-foreground mt-1">
+                  <Info className="w-4 h-4 mr-1 mt-[2px]" />
+                  <span>Set to 0 for public events.</span>
+                </div>
+              </FormItem>
+            )}
+          />
+
           <ImageUpload
             index={0}
             selectedFiles={mainImageFile ? [mainImageFile] : []}
@@ -349,7 +384,7 @@ const EventForm = ({ user }) => {
             className="w-full"
             condition={formState.isSubmitting}
             normalText={eventId ? "Update Event" : "Create Event"}
-            loadingText="Creating..."
+            loadingText="Submitting..."
           />
         </form>
       </FormProvider>

@@ -11,7 +11,8 @@ import { getRestaurant } from "@/services/restaurantService"
 const CustomDay = ({
   date,
   selected,
-  existingReservations,
+  existingItems,
+  type = "Reservations",
   updateDate,
   modifiers,
 }) => {
@@ -20,8 +21,8 @@ const CustomDay = ({
 
   const getReservationsForDate = (date) => {
     const dateStr = format(date, "yyyy-MM-dd")
-    return (existingReservations ?? []).filter(
-      (res) => format(parseISO(res.reservationDate), "yyyy-MM-dd") === dateStr
+    return (existingItems ?? []).filter(
+      (res) => format(parseISO(res.startDate), "yyyy-MM-dd") === dateStr
     )
   }
 
@@ -88,10 +89,12 @@ const CustomDay = ({
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent className="text-sm text-black bg-white w-max z-50 border shadow-md">
-        <div className="mb-1 font-semibold">Your Current Reservations:</div>
+        <div className="font-semibold text-center">
+          {type === "Booking" ? "Your Current Bookings" : `Current ${type}`}
+        </div>
         {reservationsOnDate.map((res, i) => (
           <div key={i}>
-            {format(parseISO(res.reservationDate), "HH:mm")} · {res.pax} pax
+            {format(parseISO(res.startDate), "HH:mm")} · {res.pax} pax
             {restaurantMap[res.restaurant] &&
               ` @ ${restaurantMap[res.restaurant]}`}
           </div>

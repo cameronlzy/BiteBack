@@ -12,7 +12,7 @@ import { useEffect, useState } from "react"
 import { useConfirm } from "./common/ConfirmProvider"
 import { toast } from "react-toastify"
 import ReviewSection from "./reviews/ReviewSection"
-import { Calendar, Settings, Star, Store, Users } from "lucide-react"
+import { Settings } from "lucide-react"
 import LoadingSpinner from "./common/LoadingSpinner"
 import { DropdownMenu, DropdownMenuItem } from "./ui/dropdown-menu"
 import {
@@ -21,10 +21,9 @@ import {
 } from "@radix-ui/react-dropdown-menu"
 import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
-import { isWithinOpeningHours } from "@/utils/timeConverter"
 import defaultRestImg from "@/assets/default-restaurant-img.png"
 import { ownedByUser } from "@/utils/ownerCheck"
-import RoundedActionButton from "./common/RoundedActionButton"
+import CarouselButtonSwitcher from "./common/CarouselButtonSwitcher"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -285,91 +284,12 @@ const Restaurant = ({ user }) => {
           </div>
 
           <div className="mt-6 flex gap-4 justify-center">
-            {(!user || user.role === "customer" || isOwnedByUser) && (
-              <Link
-                to={`/reservation/${restid}`}
-                state={{ from: location.pathname }}
-                className="group"
-              >
-                <Button
-                  className={`bg-black text-white h-11 w-11 ${
-                    isOwnedByUser
-                      ? "group-hover:w-[130px]"
-                      : "group-hover:w-[170px]"
-                  } transition-all duration-300 ease-in-out rounded-full overflow-hidden shadow flex items-center gap-2 px-0.75`}
-                >
-                  <div
-                    className="flex items-center justify-left group-hover:justify-start 
-                    w-full px-3 transition-all duration-300"
-                  >
-                    <Calendar className="w-5 h-5" />
-                    <span
-                      className="ml-2 opacity-0 group-hover:opacity-100 
-                      transition-opacity duration-300 whitespace-nowrap"
-                    >
-                      {isOwnedByUser ? "Book Event" : "Make Reservation"}
-                    </span>
-                  </div>
-                </Button>
-              </Link>
-            )}
-
-            {user?.role !== "owner" && (
-              <>
-                <RoundedActionButton
-                  to={`/online-queue/${restid}`}
-                  icon={Users}
-                  label="View Queue"
-                  bgColor="bg-white"
-                  hoverColor="hover:bg-gray-100"
-                  textColor="text-black"
-                  expandedWidth="w-[140px]"
-                  disabled={
-                    !isWithinOpeningHours(openingHours) ||
-                    !restaurant.queueEnabled
-                  }
-                  preventNavigation={
-                    !isWithinOpeningHours(openingHours) ||
-                    !restaurant.queueEnabled
-                  }
-                />
-
-                <RoundedActionButton
-                  to={`/current-rewards/${restid}`}
-                  icon={Store}
-                  label="View Rewards"
-                  bgColor="bg-indigo-600"
-                  hoverColor="hover:bg-indigo-700"
-                  expandedWidth="w-[140px]"
-                />
-              </>
-            )}
-
-            {user?.role !== "owner" && (
-              <div className="group">
-                <Button
-                  onClick={handleToggleReviewForm}
-                  className={`bg-yellow-400 hover:bg-yellow-500 text-black h-11 w-11 ${
-                    showReviewForm
-                      ? "group-hover:w-[100px]"
-                      : "group-hover:w-[160px]"
-                  } transition-all duration-300 ease-in-out rounded-full overflow-hidden shadow flex items-center gap-2 px-0.75`}
-                >
-                  <div
-                    className="flex items-center justify-left group-hover:justify-start 
-                    w-full px-3 transition-all duration-300"
-                  >
-                    <Star className="w-5 h-5" />
-                    <span
-                      className="ml-2 opacity-0 group-hover:opacity-100  
-                      transition-opacity duration-300 whitespace-nowrap"
-                    >
-                      {showReviewForm ? "Cancel" : "Leave a Review"}
-                    </span>
-                  </div>
-                </Button>
-              </div>
-            )}
+            <CarouselButtonSwitcher
+              restaurant={restaurant}
+              user={user}
+              showReviewForm={showReviewForm}
+              setShowReviewForm={setShowReviewForm}
+            />
           </div>
 
           <ReviewSection

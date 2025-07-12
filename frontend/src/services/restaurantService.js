@@ -68,9 +68,7 @@ export async function saveRestaurant(restaurant, isUpdate) {
 
 export async function saveRestaurants(restaurants) {
   const results = restaurants.map((r) => {
-  const cleaned = Object.fromEntries(
-    Object.entries(r).filter(([_ignore, v]) => v !== "")
-  )
+  const cleaned = objectCleaner(r)
   const sanitized = sanitizeStrings(cleaned)
 
   return {
@@ -142,5 +140,11 @@ export async function getFilteredRestaurants(params) {
   .join("&")
 
   const { data } = await http.get(`${apiEndpoint}/discover?${queryString}`)
+  return data
+}
+
+
+export async function getCustomerVisitCount(restaurantId) {
+  const { data } = await http.get(`${apiEndpoint}/${restaurantId}/visits`)
   return data
 }

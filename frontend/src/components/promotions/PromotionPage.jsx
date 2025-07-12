@@ -1,6 +1,6 @@
 import { DateTime } from "luxon"
 import {
-  hasPromotionStarted,
+  hasItemStarted,
   isPromotionAvailable,
   readableTimeSettings,
 } from "@/utils/timeConverter"
@@ -136,7 +136,7 @@ const PromotionPage = ({ user }) => {
   const { _id, title, startDate, endDate, mainImage, restaurant, description } =
     promotion
   const isAvailable = isPromotionAvailable(promotion)
-  const hasStarted = hasPromotionStarted(promotion)
+  const hasStarted = hasItemStarted(promotion)
   const isActive = promotion.isActive
   return (
     <RestaurantRelatedItemUI
@@ -152,7 +152,7 @@ const PromotionPage = ({ user }) => {
           state: { from: location.pathname },
         })
       }
-      onDelete={handleDeletePromotion}
+      onDelete={!hasStarted ? handleDeletePromotion : null}
       onActivate={handleToggleActivate}
       currentlyActive={isActive}
       banner={

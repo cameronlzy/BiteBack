@@ -56,8 +56,8 @@ const QueueStatus = ({
               : "Pending"
           setQueueStatus(newStatus)
         }
-      } catch (error) {
-        console.error("Error processing SSE message:", error)
+      } catch (ex) {
+        console.error("Error processing SSE message:", ex)
       }
     }
 
