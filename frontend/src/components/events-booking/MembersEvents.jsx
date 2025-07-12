@@ -13,6 +13,7 @@ import { activeCheck } from "@/utils/eventUtils"
 import { getRestaurant } from "@/services/restaurantService"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { Crown } from "lucide-react"
+import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 
 const MembersEvents = () => {
   const { restaurantId } = useParams()
@@ -75,7 +76,7 @@ const MembersEvents = () => {
               key={e._id}
               _id={e._id}
               name={e.title}
-              description={e.description}
+              description={getCardMessageFromDescription(e.description)}
               image={e.bannerImage}
               date={e.startDate}
               disabled={!activeCheck(e.status)}

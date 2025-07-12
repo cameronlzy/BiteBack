@@ -8,7 +8,7 @@ import {
   isPromotionAvailable,
   readableTimeSettings,
 } from "@/utils/timeConverter"
-import DisabledBlur from "../common/disabledBlur"
+import DisabledBlur from "../common/DisabledBlur"
 
 const PromotionCard = ({
   _id,

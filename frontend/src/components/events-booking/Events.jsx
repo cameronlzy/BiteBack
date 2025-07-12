@@ -5,6 +5,7 @@ import Pagination from "@/components/common/Pagination"
 import TransactionCard from "@/components/common/TransactionCard"
 import { toast } from "react-toastify"
 import { activeCheck } from "@/utils/eventUtils"
+import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 
 const Events = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -53,7 +54,7 @@ const Events = () => {
               key={e._id}
               _id={e._id}
               name={e.title}
-              description={e.description}
+              description={getCardMessageFromDescription(e.description)}
               image={e.bannerImage}
               date={e.startDate}
               disabled={!activeCheck(e.status)}

@@ -1,6 +1,7 @@
 import { convertOpeningHoursToSGT, convertSlotTimesToSGT, convertOpeningHoursToString } from "@/utils/timeConverter"
 import http from "./httpService"
 import { sanitizeStrings } from "@/utils/stringSanitizer"
+import { objectCleaner } from "@/utils/objectComparator"
 
 const apiEndpoint = import.meta.env.VITE_API_URL + "/restaurants"
 

@@ -74,9 +74,8 @@ const ReviewForm = ({
       data.dateVisited = DateTime.fromISO(data.dateVisited)
         .setZone("Asia/Singapore")
         .toISO()
-      // const payload = objectCleaner(data)
-      // rmb change
-      const res = await onSubmit(data)
+      const payload = objectCleaner(data)
+      const res = await onSubmit(payload)
       const reviewId = res._id
       let images
       if (selectedFiles.length > 0) {

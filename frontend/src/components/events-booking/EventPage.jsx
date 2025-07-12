@@ -13,6 +13,7 @@ import { AlertTriangle, CalendarPlus } from "lucide-react"
 import JoinEventForm from "./JoinEventForm"
 import { hasItemStarted } from "@/utils/timeConverter"
 import { activeCheck } from "@/utils/eventUtils"
+import { DateTime } from "luxon"
 
 const EventPage = ({ user }) => {
   const [event, setEvent] = useState(null)

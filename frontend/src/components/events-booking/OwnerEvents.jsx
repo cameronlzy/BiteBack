@@ -7,6 +7,7 @@ import { getOwnerEvents } from "@/services/eventService"
 import Pagination from "@/components/common/Pagination"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import { getRestaurant } from "@/services/restaurantService"
+import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 
 const OwnerEvents = ({ user }) => {
   const [events, setEvents] = useState([])
@@ -124,7 +125,7 @@ const OwnerEvents = ({ user }) => {
                     e.restaurantName ? ` @ ${e.restaurantName}` : ""
                   }`}
                   date={e.startDate}
-                  description={e.description}
+                  description={getCardMessageFromDescription(e.description)}
                   image={e.bannerImage}
                   onClick={() =>
                     navigate(`/events/${e._id}`, {

@@ -85,21 +85,9 @@ const Restaurant = ({ user }) => {
     }
   }
 
-  const handleToggleReviewForm = () => {
-    if (!user) {
-      toast.info("Please log in first")
-      return navigate("/login", {
-        state: { from: location.pathname },
-        replace: true,
-      })
-    }
-    setShowReviewForm((prev) => !prev)
-  }
-
   if (!restaurant) return <LoadingSpinner />
 
   const {
-    _id: restid,
     name,
     description,
     address,
