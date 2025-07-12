@@ -47,7 +47,7 @@ export function validatePatch(patch) {
 
 export function validateOwnerQuery(query) {
     const schema = paginationSchema.keys({
-        status: Joi.string().valid('past', 'upcoming').optional(),
+        status: Joi.string().valid('past', 'upcoming').default('upcoming'),
     });
     return schema.validate(query);
 }

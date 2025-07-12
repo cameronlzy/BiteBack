@@ -11,8 +11,8 @@ export async function getAllPublicEvents(query) {
     const now = new Date();
 
     const [events, total] = await Promise.all([
-        Event.find({ endDate: { $gt: now }, minVisits: 0 }).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
-        Event.countDocuments({ endDate: { $gt: now }, minVisits: 0 }),
+        Event.find({ endDate: { $gt: now }, minVisits: 0, status: 'scheduled' }).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
+        Event.countDocuments({ endDate: { $gt: now }, minVisits: 0, status: 'scheduled' }),
     ]);
 
     const eventsWithPax = await Promise.all(events.map(async e => {
@@ -44,12 +44,28 @@ export async function getEventsByOwner(authUser, query) {
         baseFilter.endDate = { $gte: now };
     }
 
+    let pipeline = [
+        { $match: baseFilter },
+    ];
+
+    if (status === 'upcoming') {
+        pipeline.push({
+            $addFields: {
+                statusPriority: {
+                    $cond: [{ $eq: ['$status', 'scheduled'] }, 0, { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 2]}]
+                }
+            }
+        });
+
+        pipeline.push({ $sort: { statusPriority: 1, startDate: 1 } });
+    } else if (status === 'past') {
+        pipeline.push({ $sort: { startDate: 1 } });
+    }
+
+    pipeline.push({ $skip: skip }, { $limit: limit }, { $project: { statusPriority: 0 } });
+
     const [events, total] = await Promise.all([
-        Event.find(baseFilter)
-            .sort({ startDate: 1 })
-            .skip(skip)
-            .limit(limit)
-            .lean(),
+        Event.aggregate(pipeline),
         Event.countDocuments(baseFilter),
     ]);
 
@@ -73,8 +89,8 @@ export async function getPrivateEventsByRestaurant(restaurant, query) {
     const now = new Date();
 
     const [events, total] = await Promise.all([
-        Event.find({ restaurant, endDate: { $gt: now }, minVisits: { $gt: 0 }}).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
-        Event.countDocuments({ restaurant, endDate: { $gt: now }, minVisits: { $gt: 0 }}),
+        Event.find({ restaurant, endDate: { $gt: now }, minVisits: { $gt: 0 }, status: 'scheduled' }).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
+        Event.countDocuments({ restaurant, endDate: { $gt: now }, minVisits: { $gt: 0 }, status: 'scheduled' }),
     ]);
 
     const eventsWithPax = await Promise.all(events.map(async e => {
@@ -100,7 +116,12 @@ export async function getEventById(eventId) {
 }
 
 export async function createEvent(data) {
-    const event = new Event(_.pick(data, ['restaurant', 'title', 'description', 'startDate', 'endDate', 'paxLimit', 'remarks']));
+    const fields = _.pick(data, ['restaurant', 'title', 'description', 'startDate', 'endDate', 'paxLimit']);
+    if (data.remarks) fields.remarks = data.remarks;
+    if (data.minVisits) fields.minVisits = data.minVisits;
+    if (data.maxPaxPerCustomer) fields.maxPaxPerCustomer = data.maxPaxPerCustomer;
+
+    const event = new Event(fields);
     await event.save();
     return success(event);
 }

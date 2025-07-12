@@ -110,7 +110,8 @@ export async function createReview(data, user) {
         if (visit.reviewed) return error(400, 'Visit has already been reviewed');
 
         // create review
-        const review = new Review(_.pick(data, ['restaurant', 'rating', 'reviewText']));
+        const review = new Review(_.pick(data, ['restaurant', 'rating']));
+        if (data.reviewText) review.reviewText = data.reviewText;
         review.dateVisited = visitDate;
         review.customer = user.profile;
         await review.save(wrapSession(session));

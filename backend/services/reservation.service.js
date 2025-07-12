@@ -17,8 +17,8 @@ export async function getReservationsByCustomer(profile, query) {
     const now = new Date();
 
     const [reservations, total] = await Promise.all([
-        Reservation.find({ customer: profile, startDate: { $gte: now }}).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
-        Reservation.countDocuments({ customer: profile, startDate: { $gte: now } }),
+        Reservation.find({ customer: profile, endDate: { $gt: now }}).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
+        Reservation.countDocuments({ customer: profile, endDate: { $gt: now } }),
     ]);
 
     return success({
@@ -107,9 +107,10 @@ export async function createReservation(authUser, data) {
             customer: authUser.profile,
             restaurant: restaurant._id,
             startDate: slotStart.toJSDate(),
-            remarks: data.remarks,
             pax: data.pax,
         });
+        if (data.remarks) reservation.remarks = data.remarks;
+
         if (data.event) {
             reservation.event = data.event;
             reservation.endDate = DateTime.fromJSDate(event.endDate).toJSDate();

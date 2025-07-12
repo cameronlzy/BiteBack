@@ -7,7 +7,7 @@ export async function getAllItems(restaurant, query) {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-        RewardItem.find({ restaurant }).skip(skip).limit(limit).lean(),
+        RewardItem.find({ restaurant }).sort({ isActive: -1 }).skip(skip).limit(limit).lean(),
         RewardItem.countDocuments({ restaurant }),
     ]);
 

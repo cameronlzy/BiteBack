@@ -106,7 +106,7 @@ export async function getPromotionsByOwner(authUser, query) {
     const [promotions, total] = await Promise.all([
         Promotion.find(baseFilter)
             .populate('restaurant', 'name')
-            .sort({ startDate: 1 })
+            .sort({ isActive: -1, startDate: 1 })
             .skip(skip)
             .limit(limit)
             .lean(),
