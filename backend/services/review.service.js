@@ -23,7 +23,8 @@ export async function getEligibleVisits(restaurantId, authUser) {
     // filter out reviewed visits
     const unreviewedVisits = visitHistory.visits
         .filter(v => !v.reviewed)
-        .map(v => ({ visitDate: v.visitDate }));
+        .map(v => ({ visitDate: v.visitDate }))
+        .sort((a, b) => new Date(a.visitDate) - new Date(b.visitDate));
 
     return success(unreviewedVisits);
 }
@@ -59,7 +60,7 @@ export async function getReviewsByCustomer(customerId, authUser) {
     if (!customer) return error(404, 'Customer profile not found');
 
     // get reviews by customer
-    let reviews = await Review.find({ customer: customerId }).populate('customer', 'username').lean();
+    let reviews = await Review.find({ customer: customerId }).populate('customer', 'username').sort({ createdAt: -1 }).lean();
     if (Array.isArray(reviews) && reviews.length === 0) return success(reviews);
     reviews = reviews.map(r => {
         return {

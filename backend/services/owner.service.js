@@ -1,6 +1,5 @@
 import User from '../models/user.model.js';
 import OwnerProfile from '../models/ownerProfile.model.js';
-import Reservation from '../models/reservation.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import Staff from '../models/staff.model.js';
 import * as restaurantService from '../services/restaurant.service.js';
@@ -120,11 +119,8 @@ export async function deleteMe(user) {
             )
         );
 
-        // delete reservations and profile
-        await Promise.all([
-            Reservation.deleteMany({ user: user._id }).session(session),
-            OwnerProfile.findByIdAndDelete(user.profile._id).session(session)
-        ]);
+        // delete profile
+        await OwnerProfile.findByIdAndDelete(user.profile._id).session(session);
 
         // delete user
         await user.deleteOne(wrapSession(session));

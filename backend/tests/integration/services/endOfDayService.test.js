@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
-import { generateAnalytics } from '../../../services/scheduledJobs/generateAnalytics.js';
+import { generateAnalytics } from '../../../services/scheduledJobs/endOfDay.service.js';
 import Reservation from '../../../models/reservation.model.js';
 import QueueEntry from '../../../models/queueEntry.model.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';

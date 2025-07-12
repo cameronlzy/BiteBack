@@ -1,8 +1,9 @@
+import _ from 'lodash';
+import { DateTime } from 'luxon';
 import Promotion from '../models/promotion.model.js';
 import Restaurant from '../models/restaurant.model.js';
-import { DateTime } from 'luxon';
 import { escapeRegex } from '../helpers/regex.helper.js';
-import _ from 'lodash';
+import { deleteImagesFromDocument } from '../services/image.service.js';
 import { error, success } from '../helpers/response.js';
 
 export async function searchPromotions(filters) {
@@ -198,6 +199,11 @@ export async function deletePromotion(promotion) {
     if (promotion.endDate < new Date()) {
         return error(400, 'Promotion has expired');
     }
+
+    await Promise.all([
+        deleteImagesFromDocument(promotion, 'bannerImage'),
+        deleteImagesFromDocument(promotion, 'mainImage'),
+    ]);
 
     const deletedPromotion = promotion.toObject();
     await promotion.deleteOne();

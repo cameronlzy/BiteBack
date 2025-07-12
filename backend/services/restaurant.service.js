@@ -5,8 +5,14 @@ import OwnerProfile from '../models/ownerProfile.model.js';
 import Review from '../models/review.model.js';
 import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import Promotion from '../models/promotion.model.js';
+import Event from '../models/event.model.js';
 import Staff from '../models/staff.model.js';
 import VisitHistory from '../models/visitHistory.model.js';
+import QueueCounter from '../models/queueCounter.model.js';
+import QueueEntry from '../models/queueEntry.model.js';
+import RewardPoint from '../models/rewardPoint.model.js';
+import RewardItem from '../models/rewardItem.model.js';
+import DailyAnalytics from '../models/dailyAnalytics.model.js';
 import { DateTime } from 'luxon';
 import mongoose from 'mongoose';
 import * as reservationService from '../services/reservation.service.js';
@@ -362,14 +368,27 @@ export async function deleteRestaurantAndAssociations(restaurant, session = unde
   // delete images
   await deleteImagesFromDocument(restaurant, 'images');
   
-  // delete restaurants and it's associations
-  await Promise.all([
-    Reservation.deleteMany({ restaurant: restaurant._id }).session(session),
-    Review.deleteMany({ restaurant: restaurant._id }).session(session),
-    ReviewBadgeVote.deleteMany({ restaurant: restaurant._id }).session(session),
-    Staff.deleteMany({ restaurant: restaurant._id }).session(session),
-    Promotion.deleteMany({ restaurant: restaurant._id }).session(session)
-  ]);
+  // delete associations
+  const models = [
+    Reservation,
+    Review,
+    ReviewBadgeVote,
+    Staff,
+    Promotion,
+    Event,
+    DailyAnalytics,
+    QueueCounter,
+    QueueEntry,
+    RewardPoint,
+    RewardItem,
+    VisitHistory,
+  ];
+
+  await Promise.all(
+    models.map((Model) =>
+      Model.deleteMany({ restaurant: restaurant._id }).session(session)
+    )
+  );
 
   // delete restaurant after children deleted
   await Restaurant.findByIdAndDelete(restaurant._id).session(session);

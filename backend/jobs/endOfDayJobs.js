@@ -1,8 +1,7 @@
 import cron from 'node-cron';
 import { DateTime } from 'luxon';
-import { processEndOfDay } from '../services/scheduledJobs/processEndOfDay.js';
+import { processEndOfDay, backfillReviewAnalytics } from '../services/scheduledJobs/endOfDay.service.js';
 import { runJob } from '../helpers/jobRunner.js';
-import { backfillReviewAnalytics } from '../services/scheduledJobs/backfillReviewAnalytics.js';
 
 export function registerEndOfDayJobs(timezone = 'Asia/Singapore') {
     if (process.env.NODE_ENV === 'test') return;

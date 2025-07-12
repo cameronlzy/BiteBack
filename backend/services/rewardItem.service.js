@@ -23,7 +23,6 @@ export async function getAllItems(restaurant, query) {
 export async function getItemById(itemId) {
     const item = await RewardItem.findById(itemId).lean();
     if (!item) return error(404, 'Item not found');
-    if (item.isDeleted) return error(404, 'Item has been deleted');
     return success(item);
 }
 

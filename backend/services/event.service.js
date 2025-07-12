@@ -3,6 +3,7 @@ import { DateTime } from 'luxon';
 import Event from '../models/event.model.js';
 import Reservation from '../models/reservation.model.js';
 import Restaurant from '../models/restaurant.model.js';
+import { deleteImagesFromDocument } from '../services/image.service.js';
 import { error, success } from '../helpers/response.js';
 
 export async function getAllPublicEvents(query) {
@@ -186,6 +187,11 @@ export async function deleteEvent(event) {
     if (event.endDate < new Date()) {
         return error(400, 'Event has expired');
     }
+
+    await Promise.all([
+        deleteImagesFromDocument(event, 'bannerImage'),
+        deleteImagesFromDocument(event, 'mainImage'),
+    ]);
 
     const deletedEvent = event.toObject();
     await event.deleteOne();
