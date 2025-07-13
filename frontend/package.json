@@ -9,6 +9,9 @@
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "preview": "vite preview"
   },
+    "lint-staged": {
+  "*.{js,jsx,mjs}": "eslint --fix"
+  },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",

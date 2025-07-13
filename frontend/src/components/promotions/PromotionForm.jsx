@@ -19,6 +19,7 @@ import {
   savePromotion,
   getPromotionById,
   updatePromotionImage,
+  uploadPromotionImages,
 } from "@/services/promotionService"
 import {
   Select,
@@ -27,10 +28,9 @@ import {
   SelectItem,
   SelectTrigger,
 } from "../ui/select"
-import { objectComparator } from "@/utils/objectComparator"
+import { objectCleaner, objectComparator } from "@/utils/objectComparator"
 import { DateTime } from "luxon"
 import BackButton from "../common/BackButton"
-import { toSGTISO } from "@/utils/timeConverter"
 import { ownedByUser } from "@/utils/ownerCheck"
 
 const PromotionForm = ({ user }) => {
@@ -44,7 +44,7 @@ const PromotionForm = ({ user }) => {
 
   useEffect(() => {
     if (user.role !== "owner") {
-      toast.error("Unauthorized access to promotion form")
+      toast.error("Unauthorised access to promotion form")
       navigate("/restaurants", { replace: true })
     }
   }, [user._id])
@@ -58,15 +58,15 @@ const PromotionForm = ({ user }) => {
         const isOwned = ownedByUser(promotion?.restaurant, user)
 
         if (!isOwned) {
-          toast.error("You are not authorized to edit this promotion")
+          toast.error("You are not authorised to edit this promotion")
           return navigate(`/promotions/${promotionId}`, { replace: true })
         }
 
         form.reset({
           title: promotion.title || "",
           description: promotion.description || "",
-          startDate: promotion.startDate?.slice(0, 16),
-          endDate: promotion.endDate?.slice(0, 16),
+          startDate: promotion.startDate?.slice(0, 10),
+          endDate: promotion.endDate?.slice(0, 10),
           timeWindow: {
             startTime: promotion.timeWindow?.startTime || "",
             endTime: promotion.timeWindow?.endTime || "",
@@ -107,7 +107,10 @@ const PromotionForm = ({ user }) => {
   })
 
   const { control, handleSubmit, formState, setError } = form
-  const localMin = DateTime.local().toFormat("yyyy-LL-dd'T'HH:mm")
+  const localMin = DateTime.local().toFormat("yyyy-LL-dd")
+  const now = DateTime.local()
+  const startDateHasPassed =
+    promotion?.startDate && DateTime.fromISO(promotion.startDate) < now
 
   useEffect(() => {
     return () => {
@@ -163,11 +166,32 @@ const PromotionForm = ({ user }) => {
         payload._id = promotionId
       }
 
-      if (data.startDate) payload.startDate = toSGTISO(data.startDate)
-      if (data.endDate) payload.endDate = toSGTISO(data.endDate)
-      const cleanedNoEmpty = Object.fromEntries(
-        Object.entries({ ...payload }).filter(([_ignore, v]) => v !== "")
-      )
+      const startDateDT = DateTime.fromISO(data.startDate, {
+        zone: "Asia/Singapore",
+      })
+      const endDateDT = DateTime.fromISO(data.endDate, {
+        zone: "Asia/Singapore",
+      })
+
+      if (hasStart && hasEnd) {
+        payload.startDate = startDateDT
+          .set({
+            hour: Number(startTime.split(":")[0]),
+            minute: Number(startTime.split(":")[1]),
+          })
+          .toISO()
+
+        payload.endDate = endDateDT
+          .set({
+            hour: Number(endTime.split(":")[0]),
+            minute: Number(endTime.split(":")[1]),
+          })
+          .toISO()
+      } else {
+        payload.startDate = startDateDT.startOf("day").toISO()
+        payload.endDate = endDateDT.endOf("day").toISO()
+      }
+      const cleanedNoEmpty = objectCleaner(payload)
       let changes = promotionId
         ? objectComparator(promotion, cleanedNoEmpty)
         : cleanedNoEmpty
@@ -195,11 +219,18 @@ const PromotionForm = ({ user }) => {
       }
 
       if (Object.keys(changedImages).length > 0) {
-        await updatePromotionImage(newPromotion._id, changedImages)
+        if (isEdit) {
+          await updatePromotionImage(newPromotion._id, changedImages)
+        } else {
+          await uploadPromotionImages(newPromotion._id, [
+            mainImageFile,
+            bannerImageFile,
+          ])
+        }
       }
 
       toast.success(isEdit ? "Promotion updated" : "Promotion created")
-      navigate(`/promotions`, { replace: true })
+      navigate(`/owner/events-promos`, { replace: true })
     } catch (ex) {
       if (ex.response?.status === 400) {
         const message = ex.response.data?.error
@@ -261,8 +292,23 @@ const PromotionForm = ({ user }) => {
               <FormItem>
                 <FormLabel>Start Date & Time</FormLabel>
                 <FormControl>
-                  <Input type="datetime-local" {...field} min={localMin} />
+                  <Input
+                    type="date"
+                    {...field}
+                    min={!promotionId ? localMin : undefined}
+                    readOnly={startDateHasPassed}
+                    className={
+                      startDateHasPassed
+                        ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                        : ""
+                    }
+                  />
                 </FormControl>
+                {startDateHasPassed && (
+                  <p className="text-sm text-muted-foreground italic mt-1">
+                    Start date cannot be changed once promotion has begun.
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -275,7 +321,7 @@ const PromotionForm = ({ user }) => {
               <FormItem>
                 <FormLabel>End Date & Time</FormLabel>
                 <FormControl>
-                  <Input type="datetime-local" {...field} min={localMin} />
+                  <Input type="date" {...field} min={localMin} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

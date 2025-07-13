@@ -6,7 +6,9 @@ export const handle401 = async (error) => {
     localStorage.removeItem("staffUser")
     localStorage.removeItem("restaurant")
     await auth.logout()
-    localStorage.setItem("toastMessage","Session expired. Please re-login.")
+    localStorage.setItem("toastMessage","Session expired. Please re-login.", {
+      toastId: "sessionStaffExpiry"
+    })
     window.location = "/staff/login"
     return true
   }

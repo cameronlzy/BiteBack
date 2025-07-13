@@ -25,7 +25,7 @@ const StaffLogin = ({ user, loading, setUser }) => {
 
   if (loading) return <LoadingSpinner />
   if (user && user.role !== "staff") {
-    toast.info("You are not authorized to access the staff portal", {
+    toast.info("You are not authorised to access the staff portal", {
       toastId: "non-staff-redirect",
     })
     return <Navigate to="/" replace />

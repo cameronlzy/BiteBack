@@ -4,7 +4,7 @@ import SearchBar from "./SearchBar"
 import SortBy from "./common/SortBy"
 import RestaurantCard from "./common/RestaurantCard"
 import Pagination from "./common/Pagination"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import { Button } from "./ui/button"
 import { Utensils } from "lucide-react"
 import { toast } from "react-toastify"
@@ -12,71 +12,29 @@ import LoadingSpinner from "./common/LoadingSpinner"
 
 const Restaurants = () => {
   const [restaurants, setRestaurants] = useState([])
-  const [params, setParams] = useState({
-    search: null,
-    sortBy: null,
-    order: null,
-    page: 1,
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [triggeredSearch, setTriggeredSearch] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parseInt(searchParams.get("page")) || 1
+  const sortBy = searchParams.get("sortBy") || "name"
+  const order = searchParams.get("order") || "asc"
+  const search = searchParams.get("search") || ""
   const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchInput, setSearchInput] = useState("")
   const [totalPages, setTotalPages] = useState(1)
-  const [restored, setRestored] = useState(false)
   const [totalCount, setTotalCount] = useState(0)
 
   useEffect(() => {
-    if (!restored) return
-
-    sessionStorage.setItem(
-      "restaurantState",
-      JSON.stringify({
-        params,
-        restaurants,
-        searchInput,
-        totalPages,
-        totalCount,
-      })
-    )
-  }, [params, restaurants, searchInput, totalPages, totalCount, restored])
-
-  useEffect(() => {
-    const saved = sessionStorage.getItem("restaurantState")
-    if (saved) {
-      const { params, restaurants, searchInput, totalPages, totalCount } =
-        JSON.parse(saved)
-      setParams(params)
-      setRestaurants(restaurants)
-      setSearchInput(searchInput)
-      setTotalPages(totalPages)
-      setTotalCount(totalCount)
-    } else {
-      setParams({
-        search: null,
-        sortBy: null,
-        order: null,
-        page: 1,
-      })
-    }
-
-    setRestored(true)
-  }, [])
-
+    setSearchInput(search)
+  }, [search])
   useEffect(() => {
     const fetchData = async () => {
-      if (!restored) return
-
       try {
-        const cleanParams = {
-          ...params,
-          search:
-            typeof params.search === "string" && params.search.trim() === ""
-              ? null
-              : params.search,
-        }
-
-        const data = await getRestaurants(cleanParams)
+        const data = await getRestaurants({
+          page,
+          sortBy,
+          order,
+          search: search.trim() === "" ? null : search,
+        })
         setRestaurants(data.restaurants)
         setTotalPages(data.totalPages)
         setTotalCount(data.totalCount)
@@ -84,40 +42,39 @@ const Restaurants = () => {
         toast.error("Failed to fetch restaurants")
       } finally {
         setLoading(false)
-        if (triggeredSearch) {
-          setIsSubmitting(false)
-          setTriggeredSearch(false)
-        }
       }
     }
+
     fetchData()
-  }, [params, restored])
+  }, [page, sortBy, order, search])
   const handleSearchSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
-    setTriggeredSearch(true)
-    setParams((prev) => ({
-      ...prev,
-      search: searchInput.trim() === "" ? null : searchInput.trim(),
+    setSearchParams({
       page: 1,
-    }))
+      sortBy,
+      order,
+      search: searchInput.trim(),
+    })
+    setIsSubmitting(false)
   }
 
   const handleSort = ({ value, direction }) => {
-    setParams((prev) => ({
-      ...prev,
+    setSearchParams({
+      page: 1,
+      search,
       sortBy: value,
       order: direction,
-      page: 1,
-    }))
+    })
   }
 
   const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > totalPages) return
-    setParams((prev) => ({
-      ...prev,
+    setSearchParams({
       page: newPage,
-    }))
+      search,
+      sortBy,
+      order,
+    })
   }
 
   const options = [
@@ -167,7 +124,7 @@ const Restaurants = () => {
       </div>
 
       <Pagination
-        currentPage={params.page}
+        currentPage={page}
         totalPages={totalPages}
         totalCount={totalCount}
         onPageChange={handlePageChange}

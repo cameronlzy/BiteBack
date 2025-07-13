@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu"
@@ -25,19 +26,22 @@ const RestaurantRelatedItemUI = ({
   onActivate = null,
   currentlyActive = null,
   banner = null,
-  onClick = null,
+  action = null,
+  form = null,
 }) => {
   return (
     <div className="max-w-3xl mx-auto mt-8 px-4 relative">
       <BackButton from={from} />
+      {banner && <div className="mt-4 translate-y-2">{banner}</div>}
 
-      {banner && <div className="mt-4">{banner}</div>}
-
-      <Card className="mt-4 shadow-xl border relative">
-        <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <Card className="mt-0 shadow-xl border relative">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
           <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-          <Link to={`/restaurants/${restaurant._id}`} state={{ from }}>
-            <Button variant="outline" size="sm">
+          <Link
+            to={`/restaurants/${restaurant._id}`}
+            state={{ from: location.pathname }}
+          >
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
               To {restaurant.name || "Restaurant"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -76,7 +80,6 @@ const RestaurantRelatedItemUI = ({
                       <Settings className="w-5 h-5" />
                     </Button>
                   </DropdownMenuTrigger>
-
                   <DropdownMenuContent
                     align="end"
                     className="w-40 bg-white shadow-md rounded-md"
@@ -89,12 +92,19 @@ const RestaurantRelatedItemUI = ({
                         Edit {type}
                       </DropdownMenuItem>
                     )}
-                    {onActivate && type === "Promotion" && (
+                    {onActivate && (
                       <DropdownMenuItem
                         className="hover:bg-gray-100 text-gray-800"
                         onClick={onActivate}
                       >
-                        {currentlyActive ? "Deactivate " : "Activate "} {type}
+                        {type === "Event"
+                          ? currentlyActive
+                            ? "Cancel"
+                            : "Re-Open"
+                          : currentlyActive
+                          ? "Deactivate"
+                          : "Activate"}{" "}
+                        {type}
                       </DropdownMenuItem>
                     )}
                     {onDelete && (
@@ -117,17 +127,31 @@ const RestaurantRelatedItemUI = ({
 
           <div className="text-sm text-gray-600 space-y-1">{metaContent}</div>
 
-          {onClick && (
+          {action && (
             <Button
               variant="outline"
-              size="sm"
+              size="lg"
               className="mt-4"
-              onClick={onClick.onClick}
+              onClick={action.onClick}
+              disabled={action.disabled}
             >
-              {onClick.icon}
-              <span className="ml-2">{onClick.label}</span>
+              {action.icon}
+              <span className="ml-2">{action.label}</span>
             </Button>
           )}
+
+          <AnimatePresence>
+            {form && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="mt-4">{form}</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </div>

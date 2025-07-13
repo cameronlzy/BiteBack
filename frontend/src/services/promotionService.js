@@ -1,5 +1,6 @@
 import { DateTime } from "luxon"
 import http from "./httpService"
+import { dateConverter } from "@/utils/timeConverter"
 
 const apiEndpoint = import.meta.env.VITE_API_URL + "/promotions"
 const timeConverter = (p) => {
@@ -13,25 +14,6 @@ const timeConverter = (p) => {
       p.timeWindow.endTime = convert(p.timeWindow.endTime)
     }
     return p
-}
-
-const dateConverter = (promotion) => {
-  const convertToSGT = (isoDateStr) =>
-    DateTime.fromISO(isoDateStr, { zone: "utc" }).setZone("Asia/Singapore").toISO()
-
-  if (promotion.startDate) {
-    promotion.startDate = convertToSGT(promotion.startDate)
-  }
-
-  if (promotion.endDate) {
-    promotion.endDate = convertToSGT(promotion.endDate)
-  }
-
-  if (promotion.createdAt) {
-    promotion.createdAt = convertToSGT(promotion.createdAt)
-  }
-
-  return promotion
 }
 
 const convertPromotion = (promotion) => {
@@ -117,10 +99,11 @@ export async function getPromotionById(id) {
   return convertPromotion(data)
 }
 
-export async function getOwnerPromotions() {
-  const { data } = await http.get(`${apiEndpoint}/owner`)
-  const result = data.map(convertPromotion)
-  return result
+export async function getOwnerPromotions(params) {
+  console.log(params)
+  const { data } = await http.get(`${apiEndpoint}/owner`, { params })
+  const promotions = data?.promotions?.map(convertPromotion)
+  return {...data, promotions}
 }
 
 export async function deletePromotion(id) {

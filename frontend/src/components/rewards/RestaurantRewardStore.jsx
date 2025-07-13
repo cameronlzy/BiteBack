@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react"
-import { useLocation, useNavigate, useParams } from "react-router-dom"
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom"
 import TransactionCard from "@/components/common/TransactionCard"
 import { getRewardsForRestaurant } from "@/services/rewardService"
 import {
@@ -23,7 +28,8 @@ const RestaurantRewardStore = ({ user }) => {
   const [isOwner, setIsOwner] = useState(false)
   const [rewards, setRewards] = useState(null)
   const [restaurant, setRestaurant] = useState(null)
-  const [page, setPage] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parseInt(searchParams.get("page")) || 1
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [normalisedFrom, setNormalisedFrom] = useState(
@@ -63,9 +69,11 @@ const RestaurantRewardStore = ({ user }) => {
     }
 
     fetchRewardsAndRestaurant()
-  }, [restaurantId, page])
+  }, [restaurantId, page, user])
 
-  if (!rewards) return <LoadingSpinner className="my-10" />
+  if (!rewards) {
+    return <LoadingSpinner className="my-10" />
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -81,11 +89,11 @@ const RestaurantRewardStore = ({ user }) => {
         </div>
       ) : user?.role === "customer" ? (
         <CustomerPoints customer={user} restaurant={restaurant} />
-      ) : (
-        <p className="text-muted-foreground text-center">
+      ) : !user ? (
+        <p className="text-muted-foreground text-center mb-3">
           Please Login to see your Points
         </p>
-      )}
+      ) : null}
 
       {rewards.length === 0 ? (
         <p className="text-muted-foreground text-center">
@@ -99,7 +107,6 @@ const RestaurantRewardStore = ({ user }) => {
               const categoryLabel =
                 categoryOptions.find((opt) => opt.value === reward.category)
                   ?.label || reward.category
-
               return (
                 <TransactionCard
                   key={reward._id}
@@ -121,6 +128,8 @@ const RestaurantRewardStore = ({ user }) => {
                       },
                     })
                   }
+                  disabled={!reward.isActive}
+                  disabledMessage="Reward is currently inactive"
                 />
               )
             })}
@@ -129,7 +138,7 @@ const RestaurantRewardStore = ({ user }) => {
             currentPage={page}
             totalPages={totalPages}
             totalCount={totalCount}
-            onPageChange={(p) => setPage(p)}
+            onPageChange={(p) => setSearchParams({ page: p })}
           />
         </div>
       )}

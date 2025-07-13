@@ -10,10 +10,12 @@ import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import Pagination from "@/components/common/Pagination"
 import { DateTime } from "luxon"
 import LoadingSpinner from "../common/LoadingSpinner"
+import { useSearchParams } from "react-router-dom"
 
 const CustomerCurrentRewards = () => {
   const [rewards, setRewards] = useState([])
-  const [page, setPage] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parseInt(searchParams.get("page")) || 1
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -96,6 +98,8 @@ const CustomerCurrentRewards = () => {
                   clickMessage: "Claim Reward",
                   onClick: () => handleActivate(reward._id),
                 })}
+                disabled={!reward.isActive}
+                disabledMessage="Reward is currently inactive"
               />
             )
           })}
@@ -105,7 +109,7 @@ const CustomerCurrentRewards = () => {
         currentPage={page}
         totalPages={totalPages}
         totalCount={totalCount}
-        onPageChange={(p) => setPage(p)}
+        onPageChange={(p) => setSearchParams({ page: p })}
       />
     </div>
   )

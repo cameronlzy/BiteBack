@@ -38,7 +38,7 @@ const RestaurantsDashboard = ({ user }) => {
                         bgColor="bg-white"
                         hoverColor="hover:bg-gray-100"
                         textColor="text-black"
-                        expandedWidth="w-[100px]"
+                        expandedWidth="group-hover:w-[100px]"
                       />
                     </div>
                     <div className="group">
@@ -49,7 +49,7 @@ const RestaurantsDashboard = ({ user }) => {
                         bgColor="bg-white"
                         hoverColor="hover:bg-gray-100"
                         textColor="text-black"
-                        expandedWidth="w-[100px]"
+                        expandedWidth="group-hover:w-[100px]"
                       />
                     </div>
                     <div className="group">
@@ -59,7 +59,7 @@ const RestaurantsDashboard = ({ user }) => {
                         label="Rewards"
                         bgColor="bg-indigo-600"
                         hoverColor="hover:bg-indigo-700"
-                        expandedWidth="w-[110px]"
+                        expandedWidth="group-hover:w-[110px]"
                       />
                     </div>
                   </div>

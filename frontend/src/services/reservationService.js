@@ -7,19 +7,22 @@ const apiEndpoint = import.meta.env.VITE_API_URL + "/reservations"
 function getReservationUrl(id, isRestaurantId) {
     return isRestaurantId ? apiEndpoint + "/restaurant/" + id : `${apiEndpoint}` + "/" + id
 }
-export async function getReservations() {
-  const { data } = await http.get(apiEndpoint)
-  return data.map((r) => ({
+export async function getReservations(params) {
+  const { data } = await http.get(apiEndpoint, { params})
+  const reservations =  data.reservations.map((r) => ({
     ...r,
-    reservationDate: toSGT(r.reservationDate).toISO(),
+    startDate: toSGT(r.startDate).toISO(),
   }))
+  return {
+    ...data, reservations
+  }
 }
 
 export async function getIndividualReservation(id) {
   const { data } = await http.get(getReservationUrl(id, false))
   return {
     ...data,
-    reservationDate: toSGT(data.reservationDate).toISO(),
+    startDate: toSGT(data.startDate).toISO(),
   }
 }
 
@@ -29,7 +32,7 @@ export async function getRestaurantReservations(id, startDate, endDate) {
   const { data } = await http.get(url)
   return data.map((r) => ({
     ...r,
-    reservationDate: toSGT(r.reservationDate).toISO(),
+    startDate: toSGT(r.startDate).toISO(),
   }))
 }
 
@@ -57,8 +60,8 @@ export async function updateReservationStatus(reservationId, status) {
   return data
 }
 
-export async function getCurrentSlotReservations(restaurantId) {
-  const response = await http.get(`${apiEndpoint}/restaurant/${restaurantId}`)
+export async function getCurrentSlotReservations(restaurantId, params) {
+  const response = await http.get(`${import.meta.env.VITE_API_URL}/restaurants/${restaurantId}/reservations`, { params })
   return response.data
 }
 

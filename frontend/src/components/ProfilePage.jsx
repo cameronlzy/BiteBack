@@ -1,4 +1,4 @@
-import UserReservation from "@/components/reservations/UserReservations"
+import CustomerReservations from "@/components/reservations/CustomerReservations"
 import authService from "@/services/authService"
 import { Button } from "@/components/ui/button"
 import { Settings } from "lucide-react"
@@ -98,9 +98,9 @@ const ProfilePage = ({ user, isLoading }) => {
         </div>
       </div>
 
-      <UserReservation user={user} />
       {user.role === "customer" && (
         <div className="w-full">
+          <CustomerReservations user={user} />
           <CustomerReviews viewedCustomer={user} user={user} />
           <CustomerPoints />
         </div>

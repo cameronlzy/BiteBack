@@ -8,13 +8,14 @@ import {
   getRewardById,
   deleteReward,
   redeemRewardItem,
+  getCustomerPointsForRestaurant,
+  saveReward,
 } from "@/services/rewardService"
+import { getRestaurant } from "@/services/restaurantService"
 import { categoryOptions, iconMap } from "@/utils/rewardUtils"
 import { ownedByUserWithId } from "@/utils/ownerCheck"
-import { getRestaurant } from "@/services/restaurantService"
-import { getCustomerPointsForRestaurant } from "@/services/rewardService"
 import RestaurantRelatedItemUI from "../common/RestaurantRelatedUI"
-import { DollarSign } from "lucide-react"
+import { AlertTriangle, DollarSign } from "lucide-react"
 
 const RewardPage = ({ user }) => {
   const [reward, setReward] = useState(null)
@@ -67,6 +68,24 @@ const RewardPage = ({ user }) => {
     const isOwnedByUserCheck = ownedByUserWithId(reward?.restaurant, user)
     setIsOwnedByUser(isOwnedByUserCheck)
   }, [reward, normalisedFrom, user])
+
+  const handleToggleActivate = async () => {
+    try {
+      const updated = await saveReward(restaurant?._id, {
+        _id: reward._id,
+        isActive: !reward.isActive,
+      })
+      toast.success(`Reward ${updated.isActive ? "Activated" : "Deactivated"}`)
+      setReward((prev) => ({
+        ...prev,
+        ...updated,
+        restaurant: prev?.restaurant,
+      }))
+    } catch (ex) {
+      toast.error("Failed to toggle promotion status")
+      throw ex
+    }
+  }
 
   const handleDeleteReward = async () => {
     const confirmed = await confirm(
@@ -147,6 +166,8 @@ const RewardPage = ({ user }) => {
       icon={<Icon className={`w-16 h-16 ${colour}`} />}
       categoryLabel={category}
       description={description}
+      onActivate={handleToggleActivate}
+      currentlyActive={isActive}
       metaContent={
         <>
           <p>
@@ -157,7 +178,6 @@ const RewardPage = ({ user }) => {
               Stock available: <strong>{stock}</strong>
             </p>
           )}
-          {!isActive && <p className="text-red-500">Inactive reward</p>}
         </>
       }
       isOwnedByUser={isOwnedByUser}
@@ -167,14 +187,24 @@ const RewardPage = ({ user }) => {
         })
       }
       onDelete={handleDeleteReward}
-      onClick={
-        user?.role === "customer"
+      action={
+        user?.role === "customer" && isActive
           ? {
               onClick: handleRedeemReward,
               icon: <DollarSign className="w-5 h-5" />,
               label: `Redeem for ${pointsRequired} points`,
             }
           : null
+      }
+      banner={
+        !isActive ? (
+          <div className="bg-gray-100 text-gray-800 border-t-4 border-gray-400 px-4 py-3 flex items-center justify-between rounded-t-md">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5" />
+              <span className="font-medium">This reward is inactive</span>
+            </div>
+          </div>
+        ) : null
       }
     />
   )
