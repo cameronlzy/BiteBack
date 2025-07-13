@@ -50,9 +50,9 @@ export function filterOpenRestaurants(restaurants) {
     const timezone = restaurant.timezone || 'Asia/Singapore';
     const localNow = nowUTC.setZone(timezone);
     const currentDay = localNow.weekday - 1;
-
     const days = restaurant.openingHours.split('|');
     const hoursToday = days[currentDay];
+
     if (!hoursToday || hoursToday.toLowerCase() === 'x') return false;
 
     const [startStr, endStr] = hoursToday.split('-');
@@ -61,13 +61,13 @@ export function filterOpenRestaurants(restaurants) {
     const [startHour, startMin] = startStr.split(':').map(Number);
     const [endHour, endMin] = endStr.split(':').map(Number);
 
-    const localStart = localNow.set({ hour: startHour, minute: startMin, second: 0 });
-    let localEnd = localNow.set({ hour: endHour, minute: endMin, second: 59 });
+    const startUTC = nowUTC.set({ hour: startHour, minute: startMin, second: 0 });
+    let endUTC = nowUTC.set({ hour: endHour, minute: endMin, second: 59 });
+    if (endUTC < startUTC) endUTC = endUTC.plus({ days: 1 });
 
-    if (localEnd < localStart) localEnd = localEnd.plus({ days: 1 });
-    return localNow >= localStart && localNow <= localEnd;
+    return nowUTC >= startUTC && nowUTC <= endUTC;
   });
-};
+}
 
 export function getCurrentTimeSlotStartUTC(restaurant) {
   const now = DateTime.utc();
