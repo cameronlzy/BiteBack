@@ -208,7 +208,7 @@ const PromotionForm = ({ user }) => {
       }
 
       toast.success(isEdit ? "Promotion updated" : "Promotion created")
-      navigate(`/promotions`, { replace: true })
+      navigate(`/owner/events-promos`, { replace: true })
     } catch (ex) {
       if (ex.response?.status === 400) {
         const message = ex.response.data?.error

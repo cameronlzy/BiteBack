@@ -246,9 +246,7 @@ const ReservationForm = ({ user }) => {
   }
 
   const handleFirstSubmit = async () => {
-    // Take userId from the user object in the localStorage
     setValue("userId", String(user._id))
-    // Use the ID in the URL
     setValue("restaurantId", String(restaurant._id))
     const valid = await trigger()
     if (valid) setConfirming(true)
@@ -366,6 +364,7 @@ const ReservationForm = ({ user }) => {
                       updateDate={updateDate}
                       existingItems={existingReservations}
                       restaurant={restaurant}
+                      type="reservation"
                     />
                   </div>
                   <AnimatePresence mode="wait">

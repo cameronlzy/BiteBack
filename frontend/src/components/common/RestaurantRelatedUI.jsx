@@ -37,7 +37,10 @@ const RestaurantRelatedItemUI = ({
       <Card className="mt-0 shadow-xl border relative">
         <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
           <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-          <Link to={`/restaurants/${restaurant._id}`} state={{ from }}>
+          <Link
+            to={`/restaurants/${restaurant._id}`}
+            state={{ from: location.pathname }}
+          >
             <Button variant="outline" size="sm" className="w-full sm:w-auto">
               To {restaurant.name || "Restaurant"}
               <ArrowRight className="ml-2 h-4 w-4" />

@@ -519,43 +519,42 @@ export const rewardClaimSchema = Joi.object({
 })
 
 export const eventSchema = Joi.object({
-  title: Joi.string()
+  title: Joi.string().required().label("Title").messages({
+    "string.empty": "Title is required",
+  }),
+
+  description: Joi.string().required().label("Description").messages({
+    "string.empty": "Description is required",
+  }),
+
+  date: Joi.date().required().label("Event Date").messages({
+    "date.base": "Date must be valid",
+    "any.required": "Date is required",
+  }),
+
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
     .required()
-    .label("Title")
+    .label("Start Time")
     .messages({
-      "string.empty": "Title is required",
+      "string.empty": "Start Time is required",
+      "string.pattern.base": "Start Time must be in HH:mm format",
     }),
 
-  description: Joi.string()
-    .required()
-    .label("Description")
-    .messages({
-      "string.empty": "Description is required",
-    }),
-
-  startDate: Joi.string()
-    .isoDate()
-    .required()
-    .label("Start Date")
-    .messages({
-      "string.empty": "Start Date is required",
-      "string.isoDate": "Start Date must be a valid ISO date",
-    }),
-
-  endDate: Joi.string()
-    .isoDate()
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
     .required()
     .custom((value, helpers) => {
-      const { startDate } = helpers?.state?.ancestors?.[0] || {}
-      if (startDate && new Date(value) <= new Date(startDate)) {
-        return helpers.message("End Date & Time must be after Start Date & Time")
+      const { startTime } = helpers?.state?.ancestors?.[0] || {}
+      if (startTime && value <= startTime) {
+        return helpers.message("End Time must be after Start Time")
       }
       return value
     })
-    .label("End Date")
+    .label("End Time")
     .messages({
-      "string.empty": "End Date is required",
-      "string.isoDate": "End Date must be a valid ISO date",
+      "string.empty": "End Time is required",
+      "string.pattern.base": "End Time must be in HH:mm format",
     }),
 
   paxLimit: Joi.number()
@@ -578,6 +577,27 @@ export const eventSchema = Joi.object({
       "any.required": "Max Guests per Booking is required",
     }),
 
+  slotPax: Joi.number()
+    .integer()
+    .min(1)
+    .required()
+    .custom((value, helpers) => {
+      const { restaurant } = helpers?.state?.ancestors?.[0] || {}
+      const maxCap = restaurant?.maxCapacity
+      if (maxCap && value > maxCap) {
+        return helpers.message(
+          `Slot Pax cannot exceed restaurant max capacity (${maxCap})`
+        )
+      }
+      return value
+    })
+    .label("Slot Pax")
+    .messages({
+      "number.base": "Slot Pax must be a number",
+      "number.min": "Slot Pax must be at least 1",
+      "any.required": "Slot Pax is required",
+    }),
+
   remarks: Joi.string()
     .allow("")
     .max(300)
@@ -591,8 +611,14 @@ export const eventSchema = Joi.object({
     .label("Restaurant")
     .messages({
       "string.empty": "Restaurant is required",
+      "any.required": "Restaurant is required",
     }),
-    minVisits: Joi.number().integer().min(0).optional(),
+    
+  minVisits: Joi.number()
+    .integer()
+    .min(0)
+    .optional()
+    .label("Minimum Visits")
 })
 
 export const joinEventSchema = Joi.object({

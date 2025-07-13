@@ -16,19 +16,7 @@ const RoundedActionButton = ({
 }) => {
   const location = useLocation()
 
-  const toGroupHoverWidth = (width, label) => {
-    if (typeof width !== "string") return ""
-
-    return label === "View Rewards"
-      ? "group-hover:w-[150px]"
-      : label === "View Member Events"
-      ? "group-hover:w-[190px]"
-      : `group-hover:${width}`
-  }
-
-  const widthClass = expandedWidth
-    ? toGroupHoverWidth(expandedWidth, label)
-    : "group-hover:w-[150px]"
+  const widthClass = expandedWidth ?? "group-hover:w-[150px]"
   return (
     <Link
       to={to}

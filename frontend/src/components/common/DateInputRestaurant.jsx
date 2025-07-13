@@ -1,12 +1,14 @@
 import { getDay } from "date-fns"
 import Calendar from "./Calendar"
 import CustomDay from "./CustomDay"
+import { isBeyond90Days } from "@/utils/dateUtil"
 
 const DateInputRestaurant = ({
   startDate,
   updateDate,
   existingItems,
   restaurant,
+  type = null,
 }) => {
   return (
     <Calendar
@@ -27,7 +29,7 @@ const DateInputRestaurant = ({
             restaurant.openingHours?.[weekday]?.toLowerCase() === "closed"
           const isPastDate =
             props.date.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
-
+          const beyond90Days = type === "reservation" && isBeyond90Days(props)
           return (
             <CustomDay
               {...props}
@@ -35,7 +37,7 @@ const DateInputRestaurant = ({
               existingItems={existingItems}
               type="Reservations"
               selected={startDate}
-              modifiers={{ disabled: isDisabled || isPastDate }}
+              modifiers={{ disabled: isDisabled || isPastDate || beyond90Days }}
             />
           )
         },

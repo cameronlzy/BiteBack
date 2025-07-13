@@ -13,8 +13,9 @@ import {
 import { saveReservation } from "@/services/reservationService"
 import { DateTime } from "luxon"
 import { joinEventSchema } from "@/utils/schemas"
+import { objectCleaner } from "@/utils/objectComparator"
 
-const JoinEventForm = ({ event }) => {
+const JoinEventForm = ({ event, setShowForm }) => {
   const form = useForm({
     resolver: joiResolver(joinEventSchema),
     defaultValues: {
@@ -38,9 +39,12 @@ const JoinEventForm = ({ event }) => {
         event: event._id,
       }
 
-      await saveReservation(payload, false)
+      const finalPayload = objectCleaner(payload)
+
+      await saveReservation(finalPayload, false)
       toast.success("Successfully joined event")
       form.reset()
+      setShowForm(false)
     } catch (ex) {
       toast.error("Failed to join event")
       throw ex

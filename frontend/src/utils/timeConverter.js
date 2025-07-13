@@ -189,13 +189,13 @@ export const isPromotionAvailable = (promotion) => {
 
 export const hasItemStarted = (item) => {
   const now = DateTime.now().setZone("Asia/Singapore")
-  const start = DateTime.fromISO(item.startDate)
+  const start = DateTime.fromISO(item.startDate).setZone("Asia/Singapore")
   return now >= start
 }
 
 export const hasItemEnded = (item) => {
   const now = DateTime.now().setZone("Asia/Singapore")
-  const end = DateTime.fromISO(item.endDate)
+  const end = DateTime.fromISO(item.endDate).setZone("Asia/Singapore")
   return end <= now
 }
 

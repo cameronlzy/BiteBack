@@ -11,7 +11,7 @@ import { getRestaurant } from "@/services/restaurantService"
 import RestaurantRelatedItemUI from "../common/RestaurantRelatedUI"
 import { AlertTriangle, CalendarPlus } from "lucide-react"
 import JoinEventForm from "./JoinEventForm"
-import { hasItemStarted } from "@/utils/timeConverter"
+import { hasItemStarted, readableTimeSettings } from "@/utils/timeConverter"
 import { activeCheck } from "@/utils/eventUtils"
 import { DateTime } from "luxon"
 
@@ -53,13 +53,16 @@ const EventPage = ({ user }) => {
 
   useEffect(() => {
     const fetchVisitHistory = async () => {
-      if (event?.minVisits) {
-        if (!user || user.role !== "customer") {
-          setMinVisitMessage(
-            "Please log in as Customer to check if you can join this Member Event."
-          )
-          return
-        }
+      if (!user || user.role !== "customer") {
+        setMinVisitMessage(
+          event?.minVisits > 0
+            ? "Please log in as Customer to check if you can join this Member Event."
+            : "Please log in as Customer to sign up for this Public Event"
+        )
+        return
+      }
+
+      if (event?.minVisits > 0) {
         try {
           const { visitCount } = await getCustomerVisitCount(restaurant._id)
           console.log(visitCount)
@@ -84,10 +87,13 @@ const EventPage = ({ user }) => {
   }, [event?.minVisits, restaurant?._id, user])
 
   useEffect(() => {
-    if (normalisedFrom.startsWith("/events") && event?.restaurant) {
+    if (
+      normalisedFrom.startsWith("/events") ||
+      (normalisedFrom.startsWith("/restaurants") && event?.restaurant)
+    ) {
       const segments = normalisedFrom.split("/")
       const eventEditString = segments[2]
-      if (eventEditString === "edit") {
+      if (eventEditString === "edit" || eventEditString === event.restaurant) {
         setNormalisedFrom(
           userIsOwner(user) ? "/owner/events-promos" : "/events"
         )
@@ -103,7 +109,7 @@ const EventPage = ({ user }) => {
       return
     }
     try {
-      const updated = await saveEvent(restaurant?._id, {
+      const updated = await saveEvent({
         _id: event._id,
         status: event.status === "scheduled" ? "cancelled" : "scheduled",
       })
@@ -137,10 +143,9 @@ const EventPage = ({ user }) => {
     )
     if (confirmed) {
       try {
-        await deleteEvent(event.restaurant, event._id)
+        await deleteEvent(event._id)
         toast.success("Event deleted")
-        // Change navigation
-        // navigate(`/current-events/${event.restaurant}`, { replace: true })
+        navigate(`/owner/events-promos`, { replace: true })
       } catch (ex) {
         toast.error("Failed to delete event")
         throw ex
@@ -181,11 +186,21 @@ const EventPage = ({ user }) => {
     )
   }
 
-  const { _id, title, description, paxLimit, mainImage, status, reservedPax } =
-    event
+  const {
+    _id,
+    title,
+    description,
+    paxLimit,
+    mainImage,
+    status,
+    reservedPax,
+    startDate,
+    endDate,
+  } = event
 
   const isActive = activeCheck(status)
   const hasStarted = hasItemStarted(event)
+  const hasAvailability = paxLimit - reservedPax > 0
   return (
     <RestaurantRelatedItemUI
       type="Event"
@@ -200,14 +215,26 @@ const EventPage = ({ user }) => {
       metaContent={
         <>
           <p className="text-base">
-            Slots available: <strong>{paxLimit - reservedPax}</strong>
+            Slots available:{" "}
+            <strong>
+              {hasAvailability ? paxLimit - reservedPax : "0 (Fully Booked)"} /{" "}
+              {paxLimit}
+            </strong>
+          </p>
+          <p>
+            <strong>Start Date & Time:</strong>{" "}
+            {DateTime.fromISO(startDate).toLocaleString(readableTimeSettings)}{" "}
+          </p>
+          <p>
+            <strong>End Date & Time:</strong>{" "}
+            {DateTime.fromISO(endDate).toLocaleString(readableTimeSettings)}
           </p>
           {event.minVisits > 0 && (
             <p className="text-sm text-gray-500">
               Minimum Visits to join: <strong>{event.minVisits}</strong>
             </p>
           )}
-          {minVisitMessage && user?.role !== "owner" && (
+          {minVisitMessage && (!user || user?.role !== "owner") && (
             <p className="text-sm text-red-500">{minVisitMessage}</p>
           )}
         </>
@@ -220,12 +247,12 @@ const EventPage = ({ user }) => {
       }
       onDelete={!hasStarted && reservedPax === 0 ? handleDeleteEvent : null}
       action={
-        user?.role === "customer" && isActive
+        (!user || user?.role === "customer") && isActive && hasAvailability
           ? {
               onClick: toggleJoinEvent,
               icon: <CalendarPlus className="w-5 h-5" />,
               label: showForm ? "Cancel Join" : "Join Event",
-              disabled: !!minVisitMessage,
+              disabled: !!minVisitMessage || !user,
             }
           : null
       }
@@ -239,9 +266,20 @@ const EventPage = ({ user }) => {
               </span>
             </div>
           </div>
+        ) : !hasAvailability ? (
+          <div className="bg-red-100 text-red-600 border-t-4 border-red-400 px-4 py-3 flex items-center justify-between rounded-t-md">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <span className="font-medium">This event is fully booked</span>
+            </div>
+          </div>
         ) : null
       }
-      form={showForm ? <JoinEventForm event={event} user={user} /> : null}
+      form={
+        showForm && hasAvailability ? (
+          <JoinEventForm event={event} user={user} setShowForm={setShowForm} />
+        ) : null
+      }
     />
   )
 }

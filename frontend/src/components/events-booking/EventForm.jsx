@@ -30,19 +30,23 @@ import {
 import { objectCleaner, objectComparator } from "@/utils/objectComparator"
 import { DateTime } from "luxon"
 import BackButton from "../common/BackButton"
-import { toSGTISO } from "@/utils/timeConverter"
 import { ownedByUserWithId } from "@/utils/ownerCheck"
 import { uploadEventImages } from "@/services/eventService"
 import { Info } from "lucide-react"
+import DateInputRestaurant from "../common/DateInputRestaurant"
+import { getRestaurant } from "@/services/restaurantService"
+import { motion } from "framer-motion"
 
 const EventForm = ({ user }) => {
   const navigate = useNavigate()
   const [mainImageFile, setMainImageFile] = useState(null)
   const [bannerImageFile, setBannerImageFile] = useState(null)
   const [event, setEvent] = useState(null)
+  const [restaurant, setRestaurant] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(null)
+  const [timeOptions, setTimeOptions] = useState([])
   const { eventId } = useParams()
   const location = useLocation()
-  console.log(location.state)
   const from = location.state?.from || "/events"
 
   useEffect(() => {
@@ -54,23 +58,71 @@ const EventForm = ({ user }) => {
     }
   }, [user._id])
 
+  useEffect(() => {
+    if (!restaurant || !selectedDate) return
+
+    const weekday = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ][selectedDate.getDay()]
+
+    const openStr = restaurant.openingHours?.[weekday]
+    console.log(openStr)
+    if (!openStr || openStr.toLowerCase() === "closed") return
+    const [startStr, endStr] = openStr.split("-")
+    const start = DateTime.fromFormat(startStr.trim(), "HH:mm")
+    const end = DateTime.fromFormat(endStr.trim(), "HH:mm")
+
+    const hours = []
+    let current = start
+
+    while (current < end.minus({ hours: 1 })) {
+      hours.push(current.toFormat("HH:mm"))
+      current = current.plus({ hours: 1 })
+    }
+    setTimeOptions(hours)
+  }, [restaurant, selectedDate])
+
   const form = useForm({
     resolver: safeJoiResolver(eventSchema),
     defaultValues: {
       title: "",
       description: "",
-      startDate: "",
-      endDate: "",
+      date: "",
+      startTime: "",
+      endTime: "",
       paxLimit: 1,
       maxPaxPerCustomer: 1,
       remarks: "",
       minVisits: 0,
+      slotPax: 1,
       restaurant: user.profile.restaurants?.[0]?._id || "",
     },
     mode: "onSubmit",
   })
 
-  const { control, handleSubmit, formState } = form
+  const { control, handleSubmit, formState, watch } = form
+
+  useEffect(() => {
+    const selectedRestaurantId = watch("restaurant")
+    if (!selectedRestaurantId) return
+
+    const fetchRestaurant = async () => {
+      try {
+        const res = await getRestaurant(selectedRestaurantId)
+        setRestaurant(res)
+      } catch (err) {
+        console.error("Failed to fetch restaurant:", err)
+      }
+    }
+
+    fetchRestaurant()
+  }, [watch("restaurant")])
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -78,21 +130,36 @@ const EventForm = ({ user }) => {
       try {
         const event = await getEventById(eventId)
         setEvent(event)
+
+        const restaurant = await getRestaurant(event.restaurant)
+        setRestaurant(restaurant)
+
         const isOwned = ownedByUserWithId(event?.restaurant, user)
         if (!isOwned) {
           toast.error("You are not authorised to edit this event")
           return navigate(`/events/${eventId}`, { replace: true })
         }
+
+        const dt = DateTime.fromISO(event.startDate, { zone: "Asia/Singapore" })
+        const endDt = DateTime.fromISO(event.endDate, {
+          zone: "Asia/Singapore",
+        })
+
         form.reset({
           title: event.title || "",
           description: event.description || "",
-          startDate: event.startDate?.slice(0, 16),
-          endDate: event.endDate?.slice(0, 16),
           paxLimit: event.paxLimit,
           maxPaxPerCustomer: event.maxPaxPerCustomer,
           remarks: event.remarks || "",
-          restaurant: event.restaurant._id,
+          restaurant: event.restaurant,
+          date: dt.toJSDate(),
+          startTime: dt.toFormat("HH:mm"),
+          endTime: endDt.toFormat("HH:mm"),
+          slotPax: event.slotPax || 1,
         })
+
+        setSelectedDate(dt.toJSDate())
+
         if (event.mainImage) setMainImageFile(event.mainImage)
         if (event.bannerImage) setBannerImageFile(event.bannerImage)
       } catch {
@@ -100,6 +167,7 @@ const EventForm = ({ user }) => {
         navigate("/not-found", { replace: true })
       }
     }
+
     fetchEvent()
   }, [eventId])
 
@@ -110,9 +178,9 @@ const EventForm = ({ user }) => {
     }
   }, [mainImageFile, bannerImageFile])
 
-  const localMin = DateTime.local().toFormat("yyyy-LL-dd'T'HH:mm")
-
   const onSubmit = async (data) => {
+    const isEdit = !!eventId
+
     if (event && data.paxLimit < event.reservedPax) {
       form.setError("paxLimit", {
         type: "manual",
@@ -120,66 +188,90 @@ const EventForm = ({ user }) => {
       })
       return
     }
+
+    const combinedStart = DateTime.fromJSDate(data.date)
+      .setZone("Asia/Singapore")
+      .set({
+        hour: Number(data.startTime?.split(":")[0]),
+        minute: Number(data.startTime?.split(":")[1]),
+      })
+
+    const combinedEnd = DateTime.fromJSDate(data.date)
+      .setZone("Asia/Singapore")
+      .set({
+        hour: Number(data.endTime?.split(":")[0]),
+        minute: Number(data.endTime?.split(":")[1]),
+      })
+
     if (event && DateTime.fromISO(event.startDate) < DateTime.now()) {
-      if (data.startDate !== event.startDate?.slice(0, 16)) {
+      const originalStart = DateTime.fromISO(event.startDate)
+      if (!combinedStart.equals(originalStart)) {
         form.setError("startDate", {
           type: "manual",
           message: "Cannot edit start date after the event has started",
         })
         return
       }
-
-      if (data.maxPaxPerCustomer > data.paxLimit) {
-        form.setError("maxPaxPerCustomer", {
-          type: "manual",
-          message: "Max guests per booking cannot exceed total pax limit",
-        })
-        return
-      }
     }
+
+    if (data.maxPaxPerCustomer > data.paxLimit) {
+      form.setError("maxPaxPerCustomer", {
+        type: "manual",
+        message: "Max guests per booking cannot exceed total pax limit",
+      })
+      return
+    }
+
+    if (!mainImageFile || !bannerImageFile) {
+      toast.error("Both Main and Banner images are required")
+      return
+    }
+
     try {
-      if (!mainImageFile || !bannerImageFile) {
-        toast.error("Both Main and Banner images are required")
-        return
+      const {
+        startTime: _startTime,
+        endTime: _endTime,
+        date: _date,
+        ...restData
+      } = data
+
+      const payload = {
+        ...restData,
+        startDate: combinedStart.toISO(),
+        endDate: combinedEnd.toISO(),
       }
 
-      const isEdit = !!eventId
-      const payload = { ...data }
-
-      if (data.startDate) payload.startDate = toSGTISO(data.startDate)
-      if (data.endDate) payload.endDate = toSGTISO(data.endDate)
       if (isEdit) payload._id = eventId
 
       const cleaned = objectCleaner(payload)
+      let changes = isEdit ? objectComparator(event, cleaned) : cleaned
 
-      let changes = eventId ? objectComparator(event, cleaned) : cleaned
       if (changes.restaurant === event?.restaurant?._id) {
         delete changes.restaurant
       }
-
-      if (
+      const noChanges =
         Object.keys(changes).length === 0 &&
         !(mainImageFile instanceof File) &&
         !(bannerImageFile instanceof File)
-      ) {
+
+      if (noChanges) {
         toast.info("No changes made")
         navigate(`/events/${eventId}`, { replace: true })
         return
       }
-
-      if (eventId) changes._id = eventId
-
-      const newevent = await saveEvent(changes)
+      console.log(changes)
+      const savedEvent = await saveEvent(changes)
 
       const changedImages = {}
       if (mainImageFile instanceof File) changedImages.mainImage = mainImageFile
       if (bannerImageFile instanceof File)
         changedImages.bannerImage = bannerImageFile
+
       if (Object.keys(changedImages).length > 0) {
         if (isEdit) {
-          await updateEventImages(newevent._id, changedImages)
+          await updateEventImages(savedEvent._id, changedImages)
         } else {
-          await uploadEventImages(newevent._id, [
+          await uploadEventImages(savedEvent._id, [
             mainImageFile,
             bannerImageFile,
           ])
@@ -193,7 +285,7 @@ const EventForm = ({ user }) => {
         const message = ex.response.data?.error
         form.setError("startDate", {
           type: "manual",
-          message: message || "Failed",
+          message: message || "Failed to save event",
         })
       }
       toast.error("Failed to save event")
@@ -240,31 +332,165 @@ const EventForm = ({ user }) => {
 
           <FormField
             control={control}
-            name="startDate"
+            name="restaurant"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Start Date & Time</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} min={localMin} />
-                </FormControl>
+                <FormLabel>Restaurant</FormLabel>
+                {eventId ? (
+                  <Input
+                    disabled
+                    value={
+                      user.profile.restaurants?.find(
+                        (r) => r._id === field.value
+                      )?.name || "N/A"
+                    }
+                  />
+                ) : (
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value ?? ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a restaurant" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {user.profile.restaurants?.map((r) => (
+                        <SelectItem key={r._id} value={r._id}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <FormMessage />
+                {eventId && (
+                  <div className="flex items-start text-sm text-muted-foreground mt-1">
+                    <Info className="w-4 h-4 mr-1 mt-[2px]" />
+                    <span>
+                      Restaurant cannot be changed for existing events
+                    </span>
+                  </div>
+                )}
               </FormItem>
             )}
           />
 
-          <FormField
-            control={control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Date & Time</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} min={localMin} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {watch("restaurant") && (
+            <FormField
+              control={control}
+              name="slotPax"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Restaurant Seats Used For Event</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="1"
+                      max={restaurant?.maxCapacity || 100}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {watch("restaurant") && (
+            <div className="flex justify-center">
+              <DateInputRestaurant
+                startDate={selectedDate}
+                updateDate={(date) => {
+                  setSelectedDate(date)
+                  form.setValue("date", date)
+                }}
+                existingItems={[]}
+                restaurant={user.profile.restaurants.find(
+                  (r) => r._id === watch("restaurant")
+                )}
+                type="event"
+              />
+            </div>
+          )}
+
+          {selectedDate && timeOptions.length > 0 && (
+            <motion.div
+              key="time-select"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.4 }}
+              className="space-y-3"
+            >
+              <FormField
+                control={control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Time</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Start Time" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {timeOptions.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="endTime"
+                render={({ field }) => {
+                  const startTime = watch("startTime")
+                  const filteredOptions = startTime
+                    ? timeOptions.filter((t) => t > startTime)
+                    : timeOptions
+
+                  return (
+                    <FormItem>
+                      <FormLabel>End Time</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select End Time" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {filteredOptions.length > 0 ? (
+                            filteredOptions.map((time) => (
+                              <SelectItem key={time} value={time}>
+                                {time}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem disabled value="">
+                              No valid end time
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
+            </motion.div>
+          )}
 
           <FormField
             control={control}
@@ -310,34 +536,6 @@ const EventForm = ({ user }) => {
 
           <FormField
             control={control}
-            name="restaurant"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Restaurant</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a restaurant" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {user.profile.restaurants?.map((r) => (
-                      <SelectItem key={r._id} value={r._id}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
             name="minVisits"
             render={({ field }) => (
               <FormItem>
@@ -353,7 +551,7 @@ const EventForm = ({ user }) => {
                 <FormMessage />
                 <div className="flex items-start text-sm text-muted-foreground mt-1">
                   <Info className="w-4 h-4 mr-1 mt-[2px]" />
-                  <span>Set to 0 for public events.</span>
+                  <span>Set to 0 for public events</span>
                 </div>
               </FormItem>
             )}

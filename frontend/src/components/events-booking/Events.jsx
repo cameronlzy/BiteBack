@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react"
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
+import { useSearchParams } from "react-router-dom"
 import { getEvents } from "@/services/eventService"
 import Pagination from "@/components/common/Pagination"
-import TransactionCard from "@/components/common/TransactionCard"
 import { toast } from "react-toastify"
-import { activeCheck } from "@/utils/eventUtils"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
+import LoadingSpinner from "../common/LoadingSpinner"
+import EventCard from "./EventCard"
 
 const Events = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -13,9 +13,6 @@ const Events = () => {
   const [totalCount, setTotalCount] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(false)
-
-  const navigate = useNavigate()
-  const location = useLocation()
   const page = parseInt(searchParams.get("page") || "1", 10)
 
   useEffect(() => {
@@ -37,36 +34,29 @@ const Events = () => {
     fetchEvents()
   }, [page])
 
+  if (loading) return <LoadingSpinner />
+
   return (
     <div className="max-w-6xl mx-auto my-10 px-4 space-y-6">
       <h2 className="text-3xl font-bold text-center">Events</h2>
 
-      {loading ? (
-        <div className="text-center py-10 text-gray-500">Loading...</div>
-      ) : events.length === 0 ? (
+      {events.length === 0 ? (
         <div className="text-center py-10 text-gray-500 italic">
           No events found.
         </div>
       ) : (
         <div className="flex flex-col gap-6">
           {events.map((e) => (
-            <TransactionCard
+            <EventCard
               key={e._id}
               _id={e._id}
-              name={e.title}
+              title={e.title}
               description={getCardMessageFromDescription(e.description)}
-              image={e.bannerImage}
-              date={e.startDate}
-              disabled={!activeCheck(e.status)}
-              disabledMessage="Event is currently cancelled"
-              clickMessage="Find out more"
-              onClick={() =>
-                navigate(`/events/${e._id}`, {
-                  state: {
-                    from: location.pathname,
-                  },
-                })
-              }
+              bannerImage={e.bannerImage}
+              startDate={e.startDate}
+              endDate={e.endDate}
+              restaurant={e.restaurant}
+              status={e.status}
             />
           ))}
         </div>

@@ -34,7 +34,7 @@ const CarouselButtonSwitcher = ({
       bgColor: "bg-black",
       hoverColor: "hover:bg-gray-900",
       textColor: "text-white",
-      expandedWidth: "w-[170px]",
+      expandedWidth: "group-hover:w-[170px]",
     },
     user?.role !== "owner" && {
       label: "View Queue",
@@ -43,7 +43,7 @@ const CarouselButtonSwitcher = ({
       bgColor: "bg-white",
       hoverColor: "hover:bg-gray-100",
       textColor: "text-black",
-      expandedWidth: "w-[140px]",
+      expandedWidth: "group-hover:w-[140px]",
       disabled:
         !isWithinOpeningHours(restaurant.openingHours) ||
         !restaurant.queueEnabled,
@@ -58,7 +58,7 @@ const CarouselButtonSwitcher = ({
       bgColor: "bg-indigo-600",
       hoverColor: "hover:bg-indigo-700",
       textColor: "text-white",
-      expandedWidth: "w-[150px]",
+      expandedWidth: "group-hover:w-[150px]",
     },
     user?.role !== "owner" && {
       label: showReviewForm ? "Cancel" : "Leave a Review",
@@ -68,7 +68,9 @@ const CarouselButtonSwitcher = ({
       hoverColor: "hover:bg-yellow-500",
       textColor: "text-black",
       preventNavigation: true,
-      expandedWidth: showReviewForm ? "w-[110px]" : "w-[160px]",
+      expandedWidth: showReviewForm
+        ? "group-hover:w-[110px]"
+        : "group-hover:w-[160px]",
       onClick: () => setShowReviewForm((prev) => !prev),
     },
     user?.role !== "owner" && {
@@ -78,7 +80,7 @@ const CarouselButtonSwitcher = ({
       bgColor: "bg-emerald-500",
       hoverColor: "hover:bg-emerald-600",
       textColor: "text-white",
-      expandedWidth: "w-[190px]",
+      expandedWidth: "group-hover:w-[190px]",
     },
   ].filter(Boolean)
 

@@ -1,3 +1,26 @@
-cd backend
-npx lint-staged
-npm test
+FRONTEND_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^frontend/' || true)
+BACKEND_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^backend/' || true)
+
+if [ -n "$FRONTEND_FILES" ] && [ -z "$BACKEND_FILES" ]; then
+  echo "Running frontend lint only"
+  npx --prefix frontend lint-staged
+  exit $?
+fi
+
+if [ -n "$BACKEND_FILES" ] && [ -z "$FRONTEND_FILES" ]; then
+  echo "Running backend lint and tests"
+  npx --prefix backend lint-staged
+  cd backend && npm test
+  exit $?
+fi
+
+if [ -n "$FRONTEND_FILES" ] && [ -n "$BACKEND_FILES" ]; then
+  echo "Running frontend and backend lint and backend tests"
+  npx --prefix frontend lint-staged
+  npx --prefix backend lint-staged
+  cd backend && npm test
+  exit $?
+fi
+
+echo "No frontend or backend files staged, skipping lint and tests"
+exit 0

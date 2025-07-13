@@ -1,19 +1,13 @@
 import React, { useEffect, useState } from "react"
-import {
-  useLocation,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom"
+import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import { getEventsByRestaurant } from "@/services/eventService"
 import Pagination from "@/components/common/Pagination"
-import TransactionCard from "@/components/common/TransactionCard"
-import { activeCheck } from "@/utils/eventUtils"
 import { getRestaurant } from "@/services/restaurantService"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { Crown } from "lucide-react"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
+import EventCard from "./EventCard"
 
 const MembersEvents = () => {
   const { restaurantId } = useParams()
@@ -25,7 +19,6 @@ const MembersEvents = () => {
   const [loading, setLoading] = useState(false)
 
   const navigate = useNavigate()
-  const location = useLocation()
   const page = parseInt(searchParams.get("page") || "1", 10)
 
   useEffect(() => {
@@ -72,23 +65,16 @@ const MembersEvents = () => {
       ) : (
         <div className="flex flex-col gap-6">
           {events.map((e) => (
-            <TransactionCard
+            <EventCard
               key={e._id}
               _id={e._id}
-              name={e.title}
+              title={e.title}
               description={getCardMessageFromDescription(e.description)}
-              image={e.bannerImage}
-              date={e.startDate}
-              disabled={!activeCheck(e.status)}
-              disabledMessage="Event is currently cancelled"
-              clickMessage="Find out more"
-              onClick={() =>
-                navigate(`/events/${e._id}`, {
-                  state: {
-                    from: location.pathname,
-                  },
-                })
-              }
+              bannerImage={e.bannerImage}
+              startDate={e.startDate}
+              endDate={e.endDate}
+              restaurant={e.restaurant}
+              status={e.status}
             />
           ))}
         </div>

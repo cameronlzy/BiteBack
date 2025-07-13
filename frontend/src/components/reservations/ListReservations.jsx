@@ -8,28 +8,31 @@ import { getReservations } from "@/services/reservationService"
 import { getRestaurant } from "@/services/restaurantService"
 import Pagination from "@/components/common/Pagination"
 import LoadingSpinner from "../common/LoadingSpinner"
+import { Link, useLocation } from "react-router-dom"
 
 const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const location = useLocation()
 
   const fetchReservations = async () => {
     try {
       setLoading(true)
       const response = await getReservations({ page, limit: 8 })
       const queriedReservations = response.reservations || []
+      console.log(queriedReservations)
 
       const restaurantIds = queriedReservations.map((r) => r.restaurant)
       const restaurantData = await Promise.all(
         restaurantIds.map((id) => getRestaurant(id).catch(() => null))
       )
 
-      const merged = queriedReservations.map((res, idx) => ({
+      const merged = queriedReservations.map((res, i) => ({
         ...res,
-        restaurantName: restaurantData[idx]?.name || "",
-        restaurantAddress: restaurantData[idx]?.address || "",
+        restaurantName: restaurantData[i]?.name || "",
+        restaurantAddress: restaurantData[i]?.address || "",
       }))
 
       setReservations(merged)
@@ -67,6 +70,15 @@ const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm text-gray-700">
+            {res.event && (
+              <Link
+                to={`/events/${res.event._id}`}
+                state={{ from: location.pathname }}
+                className="text-blue-800 text-base hover:underline font-medium"
+              >
+                {res.event.title}
+              </Link>
+            )}
             <p>
               <strong>Email:</strong> {user.email}
             </p>
@@ -74,8 +86,14 @@ const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
               <strong>Phone:</strong> {user.profile.contactNumber || "-"}
             </p>
             <p>
-              <strong>Date & Time:</strong>{" "}
+              <strong>Start Date & Time:</strong>{" "}
               {DateTime.fromISO(res.startDate).toLocaleString(
+                readableTimeSettings
+              )}
+            </p>
+            <p>
+              <strong>End Date & Time:</strong>{" "}
+              {DateTime.fromISO(res.endDate).toLocaleString(
                 readableTimeSettings
               )}
             </p>

@@ -16,48 +16,48 @@ const CustomDay = ({
   updateDate,
   modifiers,
 }) => {
-  const [restaurantMap, setRestaurantMap] = useState({})
+  const [itemsWithNames, setItemsWithNames] = useState([])
   const isDisabled = modifiers?.disabled
 
-  const getReservationsForDate = (date) => {
-    const dateStr = format(date, "yyyy-MM-dd")
-    return (existingItems ?? []).filter(
-      (res) => format(parseISO(res.startDate), "yyyy-MM-dd") === dateStr
-    )
-  }
-
-  const reservationsOnDate = getReservationsForDate(date)
-  const hasReservations = reservationsOnDate.length > 0
+  const dateStr = format(date, "yyyy-MM-dd")
+  const itemsOnDate = (existingItems ?? []).filter(
+    (item) => format(parseISO(item.startDate), "yyyy-MM-dd") === dateStr
+  )
+  const hasItems = itemsOnDate.length > 0
 
   useEffect(() => {
-    const fetchRestaurants = async () => {
-      const missingIds = reservationsOnDate
-        .map((res) => res.restaurant)
-        .filter((id) => !restaurantMap[id])
+    const enrichWithRestaurantNames = async () => {
+      if (type === "Promotion") {
+        setItemsWithNames(itemsOnDate)
+        return
+      }
 
-      const results = await Promise.all(
-        missingIds.map((id) => getRestaurant(id).catch(() => null))
+      const enriched = await Promise.all(
+        itemsOnDate.map(async (item) => {
+          if (typeof item.restaurant === "string") {
+            try {
+              const res = await getRestaurant(item.restaurant)
+              return {
+                ...item,
+                restaurant: res ? { name: res.name } : { name: "Unknown" },
+              }
+            } catch {
+              return { ...item, restaurant: { name: "Unknown" } }
+            }
+          }
+          return item
+        })
       )
 
-      const newMap = {}
-      results.forEach((res, i) => {
-        const id = missingIds[i]
-        if (res?.name) newMap[id] = res.name
-      })
-
-      if (Object.keys(newMap).length > 0) {
-        setRestaurantMap((prev) => ({ ...prev, ...newMap }))
-      }
+      setItemsWithNames(enriched)
     }
 
-    if (hasReservations) {
-      fetchRestaurants()
+    if (hasItems) {
+      enrichWithRestaurantNames()
     }
-  }, [reservationsOnDate, hasReservations, restaurantMap])
+  }, [itemsOnDate, type, hasItems])
 
-  const handleClick = () => {
-    updateDate(date)
-  }
+  const handleClick = () => updateDate(date)
 
   const isSelected =
     selected && format(date, "yyyy-MM-dd") === format(selected, "yyyy-MM-dd")
@@ -72,11 +72,11 @@ const CustomDay = ({
       className={`rounded-full w-8 h-8 p-0 text-[13px] ${
         isDisabled
           ? "text-gray-400 cursor-not-allowed"
-          : isSelected && hasReservations
+          : isSelected && hasItems
           ? "bg-yellow-300 hover:bg-yellow-400"
           : isSelected
           ? "bg-gray-200 hover:bg-gray-300"
-          : hasReservations
+          : hasItems
           ? "bg-yellow-100 hover:bg-yellow-200"
           : ""
       }`}
@@ -85,20 +85,33 @@ const CustomDay = ({
     </Button>
   )
 
-  return hasReservations && !isDisabled ? (
+  return hasItems && !isDisabled ? (
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent className="text-sm text-black bg-white w-max z-50 border shadow-md">
-        <div className="font-semibold text-center">
-          {type === "Booking" ? "Your Current Bookings" : `Current ${type}`}
+        <div className="font-semibold text-center mb-1">
+          {type === "Booking" ? "Your Current Bookings" : `Scheduled ${type}s`}
         </div>
-        {reservationsOnDate.map((res, i) => (
-          <div key={i}>
-            {format(parseISO(res.startDate), "HH:mm")} · {res.pax} pax
-            {restaurantMap[res.restaurant] &&
-              ` @ ${restaurantMap[res.restaurant]}`}
-          </div>
-        ))}
+        {itemsWithNames.map((item, i) => {
+          const startTime = format(parseISO(item.startDate), "HH:mm")
+          const restName = item.restaurant?.name
+
+          return (
+            <div key={i}>
+              {type === "Booking" ? (
+                <>
+                  {startTime} · {item.pax} pax
+                  {restName && ` @ ${restName}`}
+                </>
+              ) : (
+                <>
+                  {startTime} · {item.title}
+                  {restName && ` @ ${restName}`}
+                </>
+              )}
+            </div>
+          )
+        })}
       </TooltipContent>
     </Tooltip>
   ) : (

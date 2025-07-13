@@ -7,7 +7,7 @@ import ListReservations from "./ListReservations"
 import { Button } from "@/components/ui/button"
 import { useConfirm } from "../common/ConfirmProvider"
 
-const UserReservations = ({ user }) => {
+const CustomerReservations = ({ user }) => {
   const [selectedDate, setSelectedDate] = useState(null)
   const [viewMode, setViewMode] = useState("list")
 
@@ -68,4 +68,4 @@ const UserReservations = ({ user }) => {
   )
 }
 
-export default UserReservations
+export default CustomerReservations
