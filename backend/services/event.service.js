@@ -117,7 +117,7 @@ export async function getEventById(eventId) {
 }
 
 export async function createEvent(data) {
-    const restaurant = await Restaurant.findById(data.restaurant).select('timezone slotDuration').lean();
+    const restaurant = await Restaurant.findById(data.restaurant).select('timezone slotDuration maxCapacity').lean();
     if (!restaurant) return error(404, 'Restaurant not found');
 
     const slotStart = DateTime.fromISO(data.startDate, { zone: restaurant.timezone }).toUTC();
@@ -144,26 +144,27 @@ export async function createEvent(data) {
     ]);
 
     let minAvailable = Infinity;
-
     for (const slot of eventSlots) {
         const slotEndTime = slot.plus({ minutes: slotDuration });
 
         let regularPax = 0;
-        reservations.forEach(r => {
-            if (!r.event &&
-                DateTime.fromJSDate(r.startDate) < slotEndTime &&
-                DateTime.fromJSDate(r.endDate) > slot) {
+        for (const r of reservations) {
+            if (r.event) continue;
+            const rStart = DateTime.fromJSDate(r.startDate);
+            const rEnd = DateTime.fromJSDate(r.endDate);
+            if (rStart < slotEndTime && rEnd > slot) {
                 regularPax += r.pax;
             }
-        });
+        }
 
         let eventPax = 0;
-        overlappingEvents.forEach(e => {
-            if (DateTime.fromJSDate(e.startDate) < slotEndTime &&
-                DateTime.fromJSDate(e.endDate) > slot) {
+        for (const e of overlappingEvents) {
+            const eStart = DateTime.fromJSDate(e.startDate);
+            const eEnd = DateTime.fromJSDate(e.endDate);
+            if (eStart < slotEndTime && eEnd > slot) {
                 eventPax += e.slotPax;
             }
-        });
+        }
 
         const remaining = restaurant.maxCapacity - regularPax - eventPax;
         minAvailable = Math.min(minAvailable, remaining);
