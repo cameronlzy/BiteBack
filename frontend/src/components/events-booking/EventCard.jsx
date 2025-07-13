@@ -5,7 +5,6 @@ import { Link, useLocation } from "react-router-dom"
 import defaultRestImg from "@/assets/default-restaurant-img.png"
 import DisabledBlur from "../common/DisabledBlur"
 import { activeCheck } from "@/utils/eventUtils"
-import { readableTimeSettings } from "@/utils/timeConverter"
 import { getRestaurant } from "@/services/restaurantService"
 
 const EventCard = ({
@@ -70,14 +69,11 @@ const EventCard = ({
 
         <div className="text-sm text-gray-600 space-y-1">
           <p className="line-clamp-2">{description}</p>
-
           <p>
-            <strong>Start Date & Time:</strong>{" "}
-            {DateTime.fromISO(startDate).toLocaleString(readableTimeSettings)}{" "}
-          </p>
-          <p>
-            <strong>End Date & Time:</strong>{" "}
-            {DateTime.fromISO(endDate).toLocaleString(readableTimeSettings)}
+            <strong>Date:</strong>{" "}
+            {DateTime.fromISO(startDate).toLocaleString(DateTime.DATE_MED)}{" "}
+            {DateTime.fromISO(startDate).toFormat("hh:mm a")} <strong>-</strong>{" "}
+            {DateTime.fromISO(endDate).toFormat("hh:mm a")}
           </p>
         </div>
       </div>

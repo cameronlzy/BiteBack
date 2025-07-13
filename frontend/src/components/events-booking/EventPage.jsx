@@ -11,7 +11,7 @@ import { getRestaurant } from "@/services/restaurantService"
 import RestaurantRelatedItemUI from "../common/RestaurantRelatedUI"
 import { AlertTriangle, CalendarPlus } from "lucide-react"
 import JoinEventForm from "./JoinEventForm"
-import { hasItemStarted, readableTimeSettings } from "@/utils/timeConverter"
+import { hasItemStarted } from "@/utils/timeConverter"
 import { activeCheck } from "@/utils/eventUtils"
 import { DateTime } from "luxon"
 
@@ -93,7 +93,7 @@ const EventPage = ({ user }) => {
     ) {
       const segments = normalisedFrom.split("/")
       const eventEditString = segments[2]
-      if (eventEditString === "edit" || eventEditString === event.restaurant) {
+      if (eventEditString === "edit" || eventEditString === event?.restaurant) {
         setNormalisedFrom(
           userIsOwner(user) ? "/owner/events-promos" : "/events"
         )
@@ -222,12 +222,10 @@ const EventPage = ({ user }) => {
             </strong>
           </p>
           <p>
-            <strong>Start Date & Time:</strong>{" "}
-            {DateTime.fromISO(startDate).toLocaleString(readableTimeSettings)}{" "}
-          </p>
-          <p>
-            <strong>End Date & Time:</strong>{" "}
-            {DateTime.fromISO(endDate).toLocaleString(readableTimeSettings)}
+            <strong>Date:</strong>{" "}
+            {DateTime.fromISO(startDate).toLocaleString(DateTime.DATE_MED)}{" "}
+            {DateTime.fromISO(startDate).toFormat("hh:mm a")} <strong>-</strong>{" "}
+            {DateTime.fromISO(endDate).toFormat("hh:mm a")}
           </p>
           {event.minVisits > 0 && (
             <p className="text-sm text-gray-500">
