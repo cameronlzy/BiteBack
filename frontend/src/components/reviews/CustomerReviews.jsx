@@ -15,7 +15,7 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
   const [loading, setLoading] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get("page")) || 1
-  const sortBy = searchParams.get("sortBy") || "createdAt"
+  const sortBy = searchParams.get("sortBy") || "dateVisited"
   const order = searchParams.get("order") || "desc"
 
   const confirm = useConfirm()
