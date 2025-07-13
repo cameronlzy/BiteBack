@@ -52,20 +52,21 @@ const EventPage = ({ user }) => {
   }, [eventId, user])
 
   useEffect(() => {
+    if (!event || !restaurant) return
+
     const fetchVisitHistory = async () => {
       if (!user || user.role !== "customer") {
         setMinVisitMessage(
-          event?.minVisits > 0
+          event.minVisits > 0
             ? "Please log in as Customer to check if you can join this Member Event."
             : "Please log in as Customer to sign up for this Public Event"
         )
         return
       }
 
-      if (event?.minVisits > 0) {
+      if (event.minVisits > 0) {
         try {
           const { visitCount } = await getCustomerVisitCount(restaurant._id)
-          console.log(visitCount)
 
           const shortfall = event.minVisits - visitCount
           if (shortfall > 0) {
@@ -83,8 +84,9 @@ const EventPage = ({ user }) => {
         }
       }
     }
+
     fetchVisitHistory()
-  }, [event?.minVisits, restaurant?._id, user])
+  }, [event, restaurant, user])
 
   useEffect(() => {
     if (

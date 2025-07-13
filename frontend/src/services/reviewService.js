@@ -10,12 +10,12 @@ export async function getReview(reviewId) {
 }
 
 export async function getReviewByRestaurant(restaurantId, params) {
-    const { data } = await http.get(apiEndpoint + "/restaurant/" + restaurantId, params)
+    const { data } = await http.get(apiEndpoint + "/restaurant/" + restaurantId, {params})
     return data
 }
 
 export async function getReviewsByCustomer(customerId, params) {
-    const { data } = await http.get(apiEndpoint + "/customer/" + customerId, params)
+    const { data } = await http.get(apiEndpoint + "/customer/" + customerId, {params})
     return data
 }
 

@@ -28,7 +28,7 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
   const getAndSetReviews = async () => {
     setLoading(true)
     try {
-      const data = await getReviewsByCustomer(viewedCustomer?._id, {
+      const data = await getReviewsByCustomer(viewedCustomer?.profile._id, {
         page,
         limit: 8,
         sortBy,
@@ -89,6 +89,8 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
             options={sortOptions}
             backendHandle={true}
             onSorted={handleSort}
+            selectedValue={sortBy}
+            selectedDirection={order}
             className="mb-4"
           />
           {reviews?.map((review) => (

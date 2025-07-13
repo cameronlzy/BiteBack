@@ -29,6 +29,8 @@ const SearchAndDiscovery = () => {
   const [restaurants, setRestaurants] = useState([])
   const [searched, setSearched] = useState(false)
   const [activePopupId, setActivePopupId] = useState(null)
+  const [useDistanceFilter, setUseDistanceFilter] = useState(false)
+  const [radiusKm, setRadiusKm] = useState(1)
   const mapRef = useRef(null)
   const hasAddedScale = useRef(false)
 
@@ -110,6 +112,12 @@ const SearchAndDiscovery = () => {
   }
 
   const handleSearchClick = () => {
+    if (useDistanceFilter) {
+      form.setValue("radius", radiusKm)
+    } else {
+      form.setValue("radius", null)
+    }
+
     form.handleSubmit(onSubmit)()
   }
 
@@ -247,51 +255,53 @@ const SearchAndDiscovery = () => {
                 )}
               />
 
-              <Controller
-                control={form.control}
-                name="radius"
-                render={({ field: { value, onChange } }) => (
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="enable-radius"
-                        checked={!!value}
-                        onCheckedChange={(checked) => {
-                          if (checked && position) {
-                            onChange(1)
-                            form.setValue("lat", position.latitude)
-                            form.setValue("lng", position.longitude)
-                          } else {
-                            onChange(null)
-                            form.setValue("lat", null)
-                            form.setValue("lng", null)
-                          }
-                        }}
-                      />
-                      <label htmlFor="enable-radius" className="text-sm">
-                        Filter by Distance
-                      </label>
-                    </div>
-                    {value && (
-                      <div>
-                        <label className="text-sm font-medium block mb-2">
-                          Max Distance to Restaurant (km):{" "}
-                          <span className="font-semibold">
-                            {value.toFixed(1)}
-                          </span>
-                        </label>
-                        <Slider
-                          min={0.1}
-                          max={10}
-                          step={0.1}
-                          value={[value]}
-                          onValueChange={([v]) => onChange(v)}
-                        />
-                      </div>
-                    )}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="enable-radius"
+                    checked={useDistanceFilter}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        if (!position) {
+                          toast.info(
+                            "You must get your location first before using distance filter"
+                          )
+                          return
+                        }
+                        form.setValue("lat", position.latitude)
+                        form.setValue("lng", position.longitude)
+                      } else {
+                        form.setValue("lat", null)
+                        form.setValue("lng", null)
+                      }
+                      setUseDistanceFilter(checked)
+                    }}
+                  />
+                  <label htmlFor="enable-radius" className="text-sm">
+                    Filter by Distance
+                  </label>
+                </div>
+
+                {useDistanceFilter && (
+                  <div>
+                    <label className="text-sm font-medium block mb-2">
+                      Max Distance to Restaurant (km):{" "}
+                      <span className="font-semibold">
+                        {radiusKm.toFixed(1)}
+                      </span>
+                    </label>
+                    <Slider
+                      min={0.1}
+                      max={10}
+                      step={0.1}
+                      value={[radiusKm]}
+                      onValueChange={([v]) => {
+                        setRadiusKm(v)
+                      }}
+                    />
                   </div>
                 )}
-              />
+              </div>
 
               <div className="relative flex justify-center">
                 <div className="items-center">

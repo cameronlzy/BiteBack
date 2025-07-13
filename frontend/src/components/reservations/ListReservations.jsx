@@ -115,11 +115,13 @@ const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
               <span
                 className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${
                   showTag(res) === "Event"
-                    ? "bg-blue-100 text-blue-700"
+                    ? res?.status === "cancelled"
+                      ? "bg-red-100 text-red-700"
+                      : "bg-blue-100 text-blue-700"
                     : "bg-green-100 text-green-700"
                 }`}
               >
-                {showTag(res)}
+                {res?.status === "cancelled" ? "Cancelled" : showTag(res)}
               </span>
             </div>
             {DateTime.fromISO(res.startDate) > DateTime.local() && (

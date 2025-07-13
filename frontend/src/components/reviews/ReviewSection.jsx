@@ -91,6 +91,9 @@ const ReviewSection = ({
           options={sortOptions}
           backendHandle={true}
           onSorted={handleSort}
+          selectedValue={sortBy}
+          selectedDirection={order}
+          className="mb-4"
         />
       </div>
 

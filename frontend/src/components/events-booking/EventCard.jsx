@@ -50,21 +50,14 @@ const EventCard = ({
 
       <div className="text-left space-y-2 w-full mt-2">
         <CardTitle className="text-2xl font-semibold">
-          {isActive ? (
-            <Link
-              to={`/events/${_id}`}
-              state={{ from: location.pathname }}
-              className="text-black hover:text-gray-700 hover:underline transition-colors"
-            >
-              {title}
-              {fullRestaurant ? ` by ${fullRestaurant.name}` : ""}
-            </Link>
-          ) : (
-            <span className="text-gray-500">
-              {title}
-              {fullRestaurant ? ` by ${fullRestaurant.name}` : ""}
-            </span>
-          )}
+          <Link
+            to={`/events/${_id}`}
+            state={{ from: location.pathname }}
+            className="text-black hover:text-gray-700 hover:underline transition-colors"
+          >
+            {title}
+            {fullRestaurant ? ` by ${fullRestaurant.name}` : ""}
+          </Link>
         </CardTitle>
 
         <div className="text-sm text-gray-600 space-y-1">
