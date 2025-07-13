@@ -44,6 +44,11 @@ export async function getReservationById(reservation) {
 
 export async function createReservation(authUser, data) {
     return await withTransaction(async (session) => {
+        if (data.event) {
+            const alreadyBooked = await Reservation.exists({ customer: authUser.profile, event: data.event }).session(session);
+            if (alreadyBooked) return error(400, 'Customer already joined this event');
+        }
+
         // get restaurant
         const restaurant = await Restaurant.findById(data.restaurant).session(session).lean();
         if (!restaurant) return error(404, 'Restaurant not found');

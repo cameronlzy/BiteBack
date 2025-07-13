@@ -70,6 +70,7 @@ export async function searchPromotions(filters) {
                 timeWindow: 1,
                 mainImage: 1,
                 bannerImage: 1,
+                isActive: 1,
             },
         }
     );

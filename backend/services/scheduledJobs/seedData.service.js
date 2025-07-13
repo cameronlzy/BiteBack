@@ -14,8 +14,11 @@ function getRandomInt(min, max) {
 
 export async function seedReservations() {
     const today = DateTime.now().setZone('Asia/Singapore').startOf('day');
-    const allRestaurants = await Restaurant.find().lean();
-    const customers = (await CustomerProfile.find().select('_id').lean()).map(c => c._id);
+    const [allRestaurants, customers] = await Promise.all([
+        Restaurant.find().lean(),
+        CustomerProfile.find().select('_id').lean(),
+    ]);
+    const customerIds = customers.map(c => c._id);
     const reservations = [];
 
     for (const restaurant of allRestaurants) {
@@ -28,13 +31,15 @@ export async function seedReservations() {
                 .set({ year: today.year, month: today.month, day: today.day });
             const endTime = startTime.plus({ minutes: 60 });
 
+            const status = Math.random() < 0.7 ? 'completed' : 'no-show';
+
             reservations.push(new Reservation({
                 restaurant: restaurant._id,
-                customer: customers[getRandomInt(0, customers.length - 1)],
+                customer: customerIds[getRandomInt(0, customerIds.length - 1)],
                 startDate: startTime.toJSDate(),
                 endDate: endTime.toJSDate(),
                 pax: getRandomInt(1, 6),
-                status: 'booked'
+                status,
             }));
         }
     }
@@ -70,17 +75,22 @@ export async function seedQueueAndReview(timezone = 'Asia/Singapore') {
 
             const counter = await QueueCounter.findOneAndUpdate(
                 { restaurant: restaurant._id, queueGroup },
-                { $inc: { lastNumber: 1 } },
+                { $inc: { lastNumber: 1, calledNumber: 1 } },
                 { new: true, upsert: true }
             );
+
+            const status = Math.random() < 0.7 ? 'seated' : 'skipped';
 
             queueEntries.push({
                 customer,
                 restaurant: restaurant._id,
                 pax,
                 queueGroup,
-                status: 'waiting',
-                statusTimestamps: { waiting: randomTime.toJSDate() },
+                status,
+                statusTimestamps: {
+                    waiting: randomTime.toJSDate(),
+                    [status]: randomTime.plus({ minutes: getRandomInt(5, 20) }).toJSDate()
+                },
                 queueNumber: counter.lastNumber,
             });
 

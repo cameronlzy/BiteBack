@@ -140,11 +140,14 @@ export async function updateEvent(event, restaurant, update) {
             event.startDate = DateTime.fromISO(update.startDate, { zone: restaurant.timezone }).toUTC().toJSDate();
         } else if (key === 'endDate') {
             event.endDate = DateTime.fromISO(update.endDate, { zone: restaurant.timezone }).toUTC().toJSDate();
-        } else if (key === 'paxLimit') {
+        } else if (key === 'paxLimit' || key === 'slotPax') {
             const booked = await getBookedPaxForEvent(event._id);
             if (update[key] < booked) {
-                return error(400, 'Pax limit must be greater than exisiting reservations');
+                return error(400, `${key} must be greater than exisiting reservations`);
             } 
+            if (key === 'slotPax' && update[key] > restaurant.maxCapacity) {
+                return error(400, 'Slot Pax cannot be greater than restaurant max capacity');
+            }
             event[key] = update[key];
         } else if (key === 'status') {
             const newStatus = update[key];
