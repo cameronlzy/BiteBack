@@ -412,7 +412,7 @@ describe('event test', () => {
         let event, eventId;
         let restaurant;
         let user, token, cookie;
-        let newStartDate, newPaxLimit;
+        let newPaxLimit;
 
         beforeEach(async () => {
             await Event.deleteMany({});
@@ -428,7 +428,6 @@ describe('event test', () => {
             event = createTestEvent({ restaurant: restaurant._id, startDate: DateTime.now().plus({ days: 1 }).toJSDate() });
             await event.save();
             eventId = event._id;
-            newStartDate = DateTime.now().plus({ days: 1, minutes: 20 }).setZone('Asia/Singapore').toISO();
             newPaxLimit = 10;
         });
 
@@ -437,16 +436,9 @@ describe('event test', () => {
                 .patch(`/api/events/${eventId}`)
                 .set('Cookie', [cookie])
                 .send({
-                    startDate: newStartDate, paxLimit: newPaxLimit
+                    paxLimit: newPaxLimit
                 });
         };
-
-        it('should return 400 if trying to change startDate when event has started', async () => {
-            event.startDate = DateTime.now().minus({ days: 1 }).toJSDate();
-            await event.save();
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
 
         it('should return 400 if paxLimit is reduced below existing reservations', async () => {
             newPaxLimit = 1;

@@ -117,7 +117,65 @@ export async function getEventById(eventId) {
 }
 
 export async function createEvent(data) {
-    const fields = _.pick(data, ['restaurant', 'title', 'description', 'startDate', 'endDate', 'paxLimit', 'slotPax']);
+    const restaurant = await Restaurant.findById(data.restaurant).select('timezone slotDuration').lean();
+    if (!restaurant) return error(404, 'Restaurant not found');
+
+    const slotStart = DateTime.fromISO(data.startDate, { zone: restaurant.timezone }).toUTC();
+    const slotEnd = DateTime.fromISO(data.endDate, { zone: restaurant.timezone }).toUTC();
+    const slotDuration = restaurant.slotDuration;
+
+    const eventSlots = [];
+    for (let dt = slotStart; dt < slotEnd; dt = dt.plus({ minutes: slotDuration })) {
+        eventSlots.push(dt);
+    }
+
+    const [reservations, overlappingEvents] = await Promise.all([
+        Reservation.find({
+            restaurant: restaurant._id,
+            startDate: { $lt: slotEnd.toJSDate() },
+            endDate: { $gt: slotStart.toJSDate() }
+        }).select('startDate endDate pax event').lean(),
+
+        Event.find({
+            restaurant: restaurant._id,
+            startDate: { $lt: slotEnd.toJSDate() },
+            endDate: { $gt: slotStart.toJSDate() }
+        }).select('slotPax startDate endDate').lean()
+    ]);
+
+    let minAvailable = Infinity;
+
+    for (const slot of eventSlots) {
+        const slotEndTime = slot.plus({ minutes: slotDuration });
+
+        let regularPax = 0;
+        reservations.forEach(r => {
+            if (!r.event &&
+                DateTime.fromJSDate(r.startDate) < slotEndTime &&
+                DateTime.fromJSDate(r.endDate) > slot) {
+                regularPax += r.pax;
+            }
+        });
+
+        let eventPax = 0;
+        overlappingEvents.forEach(e => {
+            if (DateTime.fromJSDate(e.startDate) < slotEndTime &&
+                DateTime.fromJSDate(e.endDate) > slot) {
+                eventPax += e.slotPax;
+            }
+        });
+
+        const remaining = restaurant.maxCapacity - regularPax - eventPax;
+        minAvailable = Math.min(minAvailable, remaining);
+    }
+
+    if (data.slotPax > minAvailable) {
+        return error(400, 'Not enough capacity for this event');
+    }
+
+    const fields = _.pick(data, ['restaurant', 'title', 'description', 'paxLimit', 'slotPax']);
+    fields.startDate = slotStart;
+    fields.endDate = slotEnd;
     if (data.remarks) fields.remarks = data.remarks;
     if (data.minVisits) fields.minVisits = data.minVisits;
     if (data.maxPaxPerCustomer) fields.maxPaxPerCustomer = data.maxPaxPerCustomer;
@@ -133,14 +191,7 @@ export async function updateEvent(event, restaurant, update) {
     }
 
     for (const key in update) {
-        if (key === 'startDate') {
-            if (event.startDate < new Date()) {
-                return error(400, 'Event has already started');
-            }
-            event.startDate = DateTime.fromISO(update.startDate, { zone: restaurant.timezone }).toUTC().toJSDate();
-        } else if (key === 'endDate') {
-            event.endDate = DateTime.fromISO(update.endDate, { zone: restaurant.timezone }).toUTC().toJSDate();
-        } else if (key === 'paxLimit' || key === 'slotPax') {
+        if (key === 'paxLimit' || key === 'slotPax') {
             const booked = await getBookedPaxForEvent(event._id);
             if (update[key] < booked) {
                 return error(400, `${key} must be greater than exisiting reservations`);

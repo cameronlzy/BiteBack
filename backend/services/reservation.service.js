@@ -107,7 +107,7 @@ export async function createReservation(authUser, data) {
             }
         });
 
-        const totalEventSlotPax = overlappingEvents.reduce((sum, e) => sum + (e.slotPax ?? 0), 0);
+        const totalEventSlotPax = overlappingEvents.reduce((sum, e) => sum + e.slotPax, 0);
 
         if (!data.event) {
             const remainingCapacity = restaurant.maxCapacity - totalEventSlotPax;
@@ -197,7 +197,7 @@ export async function updateReservation(reservation, update) {
             }
         });
 
-        const totalEventSlotPax = overlappingEvents.reduce((sum, e) => sum + (e.slotPax ?? 0), 0);
+        const totalEventSlotPax = overlappingEvents.reduce((sum, e) => sum + e.slotPax, 0);
         const remainingCapacity = restaurant.maxCapacity - totalEventSlotPax;
 
         if (bookedPax + newPax > remainingCapacity) {

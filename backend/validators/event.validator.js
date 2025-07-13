@@ -30,8 +30,6 @@ export function validatePatch(patch) {
     const schema = Joi.object({
         title: Joi.string(),
         description: Joi.string(),
-        startDate: futureDateFullOnly,
-        endDate: futureDateFullOnly,
         paxLimit: Joi.number().integer(),
         slotPax: Joi.number().integer(),
         maxPaxPerCustomer: Joi.number().integer().min(1),
