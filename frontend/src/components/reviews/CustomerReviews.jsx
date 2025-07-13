@@ -6,12 +6,13 @@ import { getReviewsByCustomer, deleteReview } from "@/services/reviewService"
 import ReviewCard from "./ReviewCard"
 import { useSearchParams } from "react-router-dom"
 import Pagination from "../common/Pagination"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const CustomerReviews = ({ viewedCustomer, user }) => {
   const [reviews, setReviews] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
-
+  const [loading, setLoading] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get("page")) || 1
   const sortBy = searchParams.get("sortBy") || "createdAt"
@@ -25,6 +26,7 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
   ]
 
   const getAndSetReviews = async () => {
+    setLoading(true)
     try {
       const data = await getReviewsByCustomer(viewedCustomer?._id, {
         page,
@@ -35,8 +37,11 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
       setReviews(data.reviews)
       setTotalPages(data.totalPages)
       setTotalCount(data.totalCount)
-    } catch {
+    } catch (ex) {
       toast.error("Failed to load reviews")
+      throw ex
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -68,14 +73,16 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
     getAndSetReviews()
   }
 
+  if (loading) return <LoadingSpinner />
+
   return (
     <div className="max-w-2xl mx-auto mt-10">
       <h2 className="text-2xl font-bold mb-6">
         {user._id === viewedCustomer._id ? "Your" : "Their"} Reviews
       </h2>
 
-      {reviews.length === 0 ? (
-        <p className="text-gray-500">No reviews found.</p>
+      {reviews?.length === 0 ? (
+        <p className="text-gray-500 mb-2">No reviews found.</p>
       ) : (
         <>
           <SortBy
@@ -84,7 +91,7 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
             onSorted={handleSort}
             className="mb-4"
           />
-          {reviews.map((review) => (
+          {reviews?.map((review) => (
             <ReviewCard
               key={review._id}
               review={review}

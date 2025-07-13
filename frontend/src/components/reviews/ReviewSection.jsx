@@ -10,6 +10,7 @@ import ReviewCard from "./ReviewCard"
 import SortBy from "../common/SortBy"
 import { useSearchParams } from "react-router-dom"
 import Pagination from "../common/Pagination"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const ReviewSection = ({
   restaurant,
@@ -20,7 +21,7 @@ const ReviewSection = ({
   const [reviews, setReviews] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
-
+  const [loading, setLoading] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   const page = parseInt(searchParams.get("page")) || 1
   const sortBy = searchParams.get("sortBy") || "createdAt"
@@ -33,15 +34,23 @@ const ReviewSection = ({
 
   useEffect(() => {
     const fetchReviews = async () => {
-      const data = await getReviewByRestaurant(restaurant._id, {
-        page,
-        limit: 8,
-        sortBy,
-        order,
-      })
-      setReviews(data.reviews)
-      setTotalPages(data.totalPages)
-      setTotalCount(data.totalCount)
+      setLoading(true)
+      try {
+        const data = await getReviewByRestaurant(restaurant._id, {
+          page,
+          limit: 8,
+          sortBy,
+          order,
+        })
+        setReviews(data.reviews)
+        setTotalPages(data.totalPages)
+        setTotalCount(data.totalCount)
+      } catch (ex) {
+        toast.error("Failed to fetch reviews")
+        throw ex
+      } finally {
+        setLoading(false)
+      }
     }
     fetchReviews()
   }, [page, sortBy, order])
@@ -68,6 +77,8 @@ const ReviewSection = ({
     setReviews((prev) => prev.filter((r) => r._id !== id))
   }
 
+  if (loading) return <LoadingSpinner />
+
   return (
     <>
       {user?.role !== "owner" && showReviewForm && (
@@ -83,7 +94,7 @@ const ReviewSection = ({
         />
       </div>
 
-      {reviews.map((r) => (
+      {reviews?.map((r) => (
         <ReviewCard
           key={r._id}
           review={r}
