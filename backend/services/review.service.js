@@ -29,14 +29,30 @@ export async function getEligibleVisits(restaurantId, authUser) {
     return success(unreviewedVisits);
 }
 
-export async function getReviewsByRestaurant(restaurantId, authUser) {
+export async function getReviewsByRestaurant(restaurantId, authUser, query) {
+    const { page, limit, sortBy, order } = query;
+    const skip = (page - 1) * limit;
+
     // check if restaurant exists
     const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
     if (!restaurant) return error(404, 'Restaurant not found');
 
     // get reviews by restaurant
-    let reviews = await Review.find({ restaurant: restaurant._id }).populate('customer', 'username').lean();
-    if (Array.isArray(reviews) && reviews.length === 0) return success(reviews);
+    let [reviews, total] = await Promise.all([
+        Review.find({ restaurant: restaurant._id }).populate('customer', 'username').sort({ [sortBy]: order === 'asc' ? 1 : -1 }).skip(skip).limit(limit).lean(),
+        Review.countDocuments({ restaurant: restaurant._id }),
+    ]);
+
+    if (Array.isArray(reviews) && reviews.length === 0) {
+        return success({
+            reviews: [],
+            page,
+            limit,
+            totalCount: 0,
+            totalPages: 0,
+        });
+    }
+
     reviews = reviews.map(r => {
         return {
             ...r,
@@ -51,17 +67,39 @@ export async function getReviewsByRestaurant(restaurantId, authUser) {
     // get user badge votes
     if (authUser) reviews = await getUserBadgeVotes(reviews, authUser);
 
-    return success(reviews);
+    return success({
+        reviews,
+        page,
+        limit,
+        totalCount: total,
+        totalPages: Math.ceil(total / limit)
+    });
 }
 
-export async function getReviewsByCustomer(customerId, authUser) {
+export async function getReviewsByCustomer(customerId, authUser, query) {
+    const { page, limit, sortBy, order } = query;
+    const skip = (page - 1) * limit;
+
     // find customer profile
-    const customer = await CustomerProfile.findById(customerId);
+    const customer = await CustomerProfile.findById(customerId).lean();
     if (!customer) return error(404, 'Customer profile not found');
 
     // get reviews by customer
-    let reviews = await Review.find({ customer: customerId }).populate('customer', 'username').sort({ createdAt: -1 }).lean();
-    if (Array.isArray(reviews) && reviews.length === 0) return success(reviews);
+    let [reviews, total] = await Promise.all([
+        Review.find({ customer: customerId }).populate('customer', 'username').sort({ [sortBy]: order === 'asc' ? 1 : -1 }).skip(skip).limit(limit).lean(),
+        Review.countDocuments({ customer: customerId }),
+    ])
+
+    if (Array.isArray(reviews) && reviews.length === 0) {
+        return success({
+            reviews: [],
+            page,
+            limit,
+            totalCount: 0,
+            totalPages: 0,
+        });
+    }
+
     reviews = reviews.map(r => {
         return {
             ...r,
@@ -76,7 +114,13 @@ export async function getReviewsByCustomer(customerId, authUser) {
     // get user badge votes
     if (authUser) reviews = await getUserBadgeVotes(reviews, authUser);
 
-    return success(reviews);
+    return success({
+        reviews,
+        page,
+        limit,
+        totalCount: total,
+        totalPages: Math.ceil(total / limit)
+    });
 }
 
 export async function getReviewById(reviewId) {

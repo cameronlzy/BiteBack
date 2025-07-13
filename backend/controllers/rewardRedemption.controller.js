@@ -4,17 +4,17 @@ import { validateHistory, validateRedemption, validateCode } from '../validators
 
 export async function getAllRedemptions(req, res) {
     const query = {
-        page: Number(req.query.page ?? 1),
-        limit: Number(req.query.limit ?? 8),
+        page: req.query.page,
+        limit: req.query.limit,
         status: typeof req.query.status === 'string'
             ? req.query.status.split(',').map(s => s.trim()).filter(Boolean)
             : undefined,
     };
 
-    const { error } = validateHistory(query);
+    const { error, value } = validateHistory(query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status: httpStatus, body } = await rewardRedemptionService.getAllRedemptions(req.user, query);
+    const { status: httpStatus, body } = await rewardRedemptionService.getAllRedemptions(req.user, value);
     return res.status(httpStatus).json(body);
 }
 
@@ -23,18 +23,18 @@ export async function getRedemptionById(req, res) {
 }
 
 export async function createRedemption(req, res) {
-    const { error } = validateRedemption(req.body);
+    const { error, value } = validateRedemption(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await rewardRedemptionService.createRedemption(req.user, req.body);
+    const { status, body } = await rewardRedemptionService.createRedemption(req.user, value);
     return res.status(status).json(body);
 }
 
 export async function completeRedemption(req, res) {
-    const { error } = validateCode(req.body);
+    const { error, value } = validateCode(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await rewardRedemptionService.completeRedemption(req.user, req.body.code);
+    const { status, body } = await rewardRedemptionService.completeRedemption(req.user, value.code);
     return res.status(status).json(body);
 }
 

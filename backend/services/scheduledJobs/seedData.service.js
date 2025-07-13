@@ -25,7 +25,7 @@ export async function seedReservations() {
         const slots = createSlots(restaurant.openingHours, today);
         if (!slots.length) continue;
 
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < getRandomInt(10, 50); i++) {
             const randomSlot = slots[getRandomInt(0, slots.length - 1)];
             const startTime = DateTime.fromFormat(randomSlot, 'HH:mm', { zone: 'utc' })
                 .set({ year: today.year, month: today.month, day: today.day });
@@ -94,13 +94,17 @@ export async function seedQueueAndReview(timezone = 'Asia/Singapore') {
                 queueNumber: counter.lastNumber,
             });
 
-            reviews.push({
-                customer,
-                restaurant: restaurant._id,
-                rating: getRandomInt(1, 5),
-                dateVisited: randomTime.toJSDate(),
-                isVisible: true
-            });
+            const reviewLeft = Math.random() < 0.7 ? false : true;
+
+            if (reviewLeft) {
+                reviews.push({
+                    customer,
+                    restaurant: restaurant._id,
+                    rating: getRandomInt(1, 5),
+                    dateVisited: randomTime.toJSDate(),
+                    isVisible: true
+                });
+            }
         }
 
         if (queueEntries.length > 0) {

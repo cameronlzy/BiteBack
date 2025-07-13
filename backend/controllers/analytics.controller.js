@@ -8,27 +8,17 @@ export async function getSnapshot(req, res) {
 }
 
 export async function getSummary(req, res) {
-    const { error } = validateSummaryQuery(req.query);
+    const { error, value } = validateSummaryQuery(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { unit, amount, date } = req.query;
-
-    const query = {
-        unit: unit || null,
-        amount: amount ? parseInt(amount) : 1,
-        date: date || null,
-    };
-
-    const { status, body } = await analyticsService.getSummary(req.restaurant, query);
+    const { status, body } = await analyticsService.getSummary(req.restaurant, value);
     return res.status(status).json(body);
 }
 
 export async function getTrends(req, res) {
-    const { error } = validateTrendsQuery(req.query);
+    const { error, value } = validateTrendsQuery(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const days = req.query.days ? parseInt(req.query.days) : 1;
-
-    const { status, body } = await analyticsService.getTrends(req.restaurant, days);
+    const { status, body } = await analyticsService.getTrends(req.restaurant, value.days);
     return res.status(status).json(body);
 }

@@ -16,10 +16,10 @@ export async function publicProfile(req, res) {
 
 export async function updateMe(req, res) {
     // validate request
-    const { error } = validatePatch(req.body);
+    const { error, value } = validatePatch(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { token, body, status } = await customerService.updateMe(req.body, req.user);
+    const { token, body, status } = await customerService.updateMe(value, req.user);
     if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 };

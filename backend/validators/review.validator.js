@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { dateFullOnly } from '../helpers/time.helper.js';
+import { paginationSchema } from './pagination.validator.js';
 
 export function validateReview(review) {
     const schema = Joi.object({
@@ -30,4 +31,12 @@ export function validateRestaurantId(id) {
         restaurantId: Joi.objectId().required()
     });
     return schema.validate(id);
+}
+
+export function validateGetQuery(query) {
+    const schema = paginationSchema.keys({
+        sortBy: Joi.string().valid('rating', 'dateVisited').default('rating'),
+        order: Joi.string().valid('asc', 'desc').default('desc'),
+    });
+    return schema.validate(query);
 }

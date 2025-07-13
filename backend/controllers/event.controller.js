@@ -6,40 +6,26 @@ import { wrapError } from '../helpers/response.js';
 import Event from '../models/event.model.js';
 
 export async function getAllPublicEvents(req, res) {
-    const page = Number(req.query.page ?? 1);
-    const limit = Number(req.query.limit ?? 8);
-    const query = { page, limit };
-
-    const { error } = validatePagination(query);
+    const { error, value } = validatePagination(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await eventService.getAllPublicEvents(query);
+    const { status, body } = await eventService.getAllPublicEvents(value);
     return res.status(status).json(body);
 }
 
 export async function getEventsByOwner(req, res) {
-    const query = {
-        page: Number(req.query.page ?? 1),
-        limit: Number(req.query.limit ?? 8),
-        status: req.query.status,
-    };
-
-    const { error } = validateOwnerQuery(query);
+    const { error, value } = validateOwnerQuery(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status: httpStatus, body } = await eventService.getEventsByOwner(req.user, query);
+    const { status: httpStatus, body } = await eventService.getEventsByOwner(req.user, value);
     return res.status(httpStatus).json(body);
 }
 
 export async function getPrivateEventsByRestaurant(req, res) {
-    const page = Number(req.query.page ?? 1);
-    const limit = Number(req.query.limit ?? 8);
-    const query = { page, limit };
-
-    const { error } = validatePagination(query);
+    const { error, value } = validatePagination(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await eventService.getPrivateEventsByRestaurant(req.params.id, query);
+    const { status, body } = await eventService.getPrivateEventsByRestaurant(req.params.id, value);
     return res.status(status).json(body);
 }
 
@@ -49,10 +35,10 @@ export async function getEventById(req, res) {
 }
 
 export async function createEvent(req, res) {
-    const { error } = validateEvent(req.body);
+    const { error, value } = validateEvent(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
     
-    const { status, body } = await eventService.createEvent(req.body);
+    const { status, body } = await eventService.createEvent(value);
     return res.status(status).json(body);
 }
 
@@ -110,10 +96,10 @@ export async function updateEventImages(req, res) {
 }
 
 export async function updateEvent(req, res) {
-    const { error } = validatePatch(req.body);
+    const { error, value } = validatePatch(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
     
-    const { status, body } = await eventService.updateEvent(req.event, req.restaurant, req.body);
+    const { status, body } = await eventService.updateEvent(req.event, req.restaurant, value);
     return res.status(status).json(body);
 }
 

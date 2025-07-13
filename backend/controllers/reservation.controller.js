@@ -4,14 +4,10 @@ import { validateReservation, validatePatch, validateStatus } from '../validator
 import validatePagination from '../validators/pagination.validator.js';
 
 export async function getReservationsByCustomer(req, res) {
-  const page = Number(req.query.page ?? 1);
-  const limit = Number(req.query.limit ?? 8);
-  const query = { page, limit };
-
-  const { error } = validatePagination(query);
+  const { error, value } = validatePagination(req.query);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-  const { status, body } = await reservationService.getReservationsByCustomer(req.user.profile, query);
+  const { status, body } = await reservationService.getReservationsByCustomer(req.user.profile, value);
   return res.status(status).json(body);
 };
 
@@ -21,26 +17,26 @@ export async function getReservationById(req, res) {
 };
 
 export async function createReservation(req, res) {
-  const { error } = validateReservation(req.body);
+  const { error, value } = validateReservation(req.body);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-  const { status, body } = await reservationService.createReservation(req.user, req.body);
+  const { status, body } = await reservationService.createReservation(req.user, value);
   return res.status(status).json(body);
 };
 
 export async function updateReservationStatus(req, res) {
-  const { error } = validateStatus(req.body);
+  const { error, value } = validateStatus(req.body);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-  const { status, body } = await reservationService.updateReservationStatus(req.reservation, req.body.status);
+  const { status, body } = await reservationService.updateReservationStatus(req.reservation, value.status);
   return res.status(status).json(body);
 };
 
 export async function updateReservation(req, res) {
-  const { error } = validatePatch(req.body);
+  const { error, value } = validatePatch(req.body);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-  const { status, body } = await reservationService.updateReservation(req.reservation, req.body);
+  const { status, body } = await reservationService.updateReservation(req.reservation, value);
   return res.status(status).json(body);
 };
 

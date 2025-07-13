@@ -145,11 +145,11 @@ export function validateDiscover(filters) {
 
 export function validateSearch(filters) {
   const schema = Joi.object({
-    search: Joi.string(),
-    page: Joi.number().integer().min(1),
-    limit: Joi.number().integer().min(1),
-    sortBy: Joi.string().valid('averageRating', 'name', 'reviewCount'),
-    order: Joi.string().valid('desc', 'asc'),
+    search: Joi.string().min(1).empty('').default(null),
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(8),
+    sortBy: Joi.string().valid('averageRating', 'name', 'reviewCount').default('averageRating'),
+    order: Joi.string().valid('desc', 'asc').default('desc'),
   });
   return schema.validate(filters);
 }

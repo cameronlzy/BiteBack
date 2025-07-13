@@ -17,16 +17,15 @@ export function validatePromotion(promotion) {
     return schema.validate(promotion);
 }
 
-export function validateSearch(search) {
+export function validateSearch(query) {
     const schema = Joi.object({
-        search: Joi.string(),
-        restaurants: Joi.string(),
-        page: Joi.number().integer().min(1),
-        limit: Joi.number().integer().min(1),
-        sortBy: Joi.string().valid('startDate', 'endDate', 'title'),
-        order: Joi.string().valid('desc', 'asc'),
+        search: Joi.string().empty('').default(null),
+        page: Joi.number().integer().min(1).default(1),
+        limit: Joi.number().integer().min(1).default(8),
+        sortBy: Joi.string().valid('startDate', 'endDate', 'title').default('endDate'),
+        order: Joi.string().valid('desc', 'asc').default('asc'),
     });
-    return schema.validate(search);
+    return schema.validate(query);
 }
 
 export function validatePatch(update) {

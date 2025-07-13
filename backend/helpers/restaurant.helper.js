@@ -1,5 +1,8 @@
 import { DateTime } from 'luxon';
 
+// note: get day of week using local time ie. dayOfWeek = date.set(timezone).weekday - 1;
+// compare time using utc
+
 export function convertOpeningHoursToUTC(openingHoursString, timezone = 'Asia/Singapore') {
   const days = openingHoursString.split('|');
 
@@ -17,10 +20,10 @@ export function convertOpeningHoursToUTC(openingHoursString, timezone = 'Asia/Si
   return converted.join('|');
 }
 
-export function createSlots(openingHoursString, sgtDateTime, slotDuration = 60) {
+export function createSlots(openingHoursString, localDateTime, slotDuration = 60) {
   const openingHours = openingHoursString.split('|');
-  const date = sgtDateTime;
-  const weekdayIndex = sgtDateTime.weekday - 1; 
+  const date = localDateTime;
+  const weekdayIndex = localDateTime.weekday - 1; 
 
   const dayHours = openingHours[weekdayIndex];
   if (!dayHours || dayHours.toLowerCase() === 'x') return [];
@@ -102,8 +105,8 @@ export function getCurrentTimeSlotStartUTC(restaurant) {
 }
 
 export function getOpeningHoursToday(restaurant, timezone = 'Asia/Singapore') {
-  const now = DateTime.now().setZone(timezone);
-  const weekdayIndex = now.weekday - 1;
+  const localNow = DateTime.now().setZone(timezone);
+  const weekdayIndex = localNow.weekday - 1;
 
   const openingHoursArray = restaurant.openingHours.split('|');
   const todayOpening = openingHoursArray[weekdayIndex];

@@ -5,34 +5,18 @@ import { validatePromotion, validateSearch, validatePatch, validateOwnerQuery } 
 import { wrapError } from '../helpers/response.js';
 
 export async function searchPromotions(req, res) {
-    const { error } = validateSearch(req.query);
+    const { error, value } = validateSearch(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { search, page, limit, sortBy, order } = req.query;
-
-    const filters = {
-        search: search || null,
-        page: page ? parseInt(page) : 1,
-        limit: limit ? parseInt(limit): 8,
-        sortBy: sortBy ? sortBy : 'endDate',
-        order: order === 'desc' ? 'desc' : 'asc',
-    };
-
-    const { status, body } = await promotionService.searchPromotions(filters);
+    const { status, body } = await promotionService.searchPromotions(value);
     return res.status(status).json(body);
 }
 
 export async function getPromotionsByOwner(req, res) {
-    const query = {
-        page: Number(req.query.page ?? 1),
-        limit: Number(req.query.limit ?? 8),
-        status: req.query.status,
-    };
-
-    const { error } = validateOwnerQuery(query);
+    const { error, value } = validateOwnerQuery(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status: httpStatus, body } = await promotionService.getPromotionsByOwner(req.user, query);
+    const { status: httpStatus, body } = await promotionService.getPromotionsByOwner(req.user, value);
     return res.status(httpStatus).json(body);
 }
 
@@ -42,10 +26,10 @@ export async function getPromotionById(req, res) {
 }
 
 export async function createPromotion(req, res) {
-    const { error } = validatePromotion(req.body);
+    const { error, value } = validatePromotion(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await promotionService.createPromotion(req.user, req.body);
+    const { status, body } = await promotionService.createPromotion(req.user, value);
     return res.status(status).json(body);
 }
 
@@ -103,10 +87,10 @@ export async function updatePromotionImages(req, res) {
 }
 
 export async function updatePromotion(req, res) {
-    const { error } = validatePatch(req.body);
+    const { error, value } = validatePatch(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await promotionService.updatePromotion(req.promotion, req.restaurant, req.body);
+    const { status, body } = await promotionService.updatePromotion(req.promotion, req.restaurant, value);
     return res.status(status).json(body);
 }
 
