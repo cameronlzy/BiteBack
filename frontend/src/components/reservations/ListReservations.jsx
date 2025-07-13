@@ -22,7 +22,6 @@ const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
       setLoading(true)
       const response = await getReservations({ page, limit: 8 })
       const queriedReservations = response.reservations || []
-      console.log(queriedReservations)
 
       const restaurantIds = queriedReservations.map((r) => r.restaurant)
       const restaurantData = await Promise.all(
@@ -45,6 +44,11 @@ const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
   useEffect(() => {
     fetchReservations()
   }, [page])
+
+  const handleDelete = async (id) => {
+    await onDelete(id)
+    setReservations((prev) => prev.filter((res) => res._id !== id))
+  }
 
   if (loading) return <LoadingSpinner size="md" />
 
@@ -122,7 +126,7 @@ const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
               <Button
                 className="text-red-600 hover:bg-red-100 transition-colors"
                 variant="ghost"
-                onClick={() => onDelete(res._id)}
+                onClick={() => handleDelete(res._id)}
               >
                 <Trash2 className="w-5 h-5" />
                 Delete Booking

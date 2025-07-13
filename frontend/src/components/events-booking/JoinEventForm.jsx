@@ -16,7 +16,7 @@ import { joinEventSchema } from "@/utils/schemas"
 import { objectCleaner } from "@/utils/objectComparator"
 import { Info } from "lucide-react"
 
-const JoinEventForm = ({ event, setShowForm }) => {
+const JoinEventForm = ({ event, setShowForm, setMinVisitMessage }) => {
   const form = useForm({
     resolver: joiResolver(joinEventSchema),
     defaultValues: {
@@ -46,16 +46,19 @@ const JoinEventForm = ({ event, setShowForm }) => {
       toast.success("Successfully joined event")
       form.reset()
       setShowForm(false)
+      setMinVisitMessage(null)
     } catch (ex) {
       const message =
         ex.response?.data?.error || "An unexpected error occurred while joining"
-
-      toast.error("Failed to join event")
-      form.setError("pax", {
-        type: "manual",
-        message,
-      })
-      throw ex
+      if (ex.response?.status === 400) {
+        form.setError("pax", {
+          type: "manual",
+          message,
+        })
+      } else {
+        toast.error("Failed to join event")
+        throw ex
+      }
     }
   }
 

@@ -30,13 +30,7 @@ import LoadingSpinner from "../common/LoadingSpinner"
 import { readableTimeSettings } from "@/utils/timeConverter"
 import { objectCleaner } from "@/utils/objectComparator"
 
-const ReviewForm = ({
-  restaurant,
-  onSubmit,
-  setReviews,
-  setSortedReviews,
-  user,
-}) => {
+const ReviewForm = ({ restaurant, onSubmit, user }) => {
   const [selectedFiles, setSelectedFiles] = useState([])
   const [pastVisits, setPastVisits] = useState(null)
 
@@ -51,6 +45,7 @@ const ReviewForm = ({
         throw ex
       }
     }
+
     if (user) {
       fetchVisits()
     }
@@ -75,19 +70,16 @@ const ReviewForm = ({
         .setZone("Asia/Singapore")
         .toISO()
       const payload = objectCleaner(data)
+
       const res = await onSubmit(payload)
-      const reviewId = res._id
-      let images
+
       if (selectedFiles.length > 0) {
-        images = await uploadReviewImages(reviewId, selectedFiles)
+        await uploadReviewImages(res._id, selectedFiles)
       }
-      res.images = images
-      if (setReviews && setSortedReviews) {
-        setReviews((prev) => [...prev, res])
-        setSortedReviews((prev) => [...prev, res])
-      }
-      toast.success("Review uploaded successfully")
+
+      toast.success("Review submitted successfully")
       form.reset()
+      setSelectedFiles([])
     } catch (ex) {
       toast.error("Failed to submit review")
       throw ex
@@ -181,6 +173,7 @@ const ReviewForm = ({
           selectedFiles={selectedFiles}
           setSelectedFiles={setSelectedFiles}
         />
+
         <SubmitButton
           type="submit"
           className="w-full"

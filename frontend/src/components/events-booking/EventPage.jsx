@@ -277,7 +277,12 @@ const EventPage = ({ user }) => {
       }
       form={
         showForm && hasAvailability ? (
-          <JoinEventForm event={event} user={user} setShowForm={setShowForm} />
+          <JoinEventForm
+            event={event}
+            user={user}
+            setShowForm={setShowForm}
+            setMinVisitMessage={setMinVisitMessage}
+          />
         ) : null
       }
     />

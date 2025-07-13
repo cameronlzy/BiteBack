@@ -9,12 +9,31 @@ const DateInputRestaurant = ({
   existingItems,
   restaurant,
   type = null,
+  disabled = false,
 }) => {
   return (
     <Calendar
       selected={startDate}
       components={{
         Day: (props) => {
+          const dateIsSelected =
+            props.date.toDateString() === startDate?.toDateString()
+
+          if (disabled) {
+            return (
+              <CustomDay
+                {...props}
+                updateDate={() => {}}
+                existingItems={existingItems}
+                type={type || "Reservations"}
+                selected={startDate}
+                modifiers={{
+                  disabled: !dateIsSelected,
+                }}
+              />
+            )
+          }
+
           const weekday = [
             "sunday",
             "monday",
@@ -30,14 +49,17 @@ const DateInputRestaurant = ({
           const isPastDate =
             props.date.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
           const beyond90Days = type === "reservation" && isBeyond90Days(props)
+
           return (
             <CustomDay
               {...props}
               updateDate={updateDate}
               existingItems={existingItems}
-              type="Reservations"
+              type={type || "Reservations"}
               selected={startDate}
-              modifiers={{ disabled: isDisabled || isPastDate || beyond90Days }}
+              modifiers={{
+                disabled: isDisabled || isPastDate || beyond90Days,
+              }}
             />
           )
         },

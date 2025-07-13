@@ -19,6 +19,7 @@ import {
   saveEvent,
   getEventById,
   updateEventImages,
+  getOwnerEvents,
 } from "@/services/eventService"
 import {
   Select,
@@ -42,12 +43,16 @@ const EventForm = ({ user }) => {
   const [mainImageFile, setMainImageFile] = useState(null)
   const [bannerImageFile, setBannerImageFile] = useState(null)
   const [event, setEvent] = useState(null)
+  const [ownerExistingEvents, setOwnerExistingEvents] = useState([])
   const [restaurant, setRestaurant] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null)
-  const [timeOptions, setTimeOptions] = useState([])
+  const [startTimeOptions, setStartTimeOptions] = useState([])
+  const [endTimeOptions, setEndTimeOptions] = useState([])
   const { eventId } = useParams()
   const location = useLocation()
   const from = location.state?.from || "/events"
+
+  const isEdit = !!eventId
 
   useEffect(() => {
     if (user.role !== "owner") {
@@ -56,6 +61,16 @@ const EventForm = ({ user }) => {
       })
       navigate("/restaurants", { replace: true })
     }
+
+    const fetchOwnerEvents = async () => {
+      const res = await getOwnerEvents({
+        page: 1,
+        limit: 20,
+        status: "upcoming",
+      })
+      setOwnerExistingEvents(res.events)
+    }
+    fetchOwnerEvents()
   }, [user._id])
 
   useEffect(() => {
@@ -72,20 +87,30 @@ const EventForm = ({ user }) => {
     ][selectedDate.getDay()]
 
     const openStr = restaurant.openingHours?.[weekday]
-    console.log(openStr)
     if (!openStr || openStr.toLowerCase() === "closed") return
+
     const [startStr, endStr] = openStr.split("-")
-    const start = DateTime.fromFormat(startStr.trim(), "HH:mm")
-    const end = DateTime.fromFormat(endStr.trim(), "HH:mm")
+    const open = DateTime.fromFormat(startStr.trim(), "HH:mm")
+    const close = DateTime.fromFormat(endStr.trim(), "HH:mm")
 
-    const hours = []
-    let current = start
+    const latestStart = close.minus({ hours: 2 })
+    const startTimes = []
+    const endTimes = []
 
-    while (current < end.minus({ hours: 1 })) {
-      hours.push(current.toFormat("HH:mm"))
+    let current = open
+    while (current <= latestStart) {
+      startTimes.push(current.toFormat("HH:mm"))
       current = current.plus({ hours: 1 })
     }
-    setTimeOptions(hours)
+
+    current = open.plus({ hours: 1 })
+    while (current <= close) {
+      endTimes.push(current.toFormat("HH:mm"))
+      current = current.plus({ hours: 1 })
+    }
+
+    setStartTimeOptions(startTimes)
+    setEndTimeOptions(endTimes)
   }, [restaurant, selectedDate])
 
   const form = useForm({
@@ -126,7 +151,7 @@ const EventForm = ({ user }) => {
 
   useEffect(() => {
     const fetchEvent = async () => {
-      if (!eventId) return
+      if (!isEdit) return
       try {
         const event = await getEventById(eventId)
         setEvent(event)
@@ -179,8 +204,6 @@ const EventForm = ({ user }) => {
   }, [mainImageFile, bannerImageFile])
 
   const onSubmit = async (data) => {
-    const isEdit = !!eventId
-
     if (event && data.paxLimit < event.reservedPax) {
       form.setError("paxLimit", {
         type: "manual",
@@ -299,7 +322,7 @@ const EventForm = ({ user }) => {
       <FormProvider {...form}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <h2 className="text-2xl font-bold mb-4">
-            {eventId ? "Edit Event Details" : "Create New Event"}
+            {isEdit ? "Edit Event Details" : "Create New Event"}
           </h2>
 
           <FormField
@@ -336,7 +359,7 @@ const EventForm = ({ user }) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Restaurant</FormLabel>
-                {eventId ? (
+                {isEdit ? (
                   <Input
                     disabled
                     value={
@@ -365,7 +388,7 @@ const EventForm = ({ user }) => {
                   </Select>
                 )}
                 <FormMessage />
-                {eventId && (
+                {isEdit && (
                   <div className="flex items-start text-sm text-muted-foreground mt-1">
                     <Info className="w-4 h-4 mr-1 mt-[2px]" />
                     <span>
@@ -406,16 +429,17 @@ const EventForm = ({ user }) => {
                   setSelectedDate(date)
                   form.setValue("date", date)
                 }}
-                existingItems={[]}
+                existingItems={ownerExistingEvents}
                 restaurant={user.profile.restaurants.find(
                   (r) => r._id === watch("restaurant")
                 )}
                 type="event"
+                disabled={isEdit}
               />
             </div>
           )}
 
-          {selectedDate && timeOptions.length > 0 && (
+          {selectedDate && startTimeOptions.length > 0 && (
             <motion.div
               key="time-select"
               initial={{ opacity: 0, height: 0 }}
@@ -430,14 +454,23 @@ const EventForm = ({ user }) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Start Time</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value)
+                        if (form.getValues("endTime") <= value) {
+                          form.setValue("endTime", "")
+                        }
+                      }}
+                      value={field.value}
+                      disabled={isEdit}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Start Time" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {timeOptions.map((time) => (
+                        {startTimeOptions.map((time) => (
                           <SelectItem key={time} value={time}>
                             {time}
                           </SelectItem>
@@ -455,8 +488,8 @@ const EventForm = ({ user }) => {
                 render={({ field }) => {
                   const startTime = watch("startTime")
                   const filteredOptions = startTime
-                    ? timeOptions.filter((t) => t > startTime)
-                    : timeOptions
+                    ? endTimeOptions.filter((t) => t > startTime)
+                    : endTimeOptions
 
                   return (
                     <FormItem>
@@ -464,6 +497,7 @@ const EventForm = ({ user }) => {
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
+                        disabled={isEdit}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -478,7 +512,7 @@ const EventForm = ({ user }) => {
                               </SelectItem>
                             ))
                           ) : (
-                            <SelectItem disabled value="">
+                            <SelectItem disabled value="placeholder">
                               No valid end time
                             </SelectItem>
                           )}
@@ -581,7 +615,7 @@ const EventForm = ({ user }) => {
             type="submit"
             className="w-full"
             condition={formState.isSubmitting}
-            normalText={eventId ? "Update Event" : "Create Event"}
+            normalText={isEdit ? "Update Event" : "Create Event"}
             loadingText="Submitting..."
           />
         </form>

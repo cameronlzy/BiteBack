@@ -9,13 +9,13 @@ export async function getReview(reviewId) {
     return data
 }
 
-export async function getReviewByRestaurant(restaurantId) {
-    const { data } = await http.get(apiEndpoint + "/restaurant/" + restaurantId)
+export async function getReviewByRestaurant(restaurantId, params) {
+    const { data } = await http.get(apiEndpoint + "/restaurant/" + restaurantId, params)
     return data
 }
 
-export async function getReviewsByCustomer(customerId) {
-    const { data } = await http.get(apiEndpoint + "/customer/" + customerId)
+export async function getReviewsByCustomer(customerId, params) {
+    const { data } = await http.get(apiEndpoint + "/customer/" + customerId, params)
     return data
 }
 
