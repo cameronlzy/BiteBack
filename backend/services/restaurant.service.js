@@ -202,9 +202,8 @@ export async function getAvailability(restaurantId, query) {
     const eventEnd = DateTime.fromJSDate(event.endDate);
 
     timeSlots.forEach(slot => {
-      const slotDT = DateTime.fromFormat(slot, 'HH:mm', { zone: restaurant.timezone })
-        .set({ year: date.year, month: date.month, day: date.day })
-        .toUTC();
+      const slotDT = DateTime.fromFormat(slot, 'HH:mm', { zone: 'utc' })
+        .set({ year: date.year, month: date.month, day: date.day });
 
       if (slotDT >= eventStart && slotDT < eventEnd) {
         availabilityMap[slot] -= event.slotPax;
