@@ -9,7 +9,7 @@
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "preview": "vite preview"
   },
-  "lint-staged": {
+    "lint-staged": {
   "*.{js,jsx,mjs}": "eslint --fix"
   },
   "dependencies": {

@@ -14,6 +14,7 @@ import { saveReservation } from "@/services/reservationService"
 import { DateTime } from "luxon"
 import { joinEventSchema } from "@/utils/schemas"
 import { objectCleaner } from "@/utils/objectComparator"
+import { Info } from "lucide-react"
 
 const JoinEventForm = ({ event, setShowForm }) => {
   const form = useForm({
@@ -46,7 +47,14 @@ const JoinEventForm = ({ event, setShowForm }) => {
       form.reset()
       setShowForm(false)
     } catch (ex) {
+      const message =
+        ex.response?.data?.error || "An unexpected error occurred while joining"
+
       toast.error("Failed to join event")
+      form.setError("pax", {
+        type: "manual",
+        message,
+      })
       throw ex
     }
   }
@@ -72,6 +80,10 @@ const JoinEventForm = ({ event, setShowForm }) => {
                 />
               </FormControl>
               <FormMessage />
+              <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                <Info className="w-4 h-4" />
+                Max guests per customer: {event.maxPaxPerCustomer}
+              </p>
             </FormItem>
           )}
         />

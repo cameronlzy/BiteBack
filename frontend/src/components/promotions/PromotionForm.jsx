@@ -31,7 +31,6 @@ import {
 import { objectCleaner, objectComparator } from "@/utils/objectComparator"
 import { DateTime } from "luxon"
 import BackButton from "../common/BackButton"
-import { toSGTISO } from "@/utils/timeConverter"
 import { ownedByUser } from "@/utils/ownerCheck"
 
 const PromotionForm = ({ user }) => {
@@ -66,8 +65,8 @@ const PromotionForm = ({ user }) => {
         form.reset({
           title: promotion.title || "",
           description: promotion.description || "",
-          startDate: promotion.startDate?.slice(0, 16),
-          endDate: promotion.endDate?.slice(0, 16),
+          startDate: promotion.startDate?.slice(0, 10),
+          endDate: promotion.endDate?.slice(0, 10),
           timeWindow: {
             startTime: promotion.timeWindow?.startTime || "",
             endTime: promotion.timeWindow?.endTime || "",
@@ -108,7 +107,7 @@ const PromotionForm = ({ user }) => {
   })
 
   const { control, handleSubmit, formState, setError } = form
-  const localMin = DateTime.local().toFormat("yyyy-LL-dd'T'HH:mm")
+  const localMin = DateTime.local().toFormat("yyyy-LL-dd")
   const now = DateTime.local()
   const startDateHasPassed =
     promotion?.startDate && DateTime.fromISO(promotion.startDate) < now
@@ -167,8 +166,31 @@ const PromotionForm = ({ user }) => {
         payload._id = promotionId
       }
 
-      if (data.startDate) payload.startDate = toSGTISO(data.startDate)
-      if (data.endDate) payload.endDate = toSGTISO(data.endDate)
+      const startDateDT = DateTime.fromISO(data.startDate, {
+        zone: "Asia/Singapore",
+      })
+      const endDateDT = DateTime.fromISO(data.endDate, {
+        zone: "Asia/Singapore",
+      })
+
+      if (hasStart && hasEnd) {
+        payload.startDate = startDateDT
+          .set({
+            hour: Number(startTime.split(":")[0]),
+            minute: Number(startTime.split(":")[1]),
+          })
+          .toISO()
+
+        payload.endDate = endDateDT
+          .set({
+            hour: Number(endTime.split(":")[0]),
+            minute: Number(endTime.split(":")[1]),
+          })
+          .toISO()
+      } else {
+        payload.startDate = startDateDT.startOf("day").toISO()
+        payload.endDate = endDateDT.endOf("day").toISO()
+      }
       const cleanedNoEmpty = objectCleaner(payload)
       let changes = promotionId
         ? objectComparator(promotion, cleanedNoEmpty)
@@ -271,9 +293,9 @@ const PromotionForm = ({ user }) => {
                 <FormLabel>Start Date & Time</FormLabel>
                 <FormControl>
                   <Input
-                    type="datetime-local"
+                    type="date"
                     {...field}
-                    min={localMin}
+                    min={!promotionId ? localMin : undefined}
                     readOnly={startDateHasPassed}
                     className={
                       startDateHasPassed
@@ -299,7 +321,7 @@ const PromotionForm = ({ user }) => {
               <FormItem>
                 <FormLabel>End Date & Time</FormLabel>
                 <FormControl>
-                  <Input type="datetime-local" {...field} min={localMin} />
+                  <Input type="date" {...field} min={localMin} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

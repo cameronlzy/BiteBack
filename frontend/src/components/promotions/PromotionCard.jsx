@@ -9,6 +9,7 @@ import {
   readableTimeSettings,
 } from "@/utils/timeConverter"
 import DisabledBlur from "../common/DisabledBlur"
+import { Clock } from "lucide-react"
 
 const PromotionCard = ({
   _id,
@@ -20,6 +21,7 @@ const PromotionCard = ({
   isActive,
   timeWindow,
 }) => {
+  console.log(isActive)
   const promotion = {
     _id,
     title,
@@ -86,6 +88,12 @@ const PromotionCard = ({
               <strong>
                 {DateTime.fromISO(endDate).toLocaleString(readableTimeSettings)}
               </strong>
+            </p>
+          )}
+          {timeWindow?.startTime && timeWindow?.endTime && (
+            <p className="text-gray-500 flex items-center gap-1">
+              <Clock className="w-4 h-4 inline-block" />
+              Active from {timeWindow.startTime} - {timeWindow.endTime}
             </p>
           )}
         </div>

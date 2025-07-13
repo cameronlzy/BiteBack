@@ -113,16 +113,18 @@ const EventPage = ({ user }) => {
         _id: event._id,
         status: event.status === "scheduled" ? "cancelled" : "scheduled",
       })
+
       toast.success(
-        `Event ${activeCheck(updated.status) ? "Activated" : "Deactivated"}`
+        `Event ${updated.status === "cancelled" ? "Cancelled" : "Re-opened"}`
       )
+
       setEvent((prev) => ({
         ...prev,
         ...updated,
         restaurant: prev?.restaurant,
       }))
     } catch (ex) {
-      toast.error("Failed to toggle promotion status")
+      toast.error("Failed to toggle event status")
       throw ex
     }
   }

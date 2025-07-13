@@ -14,7 +14,7 @@ import {
   deletePromotion,
   savePromotion,
 } from "@/services/promotionService"
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle, Clock } from "lucide-react"
 import { toast } from "react-toastify"
 import { ownedByUser } from "@/utils/ownerCheck"
 import RestaurantRelatedItemUI from "../common/RestaurantRelatedUI"
@@ -133,8 +133,16 @@ const PromotionPage = ({ user }) => {
     )
   }
 
-  const { _id, title, startDate, endDate, mainImage, restaurant, description } =
-    promotion
+  const {
+    _id,
+    title,
+    startDate,
+    endDate,
+    mainImage,
+    restaurant,
+    description,
+    timeWindow,
+  } = promotion
   const isAvailable = isPromotionAvailable(promotion)
   const hasStarted = hasItemStarted(promotion)
   const isActive = promotion.isActive
@@ -198,6 +206,14 @@ const PromotionPage = ({ user }) => {
               </strong>
             </p>
           )}
+          <div className="flex justify-center">
+            {timeWindow?.startTime && timeWindow?.endTime && (
+              <p className="text-gray-500 flex items-center gap-1">
+                <Clock className="w-4 h-4 inline-block" />
+                Active from {timeWindow.startTime} - {timeWindow.endTime}
+              </p>
+            )}
+          </div>
         </div>
       }
     />
