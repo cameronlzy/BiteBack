@@ -241,8 +241,6 @@ const EventForm = ({ user }) => {
         endDate: combinedEnd.toISO(),
       }
 
-      if (isEdit) payload._id = eventId
-
       const cleaned = objectCleaner(payload)
       let changes = isEdit ? objectComparator(event, cleaned) : cleaned
 
@@ -259,7 +257,9 @@ const EventForm = ({ user }) => {
         navigate(`/events/${eventId}`, { replace: true })
         return
       }
-      console.log(changes)
+      if (isEdit) {
+        changes._id = eventId
+      }
       const savedEvent = await saveEvent(changes)
 
       const changedImages = {}
