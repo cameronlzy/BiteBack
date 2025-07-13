@@ -117,7 +117,7 @@ export async function getEventById(eventId) {
 }
 
 export async function createEvent(data) {
-    const fields = _.pick(data, ['restaurant', 'title', 'description', 'startDate', 'endDate', 'paxLimit']);
+    const fields = _.pick(data, ['restaurant', 'title', 'description', 'startDate', 'endDate', 'paxLimit', 'slotPax']);
     if (data.remarks) fields.remarks = data.remarks;
     if (data.minVisits) fields.minVisits = data.minVisits;
     if (data.maxPaxPerCustomer) fields.maxPaxPerCustomer = data.maxPaxPerCustomer;

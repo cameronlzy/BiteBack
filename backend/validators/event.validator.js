@@ -10,6 +10,7 @@ export function validateEvent(event) {
         startDate: futureDateFullOnly.required(),
         endDate: futureDateFullOnly.required(),
         paxLimit: Joi.number().integer().required(),
+        slotPax: Joi.number().integer().required(),
         maxPaxPerCustomer: Joi.number().integer().min(1).optional(),
         minVisits: Joi.number().integer().min(0).optional(),
         remarks: Joi.string().optional().custom((value, helpers) => {
@@ -32,8 +33,10 @@ export function validatePatch(patch) {
         startDate: futureDateFullOnly,
         endDate: futureDateFullOnly,
         paxLimit: Joi.number().integer(),
+        slotPax: Joi.number().integer(),
         maxPaxPerCustomer: Joi.number().integer().min(1),
         minVisits: Joi.number().integer().min(0),
+        status: Joi.string().valid('scheduled', 'cancelled', 'completed'),
         remarks: Joi.string().allow('').custom((value, helpers) => {
             if (value.trim() === '') return value;
 

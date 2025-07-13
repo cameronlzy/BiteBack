@@ -10,9 +10,10 @@ export function createTestEvent({
     const title = 'title';
     const description = 'description';
     const paxLimit = 10;
+    const slotPax = 10;
 
     const event = new Event({
-        restaurant, title, description, paxLimit, startDate, endDate
+        restaurant, title, description, paxLimit, slotPax, startDate, endDate
     });
     return event;
 }

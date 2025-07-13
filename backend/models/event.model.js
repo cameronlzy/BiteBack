@@ -7,6 +7,7 @@ const eventSchema = new mongoose.Schema({
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     paxLimit: { type: Number, required: true },
+    slotPax: { type: Number, required: true },
     maxPaxPerCustomer: { type: Number, default: 1 },
     minVisits: { type: Number, default: 0 },
     status: { type: String, enum: ['scheduled', 'cancelled', 'completed'], default: 'scheduled' },

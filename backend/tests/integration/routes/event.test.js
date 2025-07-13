@@ -242,7 +242,7 @@ describe('event test', () => {
     describe('POST /api/events', () => {
         let event, restaurant;
         let user, token, cookie;
-        let title, description, startDate, endDate, paxLimit, remarks;
+        let title, description, startDate, endDate, paxLimit, slotPax, remarks;
 
         beforeEach(async () => {
             await Event.deleteMany({});
@@ -260,6 +260,7 @@ describe('event test', () => {
             startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
             endDate = event.endDate;;
             paxLimit = event.paxLimit;
+            slotPax = event.slotPax;
             remarks = event.remarks;
         });
 
@@ -268,7 +269,7 @@ describe('event test', () => {
                 .post('/api/events')
                 .set('Cookie', [cookie])
                 .send({
-                    restaurant: restaurant._id, title, description, startDate, endDate, paxLimit, remarks
+                    restaurant: restaurant._id, title, description, startDate, endDate, paxLimit, slotPax, remarks
                 });
         };
         

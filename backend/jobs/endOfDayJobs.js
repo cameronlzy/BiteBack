@@ -12,17 +12,13 @@ export function registerEndOfDayJobs(timezone = 'Asia/Singapore') {
         await runJob('EndOfDayCleanup', async () => {
             await processEndOfDay(now);
         });
-    });
+    }, { timezone });
 
     // runs every minute, backfills review analytics at the end of the day
-    cron.schedule('* * * * *', async () => {
-        const now = DateTime.now().setZone(timezone);
-        if (now.hour === 23 && now.minute === 59) {
-            const runDate = now.startOf('day');
-
-            await runJob('EndOfDayBackfill', async () => {
-                await backfillReviewAnalytics(runDate);
-            });
-        }
-    });
+    cron.schedule('59 23 * * *', async () => {
+        const runDate = DateTime.now().setZone(timezone).startOf('day');
+        await runJob('EndOfDayBackfill', async () => {
+            await backfillReviewAnalytics(runDate);
+        });
+    }, { timezone });
 }

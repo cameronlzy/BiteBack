@@ -17,7 +17,7 @@ export async function getReservationsByCustomer(profile, query) {
     const now = new Date();
 
     const [reservations, total] = await Promise.all([
-        Reservation.find({ customer: profile, endDate: { $gt: now }}).sort({ startDate: 1 }).skip(skip).limit(limit).lean(),
+        Reservation.find({ customer: profile, endDate: { $gt: now }}).sort({ startDate: 1 }).populate('event', '_id title').skip(skip).limit(limit).lean(),
         Reservation.countDocuments({ customer: profile, endDate: { $gt: now } }),
     ]);
 
@@ -36,7 +36,7 @@ export async function getReservationById(reservation) {
         return error(400, 'Reservation expired');
     }
     if (reservation.event) {
-        const event = await Event.findById(reservation.event).select('title').lean();
+        const event = await Event.findById(reservation.event).select('_id title').lean();
         reservation.event = event;
     }
     return success(reservation.toObject());
@@ -78,28 +78,41 @@ export async function createReservation(authUser, data) {
         const slotStart = DateTime.fromISO(data.startDate, { zone: restaurant.timezone }).toUTC();
         const slotEnd = slotStart.plus({ minutes: restaurant.slotDuration });
 
-        const overlappingReservations = await Reservation.find({
-            restaurant: restaurant._id,
-            startDate: { $lt: slotEnd.toJSDate() },
-            endDate: { $gt: slotStart.toJSDate() }
-        }).select('pax event').session(session).lean();
+        const [overlappingReservations, overlappingEvents] = await Promise.all([
+            Reservation.find({
+                restaurant: restaurant._id,
+                startDate: { $lt: slotEnd.toJSDate() },
+                endDate: { $gt: slotStart.toJSDate() }
+            }).select('pax event').session(session).lean(),
+            Event.find({
+                restaurant: restaurant._id,
+                startDate: { $lt: slotEnd.toJSDate() },
+                endDate: { $gt: slotStart.toJSDate() }
+            }).select('slotPax').session(session).lean(),
+        ]);
 
-        let bookedPax = 0;
-        let bookedPaxForEvent = 0;
+        let bookedRegularPax = 0;
+        let bookedEventPax = 0;
 
-        overlappingReservations.forEach(({ pax, event: reservationEvent }) => {
-            bookedPax += pax;
-            if (data.event && reservationEvent?.toString() === data.event.toString()) {
-                bookedPaxForEvent += pax;
+        overlappingReservations.forEach(r => {
+            if (!r.event) {
+                bookedRegularPax += r.pax;
+            } else if (data.event && r.event.toString() === data.event.toString()) {
+                bookedEventPax += r.pax;
             }
         });
 
-        if (bookedPax + data.pax > restaurant.maxCapacity) {
-            return error(409, 'Restaurant is fully booked at this time slot');
-        }
+        const totalEventSlotPax = overlappingEvents.reduce((sum, e) => sum + (e.slotPax ?? 0), 0);
 
-        if (data.event && bookedPaxForEvent + data.pax > event.paxLimit) {
-            return error(409, 'Event is fully booked');
+        if (!data.event) {
+            const remainingCapacity = restaurant.maxCapacity - totalEventSlotPax;
+            if (bookedRegularPax + data.pax > remainingCapacity) {
+                return error(409, 'Restaurant is fully booked at this time slot');
+            }
+        } else {
+            if (bookedEventPax + data.pax > event.paxLimit) {
+                return error(409, 'Event is fully booked');
+            }
         }
 
         // create reservation
@@ -141,42 +154,55 @@ export async function updateReservation(reservation, update) {
     if (reservation.endDate < new Date()) {
         return error(400, 'Reservation expired');
     }
+    if (reservation.event) {
+        return error(400, 'Cannot edit event reservation');
+    }
+
     const isDateChanging = update.startDate !== undefined;
     const isPaxChanging = update.pax !== undefined;
-    let newDateUTC;
+    let newDateUTC, slotDuration;
 
     if (isDateChanging || isPaxChanging) {
         const newDate = isDateChanging ? update.startDate : reservation.startDate.toISOString();
         const newPax = isPaxChanging ? update.pax : reservation.pax;
         const restaurant = await Restaurant.findById(reservation.restaurant).select('+maxCapacity +slotDuration +timezone').lean();
+        slotDuration = restaurant.slotDuration;
 
-        const date = DateTime.fromISO(newDate, { zone: restaurant.timezone });
-        const UTCdate = date.toUTC();
-        newDateUTC = UTCdate;
+        const slotStart = DateTime.fromISO(newDate, { zone: restaurant.timezone }).toUTC();
+        const slotEnd = slotStart.plus({ minutes: slotDuration });
+        newDateUTC = slotStart;
 
-        const currentReservations = await Reservation.find({
-            restaurant: restaurant._id,
-            startDate: {
-                $gte: UTCdate.toJSDate(),
-                $lte: UTCdate.plus({ minutes: restaurant.slotDuration }).toJSDate()
+        const [overlappingReservations, overlappingEvents] = await Promise.all([
+            Reservation.find({
+                restaurant: restaurant._id,
+                startDate: { $lt: slotEnd.toJSDate() },
+                endDate: { $gt: slotStart.toJSDate() }
+            }).select('pax event').lean(),
+            Event.find({
+                restaurant: restaurant._id,
+                startDate: { $lt: slotEnd.toJSDate() },
+                endDate: { $gt: slotStart.toJSDate() }
+            }).select('slotPax').lean(),
+        ]);
+
+        let bookedPax = 0;
+        overlappingReservations.forEach(r => {
+            if (!r._id.equals(reservation._id) && !r.event) {
+                bookedPax += r.pax;
             }
-        }).select({ pax: 1 }).lean();
-
-        let bookedSlots = 0;
-        currentReservations.forEach(({ pax }) => {
-            bookedSlots += pax;
         });
 
-        if (!isDateChanging) {
-            bookedSlots -= reservation.pax;
-        }
-        if (bookedSlots + newPax > restaurant.maxCapacity) {
+        const totalEventSlotPax = overlappingEvents.reduce((sum, e) => sum + (e.slotPax ?? 0), 0);
+        const remainingCapacity = restaurant.maxCapacity - totalEventSlotPax;
+
+        if (bookedPax + newPax > remainingCapacity) {
             return error(409, 'Restaurant is fully booked at this time slot');
         }
     }
 
     if (update.startDate !== undefined) {
-        reservation.startDate = newDateUTC;
+        reservation.startDate = newDateUTC.toJSDate();
+        reservation.endDate = newDateUTC.plus({ minutes: slotDuration }).toJSDate();
     } 
     if (update.remarks !== undefined) {
         reservation.remarks = update.remarks;

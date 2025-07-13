@@ -166,27 +166,47 @@ export async function getAvailability(restaurantId, query) {
   const restaurant = await Restaurant.findById(restaurantId).select('+_id +timezone').lean();
   if (!restaurant) return error(404, 'Restaurant not found');
 
-  // get reservations on query date
-  const reservations = await reservationService.getReservationsByRestaurantByDate(restaurant, query.date);
-
   // create time slots
   const date = DateTime.fromISO(query.date, { zone: restaurant.timezone });
   const timeSlots = createSlots(restaurant.openingHours, date);
   if (Array.isArray(timeSlots) && timeSlots.length === 0) return success([]);
 
-  // calculate availability for each slot
+  const dayStart = date.startOf('day').toUTC().toJSDate();
+  const dayEnd = date.endOf('day').toUTC().toJSDate();
+
+  // get reservations and events on query date
+  const [reservations, overlappingEvents] = await Promise.all([
+    reservationService.getReservationsByRestaurantByDate(restaurant, query.date),
+    Event.find({ restaurant: restaurant._id, startDate: { $lt: dayEnd }, endDate: { $gt: dayStart } }).select('slotPax startDate endDate').lean(),
+  ]);
+
   const availabilityMap = {};
   timeSlots.forEach(slot => availabilityMap[slot] = restaurant.maxCapacity);
-  reservations.forEach(({ startDate, endDate, pax }) => {
+
+  reservations.forEach(({ startDate, endDate, pax, event }) => {
+    if (event) return;
+
     const start = DateTime.fromJSDate(startDate);
     const end = DateTime.fromJSDate(endDate);
 
-    for (let dt = start; dt < end; dt = dt.plus({ hours: 1 })) {
+    for (let dt = start; dt < end; dt = dt.plus({ minutes: restaurant.slotDuration })) {
       const slotTime = dt.toFormat('HH:mm');
       if (availabilityMap[slotTime] !== undefined) {
         availabilityMap[slotTime] -= pax;
       }
     }
+  });
+
+  overlappingEvents.forEach(event => {
+    const eventStart = DateTime.fromJSDate(event.startDate);
+    const eventEnd = DateTime.fromJSDate(event.endDate);
+
+    timeSlots.forEach(slot => {
+      const slotDT = DateTime.fromFormat(slot, 'HH:mm', { zone: restaurant.timezone });
+      if (slotDT >= eventStart && slotDT < eventEnd) {
+        availabilityMap[slot] -= (event.slotPax ?? 0);
+      }
+    });
   });
 
   return success(timeSlots.map(slot => ({
