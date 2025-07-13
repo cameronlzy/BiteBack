@@ -192,15 +192,73 @@ export async function updateEvent(event, restaurant, update) {
     }
 
     for (const key in update) {
-        if (key === 'paxLimit' || key === 'slotPax') {
+        if (key === 'paxLimit') {
             const booked = await getBookedPaxForEvent(event._id);
             if (update[key] < booked) {
-                return error(400, `${key} must be greater than exisiting reservations`);
+                return error(400, 'Pax Limit must be greater than exisiting reservations');
             } 
-            if (key === 'slotPax' && update[key] > restaurant.maxCapacity) {
-                return error(400, 'Slot Pax cannot be greater than restaurant max capacity');
-            }
             event[key] = update[key];
+        } else if (key === 'slotPax') {
+            const newSlotPax = update[key];
+
+            const booked = await getBookedPaxForEvent(event._id);
+            if (newSlotPax < booked) {
+                return error(400, 'Slot Pax must be greater than existing reservations');
+            }
+
+            const slotStart = DateTime.fromJSDate(event.startDate);
+            const slotEnd = DateTime.fromJSDate(event.endDate);
+            const slotDuration = restaurant.slotDuration;
+
+            const eventSlots = [];
+            for (let dt = slotStart; dt < slotEnd; dt = dt.plus({ minutes: slotDuration })) {
+                eventSlots.push(dt);
+            }
+
+            const [reservations, overlappingEvents] = await Promise.all([
+                Reservation.find({
+                    restaurant: restaurant._id,
+                    startDate: { $lt: slotEnd.toJSDate() },
+                    endDate: { $gt: slotStart.toJSDate() }
+                }).select('startDate endDate pax event').lean(),
+
+                Event.find({
+                    restaurant: restaurant._id,
+                    startDate: { $lt: slotEnd.toJSDate() },
+                    endDate: { $gt: slotStart.toJSDate() },
+                    _id: { $ne: event._id }
+                }).select('slotPax startDate endDate').lean()
+            ]);
+
+            for (const slot of eventSlots) {
+                const slotEndTime = slot.plus({ minutes: slotDuration });
+
+                let regularPax = 0;
+                for (const r of reservations) {
+                    if (r.event) continue;
+                    const rStart = DateTime.fromJSDate(r.startDate);
+                    const rEnd = DateTime.fromJSDate(r.endDate);
+                    if (rStart < slotEndTime && rEnd > slot) {
+                        regularPax += r.pax;
+                    }
+                }
+
+                let otherEventPax = 0;
+                for (const e of overlappingEvents) {
+                    const eStart = DateTime.fromJSDate(e.startDate);
+                    const eEnd = DateTime.fromJSDate(e.endDate);
+                    if (eStart < slotEndTime && eEnd > slot) {
+                        otherEventPax += e.slotPax;
+                    }
+                }
+
+                const remaining = restaurant.maxCapacity - regularPax - otherEventPax;
+                if (newSlotPax > remaining) {
+                    return error(400, 'slotPax exceeds available capacity in some time slots');
+                }
+            }
+
+            event.slotPax = newSlotPax;
         } else if (key === 'status') {
             const newStatus = update[key];
 
