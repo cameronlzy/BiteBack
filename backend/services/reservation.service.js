@@ -246,7 +246,7 @@ export async function getReservationsByRestaurantByDate(restaurant, date) {
         restaurant: restaurant._id, 
         startDate: { $lt: utcEnd },
         endDate: { $gt: utcStart } 
-    }).select({ startDate: 1, endDate: 1, pax: 1 }).lean();
+    }).select({ startDate: 1, endDate: 1, pax: 1, event: 1 }).lean();
 
     return reservations;
 }

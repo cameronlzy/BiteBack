@@ -49,7 +49,7 @@ export function filterOpenRestaurants(restaurants) {
   return restaurants.filter((restaurant) => {
     const timezone = restaurant.timezone || 'Asia/Singapore';
     const localNow = now.setZone(timezone);
-    const currentDay = localNow.weekday % 7;
+    const currentDay = localNow.weekday - 1;
 
     const days = restaurant.openingHours.split('|');
     const hoursToday = days[currentDay];
