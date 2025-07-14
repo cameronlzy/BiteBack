@@ -50,7 +50,7 @@ const RewardForm = ({ user }) => {
     const userCheckForOwnership = async () => {
       try {
         if (user.role !== "owner") {
-          toast.error("Unauthorized")
+          toast.error("Unauthorised")
           return navigate("/restaurants", { replace: true })
         }
         const restaurant = await getRestaurant(restaurantId)

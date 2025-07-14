@@ -11,18 +11,12 @@ const RoundedActionButton = ({
   disabled = false,
   showOnlyOnHover = true,
   preventNavigation = false,
-  expandedWidth = "w-[140px]",
+  expandedWidth,
+  onClick,
 }) => {
   const location = useLocation()
 
-  const widthMap = {
-    "w-[100px]": "group-hover:w-[100px]",
-    "w-[110px]": "group-hover:w-[110px]",
-    "w-[120px]": "group-hover:w-[120px]",
-    "w-[140px]": "group-hover:w-[140px]",
-  }
-
-  const widthClass = widthMap[expandedWidth] || "group-hover:w-[140px]"
+  const widthClass = expandedWidth ?? "group-hover:w-[150px]"
   return (
     <Link
       to={to}
@@ -30,6 +24,7 @@ const RoundedActionButton = ({
       className="group"
       onClick={(e) => {
         if (preventNavigation) e.preventDefault()
+        if (onClick) onClick(e)
       }}
     >
       <Button
@@ -41,7 +36,7 @@ const RoundedActionButton = ({
   ${disabled ? "opacity-50 cursor-not-allowed" : ""}
 `}
       >
-        <Icon className="w-5 h-5" />
+        <Icon className="w-5 h-5 ml-0.5" />
         <span
           className={`${
             showOnlyOnHover ? "opacity-0 group-hover:opacity-100" : ""

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { Calendar } from "@/components/ui/calendar"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faUser } from "@fortawesome/free-solid-svg-icons"
 import {
@@ -26,7 +25,6 @@ import {
 } from "@/services/reservationService"
 import { toast } from "react-toastify"
 import { readableTimeSettings } from "@/utils/timeConverter"
-import { getDay } from "date-fns"
 import { DateTime } from "luxon"
 import BackButton from "../common/BackButton"
 import ConfirmationPage from "../common/ConfirmationPage"
@@ -38,10 +36,10 @@ import {
   FormMessage,
 } from "../ui/form"
 import { Input } from "../ui/input"
-import CustomDay from "../common/CustomDay"
 import LoadingSpinner from "../common/LoadingSpinner"
-import { objectComparator } from "@/utils/objectComparator"
+import { objectCleaner, objectComparator } from "@/utils/objectComparator"
 import { ownedByUser } from "@/utils/ownerCheck"
+import DateInputRestaurant from "../common/DateInputRestaurant"
 
 const ReservationForm = ({ user }) => {
   const [showReservation, setShowReservation] = useState(false)
@@ -62,7 +60,7 @@ const ReservationForm = ({ user }) => {
     mode: "onSubmit",
     defaultValues: {
       pax: undefined,
-      reservationDate: undefined,
+      startDate: undefined,
       remarks: "",
     },
   })
@@ -78,8 +76,8 @@ const ReservationForm = ({ user }) => {
 
   useEffect(() => {
     async function fetchExistingReservations() {
-      const reservations = await getReservations()
-      setExistingReservations(reservations)
+      const bookings = await getReservations({ page: 1, limit: 10 })
+      setExistingReservations(bookings.reservations)
     }
     fetchExistingReservations()
   }, [user])
@@ -125,7 +123,15 @@ const ReservationForm = ({ user }) => {
       try {
         const reservation = await getIndividualReservation(reservationId)
 
-        if (String(reservation?.user) !== String(user._id)) {
+        if (reservation.event) {
+          toast.error("Editing events is not allowed", {
+            toastId: "event-edit-block",
+          })
+          navigate("/me", { replace: true })
+          return
+        }
+
+        if (String(reservation?.customer) !== String(user.profile._id)) {
           toast.error("You are not authorised to view this reservation", {
             toastId: "unauthorised-reservation",
           })
@@ -133,22 +139,18 @@ const ReservationForm = ({ user }) => {
           return
         }
 
-        const newReservationDate = DateTime.fromISO(
-          reservation.reservationDate,
-          {
-            zone: "Asia/Singapore",
-          }
-        ).toJSDate()
+        const newReservationDate = DateTime.fromISO(reservation.startDate, {
+          zone: "Asia/Singapore",
+        }).toJSDate()
         setPreloadedReservationDate(newReservationDate)
         setPreloadedTimeSlot(
           DateTime.fromJSDate(newReservationDate).toFormat("HH:mm")
         )
         setPreloadedPax(reservation.pax)
 
-        setValue("reservationDate", newReservationDate)
+        setValue("startDate", newReservationDate)
         setTimeout(() => {
           updateTime(DateTime.fromJSDate(newReservationDate).toFormat("HH:mm"))
-          setValue("pax", reservation.pax)
         }, 100)
       } catch (ex) {
         if (ex.response?.status === 404) {
@@ -160,13 +162,21 @@ const ReservationForm = ({ user }) => {
     preloadReservation()
   }, [reservationId, restaurant])
 
-  const reservationDate = watch("reservationDate")
+  useEffect(() => {
+    if (!preloadedPax || availableSlots.length === 0) return
+
+    if (!getValues("pax")) {
+      setValue("pax", preloadedPax)
+    }
+  }, [availableSlots, preloadedPax])
+
+  const startDate = watch("startDate")
 
   useEffect(() => {
-    if (!reservationDate || !restaurant) return
+    if (!startDate || !restaurant) return
 
     const fetchAvailability = async () => {
-      const formatted = DateTime.fromJSDate(reservationDate)
+      const formatted = DateTime.fromJSDate(startDate)
         .setZone("Asia/Singapore")
         .startOf("day")
         .toISO()
@@ -174,7 +184,7 @@ const ReservationForm = ({ user }) => {
       if (slots === -1) slots = []
 
       const selectedDateStr =
-        DateTime.fromJSDate(reservationDate).toFormat("yyyy-MM-dd")
+        DateTime.fromJSDate(startDate).toFormat("yyyy-MM-dd")
       const preloadedDateStr = preloadedReservationDate
         ? DateTime.fromJSDate(preloadedReservationDate).toFormat("yyyy-MM-dd")
         : null
@@ -194,13 +204,13 @@ const ReservationForm = ({ user }) => {
       setAvailableSlots(slots)
     }
     fetchAvailability()
-  }, [reservationDate, restaurant])
+  }, [startDate, restaurant])
 
   if (!restaurant) return <LoadingSpinner />
 
   const handleDateTimeChange = (date) => {
     if (date) {
-      setValue("reservationDate", date)
+      setValue("startDate", date)
     }
   }
 
@@ -208,21 +218,21 @@ const ReservationForm = ({ user }) => {
     if (!date) return
     const newDate = new Date(date)
 
-    if (reservationDate) {
-      newDate.setHours(reservationDate.getHours())
-      newDate.setMinutes(reservationDate.getMinutes())
+    if (startDate) {
+      newDate.setHours(startDate.getHours())
+      newDate.setMinutes(startDate.getMinutes())
     }
 
-    setValue("reservationDate", newDate)
+    setValue("startDate", newDate)
     handleDateTimeChange(newDate)
   }
 
   const updateTime = (time) => {
-    if (!reservationDate || !time) return
+    if (!startDate || !time) return
 
     const sgtTime = DateTime.fromFormat(time, "HH:mm", { zone: "utc" })
 
-    const updated = DateTime.fromJSDate(reservationDate)
+    const updated = DateTime.fromJSDate(startDate)
       .set({
         hour: sgtTime.hour,
         minute: sgtTime.minute,
@@ -231,14 +241,12 @@ const ReservationForm = ({ user }) => {
       })
       .toJSDate()
 
-    setValue("reservationDate", updated)
+    setValue("startDate", updated)
     handleDateTimeChange(updated)
   }
 
   const handleFirstSubmit = async () => {
-    // Take userId from the user object in the localStorage
     setValue("userId", String(user._id))
-    // Use the ID in the URL
     setValue("restaurantId", String(restaurant._id))
     const valid = await trigger()
     if (valid) setConfirming(true)
@@ -249,33 +257,39 @@ const ReservationForm = ({ user }) => {
       const finalReservation = {
         restaurant: data.restaurantId,
         pax: data.pax,
-        reservationDate: DateTime.fromJSDate(data.reservationDate)
+        startDate: DateTime.fromJSDate(data.startDate)
           .setZone("Asia/Singapore")
           .toISO(),
-        user: user._id,
+        customer: user.profile._id,
         remarks: data.remarks || "",
       }
       const originalReservation = existingReservations.find(
         (r) => r._id === reservationId
       )
-      const result = objectComparator(originalReservation, finalReservation)
+
+      const cleaned = objectCleaner(finalReservation)
+      const result = objectComparator(originalReservation, cleaned)
       if (reservationId && Object.keys(result).length === 0) {
         navigate(from, {
           replace: true,
         })
+        toast.info("No Changes to Booking Made")
+        return
       }
       result._id = reservationId
       reservationId
         ? await saveReservation(result, true)
-        : await saveReservation(finalReservation, false)
-      toast.success("Reserved successfully!")
+        : await saveReservation(cleaned, false)
+      toast.success(
+        reservationId ? "Edited sucessfully!" : "Reserved successfully!"
+      )
       navigate(from, {
         replace: true,
       })
     } catch (ex) {
       if (ex.response && ex.response.status === 400) {
         const message = ex.response.data.error
-        form.setError("reservationDate", {
+        form.setError("startDate", {
           type: "manual",
           message: message || "Reservation failed",
         })
@@ -286,8 +300,8 @@ const ReservationForm = ({ user }) => {
     }
   }
 
-  const selectedTime = reservationDate
-    ? DateTime.fromJSDate(reservationDate).toFormat("HH:mm")
+  const selectedTime = startDate
+    ? DateTime.fromJSDate(startDate).toFormat("HH:mm")
     : null
   const capacityForSlot = availableSlots.find(
     (s) => s.time === selectedTime
@@ -300,6 +314,7 @@ const ReservationForm = ({ user }) => {
     const isFull = !slot || slot.available === 0
     return isFull
   }
+
   return (
     <FormProvider {...form}>
       <form
@@ -344,43 +359,16 @@ const ReservationForm = ({ user }) => {
                   }`}
                 >
                   <div className="flex justify-center">
-                    <Calendar
-                      selected={reservationDate}
-                      components={{
-                        Day: (props) => {
-                          const weekday = [
-                            "sunday",
-                            "monday",
-                            "tuesday",
-                            "wednesday",
-                            "thursday",
-                            "friday",
-                            "saturday",
-                          ][getDay(props.date)]
-
-                          const isDisabled =
-                            restaurant.openingHours?.[
-                              weekday
-                            ]?.toLowerCase() === "closed"
-                          const isPastDate =
-                            props.date.setHours(0, 0, 0, 0) <
-                            new Date().setHours(0, 0, 0, 0)
-
-                          return (
-                            <CustomDay
-                              {...props}
-                              updateDate={updateDate}
-                              existingReservations={existingReservations}
-                              selected={reservationDate}
-                              modifiers={{ disabled: isDisabled || isPastDate }}
-                            />
-                          )
-                        },
-                      }}
+                    <DateInputRestaurant
+                      startDate={startDate}
+                      updateDate={updateDate}
+                      existingItems={existingReservations}
+                      restaurant={restaurant}
+                      type="reservation"
                     />
                   </div>
                   <AnimatePresence mode="wait">
-                    {reservationDate ? (
+                    {startDate ? (
                       availableSlots.length > 0 ? (
                         <motion.div
                           key="time-slot-select"
@@ -422,53 +410,75 @@ const ReservationForm = ({ user }) => {
                   </AnimatePresence>
                 </div>
 
-                {reservationDate && (
+                {startDate && (
                   <p className="text-gray-700">
                     You selected:{" "}
                     <b>
                       {DateTime.fromJSDate(
-                        getValues("reservationDate")
+                        getValues("startDate")
                       ).toLocaleString(readableTimeSettings)}
                     </b>
                   </p>
                 )}
 
-                {errors.reservationDate && (
+                {errors.startDate && (
                   <p className="text-red-500 text-sm mt-1">
-                    {errors.reservationDate.message}
+                    {errors.startDate.message}
                   </p>
                 )}
 
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faUser} className="w-4 h-4" />
-                  <label htmlFor="pax">Guests:</label>
-                  <Select
-                    onValueChange={(val) => setValue("pax", Number(val))}
-                    value={watch("pax")?.toString() || ""}
+                {selectedTime && capacityForSlot !== undefined ? (
+                  <motion.div
+                    key="pax-select"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.4 }}
                   >
-                    <SelectTrigger className="w-[100px]">
-                      <SelectValue placeholder="Guests" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {capacityForSlot === 0 ? (
-                        <SelectItem disabled value="0">
-                          Unavailable at that time
-                        </SelectItem>
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faUser} className="w-4 h-4" />
+                      <label htmlFor="pax">Guests:</label>
+
+                      {reservationId && watch("pax") === undefined ? (
+                        <LoadingSpinner inline size="sm" />
                       ) : (
-                        Array.from({ length: capacityForSlot }, (_, i) => (
-                          <SelectItem key={i + 1} value={(i + 1).toString()}>
-                            {i + 1}
-                          </SelectItem>
-                        ))
+                        <Select
+                          onValueChange={(val) => setValue("pax", Number(val))}
+                          value={watch("pax")?.toString() || ""}
+                        >
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="Guests" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {capacityForSlot === 0 ? (
+                              <SelectItem disabled value="0">
+                                Unavailable at that time
+                              </SelectItem>
+                            ) : (
+                              Array.from(
+                                { length: capacityForSlot },
+                                (_, i) => (
+                                  <SelectItem
+                                    key={i + 1}
+                                    value={(i + 1).toString()}
+                                  >
+                                    {i + 1}
+                                  </SelectItem>
+                                )
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
                       )}
-                    </SelectContent>
-                  </Select>
-                  {errors.pax && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.pax.message}
-                    </p>
-                  )}
-                </div>
+
+                      {errors.pax && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.pax.message}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                ) : null}
                 <div className="space-y-2">
                   <FormField
                     key="remarks"
@@ -515,7 +525,7 @@ const ReservationForm = ({ user }) => {
                 details={{
                   "Restaurant Name": restaurant.name,
                   "Reservation Date": DateTime.fromJSDate(
-                    getValues("reservationDate")
+                    getValues("startDate")
                   ).toLocaleString(readableTimeSettings),
                   Guests: getValues("pax"),
                   Remarks: getValues("remarks") || "-",

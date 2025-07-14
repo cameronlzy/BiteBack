@@ -23,7 +23,7 @@ import { toast } from "react-toastify"
 import { MultiSelect } from "@/components/common/MultiSelect"
 import BackButton from "./common/BackButton"
 import ConfirmationPage from "./common/ConfirmationPage"
-import { objectComparator } from "@/utils/objectComparator"
+import { objectCleaner, objectComparator } from "@/utils/objectComparator"
 import ImageUpload from "./common/ImageUpload"
 import { ownedByUser } from "@/utils/ownerCheck"
 
@@ -82,7 +82,7 @@ const RestaurantForm = ({ user }) => {
       try {
         const restaurant = await getRestaurant(restaurantId)
         if (!restaurant || !ownedByUser(restaurant, user)) {
-          toast.error("Unauthorized to edit this restaurant.")
+          toast.error("Unauthorised to edit this restaurant.")
           return navigate("/restaurants", { replace: true })
         }
 
@@ -207,11 +207,7 @@ const RestaurantForm = ({ user }) => {
     try {
       const tags = [...(features || []), ...(dietary || [])]
 
-      const cleanedNoEmpty = Object.fromEntries(
-        Object.entries({ ...rest, address, tags }).filter(
-          ([_ignore, v]) => v !== ""
-        )
-      )
+      const cleanedNoEmpty = objectCleaner({ ...rest, address, tags })
 
       let changes = restaurantId
         ? objectComparator(existingRestaurant, cleanedNoEmpty)

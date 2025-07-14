@@ -26,3 +26,9 @@ export const dateAllowPartial = Joi.string().custom((value, helpers) => {
   return helpers.error('any.invalid');
 }, 'Date or DateTime validation');
 
+export const isBeyond90Days = (props) => {
+  const today = new Date()
+  const futureLimit = new Date()
+  futureLimit.setDate(today.getDate() + 90)
+  return props.date.setHours(0, 0, 0, 0) > futureLimit.setHours(0, 0, 0, 0)
+}

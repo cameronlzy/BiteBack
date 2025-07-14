@@ -26,7 +26,7 @@ export const readableTimeSettings = {
   timeZone: "Asia/Singapore",
 }
 
-export function convertOpeningHoursToSGT(input) {
+export const convertOpeningHoursToSGT = (input) => {
   const days = [
     "monday",
     "tuesday",
@@ -46,19 +46,35 @@ export function convertOpeningHoursToSGT(input) {
       result[day] = "Closed"
     } else {
       const [start, end] = range.split("-")
-      const convertToSGT = (t) =>
-        DateTime.fromISO(`2025-01-01T${t}:00`, { zone: "utc" })
-          .setZone("Asia/Singapore")
-          .toFormat("HH:mm")
 
-      result[day] = `${convertToSGT(start)}-${convertToSGT(end)}`
+      result[day] = `${convertTimeToSGT(start)}-${convertTimeToSGT(end)}`
     }
   })
 
   return result
 }
 
-export function convertOpeningHoursToString(openingHours) {
+export const convertToSGT = (isoDateStr) => {
+  return DateTime.fromISO(isoDateStr, { zone: "utc" })
+    .setZone("Asia/Singapore")
+    .toISO()
+}
+
+export const convertTimeToSGT = (timeStr) => {
+  return DateTime.fromISO(`2025-01-01T${timeStr}:00`, { zone: "utc" })
+    .setZone("Asia/Singapore")
+    .toFormat("HH:mm")
+}
+
+export const dateConverter = (item) => {
+  const fields = ["startDate", "endDate", "createdAt"]
+  fields.forEach((f) => {
+    if (item[f]) item[f] = convertToSGT(item[f])
+  })
+  return item
+}
+
+export const convertOpeningHoursToString = (openingHours) => {
   const days = [
     "monday",
     "tuesday",
@@ -78,7 +94,7 @@ export function convertOpeningHoursToString(openingHours) {
   return segments.join("|")
 }
 
-export function isOpenToday(restaurant) {
+export const isOpenToday = (restaurant) => {
   if (!restaurant?.openingHours) return false;
 
   const now = DateTime.now().setZone("Asia/Singapore");
@@ -171,15 +187,15 @@ export const isPromotionAvailable = (promotion) => {
   return true
 }
 
-export const hasPromotionStarted = (promotion) => {
+export const hasItemStarted = (item) => {
   const now = DateTime.now().setZone("Asia/Singapore")
-  const start = DateTime.fromISO(promotion.startDate)
+  const start = DateTime.fromISO(item.startDate).setZone("Asia/Singapore")
   return now >= start
 }
 
-export const hasPromotionEnded = (promotion) => {
+export const hasItemEnded = (item) => {
   const now = DateTime.now().setZone("Asia/Singapore")
-  const end = DateTime.fromISO(promotion.endDate)
+  const end = DateTime.fromISO(item.endDate).setZone("Asia/Singapore")
   return end <= now
 }
 

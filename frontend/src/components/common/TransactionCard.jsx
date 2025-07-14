@@ -2,6 +2,8 @@ import { useEffect, useState } from "react"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { DateTime } from "luxon"
+import DisabledBlur from "@/components/common/DisabledBlur"
+import { readableTimeSettings } from "@/utils/timeConverter"
 
 const TransactionCard = ({
   _id,
@@ -12,6 +14,8 @@ const TransactionCard = ({
   image,
   date,
   description,
+  disabled = false,
+  disabledMessage = "",
   rewardCode,
   contentMessage,
   withinStartMessage,
@@ -60,22 +64,32 @@ const TransactionCard = ({
       }`}
     >
       {currencyType === "points" && iconComponent ? (
-        <div className="flex justify-center items-center bg-gray-50 py-6 rounded-t-xl">
-          {iconComponent}
-        </div>
-      ) : image ? (
-        <img
-          src={image}
-          alt={name}
-          className="w-full h-40 object-cover rounded-t-xl"
+        <DisabledBlur
+          component={iconComponent}
+          disabled={disabled}
+          disabledMessage={disabledMessage}
+          isImage={false}
         />
+      ) : image ? (
+        <div className="px-4 pt-4">
+          <DisabledBlur
+            component={image}
+            disabled={disabled}
+            disabledMessage={disabledMessage}
+            isImage={true}
+          />
+        </div>
       ) : null}
 
       <CardHeader>
-        <CardTitle className="flex justify-between items-center text-lg">
-          <span>{name}</span>
+        <CardTitle className="flex justify-between items-center text-xl font-bold">
+          <span className="truncate">{name}</span>
           <span className="text-sm text-muted-foreground">
-            {currencyType === "points" ? `${price} pts` : `$${price}`}
+            {price != null
+              ? currencyType === "points"
+                ? `${price} pts`
+                : `$${price}`
+              : ""}
           </span>
         </CardTitle>
 
@@ -84,12 +98,18 @@ const TransactionCard = ({
             Reward Code: <strong>{rewardCode}</strong>
           </p>
         ) : description ? (
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          <p className="text-base font-medium mt-1">{description}</p>
         ) : null}
 
         {date && (
           <p className="text-xs text-muted-foreground mt-1 font-medium">
-            {date}
+            {typeof date === "string" || date instanceof Date
+              ? DateTime.fromISO(
+                  typeof date === "string" ? date : date.toISOString()
+                )
+                  .setZone("Asia/Singapore")
+                  .toLocaleString(readableTimeSettings)
+              : ""}
           </p>
         )}
       </CardHeader>

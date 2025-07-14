@@ -27,7 +27,6 @@ import StaffControlCenter from "./components/staff/StaffControlCenter"
 import PromotionForm from "./components/promotions/PromotionForm"
 import PromotionPage from "./components/promotions/PromotionPage"
 import Promotions from "./components/promotions/Promotions"
-import OwnerPromotions from "./components/promotions/OwnerPromotions"
 import OwnerRestaurants from "./components/OwnerRestaurants"
 import RestaurantPerformance from "./components/statistics/RestaurantPerformance"
 import LoadingSpinner from "./components/common/LoadingSpinner"
@@ -36,6 +35,11 @@ import RewardPage from "./components/rewards/RewardPage"
 import CustomerRewards from "./components/rewards/CustomerRewards"
 import RewardForm from "./components/rewards/RewardForm"
 import OwnerStatistics from "./components/statistics/OwnerStatistics"
+import EventPage from "./components/events-booking/EventPage"
+import EventForm from "./components/events-booking/EventForm"
+import OwnerEventsAndPromos from "./components/OwnerEventsAndPromos"
+import Events from "./components/events-booking/Events"
+import MembersEvents from "./components/events-booking/MembersEvents"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -107,6 +111,7 @@ function App() {
                         path: "/restaurants",
                         name: "Restaurants",
                       },
+                      { type: "link", path: "/events", name: "Events" },
                       { type: "link", path: "/promotions", name: "Promotions" },
                       { type: "link", path: "/login", name: "Login" },
                       { type: "link", path: "/register", name: "Register" },
@@ -120,27 +125,31 @@ function App() {
                       },
                     ]
                   : [
-                      ...(user?.role === "owner"
+                      ...(user.role === "owner"
                         ? [
                             {
                               type: "link",
                               path: "/analytics",
                               name: "Analytics",
                             },
+                            {
+                              type: "link",
+                              path: "/owner/events-promos",
+                              name: "Manage Events & Promos",
+                            },
                           ]
-                        : []),
+                        : [
+                            { type: "link", path: "/events", name: "Events" },
+                            {
+                              type: "link",
+                              path: "/promotions",
+                              name: "Promotions",
+                            },
+                          ]),
                       {
                         type: "link",
                         path: "/restaurants",
                         name: "Restaurants",
-                      },
-                      {
-                        type: "link",
-                        path: "/promotions",
-                        name:
-                          user?.role === "owner"
-                            ? "Manage Promotions"
-                            : "Promotions",
                       },
                       { type: "link", path: "/me", name: "Profile" },
                     ]
@@ -286,16 +295,15 @@ function App() {
               />
             }
           />
+          <Route path="promotions" element={<Promotions user={user} />} />
           <Route
-            path="promotions"
+            path="owner/events-promos"
             element={
-              loading ? (
-                <LoadingSpinner />
-              ) : user && user.role === "owner" ? (
-                <OwnerPromotions user={user} />
-              ) : (
-                <Promotions />
-              )
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<OwnerEventsAndPromos user={user} />}
+              />
             }
           />
           <Route
@@ -334,7 +342,7 @@ function App() {
           />
           <Route
             path="current-rewards/:restaurantId"
-            element={<RestaurantRewardsStore user={user} />}
+            element={<RestaurantRewardsStore user={user} loading={loading} />}
           />
           <Route
             path="rewards/:rewardId"
@@ -367,6 +375,32 @@ function App() {
                 loading={loading}
                 user={user}
                 element={<CustomerRewards user={user} />}
+              />
+            }
+          />
+          <Route path="events" element={<Events user={user} />} />
+          <Route
+            path="member-events/:restaurantId"
+            element={<MembersEvents user={user} />}
+          />
+          <Route path="events/:eventId" element={<EventPage user={user} />} />
+          <Route
+            path="events/new"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<EventForm user={user} />}
+              />
+            }
+          />
+          <Route
+            path="events/edit/:eventId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<EventForm user={user} />}
               />
             }
           />

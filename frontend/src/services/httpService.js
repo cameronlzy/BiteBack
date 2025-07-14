@@ -14,7 +14,9 @@ axios.interceptors.response.use(null, (error) => {
 
     if (error.response?.status === 401) {
         localStorage.removeItem("role");
-        toast.error("Session expired. Please log in again.")
+        toast.error("Session expired. Please log in again.", {
+            toastId: "sessionExpiry"
+        })
         window.location.href = "/login";
     }
     return Promise.reject(error);

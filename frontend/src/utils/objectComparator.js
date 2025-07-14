@@ -40,3 +40,10 @@ export const objectComparator = (original, updated) => {
 
   return result
 }
+
+export const objectCleaner = (payload) => {
+  const cleaned = Object.fromEntries(
+    Object.entries(payload).filter(([_, v]) => v !== "")
+  )
+  return cleaned
+}

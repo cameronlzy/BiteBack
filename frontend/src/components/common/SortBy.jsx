@@ -7,26 +7,32 @@ import {
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ArrowUp, ArrowDown } from "lucide-react"
 
-const SortBy = ({ options, items, onSorted, backendHandle = false }) => {
-  const [selectedSort, setSelectedSort] = useState({
-    value: null,
-    direction: null,
-  })
+const SortBy = ({
+  options,
+  items,
+  onSorted,
+  backendHandle = false,
+  selectedValue = null,
+  selectedDirection = null,
+}) => {
   const [open, setOpen] = useState(false)
 
   const handleSort = (value, direction) => {
-    const sorted = [...items].sort((a, b) => {
-      const aVal = a[value]?.toString().toLowerCase()
-      const bVal = b[value]?.toString().toLowerCase()
-
-      if (aVal < bVal) return direction === "asc" ? -1 : 1
-      if (aVal > bVal) return direction === "asc" ? 1 : -1
-      return 0
-    })
-
-    setSelectedSort({ value, direction })
-    backendHandle ? onSorted({ value, direction }) : onSorted(sorted)
     setOpen(false)
+
+    if (backendHandle) {
+      onSorted({ value, direction })
+    } else {
+      const sorted = [...items].sort((a, b) => {
+        const aVal = a[value]?.toString().toLowerCase()
+        const bVal = b[value]?.toString().toLowerCase()
+
+        if (aVal < bVal) return direction === "asc" ? -1 : 1
+        if (aVal > bVal) return direction === "asc" ? 1 : -1
+        return 0
+      })
+      onSorted(sorted)
+    }
   }
 
   return (
@@ -43,8 +49,7 @@ const SortBy = ({ options, items, onSorted, backendHandle = false }) => {
             <div className="space-x-1">
               <Button
                 variant={
-                  selectedSort.value === value &&
-                  selectedSort.direction === "asc"
+                  selectedValue === value && selectedDirection === "asc"
                     ? "secondary"
                     : "ghost"
                 }
@@ -55,8 +60,7 @@ const SortBy = ({ options, items, onSorted, backendHandle = false }) => {
               </Button>
               <Button
                 variant={
-                  selectedSort.value === value &&
-                  selectedSort.direction === "desc"
+                  selectedValue === value && selectedDirection === "desc"
                     ? "secondary"
                     : "ghost"
                 }

@@ -261,7 +261,7 @@ export const reservationSchema = Joi.object({
   id:  Joi.string().optional(), // RMB ADD the objectID pattern ltr
   userId: objectId.required(),
   restaurantId: objectId.required(),
-  reservationDate: Joi.date().greater("now").iso().required().messages({
+  startDate: Joi.date().greater("now").iso().required().messages({
     "any.required": "Reservation Date and Time required",
     "date.greater": "Reservation must be in the future",
     "date.base": "Invalid date format",
@@ -380,12 +380,12 @@ export const updateCustomerSchema = Joi.object({
 export const filterSchema = Joi.object({
   cuisines: Joi.array().items(Joi.string()).required(),
   minRating: Joi.number().min(0).max(5).default(0),
-  radius: Joi.number().min(0.1).max(10).required(),
+  radius: Joi.number().min(0.1).max(10).allow(null).optional(),
   openNow: Joi.boolean().default(false),
   features: Joi.array().items(Joi.string()).required(),
   dietary: Joi.array().items(Joi.string()).required(),
-  lat: Joi.number().required(),
-  lng: Joi.number().required(),
+  lat: Joi.number().allow(null).optional(),
+  lng: Joi.number().allow(null).optional(),
 })
 
 export const promotionSchema = Joi.object({
@@ -516,4 +516,116 @@ export const rewardClaimSchema = Joi.object({
     "string.pattern.base": "Code must be a 6-digit number",
     "string.empty": "Code is required",
   }),
+})
+
+export const eventSchema = Joi.object({
+  title: Joi.string().required().label("Title").messages({
+    "string.empty": "Title is required",
+  }),
+
+  description: Joi.string().required().label("Description").messages({
+    "string.empty": "Description is required",
+  }),
+
+  date: Joi.date().required().label("Event Date").messages({
+    "date.base": "Date must be valid",
+    "any.required": "Date is required",
+  }),
+
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .label("Start Time")
+    .messages({
+      "string.empty": "Start Time is required",
+      "string.pattern.base": "Start Time must be in HH:mm format",
+    }),
+
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .custom((value, helpers) => {
+      const { startTime } = helpers?.state?.ancestors?.[0] || {}
+      if (startTime && value <= startTime) {
+        return helpers.message("End Time must be after Start Time")
+      }
+      return value
+    })
+    .label("End Time")
+    .messages({
+      "string.empty": "End Time is required",
+      "string.pattern.base": "End Time must be in HH:mm format",
+    }),
+
+  paxLimit: Joi.number()
+    .min(1)
+    .required()
+    .label("Total Pax Limit")
+    .messages({
+      "number.base": "Total Pax Limit must be a number",
+      "number.min": "Total Pax Limit must be at least 1",
+      "any.required": "Total Pax Limit is required",
+    }),
+
+  maxPaxPerCustomer: Joi.number()
+    .min(1)
+    .required()
+    .label("Max Guests per Booking")
+    .messages({
+      "number.base": "Max Guests per Booking must be a number",
+      "number.min": "Max Guests per Booking must be at least 1",
+      "any.required": "Max Guests per Booking is required",
+    }),
+
+  slotPax: Joi.number()
+    .integer()
+    .min(1)
+    .required()
+    .custom((value, helpers) => {
+      const { restaurant } = helpers?.state?.ancestors?.[0] || {}
+      const maxCap = restaurant?.maxCapacity
+      if (maxCap && value > maxCap) {
+        return helpers.message(
+          `Slot Pax cannot exceed restaurant max capacity (${maxCap})`
+        )
+      }
+      return value
+    })
+    .label("Slot Pax")
+    .messages({
+      "number.base": "Slot Pax must be a number",
+      "number.min": "Slot Pax must be at least 1",
+      "any.required": "Slot Pax is required",
+    }),
+
+  remarks: Joi.string()
+    .allow("")
+    .max(300)
+    .label("Remarks")
+    .messages({
+      "string.max": "Remarks must be less than 300 characters",
+    }),
+
+  restaurant: Joi.string()
+    .required()
+    .label("Restaurant")
+    .messages({
+      "string.empty": "Restaurant is required",
+      "any.required": "Restaurant is required",
+    }),
+    
+  minVisits: Joi.number()
+    .integer()
+    .min(0)
+    .optional()
+    .label("Minimum Visits")
+})
+
+export const joinEventSchema = Joi.object({
+  pax: Joi.number().integer().min(1).required().messages({
+    "number.base": "Pax must be a number",
+    "number.min": "Minimum 1 pax required",
+    "any.required": "Pax is required",
+  }),
+  remarks: Joi.string().allow("").max(500),
 })

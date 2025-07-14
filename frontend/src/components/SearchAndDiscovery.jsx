@@ -29,6 +29,8 @@ const SearchAndDiscovery = () => {
   const [restaurants, setRestaurants] = useState([])
   const [searched, setSearched] = useState(false)
   const [activePopupId, setActivePopupId] = useState(null)
+  const [useDistanceFilter, setUseDistanceFilter] = useState(false)
+  const [radiusKm, setRadiusKm] = useState(1)
   const mapRef = useRef(null)
   const hasAddedScale = useRef(false)
 
@@ -45,7 +47,9 @@ const SearchAndDiscovery = () => {
       features: [],
       dietary: [],
       minRating: 0,
-      radius: 0.5,
+      radius: null,
+      lat: null,
+      lng: null,
       openNow: false,
     },
   })
@@ -108,31 +112,42 @@ const SearchAndDiscovery = () => {
   }
 
   const handleSearchClick = () => {
-    if (!position) {
-      toast.info("Please Click 'Get Current Location' to continue.")
-      return
+    if (useDistanceFilter) {
+      form.setValue("radius", radiusKm)
+    } else {
+      form.setValue("radius", null)
     }
+
     form.handleSubmit(onSubmit)()
   }
 
   const onSubmit = async (data) => {
     try {
-      const { features, dietary, radius, ...rest } = data
+      const { features, dietary, radius, lat, lng, ...rest } = data
+
       const params = {
         ...rest,
-        radius: Math.round(radius * 1000),
         tags: [...(features || []), ...(dietary || [])],
+        ...(radius &&
+          radius > 0 && {
+            radius: Math.round(radius * 1000),
+            lat,
+            lng,
+          }),
       }
+
       const results = await getFilteredRestaurants(params)
       setRestaurants(results)
       setSearched(true)
+
       if (position) {
         sessionStorage.setItem(
           "discoveryFilters",
           JSON.stringify({ formData: data, position })
         )
       }
-    } catch {
+    } catch (ex) {
+      console.log(ex)
       toast.error("Failed to filter restaurants")
     }
   }
@@ -141,7 +156,6 @@ const SearchAndDiscovery = () => {
     <div className="max-w-4xl mx-auto mt-10 space-y-6">
       <div className="flex items-center justify-between">
         <BackButton from="/restaurants" />
-
         <h2 className="text-3xl font-bold text-center w-full -ml-8">
           Discover New Restaurants
         </h2>
@@ -157,6 +171,7 @@ const SearchAndDiscovery = () => {
           <Button onClick={handlePositionClick}>Get Current Location</Button>
         )}
       </div>
+
       <FormProvider {...form}>
         <Card className="shadow-lg border">
           <CardHeader>
@@ -183,6 +198,7 @@ const SearchAndDiscovery = () => {
                   </FormItem>
                 )}
               />
+
               <Controller
                 control={form.control}
                 name="features"
@@ -239,25 +255,53 @@ const SearchAndDiscovery = () => {
                 )}
               />
 
-              <Controller
-                control={form.control}
-                name="radius"
-                render={({ field: { value, onChange } }) => (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="enable-radius"
+                    checked={useDistanceFilter}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        if (!position) {
+                          toast.info(
+                            "You must get your location first before using distance filter"
+                          )
+                          return
+                        }
+                        form.setValue("lat", position.latitude)
+                        form.setValue("lng", position.longitude)
+                      } else {
+                        form.setValue("lat", null)
+                        form.setValue("lng", null)
+                      }
+                      setUseDistanceFilter(checked)
+                    }}
+                  />
+                  <label htmlFor="enable-radius" className="text-sm">
+                    Filter by Distance
+                  </label>
+                </div>
+
+                {useDistanceFilter && (
                   <div>
                     <label className="text-sm font-medium block mb-2">
                       Max Distance to Restaurant (km):{" "}
-                      <span className="font-semibold">{value.toFixed(1)}</span>
+                      <span className="font-semibold">
+                        {radiusKm.toFixed(1)}
+                      </span>
                     </label>
                     <Slider
                       min={0.1}
                       max={10}
                       step={0.1}
-                      value={[value]}
-                      onValueChange={([v]) => onChange(v)}
+                      value={[radiusKm]}
+                      onValueChange={([v]) => {
+                        setRadiusKm(v)
+                      }}
                     />
                   </div>
                 )}
-              />
+              </div>
 
               <div className="relative flex justify-center">
                 <div className="items-center">
@@ -350,23 +394,21 @@ const SearchAndDiscovery = () => {
                       onMouseLeave={() => setActivePopupId(null)}
                       onClick={() => setActivePopupId(r._id)}
                     >
-                      {
-                        <AntiOverlapPin
-                          restaurants={restaurants}
-                          mapRef={mapRef}
-                          activePopupId={activePopupId}
-                          r={r}
-                        />
-                      }
+                      <AntiOverlapPin
+                        restaurants={restaurants}
+                        mapRef={mapRef}
+                        activePopupId={activePopupId}
+                        r={r}
+                      />
                       {activePopupId === r._id && (
                         <div
                           className="absolute bottom-8 w-52 p-3 bg-white border rounded-lg shadow-xl text-center"
                           style={{
-                            zIndex: activePopupId === r._id ? 9999 : 1,
+                            zIndex: 9999,
                             pointerEvents: "auto",
                           }}
                         >
-                          {r.images?.length > 0 && (
+                          {r.images?.[0] && (
                             <img
                               src={r.images[0]}
                               alt={r.name}
@@ -376,18 +418,18 @@ const SearchAndDiscovery = () => {
                           <Link
                             to={`/restaurants/${r._id}`}
                             className="font-semibold text-black hover:underline"
-                            state={{
-                              from: location.pathname,
-                            }}
+                            state={{ from: location.pathname }}
                           >
                             {r.name}
                           </Link>
                           <div className="text-s text-gray-600">
                             {r.address}
                           </div>
-                          {r.distance >= 1000
-                            ? `${(r.distance / 1000).toFixed(1)} km`
-                            : `${r.distance.toFixed(1)} m`}
+                          {r.distance
+                            ? r.distance >= 1000
+                              ? `${(r.distance / 1000).toFixed(1)} km`
+                              : `${r.distance.toFixed(1)} m`
+                            : null}
                           <a
                             href={`https://www.google.com/maps/dir/?api=1&destination=${r.location.coordinates[1]},${r.location.coordinates[0]}`}
                             target="_blank"
@@ -406,7 +448,8 @@ const SearchAndDiscovery = () => {
           </Map>
         </div>
       )}
-      {position && searched && restaurants.length === 0 && (
+
+      {searched && restaurants.length === 0 && (
         <div className="text-center text-gray-500 italic mt-6">
           No restaurants found. Try tweaking your search filters.
         </div>
