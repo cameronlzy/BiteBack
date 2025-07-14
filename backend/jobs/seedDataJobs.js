@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { runJob } from '../helpers/jobRunner.js';
-import { seedReservations, seedQueueAndReview } from '../services/scheduledJobs/seedData.service.js';
+import { seedReservations, seedQueueAndReview, markPastReservations } from '../services/scheduledJobs/seedData.service.js';
 
 export function registerSeedDataJobs(timezone = 'Asia/Singapore') {
     // runs at 12am every day, creates reservations for the upcoming day
@@ -13,7 +13,11 @@ export function registerSeedDataJobs(timezone = 'Asia/Singapore') {
     // every hour, creates a few queue and review entries
     cron.schedule('0 * * * *', async () => {
         await runJob('SeedQueueAndReview', async () => {
-            await seedQueueAndReview(timezone);
+            await seedQueueAndReview();
+        });
+
+        await runJob('MarkPastReservations', async () => {
+            await markPastReservations();
         });
     }, { timezone });
 }

@@ -32,20 +32,39 @@ export async function seedReservations() {
                 .set({ year: utcToday.year, month: utcToday.month, day: utcToday.day });
             const endTime = startTime.plus({ minutes: 60 });
 
-            const status = Math.random() < 0.7 ? 'completed' : 'no-show';
-
             reservations.push(new Reservation({
                 restaurant: restaurant._id,
                 customer: customerIds[getRandomInt(0, customerIds.length - 1)],
                 startDate: startTime.toJSDate(),
                 endDate: endTime.toJSDate(),
                 pax: getRandomInt(1, 6),
-                status,
+                status: 'booked',
             }));
         }
     }
 
     if (reservations.length > 0) await Reservation.insertMany(reservations);
+}
+
+export async function markPastReservations() {
+    const nowUTC = DateTime.utc();
+    const oneHourAgo = nowUTC.minus({ hours: 1 });
+
+    const reservations = await Reservation.find({
+        endDate: {
+            $gte: oneHourAgo.toJSDate(),
+            $lte: nowUTC.toJSDate(),
+        },
+        status: 'booked'
+    });
+
+    await Promise.all(
+        reservations.map((reservation) => {
+            const status = Math.random() < 0.7 ? 'completed' : 'no-show';
+            reservation.status = status;
+            return reservation.save();
+        })
+    );
 }
 
 export async function seedQueueAndReview() {

@@ -1,14 +1,19 @@
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import request from 'supertest';
+import mongoose from 'mongoose';
 import MenuItem from '../../../models/menuItem.model.js';
+import Restaurant from '../../../models/restaurant.model.js';
+import User from '../../../models/user.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestMenuItem } from '../../factories/menuItem.factory.js';
 import { generateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
-import request from 'supertest';
-import mongoose from 'mongoose';
-import Restaurant from '../../../models/restaurant.model.js';
-import User from '../../../models/user.model.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('menu item test', () => {
     let server;
@@ -114,6 +119,120 @@ describe('menu item test', () => {
             expect(res.status).toBe(200);
             const requiredKeys = ['restaurant', 'name', 'description', 'price', 'category', 'isAvailable'];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/menu/:id/images', () => {
+        let user, token, cookie;
+        let menuItem, menuItemId;
+        let filePath;
+        let restaurant;
+
+        beforeEach(async () => {
+            await MenuItem.deleteMany({});
+            await User.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
+
+            // create event
+            menuItem = createTestMenuItem(restaurant._id);
+            await menuItem.save();
+            menuItemId = menuItem._id;
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .post(`/api/menu/${menuItemId}/image`)
+            .set('Cookie', [cookie])
+            .attach('image', filePath)
+        };
+
+        it('should return 403 if menuItem does not belong to owner', async () => {
+            let otherUser = await createTestUser('owner');
+            token = generateAuthToken(otherUser);
+            cookie = setTokenCookie(token);
+            const res = await request(server)
+                .post(`/api/menu/${menuItemId}/image`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(403);
+        });
+
+        // skip to avoid sending test images to cloudinary
+        it.skip('should return 200 if valid request', async () => { 
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            expect(typeof res.body.image).toBe('string');
+
+            const urlRegex = /^https?:\/\/.+|^\/.+/;
+            expect(res.body.image).toMatch(urlRegex);
+        });
+    });
+
+    describe('PATCH /api/menu/:id/image', () => {
+        let user, token, cookie;
+        let menuItem, menuItemId;
+        let filePath;
+        let restaurant;
+
+        beforeEach(async () => {
+            await MenuItem.deleteMany({});
+            await User.deleteMany({});
+
+            // create owner
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
+
+            // create event
+            menuItem = createTestMenuItem(restaurant._id);
+            await menuItem.save();
+            menuItemId = menuItem._id
+
+            // image file path
+            filePath = path.join(__dirname, '../../fixtures/test-image.jpg');
+        });
+
+        const exec = () => {
+            return request(server)
+            .patch(`/api/menu/${menuItemId}/image`)
+            .set('Cookie', [cookie])
+            .attach('image', filePath)
+        };
+
+        it('should return 400 if no images attached', async () => {
+            const res = await request(server)
+                .patch(`/api/menu/${menuItemId}/image`)
+                .set('Cookie', [cookie]);
+            expect(res.status).toBe(400);
+        });
+
+        // skip to avoid sending test images to cloudinary
+        it.skip('should return 200 if valid request', async () => { 
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body).toHaveProperty('image');
+
+            expect(typeof res.body.image).toBe('string');
+
+            const urlRegex = /^https?:\/\/.+|^\/.+/;
+            expect(res.body.image).toMatch(urlRegex);
         });
     });
 
