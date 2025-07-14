@@ -129,7 +129,7 @@ async function generateUniqueCode() {
     let exists = true;
 
     while (exists) {
-        code = Math.floor(100000 + Math.random() * 900000);
+        code = Math.floor(100000 + Math.random() * 900000).toString();
         exists = await RewardRedemption.exists({ code });
     }
 

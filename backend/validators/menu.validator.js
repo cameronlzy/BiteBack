@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 
 export function validateItem(item) {
     const schema = Joi.object({
@@ -18,6 +18,6 @@ export function validatePatch(patch) {
         price: Joi.number().min(0),
         category: Joi.string(),
         isAvailable: Joi.boolean(),
-    });
+    }).min(1);
     return schema.validate(patch);
 }

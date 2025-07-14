@@ -26,7 +26,7 @@ export async function seedReservations() {
         const slots = createSlots(restaurant.openingHours, localToday);
         if (!slots.length) continue;
 
-        for (let i = 0; i < getRandomInt(10, 50); i++) {
+        for (let i = 0; i < getRandomInt(20, 50); i++) {
             const randomSlot = slots[getRandomInt(0, slots.length - 1)];
             const startTime = DateTime.fromFormat(randomSlot, 'HH:mm', { zone: 'utc' })
                 .set({ year: utcToday.year, month: utcToday.month, day: utcToday.day });

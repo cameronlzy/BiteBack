@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 
 export function validateItem(item) {
     const schema = Joi.object({

@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 
 export function validatePointsUpdate(data) {
     const schema = Joi.object({

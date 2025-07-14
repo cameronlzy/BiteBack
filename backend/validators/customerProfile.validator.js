@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 import { userJoiSchema } from './user.validator.js';
 
 const cuisineList = [

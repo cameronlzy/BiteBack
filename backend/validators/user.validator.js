@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 import passwordComplexity from 'joi-password-complexity';
 
 export const userJoiSchema = Joi.object({

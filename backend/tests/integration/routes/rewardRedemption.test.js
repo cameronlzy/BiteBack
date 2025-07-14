@@ -15,7 +15,6 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
 import RewardPoint from '../../../models/rewardPoint.model.js';
-import { expect } from '@jest/globals';
 
 describe('reward redemption test', () => {
     let server;

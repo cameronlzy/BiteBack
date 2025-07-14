@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 import { dateFullOnly } from '../helpers/time.helper.js';
 import { paginationSchema } from './pagination.validator.js';
 
