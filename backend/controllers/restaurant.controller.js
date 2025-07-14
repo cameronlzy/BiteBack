@@ -1,27 +1,17 @@
 import * as restaurantService from '../services/restaurant.service.js';
 import * as imageService from '../services/image.service.js';
 import Restaurant from '../models/restaurant.model.js';
-import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch } from '../validators/restaurant.validator.js';
+import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch, validateEventQuery } from '../validators/restaurant.validator.js';
 import Joi from 'joi';
 import { dateFullOnly } from '../helpers/time.helper.js';
 import { wrapError } from '../helpers/response.js';
 
 export async function searchRestaurants(req, res) {
     // validate query
-    const { error } = validateSearch(req.query);
+    const { error, value } = validateSearch(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { search, page, limit, sortBy, order } = req.query;
-
-    const filters = {
-        search: search || null,
-        page: page ? parseInt(page) : 1,
-        limit: limit ? parseInt(limit) : 8,
-        sortBy: sortBy ? sortBy : 'averageRating',
-        order: order === 'asc' ? 'asc' : 'desc',
-    };
-
-    const { status, body } = await restaurantService.searchRestaurants(filters);
+    const { status, body } = await restaurantService.searchRestaurants(value);
     return res.status(status).json(body)
 };
 
@@ -47,10 +37,10 @@ export async function discoverRestaurants(req, res) {
         openNow: openNow === 'true',
     };
 
-    const { error } = validateDiscover(filters);
+    const { error, value } = validateDiscover(filters);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
     
-    const { status, body } = await restaurantService.discoverRestaurants(filters);
+    const { status, body } = await restaurantService.discoverRestaurants(value);
     return res.status(status).json(body);
 };
 
@@ -62,28 +52,41 @@ export async function getRestaurantById(req, res) {
 export async function getAvailability(req, res) {
     // validate query
     const schema = Joi.object({ date: dateFullOnly.required() });
-    const { error } = schema.validate(req.query);
+    const { error, value } = schema.validate(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const data = await restaurantService.getAvailability(req.params.id, req.query);
+    const data = await restaurantService.getAvailability(req.params.id, value);
     return res.status(data.status).json(data.body);
+};
+
+export async function getVisitCount(req, res) {
+    const { status, body } = await restaurantService.getVisitCount(req.user, req.params.id);
+    return res.status(status).json(body);
+};
+
+export async function getReservationsByRestaurant(req, res) {
+  const { error, value } = validateEventQuery(req.query);
+  if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+  const { status, body } = await restaurantService.getReservationsByRestaurant(req.restaurant, value);
+  return res.status(status).json(body);
 };
 
 export async function createRestaurant(req, res) {
     // validate request
-    const { error } = validateRestaurant(req.body);
+    const { error, value } = validateRestaurant(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await restaurantService.createRestaurant(req.user, req.body);
+    const { status, body } = await restaurantService.createRestaurant(req.user, value);
     return res.status(status).json(body);
 };
 
 export async function createRestaurantBulk(req, res) {
     // validate request
-    const { error } = validateRestaurantBulk(req.body);
+    const { error, value } = validateRestaurantBulk(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await restaurantService.createRestaurantBulk(req.user, req.body.restaurants);
+    const { status, body } = await restaurantService.createRestaurantBulk(req.user, value.restaurants);
     return res.status(status).json(body);
 };
 
@@ -93,19 +96,19 @@ export async function addRestaurantImages(req, res) {
 };
 
 export async function updateRestaurantImages(req, res) {
-    const { error } = validateImages(req.body);
+    const { error, value } = validateImages(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
     
-    const { status, body } = await restaurantService.updateRestaurantImages(req.restaurant, req.body.images);
+    const { status, body } = await restaurantService.updateRestaurantImages(req.restaurant, value.images);
     return res.status(status).json(body);
 };
 
 export async function updateRestaurant(req, res) {
     // validate request
-    const { error } = validatePatch(req.body);
+    const { error, value } = validatePatch(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await restaurantService.updateRestaurant(req.restaurant, req.body);
+    const { status, body } = await restaurantService.updateRestaurant(req.restaurant, value);
     return res.status(status).json(body);
 };
 

@@ -1,24 +1,30 @@
 import * as reviewService from '../services/review.service.js';
 import * as imageService from '../services/image.service.js';
 import Review from '../models/review.model.js';
-import { validateReview, validateReply, validateBadge, validateRestaurantId } from '../validators/review.validator.js';
+import { validateReview, validateReply, validateBadge, validateRestaurantId, validateGetQuery } from '../validators/review.validator.js';
 import { wrapError } from '../helpers/response.js';
 
 export async function getEligibleVisits(req, res) {
-  const { error } = validateRestaurantId(req.query);
+  const { error, value } = validateRestaurantId(req.query);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-  const { status, body } = await reviewService.getEligibleVisits(req.query.restaurantId, req.user);
+  const { status, body } = await reviewService.getEligibleVisits(value.restaurantId, req.user);
   return res.status(status).json(body);
 };
 
 export async function getReviewsByRestaurant(req, res) {
-  const { status, body } = await reviewService.getReviewsByRestaurant(req.params.id, req.user);
+  const { error, value } = validateGetQuery(req.query);
+  if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+  const { status, body } = await reviewService.getReviewsByRestaurant(req.params.id, req.user, value);
   return res.status(status).json(body);
 };
 
 export async function getReviewsByCustomer(req, res) {
-  const { status, body } = await reviewService.getReviewsByCustomer(req.params.id, req.user);
+  const { error, value } = validateGetQuery(req.query);
+  if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+  const { status, body } = await reviewService.getReviewsByCustomer(req.params.id, req.user, value);
   return res.status(status).json(body);
 };
 
@@ -29,28 +35,28 @@ export async function getReviewById(req, res) {
 
 export async function createReview(req, res) {
   // validate request
-  const { error } = validateReview(req.body);
+  const { error, value } = validateReview(req.body);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-  const { status, body } = await reviewService.createReview(req.body, req.user);
+  const { status, body } = await reviewService.createReview(value, req.user);
   return res.status(status).json(body);
 };
 
 export async function createReply(req, res) {
   // validate request
-  const { error } = validateReply(req.body);
+  const { error, value } = validateReply(req.body);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-  const { status, body } = await reviewService.createReply(req.body, req.review, req.user);
+  const { status, body } = await reviewService.createReply(value, req.review, req.user);
   return res.status(status).json(body);
 };
 
 export async function addBadge(req, res) {
   // validate request
-  const { error } = validateBadge(req.body);
+  const { error, value } = validateBadge(req.body);
   if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-  const { status, body } = await reviewService.addBadge(req.body, req.params.id, req.user);
+  const { status, body } = await reviewService.addBadge(value, req.params.id, req.user);
   return res.status(status).json(body);
 };
 

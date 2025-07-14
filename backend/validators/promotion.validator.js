@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { futureDateFullOnly, timeString } from '../helpers/time.helper.js';
+import { paginationSchema } from './pagination.validator.js';
 
 export function validatePromotion(promotion) {
     const schema = Joi.object({
@@ -16,16 +17,15 @@ export function validatePromotion(promotion) {
     return schema.validate(promotion);
 }
 
-export function validateSearch(search) {
+export function validateSearch(query) {
     const schema = Joi.object({
-        search: Joi.string(),
-        restaurants: Joi.string(),
-        page: Joi.number().integer().min(1),
-        limit: Joi.number().integer().min(1),
-        sortBy: Joi.string().valid('startDate', 'endDate', 'title'),
-        order: Joi.string().valid('desc', 'asc'),
+        search: Joi.string().empty('').default(null),
+        page: Joi.number().integer().min(1).default(1),
+        limit: Joi.number().integer().min(1).default(8),
+        sortBy: Joi.string().valid('startDate', 'endDate', 'title').default('endDate'),
+        order: Joi.string().valid('desc', 'asc').default('asc'),
     });
-    return schema.validate(search);
+    return schema.validate(query);
 }
 
 export function validatePatch(update) {
@@ -41,4 +41,11 @@ export function validatePatch(update) {
         isActive: Joi.boolean()
     }).min(1);
     return schema.validate(update);
+}
+
+export function validateOwnerQuery(query) {
+    const schema = paginationSchema.keys({
+        status: Joi.string().valid('past', 'upcoming').optional(),
+    });
+    return schema.validate(query);
 }

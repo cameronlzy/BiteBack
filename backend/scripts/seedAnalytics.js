@@ -22,7 +22,7 @@ function smoothValue(prev, trend = 0, volatility = 0.1, min = 0, max = Infinity)
     return Math.min(Math.max(value, min), max);
 }
 
-async function createReviewsForDay(restaurantId, date, customers, numReviews = getRandomInt(1, 4)) {
+async function createReviewsForDay(restaurantId, date, customers, numReviews = getRandomInt(4, 10)) {
     const reviews = [];
 
     for (let i = 0; i < numReviews; i++) {
@@ -48,7 +48,7 @@ function generateTrendedAnalytics(restaurantId, date, prev, reviewStats, visitLo
     const averagePax = reservationAttended > 0 ? smoothValue(prev.reservations.averagePax, 0, 0.05, 1, 6) : 0;
     const noShowRate = reservationTotal > 0 ? (reservationTotal - reservationAttended) / reservationTotal : 0;
 
-    const queueTotal = smoothValue(prev.queue.total, 0.005, 0.1, 20, 120);
+    const queueTotal = smoothValue(prev.queue.total, 0.005, 0.1, 20, 60);
     const queueAttended = smoothValue(prev.queue.attended, 0.005, 0.1, 0, queueTotal);
     const abandonmentRate = queueTotal > 0 ? (queueTotal - queueAttended) / queueTotal : 0;
     const averageWaitTime = queueAttended > 0 ? smoothValue(prev.queue.averageWaitTime, 0, 0.1, 2, 20) : 0;

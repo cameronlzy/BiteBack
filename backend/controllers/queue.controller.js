@@ -35,10 +35,10 @@ export async function getStatus(req, res) {
 };
 
 export async function joinQueue(req, res) {
-    const { error } = validateEntry(req.body);
+    const { error, value } = validateEntry(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await queueService.joinQueue(req.user, req.body);
+    const { status, body } = await queueService.joinQueue(req.user, value);
     return res.status(status).json(body);
 }
 
@@ -58,25 +58,25 @@ export async function getRestaurantQueueOverview(req, res) {
 }
 
 export async function updateQueueEntryStatus(req, res) {
-    const { error } = validateStatus(req.body);
+    const { error, value } = validateStatus(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await queueService.updateQueueEntryStatus(req.queueEntry, req.body);
+    const { status, body } = await queueService.updateQueueEntryStatus(req.queueEntry, value);
     return res.status(status).json(body);
 }
 
 export async function callNext(req, res) {
-    const { error } = validateQueueGroup(req.query);
+    const { error, value } = validateQueueGroup(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await queueService.callNext(req.restaurant, req.query.queueGroup);
+    const { status, body } = await queueService.callNext(req.restaurant, value.queueGroup);
     return res.status(status).json(body);
 }
 
 export async function toggleQueue(req, res) {
-    const { error } = validateToggle(req.body);
+    const { error, value } = validateToggle(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
     
-    const { status, body } = await queueService.toggleQueue(req.restaurant, req.body.enabled);
+    const { status, body } = await queueService.toggleQueue(req.restaurant, value.enabled);
     return res.status(status).json(body);
 }

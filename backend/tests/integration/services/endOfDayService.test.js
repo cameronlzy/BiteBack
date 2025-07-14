@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
-import { generateAnalytics } from '../../../services/scheduledJobs/generateAnalytics.js';
+import { generateAnalytics } from '../../../services/scheduledJobs/endOfDay.service.js';
 import Reservation from '../../../models/reservation.model.js';
 import QueueEntry from '../../../models/queueEntry.model.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
@@ -20,9 +20,9 @@ describe('generateAnalytics integration test', () => {
         await restaurant.save();
 
         await Reservation.create([
-            { user: new mongoose.Types.ObjectId(), restaurant: restaurant._id, reservationDate: makeDate(13, 30), pax: 2, status: 'completed' },
-            { user: new mongoose.Types.ObjectId(), restaurant: restaurant._id, reservationDate: makeDate(14, 15), pax: 3, status: 'event' },
-            { user: new mongoose.Types.ObjectId(), restaurant: restaurant._id, reservationDate: makeDate(15, 0), pax: 4, status: 'no-show' },
+            { user: new mongoose.Types.ObjectId(), restaurant: restaurant._id, startDate: makeDate(13, 30), pax: 2, status: 'completed' },
+            { user: new mongoose.Types.ObjectId(), restaurant: restaurant._id, startDate: makeDate(14, 15), pax: 3, status: 'event' },
+            { user: new mongoose.Types.ObjectId(), restaurant: restaurant._id, startDate: makeDate(15, 0), pax: 4, status: 'no-show' },
         ]);
 
         await QueueEntry.create([

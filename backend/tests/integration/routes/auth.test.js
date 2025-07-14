@@ -284,7 +284,6 @@ describe('auth test', () => {
                 'name',
                 'contactNumber', 
                 'favCuisines',
-                'points',
                 'dateJoined'
             ];
             expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));

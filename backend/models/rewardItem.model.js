@@ -6,7 +6,6 @@ const rewardItemSchema = new mongoose.Schema({
     description: { type: String, required: true },
     pointsRequired: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
-    isDeleted: { type: Boolean, default: false },
     stock: { type: Number, default: null } // null means unlimited
 }, { timestamps: true, versionKey: false });
 

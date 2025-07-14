@@ -8,26 +8,26 @@ import { wrapError } from '../helpers/response.js';
 
 export async function forgotPassword (req, res) {
     // validate request
-    const { error } = validateCredentials(req.body);
+    const { error, value } = validateCredentials(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
     
-    const { status, body } = await authService.forgotPassword(req.body);
+    const { status, body } = await authService.forgotPassword(value);
     return res.status(status).json(body);
 };
 
 export async function resetPassword(req, res) {
-    const { error } = validatePassword(req.body);
+    const { error, value } = validatePassword(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await authService.resetPassword(req.body, req.params.token);
+    const { status, body } = await authService.resetPassword(value, req.params.token);
     return res.status(status).json(body);
 };
 
 export async function changePassword(req, res) {
-    const { error } = validatePasswordChange(req.body);
+    const { error, value } = validatePasswordChange(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
     
-    const { token, status, body } = await authService.changePassword(req.body, req.user);
+    const { token, status, body } = await authService.changePassword(value, req.user);
     if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 };
@@ -43,10 +43,10 @@ export async function logout(req, res) {
 
 export async function login(req, res) {
     // validate request
-    const { error } = validateLogin(req.body);
+    const { error, value } = validateLogin(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { token, body, status } = await authService.login(req.body);
+    const { token, body, status } = await authService.login(value);
     if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 };
@@ -54,17 +54,17 @@ export async function login(req, res) {
 export async function register(req, res) {
     // validate request
     if (req.body.role === 'customer') {
-        const { error } = validateCustomer(req.body);
+        const { error, value } = validateCustomer(req.body);
         if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-        const {token, body, status } = await authService.registerCustomer(req.body);
+        const {token, body, status } = await authService.registerCustomer(value);
         if (token) setAuthCookie(res, token);
         return res.status(status).json(body);
     } else if (req.body.role === 'owner') {
-        const { error } = validateOwner(req.body);
+        const { error, value } = validateOwner(req.body);
         if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-        const { token, body, status } = await authService.registerOwner(req.body);
+        const { token, body, status } = await authService.registerOwner(value);
         if (token) setAuthCookie(res, token);
         return res.status(status).json(body);
     } else {
@@ -74,10 +74,10 @@ export async function register(req, res) {
 
 export async function staffLogin(req, res) {
     // validate request
-    const { error } = validateStaffLogin(req.body);
+    const { error, value } = validateStaffLogin(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { token, body, status } = await authService.staffLogin(req.body);
+    const { token, body, status } = await authService.staffLogin(value);
     if (token) setAuthCookie(res, token, 12);
     return res.status(status).json(body);
 };

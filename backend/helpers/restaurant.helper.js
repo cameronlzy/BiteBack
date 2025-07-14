@@ -1,5 +1,8 @@
 import { DateTime } from 'luxon';
 
+// note: get day of week using local time ie. dayOfWeek = date.set(timezone).weekday - 1;
+// compare time using utc
+
 export function convertOpeningHoursToUTC(openingHoursString, timezone = 'Asia/Singapore') {
   const days = openingHoursString.split('|');
 
@@ -17,10 +20,10 @@ export function convertOpeningHoursToUTC(openingHoursString, timezone = 'Asia/Si
   return converted.join('|');
 }
 
-export function createSlots(openingHoursString, sgtDateTime, slotDuration = 60) {
+export function createSlots(openingHoursString, localDateTime, slotDuration = 60) {
   const openingHours = openingHoursString.split('|');
-  const date = sgtDateTime;
-  const weekdayIndex = sgtDateTime.weekday - 1; 
+  const date = localDateTime;
+  const weekdayIndex = localDateTime.weekday - 1; 
 
   const dayHours = openingHours[weekdayIndex];
   if (!dayHours || dayHours.toLowerCase() === 'x') return [];
@@ -45,11 +48,14 @@ export function createSlots(openingHoursString, sgtDateTime, slotDuration = 60) 
 
 export function filterOpenRestaurants(restaurants) {
   const nowUTC = DateTime.utc();
-  const currentDay = nowUTC.weekday % 7;
 
   return restaurants.filter((restaurant) => {
+    const timezone = restaurant.timezone || 'Asia/Singapore';
+    const localNow = nowUTC.setZone(timezone);
+    const currentDay = localNow.weekday - 1;
     const days = restaurant.openingHours.split('|');
     const hoursToday = days[currentDay];
+
     if (!hoursToday || hoursToday.toLowerCase() === 'x') return false;
 
     const [startStr, endStr] = hoursToday.split('-');
@@ -58,12 +64,13 @@ export function filterOpenRestaurants(restaurants) {
     const [startHour, startMin] = startStr.split(':').map(Number);
     const [endHour, endMin] = endStr.split(':').map(Number);
 
-    const start = nowUTC.set({ hour: startHour, minute: startMin, second: 0 });
-    const end = nowUTC.set({ hour: endHour, minute: endMin, second: 59 });
+    const startUTC = nowUTC.set({ hour: startHour, minute: startMin, second: 0 });
+    let endUTC = nowUTC.set({ hour: endHour, minute: endMin, second: 59 });
+    if (endUTC < startUTC) endUTC = endUTC.plus({ days: 1 });
 
-    return nowUTC >= start && nowUTC <= end;
+    return nowUTC >= startUTC && nowUTC <= endUTC;
   });
-};
+}
 
 export function getCurrentTimeSlotStartUTC(restaurant) {
   const now = DateTime.utc();
@@ -98,8 +105,8 @@ export function getCurrentTimeSlotStartUTC(restaurant) {
 }
 
 export function getOpeningHoursToday(restaurant, timezone = 'Asia/Singapore') {
-  const now = DateTime.now().setZone(timezone);
-  const weekdayIndex = now.weekday - 1;
+  const localNow = DateTime.now().setZone(timezone);
+  const weekdayIndex = localNow.weekday - 1;
 
   const openingHoursArray = restaurant.openingHours.split('|');
   const todayOpening = openingHoursArray[weekdayIndex];

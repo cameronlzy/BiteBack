@@ -138,11 +138,8 @@ describe('promotion test', () => {
     });
 
     describe('GET /api/promotions/owner', () => {
-        let titles;
-        let descriptions;
         let restaurants;
         let promotion;
-        let endDates;
         let restaurant1, restaurant2;
         let user, profile, token, cookie;
 
@@ -151,12 +148,6 @@ describe('promotion test', () => {
             await Restaurant.deleteMany({});
             await User.deleteMany({});
             await OwnerProfile.deleteMany({});
-
-            // create 2 titles
-            titles = ['Alpha', 'Zebra'];
-
-            // create 2 ratings
-            descriptions = ['Buy one get one free', 'Half off second purchase'];
 
             // create owner
             user = await createTestUser('owner');
@@ -168,29 +159,18 @@ describe('promotion test', () => {
 
             // create 2 restaurant
             restaurant1 = createTestRestaurant(user.profile);
-            restaurant1.name = 'Bennys';
             await restaurant1.save();
+            promotion = createTestPromotion(restaurant1._id);
+            await promotion.save();
+
             restaurant2 = createTestRestaurant(user.profile);
-            restaurant2.name = 'Pizza';
             await restaurant2.save();
+            promotion = createTestPromotion(restaurant2._id);
+            await promotion.save();
+            
             restaurants = [restaurant1._id, restaurant2._id];
             profile.restaurants = restaurants;
             await profile.save();
-
-            // create 2 endDates
-            endDates = [
-                DateTime.now().plus({ weeks: 1}).toJSDate(), 
-                DateTime.now().plus({ weeks: 2 }).toJSDate()
-            ];
-
-            // create 2 promotions
-            for (let i = 0; i < 2; i++) {
-                promotion = createTestPromotion(restaurants[i]);
-                promotion.title = titles[i];
-                promotion.description = descriptions[i];
-                promotion.endDate = endDates[i];
-                await promotion.save();
-            }
         });
 
         const exec = () => {
@@ -202,8 +182,8 @@ describe('promotion test', () => {
         it('should return 200 if valid request', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            expect(res.body.length).toBe(2);
-            res.body.forEach(promotion => {    
+            expect(res.body.promotions.length).toBe(2);
+            res.body.promotions.forEach(promotion => {    
                 expect(promotion).toHaveProperty('restaurant');
                 expect(promotion).toHaveProperty('title');
                 expect(promotion).toHaveProperty('description');
@@ -430,7 +410,7 @@ describe('promotion test', () => {
 
     describe('PATCH /api/promotions/:id', () => {
         let user, token, cookie;
-        let restaurant, title;
+        let restaurant, title, newStartDate;
         let promotion, promotionId;
 
         beforeEach(async () => {
@@ -449,10 +429,12 @@ describe('promotion test', () => {
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);
+            promotion.startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
             await promotion.save();
             promotionId = promotion._id;
 
-            title = 'newTitle';         
+            title = 'newTitle';
+            newStartDate = DateTime.now().plus({ days: 2 }).toJSDate();  
         });
 
         const exec = () => {
@@ -460,7 +442,7 @@ describe('promotion test', () => {
             .patch(`/api/promotions/${promotionId}`)
             .set('Cookie', [cookie])
             .send({
-                title
+                title, startDate: newStartDate
             });
         };
 
@@ -470,15 +452,19 @@ describe('promotion test', () => {
             expect(res.status).toBe(400);
         });
 
-        it('should return 400 if promotion has expired', async () => {
-            promotion = createTestPromotion(restaurant._id);
-            promotion.endDate = DateTime.now().minus({ days: 5 }).toJSDate();
+        it('should return 400 if promotion has started', async () => {
+            promotion.startDate = DateTime.now().minus({ hours: 1 }).toJSDate();
             await promotion.save();
-            promotionId = promotion._id;
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
+        it('should return 400 if promotion has expired', async () => {
+            promotion.endDate = DateTime.now().minus({ days: 5 }).toJSDate();
+            await promotion.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
 
         it('should return 200 and promotion object with required properties', async () => {
             const res = await exec();
@@ -511,6 +497,7 @@ describe('promotion test', () => {
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);
+            promotion.startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
             await promotion.save();
             promotionId = promotion._id;      
         });
@@ -520,6 +507,20 @@ describe('promotion test', () => {
             .delete(`/api/promotions/${promotionId}`)
             .set('Cookie', [cookie]);
         };
+
+        it('should return 400 if promotion has started', async () => {
+            promotion.startDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            await promotion.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        it('should return 400 if promotion has expired', async () => {
+            promotion.endDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            await promotion.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
 
         it('should return 200 and promotion object with required properties', async () => {
             const res = await exec();

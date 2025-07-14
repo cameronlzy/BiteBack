@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { generateAnalytics } from '../services/scheduledJobs/generateAnalytics.js';
+import { generateAnalytics } from '../services/scheduledJobs/endOfDay.service.js';
 import Restaurant from '../models/restaurant.model.js';
 import config from 'config';
 

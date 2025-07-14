@@ -96,6 +96,7 @@ describe('review test', () => {
         let restaurant;
         let restaurantId;
         let profile;
+        let url;
 
 		beforeEach(async () => {
 			// clear all
@@ -113,29 +114,37 @@ describe('review test', () => {
             profile = createTestCustomerProfile(user);
             await profile.save();
 
-            // create a review
             review = createTestReview(profile, restaurantId);
+            review.rating = 5;
             await review.save();
+
+            review = createTestReview(profile, restaurantId);
+            review.rating = 1;
+            await review.save();
+
+            url = `/api/reviews/restaurant/${restaurantId}?sortBy=rating&order=desc`;
 		});
 
         const exec = () => {
             return request(server)
-            .get(`/api/reviews/restaurant/${restaurantId}`);
+            .get(url);
         };
 
         it('should return 404 if restaurant does not exist', async () => {
             restaurantId = new mongoose.Types.ObjectId();
+            url = `/api/reviews/restaurant/${restaurantId}?sortBy=rating&order=desc`;
             const res = await exec();
             expect(res.status).toBe(404);
         });
 
-        it('should return 200 and review object with required properties', async () => {
+        it('should return 200 and review objects sorted in the right order', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            res.body.forEach(review => {    
+            expect(res.body.reviews[0].rating).toBe(5);
+            expect(res.body.reviews[1].rating).toBe(1);
+            res.body.reviews.forEach(review => {    
                 expect(review).toHaveProperty('username');
                 expect(review).toHaveProperty('rating');
-                expect(review).toHaveProperty('reviewText');
                 expect(review).toHaveProperty('dateVisited');
                 expect(review).toHaveProperty('createdAt');
                 expect(review).toHaveProperty('badgesCount');
@@ -150,6 +159,7 @@ describe('review test', () => {
         let restaurant;
         let profile;
         let customerId;
+        let url;
 
 		beforeEach(async () => {
 			// clear all
@@ -167,29 +177,37 @@ describe('review test', () => {
             await profile.save();
             customerId = profile._id;
 
-            // create a review
             review = createTestReview(profile, restaurant._id);
+            review.rating = 5;
             await review.save();
+
+            review = createTestReview(profile, restaurant._id);
+            review.rating = 1;
+            await review.save();
+
+            url = `/api/reviews/customer/${customerId}?sortBy=rating&order=desc`
 		});
 
         const exec = () => {
             return request(server)
-            .get(`/api/reviews/customer/${customerId}`);
+            .get(url);
         };
 
         it('should return 404 if customer does not exist', async () => {
             customerId = new mongoose.Types.ObjectId();
+            url = `/api/reviews/customer/${customerId}?sortBy=rating&order=desc`;
             const res = await exec();
             expect(res.status).toBe(404);
         });
 
-        it('should return 200 and review object with required properties', async () => {
+        it('should return 200 and review objects sorted in the right order', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            res.body.forEach(review => {    
+            expect(res.body.reviews[0].rating).toBe(5);
+            expect(res.body.reviews[1].rating).toBe(1);
+            res.body.reviews.forEach(review => {    
                 expect(review).toHaveProperty('username');
                 expect(review).toHaveProperty('rating');
-                expect(review).toHaveProperty('reviewText');
                 expect(review).toHaveProperty('dateVisited');
                 expect(review).toHaveProperty('createdAt');
                 expect(review).toHaveProperty('badgesCount');
@@ -252,7 +270,7 @@ describe('review test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'username', 'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -317,7 +335,7 @@ describe('review test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'username', 'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -395,7 +413,7 @@ describe('review test', () => {
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
             const requiredKeys = [
-                'username', 'rating', 'reviewText', 'dateVisited',
+                'username', 'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -628,7 +646,7 @@ describe('review test', () => {
             expect(res.status).toBe(200);
 
             const requiredKeys = [
-                'rating', 'reviewText', 'dateVisited',
+                'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
@@ -703,7 +721,7 @@ describe('review test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'rating', 'reviewText', 'dateVisited',
+                'rating', 'dateVisited',
                 'createdAt', 'isVisible'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));

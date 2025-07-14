@@ -6,7 +6,8 @@ export default async function (req, res, next) {
     if (!queueEntry) return res.status(404).json(wrapError('QueueEntry not found'));
     if (queueEntry.restaurant.staff.toString() !== req.user._id) return res.status(403).json(wrapError('Staff cannot access QueueEntry'));
     
-    req.queueEntry = queueEntry;
     req.restaurant = queueEntry.restaurant;
+    queueEntry.restaurant = queueEntry.restaurant._id;
+    req.queueEntry = queueEntry;
     next();
 }

@@ -5,11 +5,20 @@ import OwnerProfile from '../models/ownerProfile.model.js';
 import Review from '../models/review.model.js';
 import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 import Promotion from '../models/promotion.model.js';
+import Event from '../models/event.model.js';
 import Staff from '../models/staff.model.js';
+import VisitHistory from '../models/visitHistory.model.js';
+import QueueCounter from '../models/queueCounter.model.js';
+import QueueEntry from '../models/queueEntry.model.js';
+import RewardPoint from '../models/rewardPoint.model.js';
+import RewardItem from '../models/rewardItem.model.js';
+import DailyAnalytics from '../models/dailyAnalytics.model.js';
 import { DateTime } from 'luxon';
+import mongoose from 'mongoose';
 import * as reservationService from '../services/reservation.service.js';
 import { createSlots, convertOpeningHoursToUTC, filterOpenRestaurants } from '../helpers/restaurant.helper.js';
 import { generateStaffUsername, generateStaffHashedPassword } from '../helpers/staff.helper.js';
+import { getCurrentTimeSlotStartUTC } from '../helpers/restaurant.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import _ from 'lodash';
 import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.service.js';
@@ -157,26 +166,96 @@ export async function getAvailability(restaurantId, query) {
   const restaurant = await Restaurant.findById(restaurantId).select('+_id +timezone').lean();
   if (!restaurant) return error(404, 'Restaurant not found');
 
-  // get reservations on query date
-  const reservations = await reservationService.getReservationsByRestaurantByDate(restaurant._id, query.date);
-
   // create time slots
   const date = DateTime.fromISO(query.date, { zone: restaurant.timezone });
   const timeSlots = createSlots(restaurant.openingHours, date);
   if (Array.isArray(timeSlots) && timeSlots.length === 0) return success([]);
 
-  // calculate availability for each slot
+  const dayStart = date.startOf('day').toUTC().toJSDate();
+  const dayEnd = date.endOf('day').toUTC().toJSDate();
+
+  // get reservations and events on query date
+  const [reservations, overlappingEvents] = await Promise.all([
+    reservationService.getReservationsByRestaurantByDate(restaurant, query.date),
+    Event.find({ restaurant: restaurant._id, startDate: { $lt: dayEnd }, endDate: { $gt: dayStart } }).select('slotPax startDate endDate').lean(),
+  ]);
+
   const availabilityMap = {};
   timeSlots.forEach(slot => availabilityMap[slot] = restaurant.maxCapacity);
-  reservations.forEach(({ reservationDate, pax }) => {
-    const slotTime = DateTime.fromJSDate(reservationDate).toUTC().toFormat('HH:mm');
-    if (availabilityMap[slotTime]) availabilityMap[slotTime] -= pax;
+
+  reservations.forEach(({ startDate, endDate, pax, event }) => {
+    if (event) return;
+
+    const start = DateTime.fromJSDate(startDate);
+    const end = DateTime.fromJSDate(endDate);
+
+    for (let dt = start; dt < end; dt = dt.plus({ minutes: restaurant.slotDuration })) {
+      const slotTime = dt.toFormat('HH:mm');
+      if (availabilityMap[slotTime] !== undefined) {
+        availabilityMap[slotTime] -= pax;
+      }
+    }
+  });
+
+  overlappingEvents.forEach(event => {
+    const eventStart = DateTime.fromJSDate(event.startDate);
+    const eventEnd = DateTime.fromJSDate(event.endDate);
+
+    timeSlots.forEach(slot => {
+      const slotDT = DateTime.fromFormat(slot, 'HH:mm', { zone: 'utc' })
+        .set({ year: date.year, month: date.month, day: date.day });
+
+      if (slotDT >= eventStart && slotDT < eventEnd) {
+        availabilityMap[slot] -= event.slotPax;
+      }
+    });
   });
 
   return success(timeSlots.map(slot => ({
     time: slot,
     available: Math.max(0, availabilityMap[slot])
   })));
+}
+
+export async function getVisitCount(authUser, restaurant) {
+  const result = await VisitHistory.aggregate([
+    {
+      $match: {
+        customer: new mongoose.Types.ObjectId(authUser.profile),
+        restaurant: new mongoose.Types.ObjectId(restaurant),
+      }
+    },
+    {
+      $project: {
+        visitCount: { $size: '$visits' }
+      }
+    }
+  ]);
+
+  const visitCount = result[0]?.visitCount ?? 0;
+  return success({ visitCount });
+}
+
+export async function getReservationsByRestaurant(restaurant, query) {
+    const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
+    if (!timeSlotStartUTC) return success([]);
+
+    const baseFilter = {
+        restaurant: restaurant._id,
+        startDate: { $lt: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate() },
+        endDate: { $gt: timeSlotStartUTC.toJSDate() }
+    };
+
+    if (query.event === 'true') {
+        baseFilter.event = { $ne: undefined };
+    }
+
+    const reservations = await Reservation.find(baseFilter)
+        .populate('customer', 'name contactNumber')
+        .populate('event', '_id title')
+        .lean();
+
+    return success(reservations);
 }
 
 export async function createRestaurant(authUser, data) {
@@ -274,7 +353,7 @@ export async function deleteRestaurant(restaurant, authUser) {
   });
 }
 
-// utility services
+// helper services
 export async function createRestaurantHelper(authUser, data, session = undefined) {
   // get longitude and latitude
   const fullAddress = data.address.replace(/S(\d{6})$/i, 'Singapore $1');
@@ -311,14 +390,27 @@ export async function deleteRestaurantAndAssociations(restaurant, session = unde
   // delete images
   await deleteImagesFromDocument(restaurant, 'images');
   
-  // delete restaurants and it's associations
-  await Promise.all([
-    Reservation.deleteMany({ restaurant: restaurant._id }).session(session),
-    Review.deleteMany({ restaurant: restaurant._id }).session(session),
-    ReviewBadgeVote.deleteMany({ restaurant: restaurant._id }).session(session),
-    Staff.deleteMany({ restaurant: restaurant._id }).session(session),
-    Promotion.deleteMany({ restaurant: restaurant._id }).session(session)
-  ]);
+  // delete associations
+  const models = [
+    Reservation,
+    Review,
+    ReviewBadgeVote,
+    Staff,
+    Promotion,
+    Event,
+    DailyAnalytics,
+    QueueCounter,
+    QueueEntry,
+    RewardPoint,
+    RewardItem,
+    VisitHistory,
+  ];
+
+  await Promise.all(
+    models.map((Model) =>
+      Model.deleteMany({ restaurant: restaurant._id }).session(session)
+    )
+  );
 
   // delete restaurant after children deleted
   await Restaurant.findByIdAndDelete(restaurant._id).session(session);

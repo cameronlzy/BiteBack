@@ -8,15 +8,15 @@ jest.unstable_mockModule('../../../models/reservation.model.js', () => ({
 }));
 
 const { default: Reservation } = await import('../../../models/reservation.model.js');
-const { default: authorizedReservationUser } = await import('../../../middleware/authorizedReservationUser.js');
+const { default: authorizedReservationCustomer } = await import('../../../middleware/authorizedReservationCustomer.js');
 
-describe('authorizedReservationUser middleware', () => {
+describe('authorizedReservationCustomer middleware', () => {
   let req, res, next;
 
   beforeEach(() => {
     req = {
       params: { id: 'resv123' },
-      user: { _id: 'user123' },
+      user: { profile: 'user123' },
     };
     res = {
       status: jest.fn().mockReturnThis(),
@@ -29,7 +29,7 @@ describe('authorizedReservationUser middleware', () => {
   it('should return 404 if reservation is not found', async () => {
     Reservation.findById.mockResolvedValue(null);
 
-    await authorizedReservationUser(req, res, next);
+    await authorizedReservationCustomer(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith(wrapError('Reservation not found'));
@@ -38,26 +38,26 @@ describe('authorizedReservationUser middleware', () => {
 
   it('should return 403 if reservation does not belong to user', async () => {
     Reservation.findById.mockResolvedValue({
-      user: 'otherUser456',
+      customer: 'otherUser456',
       toString: () => 'otherUser456',
     });
 
-    await authorizedReservationUser(req, res, next);
+    await authorizedReservationCustomer(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith(wrapError('Reservation does not belong to user'));
+    expect(res.json).toHaveBeenCalledWith(wrapError('Reservation does not belong to customer'));
     expect(next).not.toHaveBeenCalled();
   });
 
   it('should attach reservation and call next if user is authorized', async () => {
     const mockReservation = {
       _id: 'resv123',
-      user: { toString: () => 'user123' },
+      customer: { toString: () => 'user123' },
     };
 
     Reservation.findById.mockResolvedValue(mockReservation);
 
-    await authorizedReservationUser(req, res, next);
+    await authorizedReservationCustomer(req, res, next);
 
     expect(req.reservation).toEqual(mockReservation);
     expect(next).toHaveBeenCalled();

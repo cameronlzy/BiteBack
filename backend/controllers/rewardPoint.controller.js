@@ -4,14 +4,10 @@ import validatePagination from '../validators/pagination.validator.js';
 import { wrapError } from '../helpers/response.js';
 
 export async function getAllPoints(req, res) {
-    const page = Number(req.query.page ?? 1);
-    const limit = Number(req.query.limit ?? 8);
-    const query = { page, limit };
-
-    const { error } = validatePagination(query);
+    const { error, value } = validatePagination(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await rewardPointService.getAllPoints(req.user, query);
+    const { status, body } = await rewardPointService.getAllPoints(req.user, value);
     return res.status(status).json(body);
 }
 
@@ -21,9 +17,9 @@ export async function getPointByRestaurant(req, res) {
 }
 
 export async function updatePoints(req, res) {
-    const { error } = validatePointsUpdate(req.body);
+    const { error, value } = validatePointsUpdate(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await rewardPointService.updatePoints(req.restaurant, req.body);
+    const { status, body } = await rewardPointService.updatePoints(req.restaurant, value);
     return res.status(status).json(body);
 }

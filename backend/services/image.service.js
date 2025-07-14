@@ -26,7 +26,10 @@ export async function addImages(docModel, docId, uploadedFiles, imageField = 'im
 }
 
 export async function deleteImagesFromDocument(doc, imageField = 'images') {
-  const imageUrlsToDelete = doc[imageField];
+  const raw = doc[imageField];
+  if (!raw) return;
+
+  const imageUrlsToDelete = Array.isArray(raw) ? raw : [raw];
   await deleteImagesFromCloudinary(imageUrlsToDelete);
 }
 

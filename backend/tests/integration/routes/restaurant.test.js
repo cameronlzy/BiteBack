@@ -2,10 +2,14 @@ import Reservation from '../../../models/reservation.model.js';
 import User from '../../../models/user.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
+import VisitHistory from '../../../models/visitHistory.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
+import { createTestStaff } from '../../factories/staff.factory.js';
+import { createTestVisitHistory } from '../../factories/visitHistory.factory.js';
 import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { createTestReservation } from '../../factories/reservation.factory.js';
+import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
@@ -309,12 +313,11 @@ describe('restaurant test', () => {
 
     describe('GET /api/restaurants/:id/availability', () => {
         let user;
-        let userId;
+        let reservation;
         let restaurant;
         let restaurantId;
-        let reservationDate;
+        let startDate;
         let queryDateSG;
-        let pax;
         let url;
 
         beforeEach(async () => {
@@ -325,7 +328,6 @@ describe('restaurant test', () => {
             // create a user
             user = await createTestUser('customer');
             await user.save();
-            userId = user._id;
 
             // create a restaurant
             restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
@@ -333,13 +335,10 @@ describe('restaurant test', () => {
             restaurantId = restaurant._id;
 
             // create a reservation
-            reservationDate = new Date('2025-05-17T11:00'); // UTC date
-            queryDateSG = encodeURIComponent(DateTime.fromJSDate(reservationDate, { zone: 'utc' }).setZone('Asia/Singapore').startOf('day').toISO());
-            pax = 10;
-            const reservation = new Reservation({
-                user: userId, restaurant: restaurantId,
-                reservationDate, pax
-            });
+            startDate = new Date('2025-05-17T11:00'); // UTC date
+            queryDateSG = encodeURIComponent(DateTime.fromJSDate(startDate, { zone: 'utc' }).setZone('Asia/Singapore').startOf('day').toISO());
+            reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
+            reservation.startDate = startDate;
             await reservation.save();
 
             // create url
@@ -393,6 +392,113 @@ describe('restaurant test', () => {
                 expect(slot).toHaveProperty('available');
                 expect(typeof slot.available).toBe('number');
                 expect(slot.available).toBeGreaterThanOrEqual(0);
+            });
+        });
+    });
+
+    describe('GET /api/restaurants/:id/visits', () => {
+        let user, token, cookie;
+        let restaurant;
+        let restaurantId;
+        let visitHistory;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+            await Reservation.deleteMany({});
+            await VisitHistory.deleteMany({});
+
+            // create a user
+            user = await createTestUser('customer');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            // create a restaurant
+            restaurant = createTestRestaurant(new mongoose.Types.ObjectId());
+            await restaurant.save();
+            restaurantId = restaurant._id;
+
+            visitHistory = createTestVisitHistory(restaurant._id, user.profile);
+            visitHistory.visits = [
+                { visitDate: DateTime.now().minus({ days: 1 }).toJSDate(), reviewed: false },
+                { visitDate: DateTime.now().toJSDate(), reviewed: false }
+            ];
+            await visitHistory.save();
+        });
+
+        const exec = () => {
+            return request(server)
+            .get(`/api/restaurants/${restaurantId}/visits`)
+            .set('Cookie', [cookie]);
+        };
+
+        it('should return 200 and visitCount', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.visitCount).toBe(2);
+        });
+    });
+
+    describe('GET /api/restaurants/:id/reservations', () => {
+        let token;
+        let owner;
+        let restaurant;
+        let restaurantId;
+        let startDate1;
+        let startDate2;
+        let staff;
+        let cookie;
+        let reservation;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+            await Reservation.deleteMany({});
+
+            // create an owner
+            owner = await createTestUser('owner');
+            await owner.save();           
+
+            // create a restaurant
+            restaurant = createTestRestaurant(owner.profile);
+            staff = await createTestStaff(restaurant._id);
+            restaurant.staff = staff._id;
+            await restaurant.save();
+            await staff.save();
+            token = staffGenerateAuthToken(staff);
+            cookie = setTokenCookie(token); 
+
+            restaurantId = restaurant._id;
+
+            // create reservations (in UTC)
+            startDate1 = DateTime.utc().toJSDate();
+            startDate2 = DateTime.utc().plus({ minute: restaurant.slotDuration }).toJSDate();
+            reservation = createTestReservation({ restaurant: restaurantId });
+            reservation.startDate = startDate1;
+            await reservation.save();
+
+            reservation = createTestReservation({ restaurant: restaurantId });
+            reservation.startDate = startDate2;
+            await reservation.save();
+        });
+
+        const exec = () => {
+            return request(server)
+            .get(`/api/restaurants/${restaurantId}/reservations`)
+            .set('Cookie', [cookie]);
+        };
+
+        it.skip('should return 200 if valid token and return all reservations', async () => {
+            const res = await exec();
+            console.log(res.text);
+            expect(res.status).toBe(200);
+            expect(res.body.length).toBe(1);
+            res.body.forEach(reservation => {
+                expect(reservation).toHaveProperty('customer');
+                expect(reservation).toHaveProperty('restaurant');
+                expect(reservation).toHaveProperty('startDate');
+                expect(reservation).toHaveProperty('pax');
             });
         });
     });

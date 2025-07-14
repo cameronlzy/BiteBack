@@ -7,14 +7,7 @@ jest.unstable_mockModule('../../../models/promotion.model.js', () => ({
   },
 }));
 
-jest.unstable_mockModule('../../../models/restaurant.model.js', () => ({
-  default: {
-    findById: jest.fn(),
-  },
-}));
-
 const { default: Promotion } = await import('../../../models/promotion.model.js');
-const { default: Restaurant } = await import('../../../models/restaurant.model.js');
 const { default: authorizedPromotionOwner } = await import('../../../middleware/authorizedPromotionOwner.js');
 
 describe('authorizedPromotionOwner middleware', () => {
@@ -30,10 +23,18 @@ describe('authorizedPromotionOwner middleware', () => {
       json: jest.fn(),
     };
     next = jest.fn();
+    jest.clearAllMocks();
   });
 
-  it('should return 404 if promotion is not found', async () => {
-    Promotion.findById.mockResolvedValue(null);
+  /* helper to stub findById().populate() */
+  const mockPopulate = (resolvedValue) => {
+    Promotion.findById.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(resolvedValue),
+    });
+  };
+
+  it('returns 404 if promotion is not found', async () => {
+    mockPopulate(null);
 
     await authorizedPromotionOwner(req, res, next);
 
@@ -42,9 +43,8 @@ describe('authorizedPromotionOwner middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should return 404 if restaurant is not found', async () => {
-    Promotion.findById.mockResolvedValue({ restaurant: 'resto123' });
-    Restaurant.findById.mockResolvedValue(null);
+  it('returns 404 if restaurant is not found', async () => {
+    mockPopulate({ _id: 'promo123', restaurant: null });
 
     await authorizedPromotionOwner(req, res, next);
 
@@ -53,9 +53,9 @@ describe('authorizedPromotionOwner middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should return 403 if user is not the owner', async () => {
-    Promotion.findById.mockResolvedValue({ restaurant: 'resto123' });
-    Restaurant.findById.mockResolvedValue({ owner: 'notOwner456', toString: () => 'notOwner456' });
+  it('returns 403 if user is not the owner', async () => {
+    const mockRestaurant = { _id: 'resto123', owner: 'notOwner456' };
+    mockPopulate({ _id: 'promo123', restaurant: mockRestaurant });
 
     await authorizedPromotionOwner(req, res, next);
 
@@ -64,12 +64,11 @@ describe('authorizedPromotionOwner middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should attach promotion and restaurant and call next if authorized', async () => {
-    const mockPromotion = { _id: 'promo123', restaurant: 'resto123' };
-    const mockRestaurant = { _id: 'resto123', owner: 'owner123', toString: () => 'owner123' };
+  it('attaches promotion & restaurant and calls next if authorized', async () => {
+    const mockRestaurant = { _id: 'resto123', owner: 'owner123' };
+    const mockPromotion  = { _id: 'promo123', restaurant: mockRestaurant };
 
-    Promotion.findById.mockResolvedValue(mockPromotion);
-    Restaurant.findById.mockResolvedValue(mockRestaurant);
+    mockPopulate(mockPromotion);
 
     await authorizedPromotionOwner(req, res, next);
 

@@ -13,6 +13,7 @@ import analytics from '../routes/analytics.route.js';
 import rewardItem from '../routes/rewardItem.route.js';
 import rewardPoint from '../routes/rewardPoint.route.js';
 import rewardRedemption from '../routes/rewardRedemption.route.js';
+import events from '../routes/event.route.js';
 
 export default function(app) {
   app.use(express.json());
@@ -29,6 +30,7 @@ export default function(app) {
   app.use('/api/rewards', rewardItem);
   app.use('/api/rewards', rewardPoint);
   app.use('/api/rewards', rewardRedemption);
+  app.use('/api/events', events)
 
   // to log error
   app.use(error);

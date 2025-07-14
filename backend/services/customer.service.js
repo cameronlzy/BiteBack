@@ -89,7 +89,7 @@ export async function deleteMe(user) {
 
         // delete reservations and profile
         await Promise.all([
-            Reservation.deleteMany({ user: user._id }).session(session),
+            Reservation.deleteMany({ customer: user.profile }).session(session),
             CustomerProfile.findByIdAndDelete(user.profile).session(session)
         ]);
 

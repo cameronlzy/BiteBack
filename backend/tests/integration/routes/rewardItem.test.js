@@ -186,13 +186,13 @@ describe('reward item test', () => {
                 .set('Cookie', [cookie]);
         };
         
-        it('should return 200 and soft delete reward item', async () => {
+        it('should return 200 and delete reward item', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = ['category', 'description', 'pointsRequired', 'isActive'];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            expect(res.body.isDeleted).toBe(true);
-            expect(res.body.isActive).toBe(false);
+            const itemInDb = await RewardItem.findById(res.body._id).lean();
+            expect(itemInDb).toBeNull();
         });
     });
 });

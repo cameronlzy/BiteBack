@@ -10,7 +10,9 @@ export default async function checkReviewOwnership(req, res, next) {
     if (restaurantOwnerId !== req.user.profile) {
       return res.status(403).json(wrapError("Review's restaurant does not belong to owner"));
     }
-    req.review = review;
+
     req.restaurant = review.restaurant;
+    review.restaurant = review.restaurant._id;
+    req.review = review;
     next();
 };
