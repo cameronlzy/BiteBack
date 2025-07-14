@@ -11,7 +11,7 @@ import { error, success } from '../helpers/response.js';
 
 export async function joinQueue(authUser, data) {
     return await withTransaction(async (session) => {
-        const restaurant = await Restaurant.findById(data.restaurant).session(session).lean();
+        const restaurant = await Restaurant.findById(data.restaurant).select('queueEnabled').session(session).lean();
         if (!restaurant.queueEnabled) return error(403, 'Online queue is currently disabled');
 
         const queueEntry = new QueueEntry(_.pick(data,['restaurant', 'pax']));

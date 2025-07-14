@@ -31,6 +31,7 @@ const eventSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 eventSchema.index({ restaurant: 1 });
+eventSchema.index({ restaurant: 1, status: 1 });
 
 const Event = mongoose.model('Event', eventSchema);
 

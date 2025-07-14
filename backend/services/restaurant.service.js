@@ -163,7 +163,7 @@ export async function getRestaurantById(restaurantId) {
 
 export async function getAvailability(restaurantId, query) {
   // find restaurant
-  const restaurant = await Restaurant.findById(restaurantId).select('+_id +timezone').lean();
+  const restaurant = await Restaurant.findById(restaurantId).select('_id timezone openingHours slotDuration maxCapacity').lean();
   if (!restaurant) return error(404, 'Restaurant not found');
 
   // create time slots

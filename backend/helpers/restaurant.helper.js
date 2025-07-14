@@ -46,9 +46,7 @@ export function createSlots(openingHoursString, localDateTime, slotDuration = 60
   return slots;
 }
 
-export function filterOpenRestaurants(restaurants) {
-  const nowUTC = DateTime.utc();
-
+export function filterOpenRestaurants(restaurants, nowUTC = DateTime.utc()) {
   return restaurants.filter((restaurant) => {
     const timezone = restaurant.timezone || 'Asia/Singapore';
     const localNow = nowUTC.setZone(timezone);

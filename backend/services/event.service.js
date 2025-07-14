@@ -301,6 +301,9 @@ export async function deleteEvent(event) {
         return error(400, 'Event has expired');
     }
 
+    const booked = await Reservation.exists({ event: event._id });
+    if (booked) return error(400, 'Event has bookings already');
+
     await Promise.all([
         deleteImagesFromDocument(event, 'bannerImage'),
         deleteImagesFromDocument(event, 'mainImage'),
