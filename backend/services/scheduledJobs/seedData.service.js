@@ -13,7 +13,7 @@ function getRandomInt(min, max) {
 }
 
 export async function seedReservations() {
-    const localToday = DateTime.now().setZone('Asia/Singapore').startOf('day');
+    const localToday = DateTime.utc().setZone('Asia/Singapore').startOf('day');
     const utcToday = localToday.toUTC();
     const [allRestaurants, customers] = await Promise.all([
         Restaurant.find().lean(),

@@ -241,7 +241,7 @@ describe('reward redemption test', () => {
         });
 
         it('should return 410 if expired', async () => {
-            rewardRedemption.activatedAt = DateTime.now().minus({ days: 1}).toJSDate();
+            rewardRedemption.activatedAt = DateTime.utc().minus({ days: 1}).toJSDate();
             await rewardRedemption.save();
             const res = await exec();
             expect(res.status).toBe(410);

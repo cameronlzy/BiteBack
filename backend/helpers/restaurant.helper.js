@@ -103,7 +103,7 @@ export function getCurrentTimeSlotStartUTC(restaurant) {
 }
 
 export function getOpeningHoursToday(restaurant, timezone = 'Asia/Singapore') {
-  const localNow = DateTime.now().setZone(timezone);
+  const localNow = DateTime.utc().setZone(timezone);
   const weekdayIndex = localNow.weekday - 1;
 
   const openingHoursArray = restaurant.openingHours.split('|');

@@ -35,9 +35,10 @@ const OrderSchema = new mongoose.Schema({
     total: { type: Number, min: 0, required: true },
     status: {
         type: String,
-        enum: ['pending', 'preparing', 'ready', 'completed', 'cancelled'],
+        enum: ['pending', 'preparing', 'completed', 'cancelled'],
         default: 'pending',
     },
+    tableNumber: { type: Number },
 }, { timestamps: true, versionKey: false });
 
 OrderSchema.index({ code: 1, restaurant: 1 }, { unique: true });

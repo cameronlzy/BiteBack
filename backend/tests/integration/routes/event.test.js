@@ -44,8 +44,8 @@ describe('event test', () => {
             await event.save();
             // past event
             event = createTestEvent({ 
-                startDate: DateTime.now().minus({ weeks: 2 }).toJSDate(), 
-                endDate: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+                startDate: DateTime.utc().minus({ weeks: 2 }).toJSDate(), 
+                endDate: DateTime.utc().minus({ weeks: 1 }).toJSDate(),
             });
             await event.save();
         });
@@ -152,15 +152,15 @@ describe('event test', () => {
             await event.save();
             // past event not belonging to restaurant
             event = createTestEvent({ 
-                startDate: DateTime.now().minus({ weeks: 2 }).toJSDate(), 
-                endDate: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+                startDate: DateTime.utc().minus({ weeks: 2 }).toJSDate(), 
+                endDate: DateTime.utc().minus({ weeks: 1 }).toJSDate(),
             });
             await event.save();
             // past event belonging to restaurant
             event = createTestEvent({ 
                 restaurant,
-                startDate: DateTime.now().minus({ weeks: 2 }).toJSDate(), 
-                endDate: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+                startDate: DateTime.utc().minus({ weeks: 2 }).toJSDate(), 
+                endDate: DateTime.utc().minus({ weeks: 1 }).toJSDate(),
             });
         });
 
@@ -213,8 +213,8 @@ describe('event test', () => {
 
         it('should return 404 if past event', async () => {
             event = createTestEvent({ 
-                startDate: DateTime.now().minus({ weeks: 2 }).toJSDate(), 
-                endDate: DateTime.now().minus({ weeks: 1 }).toJSDate(),
+                startDate: DateTime.utc().minus({ weeks: 2 }).toJSDate(), 
+                endDate: DateTime.utc().minus({ weeks: 1 }).toJSDate(),
             });
             await event.save();
             eventId = event._id;
@@ -257,7 +257,7 @@ describe('event test', () => {
             event = createTestEvent({ restaurant: restaurant._id });
             title = event.title;
             description = event.description;
-            startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
+            startDate = DateTime.utc().plus({ hours: 1 }).toJSDate();
             endDate = event.endDate;;
             paxLimit = event.paxLimit;
             slotPax = event.slotPax;
@@ -425,7 +425,7 @@ describe('event test', () => {
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
-            event = createTestEvent({ restaurant: restaurant._id, startDate: DateTime.now().plus({ days: 1 }).toJSDate() });
+            event = createTestEvent({ restaurant: restaurant._id, startDate: DateTime.utc().plus({ days: 1 }).toJSDate() });
             await event.save();
             eventId = event._id;
             newPaxLimit = 10;
@@ -482,8 +482,8 @@ describe('event test', () => {
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
-            event = createTestEvent({ restaurant: restaurant._id, startDate: DateTime.now().plus({ days: 1 }).toJSDate() });
-            event.startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
+            event = createTestEvent({ restaurant: restaurant._id, startDate: DateTime.utc().plus({ days: 1 }).toJSDate() });
+            event.startDate = DateTime.utc().plus({ hours: 1 }).toJSDate();
             await event.save();
             eventId = event._id;
         });
@@ -495,14 +495,14 @@ describe('event test', () => {
         };
 
         it('should return 400 if event has started', async () => {
-            event.startDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            event.startDate = DateTime.utc().minus({ days: 1 }).toJSDate();
             await event.save();
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
         it('should return 400 if event has ended', async () => {
-            event.endDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            event.endDate = DateTime.utc().minus({ days: 1 }).toJSDate();
             await event.save();
             const res = await exec();
             expect(res.status).toBe(400);

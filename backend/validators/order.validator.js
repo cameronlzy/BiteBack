@@ -39,3 +39,17 @@ export function validatePatch(patch) {
     }).min(1);
     return schema.validate(patch);
 }
+
+export function validateTableNumber(table) {
+    const schema = Joi.object({
+        tableNumber: Joi.number().integer().min(1).required(),
+    });
+    return schema.validate(table);
+}
+
+export function validateStatus(status) {
+    const schema = Joi.object({
+        status: Joi.string().valid('pending', 'preparing', 'completed').required(),
+    });
+    return schema.validate(status);
+}

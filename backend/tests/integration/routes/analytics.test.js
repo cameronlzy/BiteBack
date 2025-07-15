@@ -61,7 +61,7 @@ describe('analytics test', () => {
             await restaurant.save();
             restaurantId = restaurant._id;
 
-            analytics = createTestAnalytics(restaurant._id, DateTime.now().setZone('Asia/Singapore').startOf('day').toUTC());
+            analytics = createTestAnalytics(restaurant._id, DateTime.utc().setZone('Asia/Singapore').startOf('day').toUTC());
             await analytics.save();
         });
 
@@ -107,7 +107,7 @@ describe('analytics test', () => {
             restaurantId = restaurant._id;
 
             // create analytics using a loop
-            const baseDate = DateTime.now().setZone('Asia/Singapore').startOf('day').minus({ days: 13 });
+            const baseDate = DateTime.utc().setZone('Asia/Singapore').startOf('day').minus({ days: 13 });
             const analyticsDocs = [];
 
             for (let i = 0; i < 14; i++) {
@@ -117,7 +117,7 @@ describe('analytics test', () => {
             }
 
             await DailyAnalytics.insertMany(analyticsDocs);
-            date = encodeURIComponent(DateTime.now().setZone('Asia/Singapore').startOf('day').minus({ days: 3 }).toISO());
+            date = encodeURIComponent(DateTime.utc().setZone('Asia/Singapore').startOf('day').minus({ days: 3 }).toISO());
             unit = 'week';
             amount = 3;
             url = `/api/analytics/restaurant/${restaurantId}/summary?unit=${unit}&amount=${amount}`;
@@ -177,7 +177,7 @@ describe('analytics test', () => {
             restaurantId = restaurant._id;
 
             // create analytics using a loop
-            const baseDate = DateTime.now().setZone('Asia/Singapore').startOf('day').minus({ days: 13 });
+            const baseDate = DateTime.utc().setZone('Asia/Singapore').startOf('day').minus({ days: 13 });
             const analyticsDocs = [];
 
             for (let i = 0; i < 14; i++) {

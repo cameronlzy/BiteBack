@@ -9,7 +9,7 @@ export const futureDateFullOnly = Joi.string()
   .custom((value, helpers) => {
     const dt = DateTime.fromISO(value, { setZone: true });
     if (!dt.isValid) return helpers.error('any.invalid');
-    const now = DateTime.now();
+    const now = DateTime.utc();
     if (dt < now) return helpers.error('custom.date.min', { limit: now.toISO() });
     return value;
 }, 'Strict full ISO datetime validation')

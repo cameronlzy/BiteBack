@@ -140,7 +140,7 @@ export async function createPromotion(authUser, data) {
     promotion.startDate = DateTime.fromISO(data.startDate, { zone: restaurant.timezone }).toUTC().toJSDate();
     promotion.endDate = DateTime.fromISO(data.endDate, { zone: restaurant.timezone }).toUTC().toJSDate();
     if (data.timeWindow) {
-        const today = DateTime.now().setZone(restaurant.timezone).toISODate();
+        const today = DateTime.utc().setZone(restaurant.timezone).toISODate();
 
         if (data.timeWindow.startTime) {
             const dtStart = DateTime.fromISO(`${today}T${data.timeWindow.startTime}`, { zone: restaurant.timezone }).toUTC();
@@ -172,7 +172,7 @@ export async function updatePromotion(promotion, restaurant, update) {
         } else if (key === 'endDate') {
             promotion.endDate = DateTime.fromISO(update.endDate, { zone: restaurant.timezone }).toUTC().toJSDate();
         } else if (key === 'timeWindow') {
-            const today = DateTime.now().setZone(restaurant.timezone).toISODate();
+            const today = DateTime.utc().setZone(restaurant.timezone).toISODate();
 
             if (update.timeWindow.startTime) {
                 const dtStart = DateTime.fromISO(`${today}T${update.timeWindow.startTime}`, { zone: restaurant.timezone }).toUTC();

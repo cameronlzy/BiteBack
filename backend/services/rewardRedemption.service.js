@@ -96,7 +96,7 @@ export async function completeRedemption(authUser, code) {
 
     const expired = DateTime
         .fromJSDate(rewardRedemption.activatedAt)
-        .plus({ minutes: 15 }) < DateTime.now();
+        .plus({ minutes: 15 }) < DateTime.utc();
     if (expired) {
         rewardRedemption.status = 'expired';
         rewardRedemption.code = undefined;

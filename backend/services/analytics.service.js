@@ -12,7 +12,7 @@ export async function getSnapshot(restaurant) {
     const openHour = getOpeningHoursToday(restaurant);
     if (openHour === 'x') return success(null);
 
-    const now = DateTime.now().setZone(restaurant.timezone);
+    const now = DateTime.utc().setZone(restaurant.timezone);
     const today = now.startOf('day');
     const tomorrow = today.plus({ days: 1 });
     const todayUTC = today.toUTC().toJSDate();
@@ -127,7 +127,7 @@ export async function getSummary(restaurant, query) {
         return success({ type: 'single', date, aggregated: entry ?? null });
     }
 
-    const now = DateTime.now().setZone(restaurant.timezone);
+    const now = DateTime.utc().setZone(restaurant.timezone);
     const currentPattern = getCurrentOpeningPattern(restaurant);
     let start, end, groupFormat;
 
@@ -320,7 +320,7 @@ export async function getTrends(restaurant, days) {
         return JSON.parse(cached);
     }
 
-    const now = DateTime.now().setZone(restaurant.timezone);
+    const now = DateTime.utc().setZone(restaurant.timezone);
     const today = now.startOf('day');
     const todayUTC = today.toUTC();
     let end;

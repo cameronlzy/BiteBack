@@ -118,8 +118,8 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // create reservations
-            startDate1 = DateTime.now().plus({days:20}).toJSDate(); // UTC
-            startDate2 = DateTime.now().plus({weeks:4}).toJSDate(); // UTC
+            startDate1 = DateTime.utc().plus({days:20}).toJSDate(); // UTC
+            startDate2 = DateTime.utc().plus({weeks:4}).toJSDate(); // UTC
             reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
             reservation.startDate = startDate1;
             await reservation.save();
@@ -231,7 +231,7 @@ describe('reservation test', () => {
             restaurantId = restaurant._id;
 
             // setting up a reservation
-            startDate = DateTime.now().setZone('Asia/Singapore').plus({days:1}).toJSDate(); // SG time
+            startDate = DateTime.utc().setZone('Asia/Singapore').plus({days:1}).toJSDate(); // SG time
             pax = 10;
         });
 
@@ -331,7 +331,7 @@ describe('reservation test', () => {
             cookie = setTokenCookie(token); 
 
             // create a reservation
-            startDate = DateTime.now().plus({days:20}).toJSDate(); // UTC
+            startDate = DateTime.utc().plus({days:20}).toJSDate(); // UTC
             reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
             reservation.startDate = startDate;
             await reservation.save();
@@ -402,7 +402,7 @@ describe('reservation test', () => {
             reservation = createTestReservation({ customer: user.profile, restaurant: restaurantId });
             await reservation.save();
             reservationId = reservation._id;
-            newstartDate = DateTime.now().plus({days:15}).setZone('Asia/Singapore').toJSDate(); // SGT
+            newstartDate = DateTime.utc().plus({days:15}).setZone('Asia/Singapore').toJSDate(); // SGT
             newRemarks = 'a';
             newPax = 5;
         });

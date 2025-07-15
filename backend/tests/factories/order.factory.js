@@ -13,7 +13,7 @@ export function createTestOrder({
 } = {}) {
     const type = 'preorder';
     const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    const code = '123456';
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     const order = new Order({
         type, restaurant, customer, code, items, total

@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { DateTime } from 'luxon';
 import Order from '../models/order.model.js';
 import MenuItem from '../models/menuItem.model.js';
 import Restaurant from '../models/restaurant.model.js';
@@ -36,6 +37,24 @@ export async function getOrderByCode(staff, code) {
     return success(order);
 }
 
+export async function getOrderByCustomer(staff, customerId) {
+    const cutoff = DateTime.utc().minus({ hours: 1 }).toJSDate();
+
+    const order = await Order.findOne({
+        restaurant: staff.restaurant,
+        customer: customerId,
+        status: 'pending',
+        createdAt: { $gte: cutoff },
+    }).sort({ createdAt: -1 }).lean();
+
+    return success(order);
+}
+
+export async function getOrdersByRestaurant(restaurant, query) {
+    const orders = await Order.find({ restaurant: restaurant._id, status: query.status }).lean();
+    return success(orders);
+}
+
 export async function createOrder(authUser, data) {
     const restaurant = await Restaurant.findById(data.restaurant).select('preordersEnabled').lean();
     if (!restaurant) return error(404, 'Restaurant not found');
@@ -70,6 +89,19 @@ export async function createOrder(authUser, data) {
     await order.save();
     
     return success(order);
+}
+
+export async function addTableNumber(order, data) {
+    order.tableNumber = data.tableNumber;
+    order.status = 'preparing';
+    await order.save();
+    return success(data);
+}
+
+export async function updateStatus(order, data) {
+    order.status = data.status;
+    await order.save();
+    return success(data);
 }
 
 export async function updateOrder(authUser, order, update) {

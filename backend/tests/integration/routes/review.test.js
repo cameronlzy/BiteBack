@@ -64,7 +64,7 @@ describe('review test', () => {
                 customer: profile._id, restaurant: restaurantId, 
                 visits: [
                     { visitDate: new Date() },
-                    { visitDate: DateTime.now().minus({ days: 1 }).toJSDate(), reviewed: true }
+                    { visitDate: DateTime.utc().minus({ days: 1 }).toJSDate(), reviewed: true }
                 ]
             });
             await visitHistory.save();

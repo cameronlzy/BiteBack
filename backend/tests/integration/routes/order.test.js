@@ -112,6 +112,105 @@ describe('order test', () => {
         });
     });
 
+    describe('GET /api/orders/customer/:id', () => {
+        let user, profile, token, cookie;
+        let order;
+        let restaurant, staff;
+        let customer;
+
+        beforeEach(async () => {
+            await Order.deleteMany({});
+            await Restaurant.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Staff.deleteMany({});
+
+            user = await createTestUser('owner');
+            profile = createTestOwnerProfile(user);
+            user.profile = profile._id;
+            
+            restaurant = createTestRestaurant(user.profile);
+            staff = await createTestStaff(restaurant._id);
+            restaurant.staff = staff._id;
+            await staff.save();
+            await restaurant.save();
+            await profile.save();
+
+            token = staffGenerateAuthToken(staff);
+            cookie = setTokenCookie(token);
+
+            customer = new mongoose.Types.ObjectId();
+            order = createTestOrder({ restaurant: restaurant._id, customer });
+            await order.save();
+        });
+
+        const exec = () => {
+            return request(server)
+                .get(`/api/orders/customer/${customer}`)
+                .set('Cookie', [cookie]);
+        };
+        
+        it('should return 200 and the right order', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = ['type', 'restaurant', 'customer', 'code', 'items', 'total'];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body._id).toEqual(String(order._id));
+        });
+    });
+
+    describe('GET /api/orders/restaurant/:id', () => {
+        let user, profile, token, cookie;
+        let order, status;
+        let restaurant, restaurantId, staff;
+
+        beforeEach(async () => {
+            await Order.deleteMany({});
+            await Restaurant.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Staff.deleteMany({});
+
+            user = await createTestUser('owner');
+            profile = createTestOwnerProfile(user);
+            user.profile = profile._id;
+            
+            restaurant = createTestRestaurant(user.profile);
+            staff = await createTestStaff(restaurant._id);
+            restaurant.staff = staff._id;
+            await staff.save();
+            await restaurant.save();
+            await profile.save();
+
+            token = staffGenerateAuthToken(staff);
+            cookie = setTokenCookie(token);
+
+            order = createTestOrder({ restaurant: restaurant._id });
+            await order.save();
+
+            order = createTestOrder({ restaurant: restaurant._id });
+            order.status = 'preparing';
+            await order.save();
+            status = 'preparing';
+            restaurantId = restaurant._id;
+        });
+
+        const exec = () => {
+            return request(server)
+                .get(`/api/orders/restaurant/${restaurantId}?status=${status}`)
+                .set('Cookie', [cookie]);
+        };
+        
+        it('should return 200 and orders with the right status', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            res.body.forEach(order => {    
+                const requiredKeys = ['type', 'restaurant', 'customer', 'code', 'items', 'total'];
+                expect(Object.keys(order)).toEqual(expect.arrayContaining(requiredKeys));
+                expect(order.status).toEqual(status);
+            });
+            expect(res.body.length).toBe(1);
+        });
+    });
+
     describe('GET /api/orders/:id', () => {
         let user, profile, token, cookie;
         let order, orderId;
@@ -197,6 +296,120 @@ describe('order test', () => {
             expect(res.status).toBe(200);
             const requiredKeys = ['type', 'restaurant', 'customer', 'code', 'items', 'total'];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('PATCH /api/orders/:id/table', () => {
+        let user, profile, token, cookie;
+        let order, orderId, restaurant, staff;
+        let item, tableNumber;
+
+        beforeEach(async () => {
+            await Order.deleteMany({});
+            await Restaurant.deleteMany({});
+            await CustomerProfile.deleteMany({});
+            await MenuItem.deleteMany({});
+
+            user = await createTestUser('owner');
+            profile = createTestOwnerProfile(user);
+            user.profile = profile._id;
+            
+            restaurant = createTestRestaurant(user.profile);
+            staff = await createTestStaff(restaurant._id);
+            restaurant.staff = staff._id;
+            await staff.save();
+            await restaurant.save();
+            await profile.save();
+
+            token = staffGenerateAuthToken(staff);
+            cookie = setTokenCookie(token);
+
+            item = createTestMenuItem(restaurant);
+            await item.save();
+
+            order = createTestOrder({ restaurant: restaurant._id });
+            order.items = [{
+                item: item._id,
+                name: item.name,
+                price: item.price,
+                quantity: 1
+            }];
+            await order.save();
+            tableNumber = 3;
+            orderId = order._id;
+        });
+
+        const exec = () => {
+            return request(server)
+                .patch(`/api/orders/${orderId}/table`)
+                .set('Cookie', [cookie])
+                .send({
+                    tableNumber
+                });
+        };
+        
+        it('should return 200 and tableNumber', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.tableNumber).toBe(tableNumber);
+            const orderInDb = await Order.findById(orderId).select('status').lean();
+            expect(orderInDb.status).toBe('preparing');
+        });
+    });
+
+    describe('PATCH /api/orders/:id/status', () => {
+        let user, profile, token, cookie;
+        let order, orderId, restaurant, staff;
+        let item, status;
+
+        beforeEach(async () => {
+            await Order.deleteMany({});
+            await Restaurant.deleteMany({});
+            await CustomerProfile.deleteMany({});
+            await MenuItem.deleteMany({});
+
+            user = await createTestUser('owner');
+            profile = createTestOwnerProfile(user);
+            user.profile = profile._id;
+            
+            restaurant = createTestRestaurant(user.profile);
+            staff = await createTestStaff(restaurant._id);
+            restaurant.staff = staff._id;
+            await staff.save();
+            await restaurant.save();
+            await profile.save();
+
+            token = staffGenerateAuthToken(staff);
+            cookie = setTokenCookie(token);
+
+            item = createTestMenuItem(restaurant);
+            await item.save();
+
+            order = createTestOrder({ restaurant: restaurant._id });
+            order.items = [{
+                item: item._id,
+                name: item.name,
+                price: item.price,
+                quantity: 1
+            }];
+            await order.save();
+            status = 'completed';
+            orderId = order._id;
+        });
+
+        const exec = () => {
+            return request(server)
+                .patch(`/api/orders/${orderId}/status`)
+                .set('Cookie', [cookie])
+                .send({
+                    status
+                });
+        };
+        
+        it('should return 200 and updated status', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.status).toBe(status);
         });
     });
 

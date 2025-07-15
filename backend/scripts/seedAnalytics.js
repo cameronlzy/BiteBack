@@ -109,7 +109,7 @@ async function seedAnalytics(days, restaurantIdArg, timezone) {
 
     const customers = (await CustomerProfile.find().select('_id').lean()).map(c => c._id);
 
-    const today = DateTime.now().setZone(timezone).startOf('day').toUTC();
+    const today = DateTime.utc().setZone(timezone).startOf('day').toUTC();
     const analyticsData = [];
 
     let prevEntry = {

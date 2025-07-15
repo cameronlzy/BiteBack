@@ -146,7 +146,7 @@ export async function processEndOfDay(nowSGT) {
 }
 
 export async function cleanupPastReservations(restaurant, session) {
-    const now = DateTime.now().setZone(restaurant.timezone);
+    const now = DateTime.utc().setZone(restaurant.timezone);
     const nowUTC = now.toUTC().toJSDate();
 
     await Reservation.deleteMany({
@@ -156,7 +156,7 @@ export async function cleanupPastReservations(restaurant, session) {
 }
 
 export async function generateAnalytics(restaurant, session) {
-    const today = DateTime.now().setZone(restaurant.timezone).startOf('day');
+    const today = DateTime.utc().setZone(restaurant.timezone).startOf('day');
     const tomorrow = today.plus({ days: 1 });
     const todayUTC = today.toUTC().toJSDate();
     const tomorrowUTC = tomorrow.toUTC().toJSDate();

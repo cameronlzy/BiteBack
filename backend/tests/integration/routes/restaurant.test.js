@@ -421,8 +421,8 @@ describe('restaurant test', () => {
 
             visitHistory = createTestVisitHistory(restaurant._id, user.profile);
             visitHistory.visits = [
-                { visitDate: DateTime.now().minus({ days: 1 }).toJSDate(), reviewed: false },
-                { visitDate: DateTime.now().toJSDate(), reviewed: false }
+                { visitDate: DateTime.utc().minus({ days: 1 }).toJSDate(), reviewed: false },
+                { visitDate: DateTime.utc().toJSDate(), reviewed: false }
             ];
             await visitHistory.save();
         });
