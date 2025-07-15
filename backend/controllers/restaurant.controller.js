@@ -1,8 +1,8 @@
 import * as restaurantService from '../services/restaurant.service.js';
 import * as imageService from '../services/image.service.js';
 import Restaurant from '../models/restaurant.model.js';
-import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch, validateEventQuery } from '../validators/restaurant.validator.js';
-import Joi from 'joi';
+import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch, validateEventQuery, validatePreordersToggle } from '../validators/restaurant.validator.js';
+import Joi from '../validators/joi.js';
 import { dateFullOnly } from '../helpers/time.helper.js';
 import { wrapError } from '../helpers/response.js';
 
@@ -102,6 +102,14 @@ export async function updateRestaurantImages(req, res) {
     const { status, body } = await restaurantService.updateRestaurantImages(req.restaurant, value.images);
     return res.status(status).json(body);
 };
+
+export async function togglePreorders(req, res) {
+    const { error, value } = validatePreordersToggle(req.body);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+    const { status, body } = await restaurantService.togglePreorders(req.restaurant, value);
+    return res.status(status).json(body);
+}
 
 export async function updateRestaurant(req, res) {
     // validate request

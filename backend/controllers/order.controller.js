@@ -1,10 +1,9 @@
 import * as orderService from '../services/order.service.js';
-import { validateCode, validateOrder, validatePatch } from '../validators/order.validator.js';
-import validatePagination from '../validators/pagination.validator.js';
+import { validateHistory, validateCode, validateOrder, validatePatch } from '../validators/order.validator.js';
 import { wrapError } from '../helpers/response.js';
 
 export async function getOrdersByCustomer(req, res) {
-    const { error, value } = validatePagination(req.query);
+    const { error, value } = validateHistory(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
     const { status, body } = await orderService.getOrdersByCustomer(req.user, value);

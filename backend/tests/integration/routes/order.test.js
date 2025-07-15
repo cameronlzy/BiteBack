@@ -164,7 +164,8 @@ describe('order test', () => {
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
 
-            restaurant = new mongoose.Types.ObjectId();
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
 
             item = createTestMenuItem(restaurant);
             await item.save();
@@ -180,9 +181,16 @@ describe('order test', () => {
                 .post('/api/orders')
                 .set('Cookie', [cookie])
                 .send({
-                    type, items, restaurant
+                    type, items, restaurant: restaurant._id
                 });
         };
+
+        it('should return 400 if preorders not enabled', async () => {
+            restaurant.preordersEnabled = false;
+            await restaurant.save();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
         
         it('should return 200 and new order', async () => {
             const res = await exec();

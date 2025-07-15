@@ -14,6 +14,7 @@ export function createTestRestaurant(owner = new mongoose.Types.ObjectId()) {
     let maxCapacity = 50;
     let location = { type: 'Point', coordinates: [103.856895, 1.306698]};
     let tags = ['Live Music'];
+    let preordersEnabled = true;
     return new Restaurant({
         owner,
         name: restaurantName,
@@ -23,6 +24,6 @@ export function createTestRestaurant(owner = new mongoose.Types.ObjectId()) {
         openingHours,
         maxCapacity,
         email: restaurantEmail,
-        website, location, tags
+        website, location, tags, preordersEnabled
     });
 }

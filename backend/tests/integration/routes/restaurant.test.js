@@ -805,6 +805,48 @@ describe('restaurant test', () => {
         });
     });
 
+    describe('PATCH /api/restaurants/:id/preorders-enabled', () => {
+        let restaurant;
+        let restaurantId;
+        let token;
+        let owner;
+        let cookie;
+        let preordersEnabled;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            
+            // create an owner
+            owner = await createTestUser('owner');
+            await owner.save();
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(owner.profile);
+            await restaurant.save();
+            restaurantId = restaurant._id;
+            preordersEnabled = false;
+        });
+
+        const exec = () => {
+            return request(server)
+            .patch(`/api/restaurants/${restaurantId}/preorders-enabled`)
+            .set('Cookie', [cookie])
+            .send({
+                preordersEnabled
+            });
+        };
+
+        it('should return 200', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.preordersEnabled).toEqual(preordersEnabled);
+            const restaurantInDb = await Restaurant.findById(restaurant._id).select('preordersEnabled').lean();
+            expect(restaurantInDb.preordersEnabled).toBe(preordersEnabled);
+        });
+    });
+
     describe('PATCH /api/restaurants/:id', () => {
         let restaurant;
         let restaurantId;

@@ -334,6 +334,12 @@ export async function updateRestaurant(restaurant, update) {
   return success(restaurant.toObject());
 }
 
+export async function togglePreorders(restaurant, data) {
+  restaurant.preordersEnabled = data.preordersEnabled;
+  await restaurant.save();
+  return success(data);
+}
+
 export async function deleteRestaurant(restaurant, authUser) {
   return await withTransaction(async (session) => {
     // get ownerProfile 

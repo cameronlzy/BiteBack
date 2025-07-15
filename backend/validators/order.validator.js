@@ -1,4 +1,5 @@
 import Joi from './joi.js';
+import { paginationSchema } from './pagination.validator.js';
 
 const itemsSchema = Joi.array().items(
     Joi.object({
@@ -6,6 +7,13 @@ const itemsSchema = Joi.array().items(
         quantity: Joi.number().integer().min(1).required()
     })
 ).min(1);
+
+export function validateHistory(query) {
+    const schema = paginationSchema.keys({
+        restaurantId: Joi.objectId().optional()
+    });
+    return schema.validate(query);
+}
 
 export function validateCode(code) {
     const schema = Joi.object({

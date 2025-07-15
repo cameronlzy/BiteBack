@@ -1,19 +1,23 @@
 import _ from 'lodash';
 import Order from '../models/order.model.js';
 import MenuItem from '../models/menuItem.model.js';
+import Restaurant from '../models/restaurant.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
 import { success, error } from '../helpers/response.js';
 
 export async function getOrdersByCustomer(authUser, query) {
-    const { page, limit } = query;
+    const { page, limit, restaurantId } = query;
     const skip = (page - 1) * limit;
 
     const customer = await CustomerProfile.exists({ _id: authUser.profile });
     if (!customer) return error(404, 'Customer profile not found');
 
+    const filter = { customer: authUser.profile };
+    if (restaurantId) filter.restaurant = restaurantId;
+
     const [orders, total] = await Promise.all([
-        Order.find({ customer: authUser.profile }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
-        Order.countDocuments({ customer: authUser.profile }),
+        Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+        Order.countDocuments(filter),
     ]);
 
     return success({
@@ -33,6 +37,10 @@ export async function getOrderByCode(staff, code) {
 }
 
 export async function createOrder(authUser, data) {
+    const restaurant = await Restaurant.findById(data.restaurant).select('preordersEnabled').lean();
+    if (!restaurant) return error(404, 'Restaurant not found');
+    if (!restaurant.preordersEnabled) return error(400, 'Preorders are currently disabled for this restaurant');
+
     const order = new Order(_.pick(data, ['type', 'restaurant']));
     order.customer = authUser.profile;
 

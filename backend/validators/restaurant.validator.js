@@ -160,3 +160,10 @@ export function validateEventQuery(query) {
   });
   return schema.validate(query);
 }
+
+export function validatePreordersToggle(toggle) {
+  const schema = Joi.object({
+    preordersEnabled: Joi.boolean().required()
+  });
+  return schema.validate(toggle);
+}
