@@ -15,7 +15,6 @@ const eventSchema = new mongoose.Schema({
     bannerImage: { type: String },
     remarks: {
         type: String,
-        default: undefined,
         validate: {
             validator: function (value) {
                 if (value == null) return true;

@@ -68,7 +68,7 @@ describe('menu item test', () => {
             expect(res.body.length).toBe(2);
         });
 
-        it.skip('should return 200 and menu items for non-owner', async () => {
+        it('should return 200 and menu items for non-owner', async () => {
             const res = await request(server)
                 .get(`/api/menu/restaurant/${restaurantId}`);
             expect(res.status).toBe(200);

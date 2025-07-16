@@ -4,7 +4,8 @@ import { paginationSchema } from './pagination.validator.js';
 const itemsSchema = Joi.array().items(
     Joi.object({
         item: Joi.objectId().required(),
-        quantity: Joi.number().integer().min(1).required()
+        quantity: Joi.number().integer().min(1).required(),
+        remarks: Joi.string(),
     })
 ).min(1);
 
@@ -34,7 +35,11 @@ export function validateOrder(order) {
 export function validatePatch(patch) {
     const schema = Joi.object({
         add: itemsSchema,
-        update: itemsSchema,
+        update: Joi.array().items(Joi.object({
+            _id: Joi.objectId().required(),
+            quantity: Joi.number().integer().min(1),
+            remarks: Joi.string(),
+        })),
         remove: Joi.array().items(Joi.objectId()),
     }).min(1);
     return schema.validate(patch);

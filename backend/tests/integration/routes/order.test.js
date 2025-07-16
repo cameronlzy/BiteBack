@@ -416,7 +416,7 @@ describe('order test', () => {
     describe('PATCH /api/orders/:id', () => {
         let user, profile, token, cookie;
         let order, orderId, restaurant;
-        let item;
+        let item, entryId;
 
         beforeEach(async () => {
             await Order.deleteMany({});
@@ -437,8 +437,10 @@ describe('order test', () => {
             item = createTestMenuItem(restaurant);
             await item.save();
 
+            entryId = new mongoose.Types.ObjectId();
             order = createTestOrder({ customer: user.profile });
             order.items = [{
+                _id: entryId,
                 item: item._id,
                 name: item.name,
                 price: item.price,
@@ -453,7 +455,7 @@ describe('order test', () => {
                 .patch(`/api/orders/${orderId}`)
                 .set('Cookie', [cookie])
                 .send({
-                    update: [{ item: item._id, quantity: 5 }]
+                    update: [{ _id: entryId, quantity: 5 }]
                 });
         };
         

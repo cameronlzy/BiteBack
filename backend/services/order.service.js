@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
 import Order from '../models/order.model.js';
 import MenuItem from '../models/menuItem.model.js';
@@ -70,7 +71,7 @@ export async function createOrder(authUser, data) {
     const itemSnapshot = [];
     let total = 0;
 
-    for (const { item: itemId, quantity } of data.items) {
+    for (const { item: itemId, quantity, remarks } of data.items) {
         const menuItem = menuItemMap[itemId.toString()];
         if (!menuItem) return error(404, `MenuItem not found: ${itemId}`);
 
@@ -78,7 +79,8 @@ export async function createOrder(authUser, data) {
             item: menuItem._id,
             name: menuItem.name,
             price: menuItem.price,
-            quantity
+            quantity,
+            ...(remarks ? { remarks } : {})
         });
 
         total += menuItem.price * quantity;
@@ -104,22 +106,23 @@ export async function updateStatus(order, data) {
     return success(data);
 }
 
-export async function updateOrder(authUser, order, update) {
-    if (order.status === 'completed') return error(400, 'Order cannot be modified');
+export async function updateOrder(order, update) {
+    if (order.status !== 'pending') return error(400, 'Order cannot be modified');
 
-    const itemMap = new Map(order.items.map(i => [i.item.toString(), i]));
+    const itemMap = new Map(order.items.map(i => [i._id.toString(), i]));
 
     if (Array.isArray(update.remove)) {
-        for (const itemId of update.remove) {
-            itemMap.delete(itemId.toString());
+        for (const entryId of update.remove) {
+            itemMap.delete(entryId.toString());
         }
     }
 
     if (Array.isArray(update.update)) {
-        for (const { item, quantity } of update.update) {
-            const entry = itemMap.get(item.toString());
-            if (!entry) return error(404, `Item not found in order: ${item}`);
-            entry.quantity = quantity;
+        for (const { _id, quantity, remarks } of update.update) {
+            const entry = itemMap.get(_id.toString());
+            if (!entry) return error(404, `Item not found in order: ${_id}`);
+            if (quantity !== undefined) entry.quantity = quantity;
+            if (remarks !== undefined) entry.remarks = remarks;
         }
     }
 
@@ -128,27 +131,34 @@ export async function updateOrder(authUser, order, update) {
         const menuItems = await MenuItem.find({ _id: { $in: newItemIds } }).lean();
         const menuMap = Object.fromEntries(menuItems.map(i => [i._id.toString(), i]));
 
-        for (const { item, quantity } of update.add) {
-            const id = item.toString();
-            if (itemMap.has(id)) return error(400, `Item already exists in order: ${id}`);
-            const menuItem = menuMap[id];
-            if (!menuItem) return error(404, `MenuItem not found: ${id}`);
+        for (const { item, quantity, remarks } of update.add) {
+            const menuItemId = item.toString();
 
-            itemMap.set(id, {
+            const duplicate = Array.from(itemMap.values()).some(i => i.item.toString() === menuItemId);
+            if (duplicate) return error(400, `Item already exists in order: ${menuItemId}`);
+
+            const menuItem = menuMap[menuItemId];
+            if (!menuItem) return error(404, `MenuItem not found: ${menuItemId}`);
+
+            const newEntryId = new mongoose.Types.ObjectId();
+            const newEntry = {
+                _id: newEntryId,
                 item: menuItem._id,
                 name: menuItem.name,
                 price: menuItem.price,
                 quantity,
-            });
+                ...(remarks !== undefined ? { remarks } : {})
+            };
+
+            itemMap.set(newEntryId.toString(), newEntry);
         }
     }
 
     const newItems = Array.from(itemMap.values());
     if (newItems.length === 0) return error(400, 'Order must contain at least one item');
-    const newTotal = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
     order.items = newItems;
-    order.total = newTotal;
+    order.total = newItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
     await order.save();
 
     return success(order);

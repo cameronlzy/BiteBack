@@ -63,6 +63,6 @@ export async function updateOrder(req, res) {
     const { error, value } = validatePatch(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await orderService.updateOrder(req.user, req.order, value);
+    const { status, body } = await orderService.updateOrder(req.order, value);
     return res.status(status).json(body);
 }
