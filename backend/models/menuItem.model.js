@@ -11,7 +11,8 @@ const menuItemSchema = new mongoose.Schema({
     price: { type: Number, required: true },
     image: { type: String },
     category: { type: String },
-    isAvailable: { type: Boolean, default: true },
+    isAvailable: { type: Boolean, default: true }, // owner managed
+    isInStock: { type: Boolean, default: true }, // temp, staff managed
 }, { timestamps: true, versionKey: false });
 
 menuItemSchema.index({ restaurant: 1 });

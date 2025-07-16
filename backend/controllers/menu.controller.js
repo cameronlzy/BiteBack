@@ -1,15 +1,11 @@
 import * as menuService from '../services/menu.service.js';
 import MenuItem from '../models/menuItem.model.js';
-import { validateItem, validatePatch } from '../validators/menu.validator.js';
+import { validateItem, validatePatch, validateInStock } from '../validators/menu.validator.js';
 import { addImage, deleteImagesFromDocument } from '../services/image.service.js';
-import validatePagination from '../validators/pagination.validator.js';
 import { wrapError } from '../helpers/response.js';
 
 export async function getAllItems(req, res) {
-    const { error, value } = validatePagination(req.query);
-    if (error) return res.status(400).json(wrapError(error.details[0].message));
-
-    const { status, body } = await menuService.getAllItems(req.params.id, value);
+    const { status, body } = await menuService.getAllItems(req.params.id, req.user);
     return res.status(status).json(body);
 }
 
@@ -40,6 +36,14 @@ export async function updateItemImage(req, res) {
     
     const { status, body } = await addImage(MenuItem, item._id, image, 'image');
     return res.status(status).json({ image: body.image });
+}
+
+export async function toggleInStock(req, res) {
+    const { error, value } = validateInStock(req.body);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+    const { status, body } = await menuService.toggleInStock(value, req.menuItem);
+    return res.status(status).json(body);
 }
 
 export async function updateItem(req, res) {

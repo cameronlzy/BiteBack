@@ -21,3 +21,10 @@ export function validatePatch(patch) {
     }).min(1);
     return schema.validate(patch);
 }
+
+export function validateInStock(stock) {
+    const schema = Joi.object({
+        isInStock: Joi.boolean().required(),
+    });
+    return schema.validate(stock);
+}

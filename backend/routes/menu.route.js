@@ -2,17 +2,20 @@ import express from 'express';
 import * as menuController from '../controllers/menu.controller.js';
 import auth from '../middleware/auth.js';
 import isOwner from '../middleware/isOwner.js';
+import isStaff from '../middleware/isStaff.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
 import validateObjectId from '../middleware/validateObjectId.js';
 import authorizedMenuItemOwner from '../middleware/authorizedMenuItemOwner.js';
+import authorizedMenuItemStaff from '../middleware/authorizedMenuItemStaff.js';
 import parser from '../middleware/cloudinaryUpload.js';
+import optionalAuth from '../middleware/optionalAuth.js';
 
 const router = wrapRoutes(express.Router());
 
 const menuParser = parser('menus');
 
 // [Public] - Get all shop items for restaurant
-router.get('/restaurant/:id', [validateObjectId()], menuController.getAllItems);
+router.get('/restaurant/:id', [validateObjectId(), optionalAuth], menuController.getAllItems);
 
 // [Public] - Get menu item by ID
 router.get('/:id', [validateObjectId()], menuController.getItemById);
@@ -25,6 +28,9 @@ router.post('/:id/image', [validateObjectId(), auth, isOwner, authorizedMenuItem
 
 // [Owner] - Update menuItem image
 router.patch('/:id/image', [validateObjectId(), auth, isOwner, authorizedMenuItemOwner, menuParser.single('image')], menuController.updateItemImage);
+
+// [Staff] - Toggle menuItem isInStock
+router.patch('/:id/in-stock', [validateObjectId(), auth, isStaff, authorizedMenuItemStaff], menuController.toggleInStock);
 
 // [Owner] - Update menu item
 router.patch('/:id', [validateObjectId(), auth, isOwner, authorizedMenuItemOwner], menuController.updateItem);

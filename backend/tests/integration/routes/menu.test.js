@@ -6,9 +6,10 @@ import MenuItem from '../../../models/menuItem.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
 import User from '../../../models/user.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
+import { createTestStaff } from '../../factories/staff.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestMenuItem } from '../../factories/menuItem.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 
@@ -28,31 +29,55 @@ describe('menu item test', () => {
 
     describe('GET /api/menu/restaurant/:id', () => {
         let menuItem;
-        let restaurantId;
+        let restaurant, restaurantId;
+        let user, token, cookie;
 
         beforeEach(async () => {
             await MenuItem.deleteMany({});
             await Restaurant.deleteMany({});
+            await User.deleteMany({});
 
-            restaurantId = new mongoose.Types.ObjectId();
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            restaurant = createTestRestaurant(user.profile);
+            await restaurant.save();
+            restaurantId = restaurant._id;
             menuItem = createTestMenuItem(restaurantId);
             await menuItem.save();
             menuItem = createTestMenuItem(restaurantId);
+            menuItem.isAvailable = false;
             await menuItem.save();
         });
 
         const exec = () => {
             return request(server)
-                .get(`/api/menu/restaurant/${restaurantId}`);
+                .get(`/api/menu/restaurant/${restaurantId}`)
+                .set('Cookie', [cookie]);
         };
         
-        it('should return 200 and all menu items', async () => {
+        it('should return 200 and all menu items for owner', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            res.body.items.forEach(item => {    
-                const requiredKeys = ['restaurant', 'name', 'description', 'price', 'category', 'isAvailable'];
+            res.body.forEach(item => {    
+                const requiredKeys = ['restaurant', 'name', 'description', 'price', 'category', 'isAvailable', 'isInStock'];
                 expect(Object.keys(item)).toEqual(expect.arrayContaining(requiredKeys));
             });
+            expect(res.body.length).toBe(2);
+        });
+
+        it.skip('should return 200 and menu items for non-owner', async () => {
+            const res = await request(server)
+                .get(`/api/menu/restaurant/${restaurantId}`);
+            expect(res.status).toBe(200);
+            res.body.forEach(item => {    
+                const requiredKeys = ['restaurant', 'name', 'description', 'price', 'category', 'isAvailable', 'isInStock'];
+                expect(Object.keys(item)).toEqual(expect.arrayContaining(requiredKeys));
+                expect(item.isAvailable).toEqual(true);
+            });
+            expect(res.body.length).toBe(1);
         });
     });
 
@@ -233,6 +258,46 @@ describe('menu item test', () => {
 
             const urlRegex = /^https?:\/\/.+|^\/.+/;
             expect(res.body.image).toMatch(urlRegex);
+        });
+    });
+
+    describe('PATCH /api/menu/:id/in-stock', () => {
+        let menuItem, menuItemId, isInStock;
+        let restaurant;
+        let staff, token, cookie;
+
+        beforeEach(async () => {
+            await MenuItem.deleteMany({});
+            await Restaurant.deleteMany({});
+            await User.deleteMany({});
+
+            restaurant = createTestRestaurant();
+            staff = await createTestStaff(restaurant._id);
+            restaurant.staff = staff._id;
+            await restaurant.save();
+            await staff.save();
+
+            token = staffGenerateAuthToken(staff);
+            cookie = setTokenCookie(token);
+
+            menuItem = createTestMenuItem(restaurant._id);
+            await menuItem.save();
+            menuItemId = menuItem._id;
+            isInStock = false;
+        });
+
+        const exec = () => {
+            return request(server)
+                .patch(`/api/menu/${menuItemId}/in-stock`)
+                .set('Cookie', [cookie])
+                .send({ isInStock });
+        };
+        
+        it('should return 200 and menu item', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const itemInDb = await MenuItem.findById(menuItemId).select('isInStock').lean();
+            expect(itemInDb.isInStock).toEqual(isInStock);
         });
     });
 

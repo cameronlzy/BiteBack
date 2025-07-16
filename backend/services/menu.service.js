@@ -3,22 +3,18 @@ import { error, success } from '../helpers/response.js';
 import MenuItem from '../models/menuItem.model.js';
 import Restaurant from '../models/restaurant.model.js';
 
-export async function getAllItems(restaurant, query) {
-    const { page, limit } = query;
-    const skip = (page - 1) * limit;
+export async function getAllItems(restaurantId, authUser) {
+    const restaurant = await Restaurant.findById(restaurantId).select('_id owner').lean();
+    if (!restaurant) return error(404, 'Restaurant not found');
+    const isOwner = authUser?.role === 'owner' && authUser?.profile?.toString() === restaurant.owner.toString();
 
-    const [items, total] = await Promise.all([
-        MenuItem.find({ restaurant, isAvailable: true }).sort({ category : 1 }).skip(skip).limit(limit).lean(),
-        MenuItem.countDocuments({ restaurant, isAvailable: true }),
-    ]);
+    const filter = { restaurant: restaurantId };
+    if (!isOwner) {
+        filter.isAvailable = true;
+    }
 
-    return success({
-        items,
-        page,
-        limit,
-        totalCount: total,
-        totalPages: Math.ceil(total / limit)
-    });
+    const items = await MenuItem.find(filter).sort({ category: 1, name: 1 }).lean();
+    return success(items);
 }
 
 export async function getItemById(itemId) {
@@ -35,6 +31,12 @@ export async function createItem(data) {
     await menuItem.save();
 
     return success(menuItem);
+}
+
+export async function toggleInStock(data, menuItem) {
+    menuItem.isInStock = data.isInStock;
+    await menuItem.save();
+    return success(data);
 }
 
 export async function updateItem(update, menuItem) {
