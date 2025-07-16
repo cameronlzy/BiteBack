@@ -102,6 +102,7 @@ export async function addTableNumber(order, data) {
 
 export async function updateStatus(order, data) {
     order.status = data.status;
+    if (data.status === 'completed') order.code = undefined;
     await order.save();
     return success(data);
 }

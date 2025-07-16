@@ -19,8 +19,7 @@ const OrderSchema = new mongoose.Schema({
     },
     code: {
         type: String,
-        match: /^\d{6}$/,
-        required: true,
+        match: /^\d{6}$/
     },
     items: [{
         item: {

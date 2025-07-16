@@ -14,7 +14,7 @@ export function registerEndOfDayJobs(timezone = 'Asia/Singapore') {
         });
     }, { timezone });
 
-    // runs every minute, backfills review analytics at the end of the day
+    // backfills review analytics at the end of the day
     cron.schedule('59 23 * * *', async () => {
         const runDate = DateTime.utc().setZone(timezone).startOf('day');
         await runJob('EndOfDayBackfill', async () => {

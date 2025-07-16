@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
 import RewardRedemption from '../../models/rewardRedemption.model.js';
+import Order from '../../models/order.model.js';
 
 export async function expireStaleRedemptions() {
     const fifteenMinsAgo = DateTime.utc().minus({ minutes: 15 }).toJSDate();
@@ -11,6 +12,23 @@ export async function expireStaleRedemptions() {
         },
         {
             $set: { status: 'expired' },
+            $unset: { code: '' },
+        }
+    );
+
+    return result.modifiedCount ?? 0;
+}
+
+export async function cancelStaleOrders() {
+    const thirtyMinsAgo = DateTime.utc().minus({ minutes: 30 }).toJSDate();
+
+    const result = await Order.updateMany(
+        {
+            status: 'pending',
+            createdAt: { $lte: thirtyMinsAgo },
+        },
+        {
+            $set: { status: 'cancelled' },
             $unset: { code: '' },
         }
     );

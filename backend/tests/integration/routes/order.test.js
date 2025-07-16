@@ -410,6 +410,9 @@ describe('order test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             expect(res.body.status).toBe(status);
+            const orderInDb = await Order.findById(orderId).select('status code').lean();
+            expect(orderInDb.status).toBe(status);
+            expect(orderInDb.code).toBe(undefined);
         });
     });
 
