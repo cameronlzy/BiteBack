@@ -22,7 +22,7 @@ import LoadingSpinner from "../common/LoadingSpinner"
 const RestaurantMenu = ({ user }) => {
   const [menuItems, setMenuItems] = useState([])
   const [currentItemShown, setCurrentItemShown] = useState(null)
-  const [loadingMenu, setLoadingMenu] = useState(true)
+  const [loadingMenu, setLoadingMenu] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [restaurant, setRestaurant] = useState(null)
   const [editingOrder, setEditingOrder] = useState(false)
