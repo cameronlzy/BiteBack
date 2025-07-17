@@ -4,6 +4,7 @@ import CustomDay from "@/components/common/CustomDay"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import { getOwnerPromotions } from "@/services/promotionService"
 import { Button } from "@/components/ui/button"
+import { toast } from "react-toastify"
 
 const CalendarOwnerPromotions = ({ user }) => {
   const [promotions, setPromotions] = useState([])
@@ -21,8 +22,9 @@ const CalendarOwnerPromotions = ({ user }) => {
           status: showUpcoming ? "upcoming" : "past",
         })
         setPromotions(res.promotions || [])
-      } catch (err) {
-        console.error("Failed to load promotions:", err)
+      } catch (ex) {
+        toast.error("Failed to load promotions")
+        throw ex
       } finally {
         setLoading(false)
       }

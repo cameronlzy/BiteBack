@@ -6,9 +6,9 @@ import LoadingSpinner from "@/components/common/LoadingSpinner"
 import { useConfirm } from "@/components/common/ConfirmProvider"
 import { getEventById, deleteEvent, saveEvent } from "@/services/eventService"
 import { getCustomerVisitCount } from "@/services/restaurantService"
-import { ownedByUserWithId, userIsOwner } from "@/utils/ownerCheck"
+import { ownedByUserWithId } from "@/utils/ownerCheck"
 import { getRestaurant } from "@/services/restaurantService"
-import RestaurantRelatedItemUI from "../common/RestaurantRelatedUI"
+import RestaurantRelatedItemUI from "../common/RestaurantRelatedItemUI"
 import { AlertTriangle, CalendarPlus } from "lucide-react"
 import JoinEventForm from "./JoinEventForm"
 import { hasItemStarted } from "@/utils/timeConverter"
@@ -26,9 +26,7 @@ const EventPage = ({ user }) => {
   const { eventId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const [normalisedFrom, setNormalisedFrom] = useState(
-    location.state?.from || "/restaurants"
-  )
+  const from = location.state?.from || "/restaurants"
 
   useEffect(() => {
     const fetchEventAndRestaurant = async () => {
@@ -89,21 +87,9 @@ const EventPage = ({ user }) => {
   }, [event, restaurant, user])
 
   useEffect(() => {
-    if (
-      normalisedFrom.startsWith("/events") ||
-      (normalisedFrom.startsWith("/restaurants") && event?.restaurant)
-    ) {
-      const segments = normalisedFrom.split("/")
-      const eventEditString = segments[2]
-      if (eventEditString === "edit" || eventEditString === event?.restaurant) {
-        setNormalisedFrom(
-          userIsOwner(user) ? "/owner/events-promos" : "/events"
-        )
-      }
-    }
     const isOwnedByUserCheck = ownedByUserWithId(event?.restaurant, user)
     setIsOwnedByUser(isOwnedByUserCheck)
-  }, [event, normalisedFrom, user])
+  }, [event, user])
 
   const handleToggleCancel = async () => {
     if (event && DateTime.fromISO(event.startDate) < DateTime.now()) {
@@ -183,7 +169,7 @@ const EventPage = ({ user }) => {
     return (
       <div className="text-center text-lg text-gray-500 mt-10">
         <div className="mt-4">
-          <BackButton from={normalisedFrom} />
+          <BackButton from={from} />
         </div>
         Reward not found.
       </div>
@@ -210,7 +196,7 @@ const EventPage = ({ user }) => {
       type="Event"
       item={event}
       restaurant={restaurant}
-      from={normalisedFrom}
+      from={from}
       title={title}
       image={mainImage}
       description={description}

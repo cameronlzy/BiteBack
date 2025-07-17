@@ -17,7 +17,7 @@ import {
 import { AlertTriangle, Clock } from "lucide-react"
 import { toast } from "react-toastify"
 import { ownedByUser } from "@/utils/ownerCheck"
-import RestaurantRelatedItemUI from "../common/RestaurantRelatedUI"
+import RestaurantRelatedItemUI from "../common/RestaurantRelatedItemUI"
 
 const PromotionPage = ({ user }) => {
   const [promotion, setPromotion] = useState(null)
@@ -27,33 +27,12 @@ const PromotionPage = ({ user }) => {
   const { promotionId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const [normalisedFrom, setNormalisedFrom] = useState(
-    location.state?.from || "/promotions"
-  )
+  const from = location.state?.from || "/promotions"
 
   useEffect(() => {
-    if (
-      normalisedFrom.startsWith("/restaurants/") &&
-      promotion?.restaurant?._id
-    ) {
-      const segments = normalisedFrom.split("/")
-      const maybeRestaurantId = segments[2]
-      if (maybeRestaurantId === promotion?.restaurant?._id) {
-        setNormalisedFrom("/promotions")
-      }
-    } else if (
-      normalisedFrom.startsWith("/promotions/edit/") &&
-      promotion?._id
-    ) {
-      const segments = normalisedFrom.split("/")
-      const maybePromotionId = segments[3]
-      if (maybePromotionId === promotion._id) {
-        setNormalisedFrom("/promotions")
-      }
-    }
     const result = ownedByUser(promotion?.restaurant, user)
     setIsOwnedByUser(result)
-  }, [promotion, normalisedFrom, user])
+  }, [promotion, user])
 
   useEffect(() => {
     const fetchPromotion = async () => {
@@ -150,7 +129,7 @@ const PromotionPage = ({ user }) => {
     <RestaurantRelatedItemUI
       type="Promotion"
       restaurant={restaurant}
-      from={normalisedFrom}
+      from={from}
       title={title}
       description={description}
       image={mainImage}

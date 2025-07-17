@@ -141,8 +141,9 @@ const EventForm = ({ user }) => {
       try {
         const res = await getRestaurant(selectedRestaurantId)
         setRestaurant(res)
-      } catch (err) {
-        console.error("Failed to fetch restaurant:", err)
+      } catch (ex) {
+        toast.error("Failed to fetch restaurant")
+        throw ex
       }
     }
 

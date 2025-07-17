@@ -34,9 +34,9 @@ const OwnerStatistics = ({ user }) => {
         })
       )
       setData(snapshots)
-    } catch (err) {
-      console.error(err)
+    } catch (ex) {
       toast.error("Failed to load statistics")
+      throw ex
     } finally {
       setLoading(false)
     }

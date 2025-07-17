@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import RoundedActionButton from "@/components/common/RoundedActionButton"
-import { Eye, Users, Store } from "lucide-react"
+import { Eye, Users, Store, Utensils } from "lucide-react"
 
 const RestaurantsDashboard = ({ user }) => {
   const [restaurants, setRestaurants] = useState([])
@@ -60,6 +60,17 @@ const RestaurantsDashboard = ({ user }) => {
                         bgColor="bg-indigo-600"
                         hoverColor="hover:bg-indigo-700"
                         expandedWidth="group-hover:w-[110px]"
+                      />
+                    </div>
+                    <div className="group">
+                      <RoundedActionButton
+                        to={`/pre-order/${res._id}`}
+                        icon={Utensils}
+                        label="Menu"
+                        bgColor="bg-green-700"
+                        hoverColor="hover:bg-green-800"
+                        textColor="text-white"
+                        expandedWidth="group-hover:w-[90px]"
                       />
                     </div>
                   </div>

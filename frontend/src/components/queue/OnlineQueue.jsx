@@ -20,6 +20,7 @@ import LoadingSpinner from "../common/LoadingSpinner"
 import BackButton from "../common/BackButton"
 import QueueStatus from "./QueueStatus"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
+import { userIsOwner } from "@/utils/ownerCheck"
 
 const queueNumToThousand = (queueNumber, pax) => {
   if (pax > 0 && pax <= 2) {
@@ -41,7 +42,10 @@ const OnlineQueue = ({ user }) => {
   const { restaurantId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = location.state?.from || `/restaurants/${restaurantId}`
+  const from =
+    location.state?.from || userIsOwner(user)
+      ? "/restaurants"
+      : `/restaurants/${restaurantId}`
 
   useEffect(() => {
     async function fetchRestaurantandQueue() {

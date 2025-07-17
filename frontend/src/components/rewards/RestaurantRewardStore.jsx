@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "react-toastify"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import { getRestaurant } from "@/services/restaurantService"
-import { ownedByUser } from "@/utils/ownerCheck"
+import { ownedByUser, userIsOwner } from "@/utils/ownerCheck"
 import CustomerPoints from "./CustomerPoints"
 import Pagination from "../common/Pagination"
 import BackButton from "../common/BackButton"
@@ -32,18 +32,10 @@ const RestaurantRewardStore = ({ user }) => {
   const page = parseInt(searchParams.get("page")) || 1
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
-  const [normalisedFrom, setNormalisedFrom] = useState(
-    location.state?.from || `/restaurants/${restaurantId}`
-  )
-
-  useEffect(() => {
-    if (
-      normalisedFrom.startsWith("/my-rewards") ||
-      normalisedFrom.startsWith("/rewards")
-    ) {
-      setNormalisedFrom(`/restaurants/${restaurantId}`)
-    }
-  }, [restaurant, normalisedFrom])
+  const from =
+    location.state?.from || userIsOwner(user)
+      ? "/restaurants"
+      : `/restaurants/${restaurantId}`
 
   useEffect(() => {
     const fetchRewardsAndRestaurant = async () => {
@@ -80,7 +72,7 @@ const RestaurantRewardStore = ({ user }) => {
       <h1 className="text-2xl font-bold mb-6 text-center">
         Rewards @ {restaurant?.name} - {getShortAddress(restaurant?.address)}
       </h1>
-      <BackButton from={normalisedFrom} />
+      <BackButton from={from} />
       {isOwner ? (
         <div className="flex justify-center mb-4">
           <Button onClick={() => navigate(`/rewards/${restaurantId}/new`)}>

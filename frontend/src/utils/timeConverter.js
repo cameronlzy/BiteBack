@@ -115,8 +115,8 @@ export const isOpenToday = (restaurant) => {
     }).set({ year: now.year, month: now.month, day: now.day });
 
     return now >= openTime && now <= closeTime;
-  } catch (err) {
-    console.error("Error parsing opening hours:", err);
+  } catch (ex) {
+    console.error("Error parsing opening hours:", ex);
     return false;
   }
 }

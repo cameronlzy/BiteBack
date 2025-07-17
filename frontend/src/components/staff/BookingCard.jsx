@@ -47,13 +47,6 @@ const BookingCard = ({ booking: b, onStatusUpdate }) => {
             >
               Mark Completed
             </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => onStatusUpdate(b._id, "no-show")}
-            >
-              Mark No-Show
-            </Button>
           </div>
         )}
       </div>

@@ -1,11 +1,10 @@
-import { useLocation, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { Button } from "../ui/button"
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 const BackButton = ({ from, confirming, setConfirming }) => {
   const navigate = useNavigate()
-  const location = useLocation()
   return (
     <Button
       type="button"
@@ -15,9 +14,7 @@ const BackButton = ({ from, confirming, setConfirming }) => {
         confirming
           ? setConfirming(false)
           : navigate(from, {
-              state: {
-                from: location.pathname,
-              },
+              replace: true,
             })
       }
     >

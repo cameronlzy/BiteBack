@@ -16,6 +16,12 @@ import {
 import { Separator } from "../ui/separator"
 import { Badge } from "../ui/badge"
 import { AlertCircle, CheckCircle2, Clock } from "lucide-react"
+import { useLocation, useNavigate } from "react-router-dom"
+import { AnimatePresence, motion } from "framer-motion"
+import OrderDisplay from "../preorder/OrderDisplay"
+import { getOrderById } from "@/services/orderService"
+import { getRestaurant } from "@/services/restaurantService"
+import { toast } from "react-toastify"
 
 const QueueStatus = ({
   customerQueueData,
@@ -25,6 +31,11 @@ const QueueStatus = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [queueStatus, setQueueStatus] = useState("Pending")
+  const [restaurant, setRestaurant] = useState(null)
+  const [existingCustomerOrder, setExistingCustomerOrder] = useState(null)
+  const [showOrder, setShowOrder] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     const newStatus =
@@ -34,7 +45,43 @@ const QueueStatus = ({
         ? "Skipped"
         : "Pending"
     setQueueStatus(newStatus)
+    if (customerQueueData.status !== "waiting") {
+      localStorage.removeItem("currentQueue")
+    }
+    const fetchRestaurant = async () => {
+      try {
+        const restaurant = await getRestaurant(customerQueueData.restaurant)
+        setRestaurant(restaurant)
+      } catch (ex) {
+        toast.error("Unable to load restaurant details")
+        throw ex
+      }
+    }
+    fetchRestaurant()
   }, [customerQueueData])
+
+  useEffect(() => {
+    const fetchExistingOrder = async () => {
+      const orderId = localStorage.getItem("order_id")
+      if (!orderId) return
+
+      try {
+        const existingOrder = await getOrderById(orderId)
+        if (existingOrder?.status === "pending") {
+          setExistingCustomerOrder(existingOrder)
+        }
+      } catch (ex) {
+        setExistingCustomerOrder(null)
+        throw ex
+      }
+    }
+
+    fetchExistingOrder()
+
+    window.addEventListener("order_id_change", fetchExistingOrder)
+    return () =>
+      window.removeEventListener("order_id_change", fetchExistingOrder)
+  }, [])
 
   useEffect(() => {
     if (!customerQueueData?._id) return
@@ -74,12 +121,30 @@ const QueueStatus = ({
       await new Promise((resolve) => setTimeout(resolve, 1000))
       await leaveQueue(customerQueueData._id)
       localStorage.removeItem("queueId")
+      localStorage.removeItem("currentQueue")
+      localStorage.removeItem("order_items")
       setCurrentlyQueuing(false)
     } catch (ex) {
       console.error("Failed to leave queue", ex)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handlePreOrderNavigate = () => {
+    localStorage.setItem("currentQueue", customerQueueData?.restaurant)
+
+    const navState = {
+      from: location.pathname,
+    }
+
+    if (existingCustomerOrder) {
+      navState.existingOrder = existingCustomerOrder
+    }
+
+    navigate(`/pre-order/${customerQueueData?.restaurant}`, {
+      state: navState,
+    })
   }
 
   const getQueueIndex = (pax) => {
@@ -167,6 +232,46 @@ const QueueStatus = ({
         <Separator />
         {queueStatus === "Pending" && (
           <div className="text-center">
+            {existingCustomerOrder ? (
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowOrder((prev) => !prev)}
+                  className="w-full"
+                >
+                  {showOrder ? "Hide Order" : "View Existing Order"}
+                </Button>
+
+                <AnimatePresence>
+                  {showOrder && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden mt-4"
+                    >
+                      <OrderDisplay
+                        orderItems={existingCustomerOrder.items}
+                        restaurant={restaurant}
+                        handlePreOrderNavigate={handlePreOrderNavigate}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              restaurant?.preordersEnabled && (
+                <Button
+                  variant="outline"
+                  onClick={handlePreOrderNavigate}
+                  disabled={isSubmitting}
+                  className="w-full mb-4"
+                >
+                  Pre-Order
+                </Button>
+              )
+            )}
             <Button
               variant="destructive"
               onClick={handleLeaveQueue}
