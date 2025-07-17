@@ -16,6 +16,7 @@ import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import OwnerProfile from '../../../models/ownerProfile.model.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
+import { it } from '@jest/globals';
 
 describe('order test', () => {
     let server;
@@ -442,13 +443,23 @@ describe('order test', () => {
 
             entryId = new mongoose.Types.ObjectId();
             order = createTestOrder({ customer: user.profile });
-            order.items = [{
-                _id: entryId,
-                item: item._id,
-                name: item.name,
-                price: item.price,
-                quantity: 1
-            }];
+            order.items = [
+                {
+                    _id: entryId,
+                    item: item._id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: 1
+                },
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    item: item._id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: 2,
+                    remarks: 'less oil'
+                }
+            ];
             await order.save();
             orderId = order._id;
         });
@@ -466,6 +477,29 @@ describe('order test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             expect(res.body.items[0].quantity).toBe(5);
+        });
+
+        it('should return 200 and add to order', async () => {
+            const res = await request(server)
+            .patch(`/api/orders/${orderId}`)
+            .set('Cookie', [cookie])
+            .send({
+                add: [{ item: item._id, quantity: 1, remarks: 'more oil' }]
+            });
+            expect(res.status).toBe(200);
+            expect(res.body.items.length).toBe(3);
+        });
+
+        it('should return 200 and remove from order', async () => {
+            const res = await request(server)
+            .patch(`/api/orders/${orderId}`)
+            .set('Cookie', [cookie])
+            .send({
+                remove: [entryId]
+            });
+            console.log(res.text);
+            expect(res.status).toBe(200);
+            expect(res.body.items.length).toBe(1);
         });
     });
 });

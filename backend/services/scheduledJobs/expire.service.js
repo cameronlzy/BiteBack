@@ -19,19 +19,13 @@ export async function expireStaleRedemptions() {
     return result.modifiedCount ?? 0;
 }
 
-export async function cancelStaleOrders() {
+export async function deleteStaleOrders() {
     const thirtyMinsAgo = DateTime.utc().minus({ minutes: 30 }).toJSDate();
 
-    const result = await Order.updateMany(
-        {
-            status: 'pending',
-            createdAt: { $lte: thirtyMinsAgo },
-        },
-        {
-            $set: { status: 'cancelled' },
-            $unset: { code: '' },
-        }
-    );
+    const result = await Order.deleteMany({
+        status: 'pending',
+        createdAt: { $lte: thirtyMinsAgo },
+    });
 
-    return result.modifiedCount ?? 0;
+    return result.deletedCount ?? 0;
 }

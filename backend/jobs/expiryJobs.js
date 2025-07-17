@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { runJob } from '../helpers/jobRunner.js';
-import { expireStaleRedemptions, cancelStaleOrders } from '../services/scheduledJobs/expire.service.js';
+import { expireStaleRedemptions, deleteStaleOrders } from '../services/scheduledJobs/expire.service.js';
 
 export function registerExpiryJobs(timezone = 'Asia/Singapore') {
     // every minute - expires stale redemptions
@@ -10,10 +10,10 @@ export function registerExpiryJobs(timezone = 'Asia/Singapore') {
         });
     }, { timezone });
 
-    // every 5 minutes — cancel stale orders
+    // every 5 minutes — delete stale orders
     cron.schedule('*/5 * * * *', async () => {
-        await runJob('CancelStaleOrders', async () => {
-            await cancelStaleOrders();
+        await runJob('DeleteStaleOrders', async () => {
+            await deleteStaleOrders();
         });
     }, { timezone });
 }

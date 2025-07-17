@@ -135,9 +135,6 @@ export async function updateOrder(order, update) {
         for (const { item, quantity, remarks } of update.add) {
             const menuItemId = item.toString();
 
-            const duplicate = Array.from(itemMap.values()).some(i => i.item.toString() === menuItemId);
-            if (duplicate) return error(400, `Item already exists in order: ${menuItemId}`);
-
             const menuItem = menuMap[menuItemId];
             if (!menuItem) return error(404, `MenuItem not found: ${menuItemId}`);
 
