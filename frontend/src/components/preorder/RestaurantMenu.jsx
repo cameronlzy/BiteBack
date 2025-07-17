@@ -17,15 +17,17 @@ import { ownedByUser, userIsOwner } from "@/utils/ownerCheck"
 import BackButton from "../common/BackButton"
 import { saveOrder } from "@/services/orderService"
 import PreviousOrderBar from "./PreviousOrderBar"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const RestaurantMenu = ({ user }) => {
   const [menuItems, setMenuItems] = useState([])
   const [currentItemShown, setCurrentItemShown] = useState(null)
+  const [loadingMenu, setLoadingMenu] = useState(true)
   const [showConfirm, setShowConfirm] = useState(false)
   const [restaurant, setRestaurant] = useState(null)
   const [editingOrder, setEditingOrder] = useState(false)
   const [originalOrderItems, setOriginalOrderItems] = useState([])
-  const [currentlyInQueue, setCurrentlyInQueue] = useState(false)
+  const [canOrder, setCanOrder] = useState(false)
   const { restaurantId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -38,7 +40,7 @@ const RestaurantMenu = ({ user }) => {
     ? location.state.from
     : userIsOwner(user)
     ? "/restaurants"
-    : currentlyInQueue
+    : canOrder
     ? `/online-queue/${restaurantId}`
     : `/restaurants/${restaurantId}`
   const existingOrder = location.state?.existingOrder
@@ -64,20 +66,14 @@ const RestaurantMenu = ({ user }) => {
   useEffect(() => {
     if (user?.role === "customer") {
       const inQueue = localStorage.getItem("currentQueue") === restaurantId
-      const preorderDisabled = restaurant?.preordersEnabled === false
-      setCurrentlyInQueue(inQueue)
-      if (preorderDisabled) {
-        toast.error("Pre-ordering is currently disabled by the restaurant", {
-          toastId: "preorder-disabled",
-        })
-        navigate("/restaurants", { replace: true })
-      }
+      setCanOrder(restaurant?.preordersEnabled && inQueue)
     }
   }, [user, restaurantId, location, restaurant?.preordersEnabled])
 
   useEffect(() => {
     const fetchRestaurantAndMenu = async () => {
       try {
+        setLoadingMenu(true)
         const res = await getRestaurant(restaurantId)
         setRestaurant(res)
         const menu = await getMenuByRestaurant(restaurantId)
@@ -95,6 +91,8 @@ const RestaurantMenu = ({ user }) => {
           toast.error("Failed to fetch restaurant")
           throw ex
         }
+      } finally {
+        setLoadingMenu(false)
       }
     }
 
@@ -328,7 +326,15 @@ const RestaurantMenu = ({ user }) => {
     setShowConfirm(true)
   }
 
-  return (
+  return loadingMenu ? (
+    <div className="flex justify-center py-10">
+      <LoadingSpinner />
+    </div>
+  ) : menuItems.length === 0 ? (
+    <div className="text-center text-muted-foreground py-10 text-lg font-medium">
+      No Menu Available
+    </div>
+  ) : (
     <div className="w-full space-y-6">
       <BackButton from={from} />
       <div className="px-2 space-y-2">
@@ -339,7 +345,7 @@ const RestaurantMenu = ({ user }) => {
           <PreviousOrderBar
             customerId={user._id}
             restaurantId={restaurantId}
-            currentlyInQueue={currentlyInQueue}
+            canOrder={canOrder}
             setOrderItems={(items) => {
               setOrderItems(items)
               localStorage.setItem("order_items", JSON.stringify(items))
@@ -348,7 +354,7 @@ const RestaurantMenu = ({ user }) => {
         )}
 
         <div className="flex justify-end">
-          {user?.role === "customer" && currentlyInQueue ? (
+          {user?.role === "customer" && canOrder ? (
             <Button size="sm" variant="ghost" onClick={handleShowConfirm}>
               <ShoppingCart className="w-5 h-5" />
             </Button>
@@ -410,7 +416,7 @@ const RestaurantMenu = ({ user }) => {
       </Tabs>
 
       <ItemPage
-        currentlyInQueue={currentlyInQueue}
+        canOrder={canOrder}
         item={currentItemShown}
         restaurant={restaurant}
         onClose={() => setCurrentItemShown(null)}
@@ -418,7 +424,7 @@ const RestaurantMenu = ({ user }) => {
         user={user}
         setMenuItems={setMenuItems}
       />
-      {user?.role === "customer" && currentlyInQueue && (
+      {user?.role === "customer" && canOrder && (
         <OrderConfirmationPage
           showConfirm={showConfirm}
           onClose={() => setShowConfirm(false)}

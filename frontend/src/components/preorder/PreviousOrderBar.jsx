@@ -9,7 +9,7 @@ const PreviousOrderBar = ({
   customerId,
   setOrderItems,
   restaurantId,
-  currentlyInQueue,
+  canOrder,
 }) => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -79,7 +79,7 @@ const PreviousOrderBar = ({
           <Card
             key={order._id}
             className={`w-[215px] flex-shrink-0 flex flex-col justify-between ${
-              currentlyInQueue ? "h-54" : "h-40"
+              canOrder ? "h-54" : "h-40"
             }`}
           >
             <CardHeader className="pb-">
@@ -101,7 +101,7 @@ const PreviousOrderBar = ({
                 )}
               </ul>
             </CardContent>
-            {currentlyInQueue && (
+            {canOrder && (
               <CardContent className="pt-1">
                 <Button
                   size="sm"

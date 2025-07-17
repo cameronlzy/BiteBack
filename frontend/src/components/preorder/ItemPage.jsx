@@ -21,7 +21,7 @@ const ItemPage = ({
   onAddToCart,
   user,
   setMenuItems,
-  currentlyInQueue,
+  canOrder,
 }) => {
   const [showForm, setShowForm] = useState(false)
   const [quantity, setQuantity] = useState(1)
@@ -146,7 +146,7 @@ const ItemPage = ({
                 user?.role === "customer" &&
                 item?.isAvailable &&
                 item?.isInStock &&
-                currentlyInQueue && {
+                canOrder && {
                   onClick: () => setShowForm((prev) => !prev),
                   icon: <ShoppingCart className="w-4 h-4" />,
                   label: showForm ? "Cancel" : "Add to Cart",
@@ -178,7 +178,7 @@ const ItemPage = ({
                 user?.role === "customer" &&
                 item?.isAvailable &&
                 item?.isInStock &&
-                currentlyInQueue && (
+                canOrder && (
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">
