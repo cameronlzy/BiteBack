@@ -7,6 +7,7 @@ import {
   Store,
   Star,
   Crown,
+  Utensils,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
@@ -34,7 +35,9 @@ const CarouselButtonSwitcher = ({
       bgColor: "bg-black",
       hoverColor: "hover:bg-gray-900",
       textColor: "text-white",
-      expandedWidth: "group-hover:w-[170px]",
+      expandedWidth: isOwnedByUser
+        ? "group-hover:w-[130px]"
+        : "group-hover:w-[170px]",
     },
     user?.role !== "owner" && {
       label: "View Queue",
@@ -81,6 +84,15 @@ const CarouselButtonSwitcher = ({
       hoverColor: "hover:bg-emerald-600",
       textColor: "text-white",
       expandedWidth: "group-hover:w-[190px]",
+    },
+    user?.role !== "owner" && {
+      label: "View Restaurant Menu",
+      icon: Utensils,
+      to: `/pre-order/${restaurant._id}`,
+      bgColor: "bg-orange-500",
+      hoverColor: "hover:bg-orange-600",
+      textColor: "text-white",
+      expandedWidth: "group-hover:w-[200px]",
     },
   ].filter(Boolean)
 

@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu"
-import { ArrowRight, Settings } from "lucide-react"
+import { ArrowRight, Settings, X } from "lucide-react"
 import { Link } from "react-router-dom"
 import BackButton from "@/components/common/BackButton"
 
@@ -21,31 +21,50 @@ const RestaurantRelatedItemUI = ({
   description,
   metaContent,
   isOwnedByUser,
+  isStaff = false,
+  onToggleOOS,
   onEdit,
   onDelete,
   onActivate = null,
-  currentlyActive = null,
+  currentlyActive = true,
+  currentlyInStock = true,
   banner = null,
   action = null,
   form = null,
+  onBack = null,
 }) => {
   return (
-    <div className="max-w-3xl mx-auto mt-8 px-4 relative">
-      <BackButton from={from} />
+    <div className="max-w-3xl mx-auto mt-8 px-4">
+      {!onBack && <BackButton from={from} />}
       {banner && <div className="mt-4 translate-y-2">{banner}</div>}
 
       <Card className="mt-0 shadow-xl border relative">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
-          <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-          <Link
-            to={`/restaurants/${restaurant._id}`}
-            state={{ from: location.pathname }}
-          >
-            <Button variant="outline" size="sm" className="w-full sm:w-auto">
-              To {restaurant.name || "Restaurant"}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
+        <CardHeader className="px-4 pb-0 relative space-y-2">
+          {onBack && (
+            <div className="flex justify-start">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onBack}
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+            <CardTitle className="text-2xl font-bold">{title}</CardTitle>
+            <Link
+              to={`/restaurants/${restaurant._id}`}
+              state={{ from: location.pathname }}
+            >
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                To {restaurant.name || "Restaurant"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -67,7 +86,34 @@ const RestaurantRelatedItemUI = ({
                 </div>
               </div>
             )}
-
+            {isStaff && onToggleOOS && type === "item" && (
+              <div className="absolute top-2 right-2 z-10">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-gray-700 hover:bg-gray-100"
+                    >
+                      <Settings className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-40 bg-white shadow-md rounded-md"
+                  >
+                    {onToggleOOS && (
+                      <DropdownMenuItem
+                        className="hover:bg-gray-100 text-gray-800"
+                        onClick={onToggleOOS}
+                      >
+                        {currentlyInStock ? "Disable" : "Enable"} {type}
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
             {isOwnedByUser && (onEdit || onDelete || onActivate) && (
               <div className="absolute top-2 right-2 z-10">
                 <DropdownMenu>

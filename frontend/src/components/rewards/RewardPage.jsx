@@ -14,7 +14,7 @@ import {
 import { getRestaurant } from "@/services/restaurantService"
 import { categoryOptions, iconMap } from "@/utils/rewardUtils"
 import { ownedByUserWithId } from "@/utils/ownerCheck"
-import RestaurantRelatedItemUI from "../common/RestaurantRelatedUI"
+import RestaurantRelatedItemUI from "../common/RestaurantRelatedItemUI"
 import { AlertTriangle, DollarSign } from "lucide-react"
 
 const RewardPage = ({ user }) => {
@@ -27,9 +27,7 @@ const RewardPage = ({ user }) => {
   const { rewardId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const [normalisedFrom, setNormalisedFrom] = useState(
-    location.state?.from || "/restaurants"
-  )
+  const from = location.state?.from || "/restaurants"
 
   useEffect(() => {
     const fetchRewardAndRestaurant = async () => {
@@ -58,16 +56,9 @@ const RewardPage = ({ user }) => {
   }, [rewardId, user])
 
   useEffect(() => {
-    if (normalisedFrom.startsWith("/restaurants/") && reward?.restaurant) {
-      const segments = normalisedFrom.split("/")
-      const maybeRestaurantId = segments[2]
-      if (maybeRestaurantId === reward?.restaurant) {
-        setNormalisedFrom("/current-rewards/" + reward.restaurant)
-      }
-    }
     const isOwnedByUserCheck = ownedByUserWithId(reward?.restaurant, user)
     setIsOwnedByUser(isOwnedByUserCheck)
-  }, [reward, normalisedFrom, user])
+  }, [reward, user])
 
   const handleToggleActivate = async () => {
     try {
@@ -137,7 +128,7 @@ const RewardPage = ({ user }) => {
     return (
       <div className="text-center text-lg text-gray-500 mt-10">
         <div className="mt-4">
-          <BackButton from={normalisedFrom} />
+          <BackButton from={from} />
         </div>
         Reward not found.
       </div>
@@ -159,7 +150,7 @@ const RewardPage = ({ user }) => {
       item={reward}
       bgColour={bgColour}
       restaurant={restaurant}
-      from={normalisedFrom}
+      from={from}
       title={`${
         categoryOptions.find((opt) => opt.value === category)?.label || category
       } Reward`}

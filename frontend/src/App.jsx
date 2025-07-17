@@ -40,6 +40,9 @@ import EventForm from "./components/events-booking/EventForm"
 import OwnerEventsAndPromos from "./components/OwnerEventsAndPromos"
 import Events from "./components/events-booking/Events"
 import MembersEvents from "./components/events-booking/MembersEvents"
+import RestaurantMenu from "./components/preorder/RestaurantMenu"
+import MenuItemForm from "./components/preorder/MenuItemForm"
+import KitchenOrders from "./components/staff/KitchenOrders"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -118,6 +121,11 @@ function App() {
                     ]
                   : user.role === "staff"
                   ? [
+                      {
+                        type: "link",
+                        path: "/staff/orders",
+                        name: "Manage Ordering",
+                      },
                       {
                         type: "link",
                         path: "/staff/control-center",
@@ -286,6 +294,16 @@ function App() {
             }
           />
           <Route
+            path="staff/orders"
+            element={
+              <ProtectedStaffRoute
+                loading={loading}
+                user={user}
+                element={<KitchenOrders user={user} />}
+              />
+            }
+          />
+          <Route
             path="promotions/new"
             element={
               <ProtectedRoute
@@ -401,6 +419,36 @@ function App() {
                 loading={loading}
                 user={user}
                 element={<EventForm user={user} />}
+              />
+            }
+          />
+          <Route
+            path="pre-order/:restaurantId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<RestaurantMenu user={user} />}
+              />
+            }
+          />
+          <Route
+            path="menu-item/new/:restaurantId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<MenuItemForm user={user} />}
+              />
+            }
+          />
+          <Route
+            path="menu-item/edit/:restaurantId/:itemId"
+            element={
+              <ProtectedRoute
+                loading={loading}
+                user={user}
+                element={<MenuItemForm user={user} />}
               />
             }
           />

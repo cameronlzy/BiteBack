@@ -613,7 +613,7 @@ export const eventSchema = Joi.object({
       "string.empty": "Restaurant is required",
       "any.required": "Restaurant is required",
     }),
-    
+
   minVisits: Joi.number()
     .integer()
     .min(0)
@@ -628,4 +628,56 @@ export const joinEventSchema = Joi.object({
     "any.required": "Pax is required",
   }),
   remarks: Joi.string().allow("").max(500),
+})
+
+export const menuCategoryList = [
+  { value: "appetisers", label: "Appetisers" },
+  { value: "mains", label: "Mains" },
+  { value: "desserts", label: "Desserts" },
+  { value: "drinks", label: "Drinks" },
+  { value: "kids-menu", label: "Kids Menu" },
+  { value: "specials", label: "Specials" },
+]
+
+export const itemSchema = Joi.object({
+  restaurant: Joi.string()
+    .required()
+    .messages({
+      "any.required": "Restaurant ID is required",
+      "string.base": "Restaurant ID must be a string",
+    }),
+  name: Joi.string()
+    .required()
+    .messages({
+      "any.required": "Name is required",
+      "string.base": "Name must be a string",
+    }),
+  description: Joi.string()
+    .required()
+    .messages({
+      "any.required": "Description is required",
+      "string.base": "Description must be a string",
+    }),
+ price: Joi.number()
+  .min(0)
+  .required()
+  .custom((value, helpers) => {
+    if (!/^\d+(\.\d{1,2})?$/.test(value.toString())) {
+      return helpers.error("number.decimal")
+    }
+    return value
+  })
+  .messages({
+    "any.required": "Price is required",
+    "number.base": "Price must be a number",
+    "number.min": "Price must be at least 0",
+    "number.decimal": "Price must have at most 2 decimal places",
+  }),
+  category: Joi.string()
+    .required()
+    .messages({
+      "any.required": "Category is required",
+      "string.empty": "Category is required",
+      "string.base": "Category must be a string",
+    }),
 })

@@ -9,11 +9,13 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/png"]
 const DIMENSIONS = {
   "Main Image": { width: 600, height: 600 },
   "Banner Image": { width: 2000, height: 400 },
+  "Item Image": { width: 400, height: 400 },
 }
 
 const ASPECT_RATIOS = {
   "Main Image": 1,
   "Banner Image": 5,
+  "Item Image": 1,
 }
 
 const ImageUpload = ({

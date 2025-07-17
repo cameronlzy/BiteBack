@@ -114,7 +114,7 @@ const LineChart = ({
         xAxisG.call(
           d3
             .axisBottom(zx)
-            .ticks(Math.floor(innerWidth / 80))
+            .tickValues(data.map((d) => new Date(d.date)))
             .tickFormat(d3.timeFormat("%b %d"))
         )
         path

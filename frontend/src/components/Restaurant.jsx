@@ -30,18 +30,7 @@ const Restaurant = ({ user }) => {
   const navigate = useNavigate()
   const confirm = useConfirm()
   const location = useLocation()
-  const [normalisedFrom, setNormalisedFrom] = useState(
-    location?.state?.from || "/restaurants"
-  )
-
-  if (
-    (normalisedFrom?.startsWith("/online-queue/") ||
-      normalisedFrom?.startsWith("/reservation/") ||
-      normalisedFrom?.startsWith("/current-rewards/")) &&
-    normalisedFrom?.split("/")[2] === id
-  ) {
-    setNormalisedFrom("/restaurants")
-  }
+  const from = location?.state?.from || "/restaurants"
 
   const [restaurant, setRestaurant] = useState(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
@@ -103,7 +92,7 @@ const Restaurant = ({ user }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto mt-6 px-4">
-      <BackButton from={normalisedFrom} />
+      <BackButton from={from} />
       <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-md">
         <Link
           to={`/images/${encodeURIComponent(images?.[0])}`}
