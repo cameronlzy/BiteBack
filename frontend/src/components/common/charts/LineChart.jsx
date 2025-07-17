@@ -12,6 +12,14 @@ const LineChart = ({
 }) => {
   const ref = useRef()
 
+  const getLimitedTickDates = (dateArray, maxTicks = 10) => {
+    const unique = [
+      ...new Set(dateArray.map((d) => new Date(d).getTime())),
+    ].map((t) => new Date(t))
+    const step = Math.ceil(unique.length / maxTicks)
+    return unique.filter((_, i) => i % step === 0)
+  }
+
   useEffect(() => {
     if (!data || data.length === 0) return
 
@@ -56,7 +64,12 @@ const LineChart = ({
       .append("g")
       .attr("transform", `translate(0,${innerHeight})`)
       .attr("class", "x-axis")
-      .call(d3.axisBottom(x).ticks(10).tickFormat(d3.timeFormat("%b %d")))
+      .call(
+        d3
+          .axisBottom(x)
+          .tickValues(getLimitedTickDates(data.map((d) => d.date)))
+          .tickFormat(d3.timeFormat("%b %d"))
+      )
     g.append("g").attr("class", "y-axis").call(d3.axisLeft(y).ticks(5))
 
     const plotArea = g.append("g").attr("clip-path", "url(#clip)")
@@ -114,7 +127,7 @@ const LineChart = ({
         xAxisG.call(
           d3
             .axisBottom(zx)
-            .tickValues(data.map((d) => new Date(d.date)))
+            .tickValues(getLimitedTickDates(data.map((d) => d.date)))
             .tickFormat(d3.timeFormat("%b %d"))
         )
         path
