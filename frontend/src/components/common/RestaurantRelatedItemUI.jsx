@@ -15,7 +15,7 @@ const RestaurantRelatedItemUI = ({
   restaurant,
   from,
   title,
-  price,
+  price = null,
   icon,
   image = null,
   bgColour,
@@ -169,9 +169,11 @@ const RestaurantRelatedItemUI = ({
           </div>
 
           <div className="space-y-2">
-            <p className="text-lg font-bold text-gray-900">
-              ${Number(price).toFixed(2)}
-            </p>
+            {price && (
+              <p className="text-lg font-bold text-gray-900">
+                ${Number(price).toFixed(2)}
+              </p>
+            )}
             <p className="text-gray-700 text-base font-semibold whitespace-pre-line">
               {description}
             </p>
