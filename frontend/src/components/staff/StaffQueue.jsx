@@ -23,7 +23,9 @@ const StaffQueue = () => {
   const [restaurant, setRestaurant] = useState(null)
   const [queueEnabled, setQueueEnabled] = useState(null)
   const [togglingQueue, setTogglingQueue] = useState(false)
-  const [calledCustomers, setCalledCustomers] = useState([])
+  const [calledCustomers, setCalledCustomers] = useState(
+    JSON.parse(localStorage.getItem("called_customer")) || []
+  )
   const [loadingOrderId, setLoadingOrderId] = useState(null)
   const [seatingLoadingId, setSeatingLoadingId] = useState(null)
   const seatingInputRef = useRef()
@@ -67,7 +69,9 @@ const StaffQueue = () => {
   const handleCallNext = async (group) => {
     try {
       const data = await callNextCustomer(restaurantId, group)
-      setCalledCustomers((prev) => [...prev, { ...data, group }])
+      const updated = [...calledCustomers, { ...data, group }]
+      setCalledCustomers(updated)
+      localStorage.setItem("called_customer", JSON.stringify(updated))
       toast.success(`Called next in ${group} queue`)
       await fetchQueue()
     } catch {
@@ -82,7 +86,9 @@ const StaffQueue = () => {
         toastId: entryId,
       })
       await fetchQueue()
-      setCalledCustomers((prev) => prev.filter((e) => e._id !== entryId))
+      const updated = calledCustomers.filter((e) => e._id !== entryId)
+      setCalledCustomers(updated)
+      localStorage.setItem("called_customer", JSON.stringify(updated))
     } catch {
       toast.error("Failed to update status")
     }
@@ -135,9 +141,11 @@ const StaffQueue = () => {
         ])
       }
       toast.success(`Marked Seated for seat ${seatNumber}`)
-      setCalledCustomers((prev) =>
-        prev.filter((c) => c.customer !== currentOrder.customer)
+      const updated = calledCustomers.filter(
+        (c) => c.customer !== currentOrder.customer
       )
+      setCalledCustomers(updated)
+      localStorage.setItem("called_customer", JSON.stringify(updated))
 
       setCurrentOrder(null)
       await fetchQueue()

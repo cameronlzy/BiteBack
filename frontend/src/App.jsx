@@ -424,13 +424,7 @@ function App() {
           />
           <Route
             path="pre-order/:restaurantId"
-            element={
-              <ProtectedRoute
-                loading={loading}
-                user={user}
-                element={<RestaurantMenu user={user} />}
-              />
-            }
+            element={<RestaurantMenu user={user} />}
           />
           <Route
             path="menu-item/new/:restaurantId"

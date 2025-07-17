@@ -38,7 +38,9 @@ const RestaurantMenu = ({ user }) => {
     ? location.state.from
     : userIsOwner(user)
     ? "/restaurants"
-    : `/online-queue/${restaurantId}`
+    : currentlyInQueue
+    ? `/online-queue/${restaurantId}`
+    : `/restaurants/${restaurantId}`
   const existingOrder = location.state?.existingOrder
 
   useEffect(() => {
@@ -333,7 +335,7 @@ const RestaurantMenu = ({ user }) => {
         <h2 className="text-2xl font-bold text-center">
           {restaurant?.name} Menu
         </h2>
-        {!existingOrder && (
+        {!existingOrder && user && (
           <PreviousOrderBar
             customerId={user._id}
             restaurantId={restaurantId}
@@ -346,7 +348,7 @@ const RestaurantMenu = ({ user }) => {
         )}
 
         <div className="flex justify-end">
-          {user.role === "customer" && currentlyInQueue ? (
+          {user?.role === "customer" && currentlyInQueue ? (
             <Button size="sm" variant="ghost" onClick={handleShowConfirm}>
               <ShoppingCart className="w-5 h-5" />
             </Button>
@@ -415,9 +417,8 @@ const RestaurantMenu = ({ user }) => {
         onAddToCart={handleAddToCart}
         user={user}
         setMenuItems={setMenuItems}
-        setCurrentItemShown={setCurrentItemShown}
       />
-      {user.role === "customer" && currentlyInQueue && (
+      {user?.role === "customer" && currentlyInQueue && (
         <OrderConfirmationPage
           showConfirm={showConfirm}
           onClose={() => setShowConfirm(false)}
@@ -431,7 +432,6 @@ const RestaurantMenu = ({ user }) => {
           onSubmit={handleSubmitOrder}
           user={user}
           isExisting={Array.isArray(existingOrder?.items)}
-          setShowConfirm={setShowConfirm}
         />
       )}
     </div>

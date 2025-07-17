@@ -21,7 +21,6 @@ const ItemPage = ({
   onAddToCart,
   user,
   setMenuItems,
-  setCurrentItemShown,
   currentlyInQueue,
 }) => {
   const [showForm, setShowForm] = useState(false)
@@ -118,7 +117,6 @@ const ItemPage = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center overflow-y-auto pt-20 px-4"
-          onClick={() => setCurrentItemShown(null)}
         >
           <div className="max-w-2xl w-full">
             <RestaurantRelatedItemUI
@@ -130,7 +128,7 @@ const ItemPage = ({
               image={item.image}
               price={item.price}
               isOwnedByUser={ownedByUser(restaurant, user)}
-              isStaff={user.role === "staff"}
+              isStaff={user?.role === "staff"}
               onToggleOOS={handleToggleOOS}
               currentlyActive={item?.isAvailable}
               currentlyInStock={item?.isInStock}
@@ -145,7 +143,7 @@ const ItemPage = ({
               onDelete={handleDelete}
               onBack={onClose}
               action={
-                user.role === "customer" &&
+                user?.role === "customer" &&
                 item?.isAvailable &&
                 item?.isInStock &&
                 currentlyInQueue && {
@@ -177,7 +175,7 @@ const ItemPage = ({
               }
               form={
                 showForm &&
-                user.role === "customer" &&
+                user?.role === "customer" &&
                 item?.isAvailable &&
                 item?.isInStock &&
                 currentlyInQueue && (

@@ -20,7 +20,6 @@ const OrderConfirmationPage = ({
   orderItems,
   restaurantId,
   isExisting,
-  setShowConfirm,
 }) => {
   const [loading, setLoading] = useState(false)
 
@@ -55,7 +54,6 @@ const OrderConfirmationPage = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center overflow-y-auto pt-20 px-4"
-          onClick={() => setShowConfirm(false)}
         >
           <motion.div
             initial={{ y: 20, opacity: 0 }}
