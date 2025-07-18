@@ -27,9 +27,9 @@ export async function getMe(userId) {
     return success(user);
 }
 
-export async function createProfile(authUser, data) {
+export async function createProfile(tempUser, data) {
     return await withTransaction(async (session) => {
-        const user = await User.findById(authUser._id).session(session);
+        const user = await User.findById(tempUser._id).session(session);
         if (!user) return error(404, 'User not found');
 
         const profile = new OwnerProfile(_.pick(data, ['companyName', 'username']));

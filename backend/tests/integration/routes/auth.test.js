@@ -11,7 +11,7 @@ import OwnerProfile from '../../../models/ownerProfile.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
 import Staff from '../../../models/staff.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, generateTempToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import simpleCrypto from '../../../helpers/encryption.helper.js';
@@ -25,6 +25,46 @@ describe('auth test', () => {
     afterAll(async () => {
         await mongoose.connection.close();
         await server.close();
+    });
+
+    describe('POST /api/auth/register', () => {
+        let email;
+        let username;
+        let password;
+        let role;
+
+        beforeEach(async () => { 
+            await User.deleteMany({});
+            await CustomerProfile.deleteMany({});
+            email = "myCustomer@gmail.com";
+            username = "myCustomer";
+            password = "myPassword@123";
+            role = "customer";
+        });
+
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/register')
+            .send({
+                email, username, password, role
+            });
+        };
+    
+        it('should return 400 if the user exists', async () => {
+            await exec();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200 + username, email, role', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body).not.toHaveProperty('password');
+        });
     });
 
     describe('POST /api/auth/verify-email/:token', () => {
@@ -99,6 +139,39 @@ describe('auth test', () => {
         it.skip('should return 200 and send email when using email', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
+        });
+    });
+
+    describe('POST /api/auth/set-password', () => {
+        let user, token, cookie;
+        let password;
+    
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/set-password')
+            .set('Cookie', [cookie])
+            .send({
+                password
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+
+            user = await createTestUser('customer');
+            user.password = undefined;
+            await user.save();
+            token = generateTempToken(user);
+            cookie = setTokenCookie(token);
+
+            password = 'Password@123';
+        });
+    
+        it('should return 200 and set password', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const userInDb = await User.findById(user._id).lean();
+            expect(userInDb.password).toBeDefined();
         });
     });
 
@@ -261,46 +334,6 @@ describe('auth test', () => {
             const isMatch = await bcrypt.compare(password, updatedUser.password);
 
             expect(isMatch).toBe(true);
-        });
-    });
-
-    describe('POST /api/auth/register', () => {
-        let email;
-        let username;
-        let password;
-        let role;
-
-        beforeEach(async () => { 
-            await User.deleteMany({});
-            await CustomerProfile.deleteMany({});
-            email = "myCustomer@gmail.com";
-            username = "myCustomer";
-            password = "myPassword@123";
-            role = "customer";
-        });
-
-        const exec = () => {
-            return request(server)
-            .post('/api/auth/register')
-            .send({
-                email, username, password, role
-            });
-        };
-    
-        it('should return 400 if the user exists', async () => {
-            await exec();
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 200 + username, email, role', async () => {
-            const res = await exec();
-            expect(res.status).toBe(200);
-            const requiredKeys = [
-                '_id', 'email', 'username', 'role'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            expect(res.body).not.toHaveProperty('password');
         });
     });
 

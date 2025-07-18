@@ -51,6 +51,14 @@ export async function resendVerification(req, res) {
     return res.status(status).json(body);
 }
 
+export async function setPassword(req, res) {
+    const { error, value } = validatePassword(req.body);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+    
+    const { status, body } = await authService.setPassword(req.user, value);
+    return res.status(status).json(body);
+}
+
 export async function forgotPassword(req, res) {
     // validate request
     const { error, value } = validateCredentials(req.body);

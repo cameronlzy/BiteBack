@@ -30,9 +30,9 @@ export async function publicProfile(customerId) {
     return success(customer);
 }
 
-export async function createProfile(authUser, data) {
+export async function createProfile(tempUser, data) {
     return await withTransaction(async (session) => {
-        const user = await User.findById(authUser._id).session(session);
+        const user = await User.findById(tempUser._id).session(session);
         if (!user) return error(404, 'User not found');
 
         const profile = new CustomerProfile(_.pick(data, ['name', 'username', 'contactNumber']));

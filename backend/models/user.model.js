@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
     }
   },
   username: { type: String, minlength: 2, unique: true, trim: true },
-  password: { type: String, required: true },
+  password: { type: String },
   role: { type: String, enum: ['customer', 'owner'], required: true },
   profile: {
     type: mongoose.Schema.Types.ObjectId,

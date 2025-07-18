@@ -76,6 +76,18 @@ export async function resendVerification(data) {
     return success({ message: 'Verification email resent' });
 }
 
+export async function setPassword(tempUser, data) {
+    const user = await User.findById(tempUser._id);
+    if (!user) return error(404, 'User not found');
+    if (user.password) return error(400, 'Password already set');
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(data.password, salt);
+    await user.save();
+
+    return success({ message: 'Password set successfully' });
+}
+
 export async function forgotPassword(credentials) {
     // find user
     const user = await User.findOne(credentials.email 
