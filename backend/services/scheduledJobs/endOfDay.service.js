@@ -129,6 +129,9 @@ export async function processEndOfDay(nowSGT) {
 
                 if (existing) return;
 
+                // mark no-shows
+                await markPastReservations(restaurant, session);
+
                 // analytics processing
                 const analyticsData = await generateAnalytics(restaurant, session);
 
@@ -146,17 +149,17 @@ export async function processEndOfDay(nowSGT) {
 }
 
 export async function cleanupPastReservations(restaurant, session) {
-    const now = DateTime.now().setZone(restaurant.timezone);
-    const nowUTC = now.toUTC().toJSDate();
+    const now = DateTime.utc().setZone(restaurant.timezone);
+    const endOfDay = now.endOf('day').toUTC().toJSDate();
 
     await Reservation.deleteMany({
         restaurant: restaurant._id,
-        startDate: { $lt: nowUTC }
+        endDate: { $lt: endOfDay }
     }).session(session);
 }
 
 export async function generateAnalytics(restaurant, session) {
-    const today = DateTime.now().setZone(restaurant.timezone).startOf('day');
+    const today = DateTime.utc().setZone(restaurant.timezone).startOf('day');
     const tomorrow = today.plus({ days: 1 });
     const todayUTC = today.toUTC().toJSDate();
     const tomorrowUTC = tomorrow.toUTC().toJSDate();
@@ -167,7 +170,8 @@ export async function generateAnalytics(restaurant, session) {
         {
         $match: {
                 restaurant: restaurantId,
-                startDate: { $gte: todayUTC, $lt: tomorrowUTC }
+                startDate: { $gte: todayUTC },
+                endDate: { $lt: tomorrowUTC },
             }
         },
         {
@@ -330,4 +334,21 @@ export async function queueCleanup(restaurant, session) {
         { restaurant: restaurant._id },
         { $set: { lastNumber: 0, calledNumber: 0 } }
     ).session(session);
+}
+
+export async function markPastReservations(restaurant, session) {
+    const now = DateTime.utc().setZone(restaurant.timezone);
+    const endOfDay = now.endOf('day').toUTC().toJSDate();
+
+    await Reservation.updateMany(
+        {
+            restaurant: restaurant._id,
+            endDate : { $lt : endOfDay },
+            status: 'booked',
+        },
+        {
+            $set: { status: 'no-show' },
+        },
+        { session }
+    );
 }

@@ -13,7 +13,8 @@ function getRandomInt(min, max) {
 }
 
 export async function seedReservations() {
-    const today = DateTime.now().setZone('Asia/Singapore').startOf('day');
+    const localToday = DateTime.utc().setZone('Asia/Singapore').startOf('day');
+    const utcToday = localToday.toUTC();
     const [allRestaurants, customers] = await Promise.all([
         Restaurant.find().lean(),
         CustomerProfile.find().select('_id').lean(),
@@ -22,16 +23,14 @@ export async function seedReservations() {
     const reservations = [];
 
     for (const restaurant of allRestaurants) {
-        const slots = createSlots(restaurant.openingHours, today);
+        const slots = createSlots(restaurant.openingHours, localToday);
         if (!slots.length) continue;
 
-        for (let i = 0; i < getRandomInt(10, 50); i++) {
+        for (let i = 0; i < getRandomInt(20, 50); i++) {
             const randomSlot = slots[getRandomInt(0, slots.length - 1)];
             const startTime = DateTime.fromFormat(randomSlot, 'HH:mm', { zone: 'utc' })
-                .set({ year: today.year, month: today.month, day: today.day });
+                .set({ year: utcToday.year, month: utcToday.month, day: utcToday.day });
             const endTime = startTime.plus({ minutes: 60 });
-
-            const status = Math.random() < 0.7 ? 'completed' : 'no-show';
 
             reservations.push(new Reservation({
                 restaurant: restaurant._id,
@@ -39,7 +38,7 @@ export async function seedReservations() {
                 startDate: startTime.toJSDate(),
                 endDate: endTime.toJSDate(),
                 pax: getRandomInt(1, 6),
-                status,
+                status: 'booked',
             }));
         }
     }
@@ -47,16 +46,37 @@ export async function seedReservations() {
     if (reservations.length > 0) await Reservation.insertMany(reservations);
 }
 
-export async function seedQueueAndReview(timezone = 'Asia/Singapore') {
-    const now = DateTime.now().setZone(timezone);
-    const oneHourAgo = now.minus({ hours: 1 });
+export async function markPastReservations() {
+    const nowUTC = DateTime.utc();
+    const oneHourAgo = nowUTC.minus({ hours: 1 });
+
+    const reservations = await Reservation.find({
+        endDate: {
+            $gte: oneHourAgo.toJSDate(),
+            $lte: nowUTC.toJSDate(),
+        },
+        status: 'booked'
+    });
+
+    await Promise.all(
+        reservations.map((reservation) => {
+            const status = Math.random() < 0.7 ? 'completed' : 'no-show';
+            reservation.status = status;
+            return reservation.save();
+        })
+    );
+}
+
+export async function seedQueueAndReview() {
+    const nowUTC = DateTime.utc();
+    const oneHourAgo = nowUTC.minus({ hours: 1 });
 
     const [restaurants, customers] = await Promise.all([
         Restaurant.find().lean(),
         CustomerProfile.find().select('_id').lean()
     ]);
     const customerIds = customers.map(c => c._id);
-    const openRestaurants = filterOpenRestaurants(restaurants);
+    const openRestaurants = filterOpenRestaurants(restaurants, oneHourAgo);
 
     for (const restaurant of openRestaurants) {
         const queueEntries = [];
@@ -68,7 +88,7 @@ export async function seedQueueAndReview(timezone = 'Asia/Singapore') {
             const randomTime = oneHourAgo.plus({
                 minutes: getRandomInt(0, 59),
                 seconds: getRandomInt(0, 59)
-            }).toUTC();
+            });
 
             const pax = getRandomInt(1, 6);
             const queueGroup = QUEUE_GROUPS[getRandomInt(0, QUEUE_GROUPS.length - 1)];

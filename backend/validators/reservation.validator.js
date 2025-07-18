@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 import { futureDateFullOnly } from '../helpers/time.helper.js';
 
 export function validateReservation(reservation) {

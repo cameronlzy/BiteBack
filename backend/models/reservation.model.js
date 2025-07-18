@@ -21,7 +21,6 @@ const reservationSchema = new mongoose.Schema({
     },
     remarks: {
         type: String,
-        default: undefined,
         validate: {
             validator: function (value) {
                 if (value == null) return true;
@@ -36,7 +35,7 @@ const reservationSchema = new mongoose.Schema({
     },
     pax: { type: Number, required: true },
     status: { type: String, enum: ['booked', 'no-show', 'cancelled', 'completed'], default: 'booked' },
-    event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: undefined },
+    event: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
 }, { versionKey: false });
 
 reservationSchema.index({ customer: 1 });

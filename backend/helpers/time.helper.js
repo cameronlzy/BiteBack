@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import Joi from 'joi';
+import Joi from '../validators/joi.js';
 
 // validates only iso full strings (must be in the future)
 const fullISORegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,})?)?(Z|[+-]\d{2}:\d{2})?$/;
@@ -9,7 +9,7 @@ export const futureDateFullOnly = Joi.string()
   .custom((value, helpers) => {
     const dt = DateTime.fromISO(value, { setZone: true });
     if (!dt.isValid) return helpers.error('any.invalid');
-    const now = DateTime.now();
+    const now = DateTime.utc();
     if (dt < now) return helpers.error('custom.date.min', { limit: now.toISO() });
     return value;
 }, 'Strict full ISO datetime validation')

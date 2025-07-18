@@ -7,8 +7,8 @@ import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 
 describe('generateAnalytics integration test', () => {
   it.skip('computes reservations, queue, reviews and visitLoadByHour correctly', async () => {
-        const todaySGT = DateTime.now().setZone('Asia/Singapore').startOf('day');
-        const todayUTC = DateTime.now().toUTC().startOf('day');
+        const todaySGT = DateTime.utc().setZone('Asia/Singapore').startOf('day');
+        const todayUTC = DateTime.utc().toUTC().startOf('day');
         const makeDate = (h, m) => todayUTC.plus({ hours: h, minutes: m }).toJSDate();
 
         const todayWeekdayIdx = todaySGT.weekday - 1;

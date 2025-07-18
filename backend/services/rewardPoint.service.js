@@ -24,16 +24,16 @@ export async function getAllPoints(authUser, query) {
 }
 
 export async function getPointByRestaurant(authUser, restaurantId) {
-    const restaurant = await Restaurant.findById(restaurantId).lean();
+    const restaurant = await Restaurant.exists({ _id: restaurantId });
     if (!restaurant) return error(404, 'Restaurant not found');
 
-    const point = await RewardPoint.findOne({ customer: authUser.profile, restaurant: restaurant._id }).lean();
+    const point = await RewardPoint.findOne({ customer: authUser.profile, restaurant: restaurantId }).lean();
 
     return success(point || null);
 }
 
 export async function updatePoints(restaurant, update) {
-    const user = await User.findOne({ username: update.username }).lean();
+    const user = await User.findOne({ username: update.username }).select('_id profile').lean();
     if (!user) return error(404, 'Customer not found');
 
     const pass = await adjustPoints(update.change, restaurant._id, user.profile);

@@ -1,0 +1,60 @@
+import Joi from './joi.js';
+import { paginationSchema } from './pagination.validator.js';
+
+const itemsSchema = Joi.array().items(
+    Joi.object({
+        item: Joi.objectId().required(),
+        quantity: Joi.number().integer().min(1).required(),
+        remarks: Joi.string(),
+    })
+).min(1);
+
+export function validateHistory(query) {
+    const schema = paginationSchema.keys({
+        restaurantId: Joi.objectId().optional()
+    });
+    return schema.validate(query);
+}
+
+export function validateCode(code) {
+    const schema = Joi.object({
+        code: Joi.string().pattern(/^\d{6}$/).required(),
+    });
+    return schema.validate(code);
+}
+
+export function validateOrder(order) {
+    const schema = Joi.object({
+        type: Joi.string().valid('preorder').required(),
+        restaurant: Joi.objectId().required(),
+        items: itemsSchema.required(),
+    });
+    return schema.validate(order);
+}
+
+export function validatePatch(patch) {
+    const schema = Joi.object({
+        add: itemsSchema,
+        update: Joi.array().items(Joi.object({
+            _id: Joi.objectId().required(),
+            quantity: Joi.number().integer().min(1),
+            remarks: Joi.string(),
+        })),
+        remove: Joi.array().items(Joi.objectId()),
+    }).min(1);
+    return schema.validate(patch);
+}
+
+export function validateTableNumber(table) {
+    const schema = Joi.object({
+        tableNumber: Joi.number().integer().min(1).required(),
+    });
+    return schema.validate(table);
+}
+
+export function validateStatus(status) {
+    const schema = Joi.object({
+        status: Joi.string().valid('pending', 'preparing', 'completed').required(),
+    });
+    return schema.validate(status);
+}

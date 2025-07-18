@@ -4,8 +4,8 @@ import { DateTime } from 'luxon';
 
 export function createTestEvent({ 
     restaurant = new mongoose.Types.ObjectId(), 
-    startDate = DateTime.now().minus({ days: 3 }).toJSDate(),
-    endDate = DateTime.now().plus({ days: 3 }).toJSDate() 
+    startDate = DateTime.utc().minus({ days: 3 }).toJSDate(),
+    endDate = DateTime.utc().plus({ days: 3 }).toJSDate() 
 } = {}) {
     const title = 'title';
     const description = 'description';

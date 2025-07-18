@@ -44,6 +44,9 @@ router.post('/:id/images', [validateObjectId(), auth, isOwner, authorizedRestaur
 // [Owner] - Reorder/Delete images from restaurant
 router.put('/:id/images', [validateObjectId(), auth, isOwner, authorizedRestaurantOwner], restaurantController.updateRestaurantImages);
 
+// [Owner] - Toggle restaurant preorders
+router.patch('/:id/preorders-enabled', [validateObjectId(), auth, isOwner, authorizedRestaurantOwner], restaurantController.togglePreorders);
+
 // [Owner] - Update restaurant
 router.patch('/:id', [validateObjectId(), auth, isOwner, authorizedRestaurantOwner], restaurantController.updateRestaurant);
 

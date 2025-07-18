@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { error, success } from '../helpers/response.js';
 
-export async function addImage(docModel, docId, uploadedFile, imageField = 'images') {
+export async function addImage(docModel, docId, uploadedFile, imageField = 'image') {
   const imageUrl = uploadedFile.path;
 
   const doc = await docModel.findById(docId);

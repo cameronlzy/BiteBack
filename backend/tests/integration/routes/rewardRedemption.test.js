@@ -15,7 +15,6 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import { DateTime } from 'luxon';
 import RewardPoint from '../../../models/rewardPoint.model.js';
-import { expect } from '@jest/globals';
 
 describe('reward redemption test', () => {
     let server;
@@ -242,7 +241,7 @@ describe('reward redemption test', () => {
         });
 
         it('should return 410 if expired', async () => {
-            rewardRedemption.activatedAt = DateTime.now().minus({ days: 1}).toJSDate();
+            rewardRedemption.activatedAt = DateTime.utc().minus({ days: 1}).toJSDate();
             await rewardRedemption.save();
             const res = await exec();
             expect(res.status).toBe(410);

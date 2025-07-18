@@ -163,7 +163,7 @@ export async function getRestaurantById(restaurantId) {
 
 export async function getAvailability(restaurantId, query) {
   // find restaurant
-  const restaurant = await Restaurant.findById(restaurantId).select('+_id +timezone').lean();
+  const restaurant = await Restaurant.findById(restaurantId).select('_id timezone openingHours slotDuration maxCapacity').lean();
   if (!restaurant) return error(404, 'Restaurant not found');
 
   // create time slots
@@ -332,6 +332,12 @@ export async function updateRestaurant(restaurant, update) {
   
   await restaurant.save();
   return success(restaurant.toObject());
+}
+
+export async function togglePreorders(restaurant, data) {
+  restaurant.preordersEnabled = data.preordersEnabled;
+  await restaurant.save();
+  return success(data);
 }
 
 export async function deleteRestaurant(restaurant, authUser) {

@@ -73,7 +73,7 @@ dailyAnalyticsSchema.pre('save', function (next) {
 
 dailyAnalyticsSchema.post('save', async function (doc) {
   try {
-    const now = DateTime.now().startOf('day');
+    const now = DateTime.utc().startOf('day');
     const maxDays = Math.max(...DAYS_TO_CHECK);
     const cutoff = now.minus({ days: maxDays });
 

@@ -14,6 +14,8 @@ import rewardItem from '../routes/rewardItem.route.js';
 import rewardPoint from '../routes/rewardPoint.route.js';
 import rewardRedemption from '../routes/rewardRedemption.route.js';
 import events from '../routes/event.route.js';
+import menus from '../routes/menu.route.js';
+import orders from '../routes/order.route.js';
 
 export default function(app) {
   app.use(express.json());
@@ -31,6 +33,8 @@ export default function(app) {
   app.use('/api/rewards', rewardPoint);
   app.use('/api/rewards', rewardRedemption);
   app.use('/api/events', events)
+  app.use('/api/menu', menus);
+  app.use('/api/orders', orders);
 
   // to log error
   app.use(error);

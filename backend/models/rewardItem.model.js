@@ -10,6 +10,7 @@ const rewardItemSchema = new mongoose.Schema({
 }, { timestamps: true, versionKey: false });
 
 rewardItemSchema.index({ restaurant: 1 });
+rewardItemSchema.index({ restaurant: 1, isActive: 1 });
 
 const RewardItem = mongoose.model('RewardItem', rewardItemSchema);
 

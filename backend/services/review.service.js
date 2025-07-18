@@ -13,11 +13,11 @@ import { updateVisitReviewedStatus } from './visitHistory.service.js';
 
 export async function getEligibleVisits(restaurantId, authUser) {
     // check if restaurant exists
-    const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
-    if (!restaurant) return { status: 404, body: 'Restaurant not found' };
+    const restaurant = await Restaurant.exists({ _id: restaurantId });
+    if (!restaurant) return error(404, 'Restaurant not found');
 
     // get visits by customer in restaurant
-    const visitHistory = await VisitHistory.findOne({ customer: authUser.profile, restaurant: restaurant._id }).select('visits').lean();
+    const visitHistory = await VisitHistory.findOne({ customer: authUser.profile, restaurant: restaurantId }).select('visits').lean();
     if (!visitHistory || visitHistory.visits.length === 0) return success([]);
 
     // filter out reviewed visits
@@ -34,13 +34,13 @@ export async function getReviewsByRestaurant(restaurantId, authUser, query) {
     const skip = (page - 1) * limit;
 
     // check if restaurant exists
-    const restaurant = await Restaurant.findById(restaurantId).select('_id').lean();
+    const restaurant = await Restaurant.exists({ _id: restaurantId });
     if (!restaurant) return error(404, 'Restaurant not found');
 
     // get reviews by restaurant
     let [reviews, total] = await Promise.all([
-        Review.find({ restaurant: restaurant._id }).populate('customer', 'username').sort({ [sortBy]: order === 'asc' ? 1 : -1 }).skip(skip).limit(limit).lean(),
-        Review.countDocuments({ restaurant: restaurant._id }),
+        Review.find({ restaurant: restaurantId }).populate('customer', 'username').sort({ [sortBy]: order === 'asc' ? 1 : -1 }).skip(skip).limit(limit).lean(),
+        Review.countDocuments({ restaurant: restaurantId }),
     ]);
 
     if (Array.isArray(reviews) && reviews.length === 0) {
@@ -81,7 +81,7 @@ export async function getReviewsByCustomer(customerId, authUser, query) {
     const skip = (page - 1) * limit;
 
     // find customer profile
-    const customer = await CustomerProfile.findById(customerId).lean();
+    const customer = await CustomerProfile.exists({ _id: customerId });
     if (!customer) return error(404, 'Customer profile not found');
 
     // get reviews by customer
@@ -134,7 +134,7 @@ export async function getReviewById(reviewId) {
 
 export async function createReview(data, user) {
     return await withTransaction(async (session) => {
-        const restaurant = await Restaurant.findById(data.restaurant).select('timezone').lean();
+        const restaurant = await Restaurant.findById(data.restaurant).select('_id timezone').lean();
         if (!restaurant) return error(404, 'Restaurant not found');
 
         const visitDate = DateTime.fromISO(data.dateVisited, { zone: restaurant.timezone }).toUTC().toJSDate();
@@ -206,8 +206,8 @@ export async function createReply(data, review, authUser) {
 export async function addBadge(data, reviewId, authUser) {
     return await withTransaction(async (session) => {
         // find review
-        const review = await Review.findById(reviewId).session(session).lean();
-        if (!review) return error(404, 'Review with this ID not found');
+        const review = await Review.findById(reviewId).select('_id restaurant customer').session(session).lean();
+        if (!review) return error(404, 'Review not found');
 
         // check if customer has made a badgeVote for this review
         const badgeVote = await ReviewBadgeVote.findOne({
@@ -255,8 +255,8 @@ export async function deleteReply(review) {
 export async function deleteBadge(reviewId, authUser) {
     return await withTransaction(async (session) => {
         // find review
-        const review = await Review.findById(reviewId).session(session).lean();
-        if (!review) return error(404, 'Review with this ID not found');
+        const review = await Review.findById(reviewId).select('_id restaurant customer').session(session).lean();
+        if (!review) return error(404, 'Review not found');
 
         // find badgeVote
         const badgeVote = await ReviewBadgeVote.findOne({

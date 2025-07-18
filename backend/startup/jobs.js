@@ -5,6 +5,6 @@ import { registerSeedDataJobs } from '../jobs/seedDataJobs.js';
 export function registerJobs(timezone = 'Asia/Singapore') {
     if (process.env.NODE_ENV === 'test') return;
     registerEndOfDayJobs(timezone);
-    registerExpiryJobs();
+    registerExpiryJobs(timezone);
     registerSeedDataJobs(timezone);
 }

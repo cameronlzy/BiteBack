@@ -8,15 +8,15 @@ export function registerEndOfDayJobs(timezone = 'Asia/Singapore') {
     
     // runs every 15 minute
     cron.schedule('*/15 * * * *', async () => {
-        const now = DateTime.now().setZone(timezone);
+        const now = DateTime.utc().setZone(timezone);
         await runJob('EndOfDayCleanup', async () => {
             await processEndOfDay(now);
         });
     }, { timezone });
 
-    // runs every minute, backfills review analytics at the end of the day
+    // backfills review analytics at the end of the day
     cron.schedule('59 23 * * *', async () => {
-        const runDate = DateTime.now().setZone(timezone).startOf('day');
+        const runDate = DateTime.utc().setZone(timezone).startOf('day');
         await runJob('EndOfDayBackfill', async () => {
             await backfillReviewAnalytics(runDate);
         });

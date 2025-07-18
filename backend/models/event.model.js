@@ -15,7 +15,6 @@ const eventSchema = new mongoose.Schema({
     bannerImage: { type: String },
     remarks: {
         type: String,
-        default: undefined,
         validate: {
             validator: function (value) {
                 if (value == null) return true;
@@ -31,6 +30,7 @@ const eventSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 eventSchema.index({ restaurant: 1 });
+eventSchema.index({ restaurant: 1, status: 1 });
 
 const Event = mongoose.model('Event', eventSchema);
 

@@ -43,7 +43,7 @@ async function createReviewsForDay(restaurantId, date, customers, numReviews = g
 }
 
 function generateTrendedAnalytics(restaurantId, date, prev, reviewStats, visitLoadByHour) {
-    const reservationTotal = smoothValue(prev.reservations.total, 0.01, 0.1, 10, 50);
+    const reservationTotal = smoothValue(prev.reservations.total, 0.01, 0.1, 20, 50);
     const reservationAttended = smoothValue(prev.reservations.attended, 0.01, 0.1, 0, reservationTotal);
     const averagePax = reservationAttended > 0 ? smoothValue(prev.reservations.averagePax, 0, 0.05, 1, 6) : 0;
     const noShowRate = reservationTotal > 0 ? (reservationTotal - reservationAttended) / reservationTotal : 0;
@@ -109,7 +109,7 @@ async function seedAnalytics(days, restaurantIdArg, timezone) {
 
     const customers = (await CustomerProfile.find().select('_id').lean()).map(c => c._id);
 
-    const today = DateTime.now().setZone(timezone).startOf('day').toUTC();
+    const today = DateTime.utc().setZone(timezone).startOf('day').toUTC();
     const analyticsData = [];
 
     let prevEntry = {

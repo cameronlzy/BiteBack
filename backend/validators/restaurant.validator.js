@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 
 const cuisineList = [
   'Chinese',
@@ -159,4 +159,11 @@ export function validateEventQuery(query) {
     event: Joi.boolean()
   });
   return schema.validate(query);
+}
+
+export function validatePreordersToggle(toggle) {
+  const schema = Joi.object({
+    preordersEnabled: Joi.boolean().required()
+  });
+  return schema.validate(toggle);
 }

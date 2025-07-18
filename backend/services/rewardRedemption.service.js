@@ -96,7 +96,7 @@ export async function completeRedemption(authUser, code) {
 
     const expired = DateTime
         .fromJSDate(rewardRedemption.activatedAt)
-        .plus({ minutes: 15 }) < DateTime.now();
+        .plus({ minutes: 15 }) < DateTime.utc();
     if (expired) {
         rewardRedemption.status = 'expired';
         rewardRedemption.code = undefined;
@@ -129,7 +129,7 @@ async function generateUniqueCode() {
     let exists = true;
 
     while (exists) {
-        code = Math.floor(100000 + Math.random() * 900000);
+        code = Math.floor(100000 + Math.random() * 900000).toString();
         exists = await RewardRedemption.exists({ code });
     }
 

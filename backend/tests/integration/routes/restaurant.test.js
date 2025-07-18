@@ -421,8 +421,8 @@ describe('restaurant test', () => {
 
             visitHistory = createTestVisitHistory(restaurant._id, user.profile);
             visitHistory.visits = [
-                { visitDate: DateTime.now().minus({ days: 1 }).toJSDate(), reviewed: false },
-                { visitDate: DateTime.now().toJSDate(), reviewed: false }
+                { visitDate: DateTime.utc().minus({ days: 1 }).toJSDate(), reviewed: false },
+                { visitDate: DateTime.utc().toJSDate(), reviewed: false }
             ];
             await visitHistory.save();
         });
@@ -802,6 +802,48 @@ describe('restaurant test', () => {
             expect(res.status).toBe(200);
             expect(res.body.images.length).toBe(2);
             expect(res.body.images[0]).toBe('https://res.cloudinary.com/drmcljacy/image/upload/v1749107560/biteback/restaurants/aqm6h7qc3iei3gvjzala.png');
+        });
+    });
+
+    describe('PATCH /api/restaurants/:id/preorders-enabled', () => {
+        let restaurant;
+        let restaurantId;
+        let token;
+        let owner;
+        let cookie;
+        let preordersEnabled;
+
+        beforeEach(async () => {
+            await Restaurant.deleteMany({});
+            
+            // create an owner
+            owner = await createTestUser('owner');
+            await owner.save();
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+
+            // create restaurant
+            restaurant = createTestRestaurant(owner.profile);
+            await restaurant.save();
+            restaurantId = restaurant._id;
+            preordersEnabled = false;
+        });
+
+        const exec = () => {
+            return request(server)
+            .patch(`/api/restaurants/${restaurantId}/preorders-enabled`)
+            .set('Cookie', [cookie])
+            .send({
+                preordersEnabled
+            });
+        };
+
+        it('should return 200', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            expect(res.body.preordersEnabled).toEqual(preordersEnabled);
+            const restaurantInDb = await Restaurant.findById(restaurant._id).select('preordersEnabled').lean();
+            expect(restaurantInDb.preordersEnabled).toBe(preordersEnabled);
         });
     });
 

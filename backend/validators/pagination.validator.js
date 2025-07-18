@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 
 export const paginationSchema = Joi.object({
     page: Joi.number().integer().min(1).default(1),

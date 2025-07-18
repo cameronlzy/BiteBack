@@ -50,7 +50,7 @@ export async function createReservation(authUser, data) {
         }
 
         // get restaurant
-        const restaurant = await Restaurant.findById(data.restaurant).session(session).lean();
+        const restaurant = await Restaurant.findById(data.restaurant).select('timezone slotDuration maxCapacity _id').session(session).lean();
         if (!restaurant) return error(404, 'Restaurant not found');
 
         let event;
@@ -170,7 +170,7 @@ export async function updateReservation(reservation, update) {
     if (isDateChanging || isPaxChanging) {
         const newDate = isDateChanging ? update.startDate : reservation.startDate.toISOString();
         const newPax = isPaxChanging ? update.pax : reservation.pax;
-        const restaurant = await Restaurant.findById(reservation.restaurant).select('+maxCapacity +slotDuration +timezone').lean();
+        const restaurant = await Restaurant.findById(reservation.restaurant).select('maxCapacity slotDuration timezone _id').lean();
         slotDuration = restaurant.slotDuration;
 
         const slotStart = DateTime.fromISO(newDate, { zone: restaurant.timezone }).toUTC();

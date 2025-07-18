@@ -46,9 +46,7 @@ export function createSlots(openingHoursString, localDateTime, slotDuration = 60
   return slots;
 }
 
-export function filterOpenRestaurants(restaurants) {
-  const nowUTC = DateTime.utc();
-
+export function filterOpenRestaurants(restaurants, nowUTC = DateTime.utc()) {
   return restaurants.filter((restaurant) => {
     const timezone = restaurant.timezone || 'Asia/Singapore';
     const localNow = nowUTC.setZone(timezone);
@@ -105,7 +103,7 @@ export function getCurrentTimeSlotStartUTC(restaurant) {
 }
 
 export function getOpeningHoursToday(restaurant, timezone = 'Asia/Singapore') {
-  const localNow = DateTime.now().setZone(timezone);
+  const localNow = DateTime.utc().setZone(timezone);
   const weekdayIndex = localNow.weekday - 1;
 
   const openingHoursArray = restaurant.openingHours.split('|');

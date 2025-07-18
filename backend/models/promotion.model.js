@@ -72,6 +72,7 @@ promotionSchema.pre('updateMany', handleSearchKeywordsUpdate());
 
 promotionSchema.index({ searchKeywords: 1 });
 promotionSchema.index({ restaurant: 1 });
+promotionSchema.index({ restaurant: 1, isActive: 1 });
 
 const Promotion = mongoose.model('Promotion', promotionSchema);
 

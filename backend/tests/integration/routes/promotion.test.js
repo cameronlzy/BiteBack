@@ -60,8 +60,8 @@ describe('promotion test', () => {
 
             // create 2 endDates
             endDates = [
-                DateTime.now().plus({ weeks: 1}).toJSDate(), 
-                DateTime.now().plus({ weeks: 2 }).toJSDate()
+                DateTime.utc().plus({ weeks: 1}).toJSDate(), 
+                DateTime.utc().plus({ weeks: 2 }).toJSDate()
             ];
 
             // create 2 promotions
@@ -244,8 +244,8 @@ describe('promotion test', () => {
             await restaurant.save();
             title = 'title';
             description = 'description';
-            startDate = DateTime.now().plus({ days: 1 }).toJSDate();
-            endDate = DateTime.now().plus({ weeks: 1 }).toJSDate();            
+            startDate = DateTime.utc().plus({ days: 1 }).toJSDate();
+            endDate = DateTime.utc().plus({ weeks: 1 }).toJSDate();            
         });
 
         const exec = () => {
@@ -429,12 +429,12 @@ describe('promotion test', () => {
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);
-            promotion.startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
+            promotion.startDate = DateTime.utc().plus({ hours: 1 }).toJSDate();
             await promotion.save();
             promotionId = promotion._id;
 
             title = 'newTitle';
-            newStartDate = DateTime.now().plus({ days: 2 }).toJSDate();  
+            newStartDate = DateTime.utc().plus({ days: 2 }).toJSDate();  
         });
 
         const exec = () => {
@@ -453,14 +453,14 @@ describe('promotion test', () => {
         });
 
         it('should return 400 if promotion has started', async () => {
-            promotion.startDate = DateTime.now().minus({ hours: 1 }).toJSDate();
+            promotion.startDate = DateTime.utc().minus({ hours: 1 }).toJSDate();
             await promotion.save();
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
         it('should return 400 if promotion has expired', async () => {
-            promotion.endDate = DateTime.now().minus({ days: 5 }).toJSDate();
+            promotion.endDate = DateTime.utc().minus({ days: 5 }).toJSDate();
             await promotion.save();
             const res = await exec();
             expect(res.status).toBe(400);
@@ -497,7 +497,7 @@ describe('promotion test', () => {
             await restaurant.save();
 
             promotion = createTestPromotion(restaurant._id);
-            promotion.startDate = DateTime.now().plus({ hours: 1 }).toJSDate();
+            promotion.startDate = DateTime.utc().plus({ hours: 1 }).toJSDate();
             await promotion.save();
             promotionId = promotion._id;      
         });
@@ -509,14 +509,14 @@ describe('promotion test', () => {
         };
 
         it('should return 400 if promotion has started', async () => {
-            promotion.startDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            promotion.startDate = DateTime.utc().minus({ days: 1 }).toJSDate();
             await promotion.save();
             const res = await exec();
             expect(res.status).toBe(400);
         });
 
         it('should return 400 if promotion has expired', async () => {
-            promotion.endDate = DateTime.now().minus({ days: 1 }).toJSDate();
+            promotion.endDate = DateTime.utc().minus({ days: 1 }).toJSDate();
             await promotion.save();
             const res = await exec();
             expect(res.status).toBe(400);

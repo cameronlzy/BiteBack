@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from './joi.js';
 import { futureDateFullOnly, timeString } from '../helpers/time.helper.js';
 import { paginationSchema } from './pagination.validator.js';
 
