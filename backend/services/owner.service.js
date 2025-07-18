@@ -1,3 +1,7 @@
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import _ from 'lodash';
+import config from 'config';
 import User from '../models/user.model.js';
 import OwnerProfile from '../models/ownerProfile.model.js';
 import Restaurant from '../models/restaurant.model.js';
@@ -5,10 +9,9 @@ import Staff from '../models/staff.model.js';
 import * as restaurantService from '../services/restaurant.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
-import _ from 'lodash';
 import simpleCrypto from '../helpers/encryption.helper.js';
-import bcrypt from 'bcryptjs';
 import { error, success } from '../helpers/response.js';
+import { sendVerifyEmail } from '../helpers/sendEmail.js';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
@@ -37,8 +40,22 @@ export async function createProfile(authUser, data) {
         user.username = data.username;
         await user.save(wrapSession(session));
 
-        const token = generateAuthToken(user);
-        return { token, status: 200, body: profile.toObject() };
+        if (user.isVerified) {
+            const token = generateAuthToken(user);
+            return { token, status: 200, body: profile.toObject() };
+        } else {
+            // send email
+            const token = crypto.randomBytes(32).toString('hex');
+            const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+            user.verifyEmailToken = hash;
+            user.verifyEmailExpires = Date.now() + 30 * 60 * 1000;
+            await user.save(wrapSession(session));
+
+            const link = `${config.get('frontendLink')}/verify-email/${token}`;
+            await sendVerifyEmail(user.email, user.username, link);
+            return success(profile.toObject());
+        }
     });
 }
 

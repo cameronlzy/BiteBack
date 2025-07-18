@@ -16,7 +16,10 @@ passport.use(new GoogleStrategy({
         const isNewUser = !user;
 
         if (isNewUser) {
-            user = await User.create({ email, role });
+            user = await User.create({ email, role, isVerified: true });
+        } else if (!user.isVerified) {
+            user.isVerified = true;
+            await user.save();
         }
 
         user._isNew = isNewUser;

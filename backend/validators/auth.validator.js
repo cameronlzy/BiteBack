@@ -56,3 +56,10 @@ export function validatePasswordChange(change) {
   });
   return schema.validate(change);
 }
+
+export function validateEmail(email) {
+  const schema = Joi.object({
+    email: Joi.string().email().required()
+  });
+  return schema.validate(email);
+}

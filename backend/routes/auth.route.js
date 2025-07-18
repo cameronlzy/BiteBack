@@ -16,6 +16,15 @@ router.get('/google/callback', passport.authenticate('google', {
     failureRedirect: `${config.get('frontendLink')}/login`
 }), authController.googleCallback);
 
+// [Public] - Registration for owners and customers
+router.post('/register', authController.register);
+
+// [Public] - Validate token to verify email
+router.post('/verify-email/:token', authController.verifyEmail);
+
+// [Public] - Resend verification email
+router.post('/resend-verification', authController.resendVerification);
+
 // [Public] - Generate token for password reset
 router.post('/forget-password', authController.forgotPassword);
 
@@ -30,9 +39,6 @@ router.post('/logout', authController.logout);
 
 // [Public] - Login for owners and customers via username or email + password
 router.post('/login', authController.login);
-
-// [Public] - Registration for owners and customers
-router.post('/register', authController.register);
 
 // [Staff] - Login for staff
 router.post('/login/staff', authController.staffLogin);

@@ -6,12 +6,15 @@ import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
 import { createTestStaff } from '../../factories/staff.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, generateTempToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import config from 'config';
+import cookieParser from 'cookie';
+import jwt from 'jsonwebtoken';
 
 describe('owner test', () => {
     let server;
@@ -85,8 +88,10 @@ describe('owner test', () => {
             await Restaurant.deleteMany({});
 
             user = await createTestUser('owner');
+            user.username = undefined;
+            user.profile = undefined;
             await user.save();
-            token = generateAuthToken(user);
+            token = generateTempToken(user);
             cookie = setTokenCookie(token);
 
             username = 'username';
@@ -273,6 +278,23 @@ describe('owner test', () => {
             expect(res.body).not.toHaveProperty('password');
             expect(res.body.profile).toHaveProperty('companyName');
             expect(res.body.profile).toHaveProperty('restaurants');
+        });
+
+        it('should return valid jwtToken', async () => {
+            const res = await exec();
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 

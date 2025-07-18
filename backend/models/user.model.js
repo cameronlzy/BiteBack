@@ -18,8 +18,11 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     refPath: 'profileModel',
   },
+  isVerified: { type: Boolean, default: false },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+  verifyEmailToken: { type: String },
+  verifyEmailExpires: { type: Date },
 }, { versionKey: false });
 
 userSchema.virtual('profileModel').get(function () {

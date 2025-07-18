@@ -27,6 +27,81 @@ describe('auth test', () => {
         await server.close();
     });
 
+    describe('POST /api/auth/verify-email/:token', () => {
+        let user;
+        let userId;
+        let token;
+        let hash;
+    
+        const exec = () => {
+            return request(server)
+            .post(`/api/auth/verify-email/${token}`);
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+            user = await createTestUser('customer');
+            user.isVerified = false;
+            userId = user._id;
+
+            // create token
+            token = crypto.randomBytes(32).toString('hex');
+            hash = crypto.createHash('sha256').update(token).digest('hex');
+            user.verifyEmailToken = hash;
+            user.verifyEmailExpires = Date.now() + 30 * 60 * 1000;
+            await user.save();
+        });
+
+        it('should return 400 if username/email does not belong to anyone', async () => {
+            let otherToken = crypto.randomBytes(32).toString('hex');
+            token = otherToken;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200 and change the password', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            let updatedUser = await User.findById(userId).select('isVerified').lean();
+            expect(updatedUser.isVerified).toBe(true);
+        });
+    });
+
+    describe('POST /api/auth/resend-verification', () => {
+        let email;
+        let user;
+    
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/resend-verification')
+            .send({
+                email
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+            user = await createTestUser('customer');
+            user.isVerified = false;
+            user.email = "benlua73@gmail.com";
+            await user.save();
+            email = user.email;
+        });
+
+        it('should return 400 if username/email does not belong to anyone', async () => {
+            email = "otherEmail@gamil.com"
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        // skip to avoid spamming emails
+        it.skip('should return 200 and send email when using email', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+    });
+
     describe('POST /api/auth/forget-password', () => {
         let email;
         let user;
@@ -56,7 +131,7 @@ describe('auth test', () => {
         });
 
         // skip to avoid spamming emails
-        it.skip('should return 200 and send email when using username', async () => {
+        it.skip('should return 200 and send email when using email', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
         });
@@ -75,7 +150,7 @@ describe('auth test', () => {
         });
     });
 
-    describe('POST /api/auth/reset-password', () => {
+    describe('POST /api/auth/reset-password/:token', () => {
         let user;
         let password;
         let userId;
@@ -187,26 +262,9 @@ describe('auth test', () => {
 
             expect(isMatch).toBe(true);
         });
-
-        it('should return valid jwtToken', async () => {
-            const res = await exec();
-            const cookies = res.headers['set-cookie'];
-            expect(cookies).toBeDefined();
-
-            const parsed = cookieParser.parse(cookies[0]);
-            const token = parsed.token;
-            expect(token).toBeDefined();
-    
-            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
-
-            const requiredKeys = [
-                'email', 'username', 'role', 'profile'
-            ];
-            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
-        });
     });
 
-    describe('POST /api/auth/register - for customer', () => {
+    describe('POST /api/auth/register', () => {
         let email;
         let username;
         let password;

@@ -14,6 +14,18 @@ export function generateAuthToken(user) {
   );
 }
 
+export function generateTempToken(user) {
+  return jwt.sign(
+    {
+      _id: user._id,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+    },
+    config.get('jwtPrivateKey')
+  );
+}
+
 export function staffGenerateAuthToken(staff) {
   return jwt.sign(
     {

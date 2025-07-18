@@ -4,9 +4,77 @@ import bcrypt from 'bcryptjs';
 import _ from 'lodash';
 import crypto from 'crypto';
 import config from 'config';
-import { generateAuthToken, staffGenerateAuthToken } from '../helpers/token.helper.js';
-import sendEmail from '../helpers/sendEmail.js';
+import { generateAuthToken, staffGenerateAuthToken, generateTempToken } from '../helpers/token.helper.js';
+import { sendResetPasswordEmail, sendVerifyEmail } from '../helpers/sendEmail.js';
 import { error, success } from '../helpers/response.js';
+
+export async function register(data) {
+    // if user exists
+    let existingUser = await User.findOne({
+        $or: [
+            { email: data.email },
+            { username: data.username }
+        ]
+    }).lean();
+    if (existingUser) {
+        if (existingUser.email === data.email) {
+            return error(400, 'Email already registered');
+        }
+        if (existingUser.username === data.username) {
+            return error(400, 'Username already taken.');
+        }
+    }
+
+    // create new user
+    let user = new User(_.pick(data, ['email', 'username', 'role']));
+
+    // hash password and add references
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(data.password, salt);
+    await user.save();
+    
+    const token = generateTempToken(user);
+    return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role']) };
+}
+
+export async function verifyEmail(token) {
+    if (!token) return error(400, 'Token is required');
+
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+        verifyEmailToken: hash,
+        verifyEmailExpires: { $gt: Date.now() },
+    });
+
+    if (!user) return error(400, 'Token is invalid or expired');
+
+    user.isVerified = true;
+    user.verifyEmailToken = undefined;
+    user.verifyEmailExpires = undefined;
+    await user.save();
+
+    return success({ message: 'Email verified successfully' });
+}
+
+export async function resendVerification(data) {
+    const user = await User.findOne({ email: data.email });
+    if (!user) return error(400, 'User not found');
+
+    if (user.isVerified) return error(400, 'Email is already verified');
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+    user.verifyEmailToken = hash;
+    user.verifyEmailExpires = Date.now() + 30 * 60 * 1000;
+    await user.save();
+
+    const link = `${config.get('frontendLink')}/verify-email/${token}`;
+    await sendVerifyEmail(user.email, user.username, link);
+
+    return success({ message: 'Verification email resent' });
+}
 
 export async function forgotPassword(credentials) {
     // find user
@@ -25,12 +93,14 @@ export async function forgotPassword(credentials) {
     await user.save();
 
     const resetLink = `${config.get('frontendLink')}/reset-password/${token}`;
-    await sendEmail(user.email, 'Password Reset', `Click to reset your password: ${resetLink}`);
+    await sendResetPasswordEmail(user.email, user.baseModelName, resetLink);
 
     return success({ message: 'Password reset link sent to your email' });
 }
 
-export async function resetPassword(data, token)  {
+export async function resetPassword(data, token) {
+    if (!token) return error(400, 'Token is required');
+
     const hash = crypto.createHash('sha256').update(token).digest('hex');
     const now = new Date();
 
@@ -64,8 +134,7 @@ export async function changePassword(data, authUser) {
     user.password = await bcrypt.hash(data.password, salt);
 
     await user.save();
-    const token = generateAuthToken(user);
-    return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role'])};
+    return success(_.pick(user, ['_id', 'email', 'username', 'role']));
 }
 
 export async function login(credentials) {
@@ -74,35 +143,6 @@ export async function login(credentials) {
     if (status !== 200) return { status, body };
     const token = generateAuthToken(body);
     return { token, status: 200, body: _.pick(body, ['_id', 'email', 'username', 'role']) };
-}
-
-export async function register(data) {
-    // if user exists
-    let existingUser = await User.findOne({
-        $or: [
-            { email: data.email },
-            { username: data.username }
-        ]
-    }).lean();
-    if (existingUser) {
-        if (existingUser.email === data.email) {
-            return error(400, 'Email already registered');
-        }
-        if (existingUser.username === data.username) {
-            return error(400, 'Username already taken.');
-        }
-    }
-
-    // create new user
-    let user = new User(_.pick(data, ['email', 'username', 'role']));
-
-    // hash password and add references
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(data.password, salt);
-    await user.save();
-    
-    const token = generateAuthToken(user);
-    return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role']) };
 }
 
 export async function staffLogin(credentials) {

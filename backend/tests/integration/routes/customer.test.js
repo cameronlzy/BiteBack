@@ -2,11 +2,14 @@ import User from '../../../models/user.model.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, generateTempToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import config from 'config';
+import cookieParser from 'cookie';
+import jwt from 'jsonwebtoken';
 
 describe('customer test', () => {
     let server;
@@ -115,7 +118,7 @@ describe('customer test', () => {
             user.profile = undefined;
             user.username = undefined;
             await user.save();
-            token = generateAuthToken(user);
+            token = generateTempToken(user);
             cookie = setTokenCookie(token);
 
             username = 'username';
@@ -239,6 +242,23 @@ describe('customer test', () => {
             expect(res.body).not.toHaveProperty('password');
             expect(res.body.profile).toHaveProperty('name');
             expect(res.body.profile).toHaveProperty('contactNumber');
+        });
+
+        it('should return valid jwtToken', async () => {
+            const res = await exec();
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 

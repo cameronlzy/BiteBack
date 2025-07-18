@@ -6,6 +6,7 @@ export async function createTestUser(role = 'customer') {
   const email = `test_${Date.now()}@example.com`;
   const username = `user_${Date.now()}`;
   const password = await bcrypt.hash('Password@123', 10);
+  const isVerified = true;
 
   const roleProfile = role === 'customer' ? 'CustomerProfile' : 'OwnerProfile';
 
@@ -16,6 +17,7 @@ export async function createTestUser(role = 'customer') {
     role,
     roleProfile,
     profile: new mongoose.Types.ObjectId(),
+    isVerified,
   });
   return user;
 }
