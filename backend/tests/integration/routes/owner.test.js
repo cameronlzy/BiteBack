@@ -25,11 +25,6 @@ describe('owner test', () => {
     });
 
     describe('GET /api/owners/me', () => {
-        let email;
-        let username;
-        let password;
-        let role;
-        let roleProfile;
         let token;
         let user;
         let cookie;
@@ -45,24 +40,7 @@ describe('owner test', () => {
             await OwnerProfile.deleteMany({});
             await Restaurant.deleteMany({});
 
-            email = "myEmail@gmail.com";
-            username = "username";
-            password = "myPassword@123";
-            role = "owner";
-            roleProfile = "OwnerProfile";
-
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-
-            user = new User({
-                email,
-                username,
-                password: hashedPassword,
-                role,
-                roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
-
+            user = await createTestUser('owner');
             await user.save();
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -81,6 +59,53 @@ describe('owner test', () => {
             expect(res.status).toBe(200);
             const requiredKeys = [
                 'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/owners', () => {
+        let token;
+        let user;
+        let cookie;
+        let username, companyName;
+
+        const exec = () => {
+            return request(server)
+                .post('/api/owners')
+                .set('Cookie', [cookie])
+                .send({
+                    username, companyName
+                })
+        };
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            user = await createTestUser('owner');
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            username = 'username';
+            companyName = 'name';
+        });
+
+        it('should return 403 if customer', async () => {
+            let customer = await createTestUser('customer');
+            token = generateAuthToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 + user details', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'username', 'companyName'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });

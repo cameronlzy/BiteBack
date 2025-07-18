@@ -497,7 +497,6 @@ describe('order test', () => {
             .send({
                 remove: [entryId]
             });
-            console.log(res.text);
             expect(res.status).toBe(200);
             expect(res.body.items.length).toBe(1);
         });

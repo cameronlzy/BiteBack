@@ -13,6 +13,9 @@ router.get('/me', [auth, isCustomer], customerController.getMe);
 // [Public] - Get information for public profile page
 router.get('/:id', [validateObjectId()], customerController.publicProfile);
 
+// [Public] - Create customer profile upon registration
+router.post('/', [auth, isCustomer], customerController.createProfile);
+
 // [Customer] - Update customer information
 router.patch('/me', [auth, isCustomer], customerController.updateMe);
 

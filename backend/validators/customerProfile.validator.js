@@ -1,5 +1,4 @@
 import Joi from './joi.js';
-import { userJoiSchema } from './user.validator.js';
 
 const cuisineList = [
   'Chinese',
@@ -25,8 +24,8 @@ const cuisineList = [
 ];
 
 export function validateCustomer(profile) {
-  const schema = userJoiSchema.keys({
-    role: Joi.string().valid("customer").required(),
+  const schema = Joi.object({
+    username: Joi.string().min(2).required(),
     name: Joi.string().min(2).max(20).required(),
     contactNumber: Joi.string()
       .pattern(/^\d{8}$/)
@@ -34,13 +33,6 @@ export function validateCustomer(profile) {
       .messages({
         "string.pattern.base": "Contact number must be an 8-digit number.",
         "string.empty": `"contactNumber" is required`
-      }),
-    favCuisines: Joi.array()
-      .items(Joi.string().valid(...cuisineList))
-      .min(1)
-      .required()
-      .messages({
-        "array.min": "Please select at least one favourite cuisine.",
       }),
   });
   return schema.validate(profile);

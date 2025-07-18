@@ -1,10 +1,9 @@
 import Joi from './joi.js';
-import { userJoiSchema } from './user.validator.js';
 import passwordComplexity from 'joi-password-complexity';
 
 export function validateOwner(profile) {
-  const schema = userJoiSchema.keys({
-    role: Joi.string().valid("owner").required(),
+  const schema = Joi.object({
+    username: Joi.string().min(2).required(),
     companyName: Joi.string().min(2).max(255).required(),
   });
   return schema.validate(profile);

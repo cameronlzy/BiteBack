@@ -212,18 +212,6 @@ describe('auth test', () => {
         let password;
         let role;
 
-        let name;
-        let contactNumber;
-        let favCuisines;
-    
-        const exec = () => {
-            return request(server)
-            .post('/api/auth/register')
-            .send({
-                email, username, password, role, name, contactNumber, favCuisines
-            });
-        };
-    
         beforeEach(async () => { 
             await User.deleteMany({});
             await CustomerProfile.deleteMany({});
@@ -231,34 +219,15 @@ describe('auth test', () => {
             username = "myCustomer";
             password = "myPassword@123";
             role = "customer";
-            name = "name";
-            contactNumber = "87654321";
-            favCuisines = ["Chinese"];
-        });
-    
-        it('should return 400 if the request has invalid email', async () => {
-            email = "email";
-            const res = await exec();
-            expect(res.status).toBe(400);
         });
 
-        it('should return 400 if the request has short username', async () => {
-            username = "a";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the request has simple password', async () => {
-            password = "password";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the request had invalid contact number', async () => {
-            contactNumber = "a";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/register')
+            .send({
+                email, username, password, role
+            });
+        };
     
         it('should return 400 if the user exists', async () => {
             await exec();
@@ -274,92 +243,6 @@ describe('auth test', () => {
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
-        });
-
-        it('should return create a customer profile', async () => {
-            await exec();
-            const user = await User.findOne({ email: email })
-                .populate('profile');
-            const requiredKeys = [
-                'name',
-                'contactNumber', 
-                'favCuisines',
-                'dateJoined'
-            ];
-            expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));
-        });
-    });
-
-    describe('POST /api/auth/register - for owner', () => {
-        let email;
-        let username;
-        let password;
-        let role;
-        let companyName;
-    
-        const exec = () => {
-            return request(server)
-            .post('/api/auth/register')
-            .send({
-                email, username, password, role, companyName
-            });
-        };
-    
-        beforeEach(async () => { 
-            await User.deleteMany({});
-            await OwnerProfile.deleteMany({});
-            await Restaurant.deleteMany({});
-
-            // creating a owner
-            email = "myOwner@gmail.com";
-            username = "myOwner";
-            password = "myPassword@123";
-            role = "owner";
-            companyName = "name";
-        });
-
-        it('should return 400 if the request has invalid email', async () => {
-            email = "email";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 400 if the request has short username', async () => {
-            username = "a";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the request has simple password', async () => {
-            password = "password";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the user exists', async () => {
-            await exec();
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 200 and username, email, role', async () => {
-            const res = await exec();
-            expect(res.status).toBe(200);
-            const requiredKeys = [
-                '_id', 'email', 'username', 'role'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            expect(res.body).not.toHaveProperty('password');
-        });
-
-        it('should return create a owner profile', async () => {
-            await exec();
-            const user = await User.findOne({ email: email })
-                .populate('profile');
-            const requiredKeys = [
-                'companyName', 'restaurants', 'dateJoined'
-            ];
-            expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 

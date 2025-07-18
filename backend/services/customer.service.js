@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import User from '../models/user.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
 import Review from '../models/review.model.js';
@@ -19,11 +20,29 @@ export async function getMe(userId) {
 export async function publicProfile(customerId) {
     // get customer
     const customer = await CustomerProfile.findById(customerId)
-        .select('+totalBadges +dateJoined +username')
+        .select('dateJoined username')
         .lean();
     if (!customer) return error(404, 'Customer not found');
 
     return success(customer);
+}
+
+export async function createProfile(authUser, data) {
+    return await withTransaction(async (session) => {
+        const user = await User.findById(authUser._id).session(session);
+        if (!user) return error(404, 'User not found');
+
+        const profile = new CustomerProfile(_.pick(data, ['name', 'username', 'contactNumber']));
+        profile.user = user._id;
+        await profile.save(wrapSession(session));
+
+        user.profile = profile._id;
+        user.username = data.username;
+        await user.save(wrapSession(session));
+        
+        const token = generateAuthToken(user);
+        return { token, status: 200, body: profile.toObject() };
+    });
 }
 
 export async function updateMe(update, authUser) {

@@ -95,8 +95,57 @@ describe('customer test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'dateJoined', 'totalBadges'
+                'dateJoined', 'username'
             ]
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/customers', () => {
+        let token;
+        let user;
+        let cookie;
+        let username, name, contactNumber;
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+            await CustomerProfile.deleteMany({});
+
+            user = await createTestUser('customer');
+            user.profile = undefined;
+            user.username = undefined;
+            await user.save();
+            token = generateAuthToken(user);
+            cookie = setTokenCookie(token);
+
+            username = 'username';
+            name = 'name';
+            contactNumber = '87654321';
+        });
+
+        const exec = () => {
+            return request(server)
+                .post('/api/customers')
+                .set('Cookie', [cookie])
+                .send({
+                    username, name, contactNumber
+                });
+        };
+
+        it('should return 403 if owner', async () => {
+            let owner = await createTestUser('owner');
+            token = generateAuthToken(owner);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 and profile', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'username', 'name', 'contactNumber'
+            ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });

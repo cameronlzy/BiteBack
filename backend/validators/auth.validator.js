@@ -13,6 +13,23 @@ const loginJoiSchema = Joi.object({
   password: passwordComplexity().required(),
 }).xor('email', 'username');
 
+export function validateRole(role) {
+  const schema = Joi.object({
+    role: Joi.string().valid('customer', 'owner').required()
+  });
+  return schema.validate(role);
+}
+
+export function validateUser(user) {
+  const schema = Joi.object({
+    username: Joi.string().min(2).required(),
+    email: Joi.string().email().required(),
+    password: passwordComplexity().required(),
+    role: Joi.string().valid('owner', 'customer'),
+  });
+  return schema.validate(user);
+}
+
 export function validateLogin(credentials) {
   return loginJoiSchema.validate(credentials);
 }

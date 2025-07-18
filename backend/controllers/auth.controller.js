@@ -1,10 +1,32 @@
+import config from 'config';
+import passport from 'passport';
 import * as authService from '../services/auth.service.js';
-import { validateLogin, validateCredentials, validatePassword, validatePasswordChange } from '../validators/user.validator.js';
-import { validateCustomer } from '../validators/customerProfile.validator.js';
-import { validateOwner } from '../validators/ownerProfile.validator.js';
+import { validateRole, validateLogin, validateCredentials, validatePassword, validatePasswordChange, validateUser } from '../validators/auth.validator.js';
 import { validateStaffLogin } from '../validators/staff.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
 import { wrapError } from '../helpers/response.js';
+import { generateAuthToken } from '../helpers/token.helper.js';
+
+export async function googleRedirect(req, res, next) {
+    const { error, value } = validateRole(req.query);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        state: value.role,
+    })(req, res, next);
+}
+
+export async function googleCallback(req, res) {
+    const token = generateAuthToken(req.user);
+    setAuthCookie(res, token);
+
+    if (req.user._isNew) {
+        return res.redirect(`${config.get('frontendLink')}/complete-signup/${req.user.role}`);
+    }
+
+    return res.redirect(`${config.get('frontendLink')}`);
+}
 
 export async function forgotPassword (req, res) {
     // validate request
@@ -53,23 +75,12 @@ export async function login(req, res) {
 
 export async function register(req, res) {
     // validate request
-    if (req.body.role === 'customer') {
-        const { error, value } = validateCustomer(req.body);
-        if (error) return res.status(400).json(wrapError(error.details[0].message));
+    const { error, value } = validateUser(req.body);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-        const {token, body, status } = await authService.registerCustomer(value);
-        if (token) setAuthCookie(res, token);
-        return res.status(status).json(body);
-    } else if (req.body.role === 'owner') {
-        const { error, value } = validateOwner(req.body);
-        if (error) return res.status(400).json(wrapError(error.details[0].message));
-
-        const { token, body, status } = await authService.registerOwner(value);
-        if (token) setAuthCookie(res, token);
-        return res.status(status).json(body);
-    } else {
-        return res.status(400).json(wrapError('Invalid role'));
-    }
+    const {token, body, status } = await authService.register(value);
+    if (token) setAuthCookie(res, token);
+    return res.status(status).json(body);
 };
 
 export async function staffLogin(req, res) {

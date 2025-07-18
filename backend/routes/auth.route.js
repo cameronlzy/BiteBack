@@ -1,9 +1,20 @@
 import express from 'express';
+import passport from 'passport';
+import config from 'config';
 import auth from '../middleware/auth.js';
 import * as authController from '../controllers/auth.controller.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
 
 const router = wrapRoutes(express.Router());
+
+// [Public] - Google oauth
+router.get('/google', authController.googleRedirect);
+
+// [Public] - Google oauth callback
+router.get('/google/callback', passport.authenticate('google', {
+    session: false,
+    failureRedirect: `${config.get('frontendLink')}/login`
+}), authController.googleCallback);
 
 // [Public] - Generate token for password reset
 router.post('/forget-password', authController.forgotPassword);

@@ -1,6 +1,6 @@
 import * as ownerService from '../services/owner.service.js';
 import * as authService from '../services/auth.service.js';
-import { validatePatch, validatePassword } from '../validators/ownerProfile.validator.js';
+import { validateOwner, validatePatch, validatePassword } from '../validators/ownerProfile.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
 import { wrapError } from '../helpers/response.js';
 
@@ -8,6 +8,15 @@ export async function getMe(req, res) {
     const { status, body } = await ownerService.getMe(req.user._id);
     return res.status(status).json(body);
 };
+
+export async function createProfile(req, res) {
+    const { error, value } = validateOwner(req.body);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+    const { token, status, body } = await ownerService.createProfile(req.user, value);
+    if (token) setAuthCookie(res, token);
+    return res.status(status).json(body);
+}
 
 export async function getStaffWithStepUp(req, res) {
     const { error, value } = validatePassword(req.body);

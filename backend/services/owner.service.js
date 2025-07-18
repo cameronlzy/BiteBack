@@ -24,6 +24,24 @@ export async function getMe(userId) {
     return success(user);
 }
 
+export async function createProfile(authUser, data) {
+    return await withTransaction(async (session) => {
+        const user = await User.findById(authUser._id).session(session);
+        if (!user) return error(404, 'User not found');
+
+        const profile = new OwnerProfile(_.pick(data, ['companyName', 'username']));
+        profile.user = user._id;
+        await profile.save(wrapSession(session));
+        
+        user.profile = profile._id;
+        user.username = data.username;
+        await user.save(wrapSession(session));
+
+        const token = generateAuthToken(user);
+        return { token, status: 200, body: profile.toObject() };
+    });
+}
+
 export async function getStaffWithStepUp(authUser, password) {
     // find user
     const user = await User.findById(authUser._id).populate('profile').lean();

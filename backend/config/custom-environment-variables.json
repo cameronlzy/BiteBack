@@ -14,5 +14,9 @@
   "encryptionSecret": "ENCRYPTION_SECRET",
   "redis": {
     "url": "REDIS_URL"
+  },
+  "google": {
+    "clientId": "GOOGLE_CLIENT_ID",
+    "clientSecret": "GOOGLE_CLIENT_SECRET"
   }
 }
