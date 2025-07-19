@@ -210,17 +210,6 @@ describe('event test', () => {
             const res = await exec();
             expect(res.status).toBe(404);  
         });
-
-        it('should return 404 if past event', async () => {
-            event = createTestEvent({ 
-                startDate: DateTime.utc().minus({ weeks: 2 }).toJSDate(), 
-                endDate: DateTime.utc().minus({ weeks: 1 }).toJSDate(),
-            });
-            await event.save();
-            eventId = event._id;
-            const res = await exec();
-            expect(res.status).toBe(404);  
-        });
         
         it('should return 200 and event', async () => {
             const res = await exec();

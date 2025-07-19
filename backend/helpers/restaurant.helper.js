@@ -32,11 +32,17 @@ export function createSlots(openingHoursString, localDateTime, slotDuration = 60
   const openTime = DateTime.fromFormat(openStr, 'HH:mm', { zone: 'utc' })
     .set({ year: date.year, month: date.month, day: date.day });
 
-  const closeTime = DateTime.fromFormat(closeStr, 'HH:mm', { zone: 'utc' })
+  let closeTime = DateTime.fromFormat(closeStr, 'HH:mm', { zone: 'utc' })
     .set({ year: date.year, month: date.month, day: date.day });
+
+  if (closeTime <= openTime) {
+    closeTime = closeTime.plus({ days: 1 });
+  }
 
   const slots = [];
   let slotStart = openTime;
+  console.log('openTime', openTime);
+  console.log('closeTime', closeTime);
 
   while (slotStart.plus({ minutes: slotDuration }) <= closeTime) {
     slots.push(slotStart.toFormat('HH:mm'));

@@ -7,6 +7,8 @@ import validationSetup from './startup/validation.js';
 import routesSetup from './startup/routes.js';
 import prodSetup from './startup/prod.js';
 import serverSetup from './startup/server.js';
+import passport from 'passport';
+import './startup/passport.js';
 import { registerJobs } from './startup/jobs.js';
 
 const app = express();
@@ -23,6 +25,7 @@ app.enable('trust proxy');
 configSetup();
 corsSetup(app);
 validationSetup();
+app.use(passport.initialize());
 routesSetup(app);
 prodSetup(app);
 app.use('/', statusRoute);

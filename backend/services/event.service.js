@@ -111,8 +111,7 @@ export async function getPrivateEventsByRestaurant(restaurant, query) {
 export async function getEventById(eventId) {
     const event = await Event.findById(eventId).lean();
     if (!event) return error(404, 'Event not found');
-    if (event.endDate < new Date()) return error(404, 'Event expired');
-    event.reservedPax = await getBookedPaxForEvent(event._id);
+    if (event.endDate > new Date()) event.reservedPax = await getBookedPaxForEvent(event._id);
     return success(event);
 }
 

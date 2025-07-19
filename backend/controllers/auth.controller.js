@@ -5,7 +5,7 @@ import { validateRole, validateLogin, validateCredentials, validatePassword, val
 import { validateStaffLogin } from '../validators/staff.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
 import { wrapError } from '../helpers/response.js';
-import { generateTempToken } from '../helpers/token.helper.js';
+import { generateTempToken, generateAuthToken } from '../helpers/token.helper.js';
 
 export async function googleRedirect(req, res, next) {
     const { error, value } = validateRole(req.query);
@@ -18,14 +18,17 @@ export async function googleRedirect(req, res, next) {
 }
 
 export async function googleCallback(req, res) {
-    const token = generateTempToken(req.user);
+    const token = req.user._isNew
+        ? generateTempToken(req.user)
+        : generateAuthToken(req.user);
+
     setAuthCookie(res, token);
 
-    if (req.user._isNew) {
-        return res.redirect(`${config.get('frontendLink')}/complete-signup/${req.user.role}`);
-    }
+    const redirectPath = req.user._isNew
+        ? `/complete-signup/${req.user.role}`
+        : ``;
 
-    return res.redirect(`${config.get('frontendLink')}`);
+    return res.redirect(`${config.get('frontendLink')}${redirectPath}`);
 }
 
 export async function register(req, res) {
