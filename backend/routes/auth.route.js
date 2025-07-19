@@ -2,7 +2,7 @@ import express from 'express';
 import passport from 'passport';
 import config from 'config';
 import auth from '../middleware/auth.js';
-import requireTempAuth from '../middleware/requireTempAuth.js';
+import tempAuth from '../middleware/tempAuth.js';
 import * as authController from '../controllers/auth.controller.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
 
@@ -27,7 +27,7 @@ router.post('/verify-email/:token', authController.verifyEmail);
 router.post('/resend-verification', authController.resendVerification);
 
 // [User] - Sets password for the first time (for google oauth)
-router.post('/set-password', [auth, requireTempAuth], authController.setPassword);
+router.post('/set-password', [tempAuth], authController.setPassword);
 
 // [Public] - Generate token for password reset
 router.post('/forget-password', authController.forgotPassword);
@@ -36,7 +36,7 @@ router.post('/forget-password', authController.forgotPassword);
 router.post('/reset-password/:token', authController.resetPassword);
 
 // [User] - Change user's password
-router.put('/change-password', auth, authController.changePassword);
+router.put('/change-password', [auth], authController.changePassword);
 
 // [Public] - Log out
 router.post('/logout', authController.logout);

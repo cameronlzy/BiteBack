@@ -30,6 +30,18 @@ export async function sendVerifyEmail(to, username, verificationLink) {
   });
 }
 
+export async function sendWeeklyPromotionEmail(to, promotions, unsubscribeLink) {
+  const html = await renderTemplate('weeklyPromotions', { promotions, unsubscribeLink });
+
+  // const text = generatePlainTextFromPromotions(promotions, unsubscribeLink);
+
+  await sendEmail({
+    to,
+    subject: 'Weekly Promotions Just for You',
+    html,
+  });
+}
+
 // helpers
 const templatesCache = {};
 

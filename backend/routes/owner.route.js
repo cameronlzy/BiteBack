@@ -3,7 +3,7 @@ import * as ownerController from '../controllers/owner.controller.js';
 import auth from '../middleware/auth.js';
 import isOwner from '../middleware/isOwner.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
-import requireTempAuth from '../middleware/requireTempAuth.js';
+import tempAuth from '../middleware/tempAuth.js';
 
 const router = wrapRoutes(express.Router());
 
@@ -11,7 +11,7 @@ const router = wrapRoutes(express.Router());
 router.get('/me', [auth, isOwner], ownerController.getMe);
 
 //[Owner] - Create profile upon registration
-router.post('/', [auth, requireTempAuth, isOwner], ownerController.createProfile);
+router.post('/', [tempAuth, isOwner], ownerController.createProfile);
 
 // [Owner] - Get all staff username and password for each restaurant
 router.post('/staff/access', [auth, isOwner], ownerController.getStaffWithStepUp);

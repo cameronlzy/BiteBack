@@ -4,7 +4,7 @@ import * as customerController from '../controllers/customer.controller.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
 import validateObjectId from '../middleware/validateObjectId.js';
 import isCustomer from '../middleware/isCustomer.js';
-import requireTempAuth from '../middleware/requireTempAuth.js';
+import tempAuth from '../middleware/tempAuth.js';
 
 const router = wrapRoutes(express.Router());
 
@@ -15,7 +15,7 @@ router.get('/me', [auth, isCustomer], customerController.getMe);
 router.get('/:id', [validateObjectId()], customerController.publicProfile);
 
 // [Public] - Create customer profile upon registration
-router.post('/', [auth, requireTempAuth, isCustomer], customerController.createProfile);
+router.post('/', [tempAuth, isCustomer], customerController.createProfile);
 
 // [Customer] - Update customer information
 router.patch('/me', [auth, isCustomer], customerController.updateMe);

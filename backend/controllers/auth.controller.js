@@ -4,7 +4,7 @@ import * as authService from '../services/auth.service.js';
 import { validateRole, validateLogin, validateCredentials, validatePassword, validatePasswordChange, validateUser, validateEmail } from '../validators/auth.validator.js';
 import { validateStaffLogin } from '../validators/staff.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
-import { wrapError } from '../helpers/response.js';
+import { wrapError, wrapMessage } from '../helpers/response.js';
 import { generateTempToken, generateAuthToken } from '../helpers/token.helper.js';
 
 export async function googleRedirect(req, res, next) {
@@ -94,7 +94,7 @@ export async function logout(req, res) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     });
-    res.status(200).json({ message: 'Logged out successfully' });
+    res.status(200).json(wrapMessage('Logged out successfully'));
 };
 
 export async function login(req, res) {

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .promo {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .promo img {
+      max-width: 100%;
+      height: auto;
+    }
+    .promo-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .promo-description {
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Weekly Promotions</h2>
+
+  {{#each promotions}}
+    <div class="promo">
+      <div class="promo-title">{{title}}</div>
+      {{#if mainImage}}
+        <img src="{{mainImage}}" alt="{{title}}" />
+      {{/if}}
+      <div class="promo-description">{{description}}</div>
+    </div>
+  {{/each}}
+
+  <p>If you want to unsubscribe, click <a href="{{unsubscribeLink}}">here</a>.</p>
+</body>
+</html>

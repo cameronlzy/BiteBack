@@ -14,6 +14,7 @@ const customerProfileSchema = new mongoose.Schema({
       message: props => `${props.value} is not a valid 8-digit contact number!`
     }
   },
+  emailOptOut: { type: Boolean, default: false },
 }, {
   timestamps: { createdAt: 'dateJoined', updatedAt: false }, 
   versionKey: false

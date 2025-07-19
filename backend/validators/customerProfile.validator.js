@@ -34,6 +34,7 @@ export function validateCustomer(profile) {
         "string.pattern.base": "Contact number must be an 8-digit number.",
         "string.empty": `"contactNumber" is required`
       }),
+      emailOptOut: Joi.boolean().default(false),
   });
   return schema.validate(profile);
 }

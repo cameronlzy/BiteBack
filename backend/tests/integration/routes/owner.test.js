@@ -100,7 +100,7 @@ describe('owner test', () => {
 
         it('should return 403 if customer', async () => {
             let customer = await createTestUser('customer');
-            token = generateAuthToken(customer);
+            token = generateTempToken(customer);
             cookie = setTokenCookie(token);
             const res = await exec();
             expect(res.status).toBe(403);

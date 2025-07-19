@@ -3,6 +3,8 @@ import { runJob } from '../helpers/jobRunner.js';
 import { expireStaleRedemptions, deleteStaleOrders } from '../services/scheduledJobs/expire.service.js';
 
 export function registerExpiryJobs(timezone = 'Asia/Singapore') {
+    if (process.env.NODE_ENV === 'test') return;
+
     // every minute - expires stale redemptions
     cron.schedule('*/1 * * * *', async () => {
         await runJob('ExpireStaleRedemptions', async () => {

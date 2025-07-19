@@ -35,7 +35,7 @@ export async function createProfile(tempUser, data) {
         const user = await User.findById(tempUser._id).session(session);
         if (!user) return error(404, 'User not found');
 
-        const profile = new CustomerProfile(_.pick(data, ['name', 'username', 'contactNumber']));
+        const profile = new CustomerProfile(_.pick(data, ['name', 'username', 'contactNumber', 'emailOptOut']));
         profile.user = user._id;
         await profile.save(wrapSession(session));
 

@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import config from 'config';
 import { generateAuthToken, staffGenerateAuthToken, generateTempToken } from '../helpers/token.helper.js';
 import { sendResetPasswordEmail, sendVerifyEmail } from '../helpers/sendEmail.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 
 export async function register(data) {
     // if user exists
@@ -55,7 +55,7 @@ export async function verifyEmail(token) {
     await user.save();
 
     const authToken = generateAuthToken(user);
-    return { token: authToken, status: 200, body: { message: 'Email verified successfully' }};
+    return { token: authToken, status: 200, body: wrapMessage('Email verified successfully') };
 }
 
 export async function resendVerification(data) {
@@ -74,7 +74,7 @@ export async function resendVerification(data) {
     const link = `${config.get('frontendLink')}/verify-email/${token}`;
     await sendVerifyEmail(user.email, user.username, link);
 
-    return success({ message: 'Verification email resent' });
+    return success(wrapMessage('Verification email resent'));
 }
 
 export async function setPassword(tempUser, data) {
@@ -86,7 +86,7 @@ export async function setPassword(tempUser, data) {
     user.password = await bcrypt.hash(data.password, salt);
     await user.save();
 
-    return success({ message: 'Password set successfully' });
+    return success(wrapMessage('Password set successfully'));
 }
 
 export async function forgotPassword(credentials) {
@@ -108,7 +108,7 @@ export async function forgotPassword(credentials) {
     const resetLink = `${config.get('frontendLink')}/reset-password/${token}`;
     await sendResetPasswordEmail(user.email, user.baseModelName, resetLink);
 
-    return success({ message: 'Password reset link sent to your email' });
+    return success(wrapMessage('Password reset link sent to your email'));
 }
 
 export async function resetPassword(data, token) {
@@ -132,7 +132,7 @@ export async function resetPassword(data, token) {
     user.resetPasswordExpires = undefined;
     await user.save();
 
-    return success({ message: 'Password has been reset' });
+    return success(wrapMessage('Password has been reset'));
 }
 
 export async function changePassword(data, authUser) {

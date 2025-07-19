@@ -210,3 +210,20 @@ export async function deletePromotion(promotion) {
     await promotion.deleteOne();
     return success(deletedPromotion);
 }
+
+// helper services
+export async function getRandomActivePromotions(amount) {
+    const now = new Date();
+
+    const promotions = await Promotion.aggregrate([
+        {
+            $match: {
+                isActive: true,
+                endDate: { $gte: now },
+            },
+        },
+        { $sample: { size: amount }},
+    ]);
+    
+    return promotions;
+}

@@ -233,7 +233,7 @@ describe('reward redemption test', () => {
         });
 
         it('should return 403 if wrong staff', async () => {
-            const otherStaff = createTestStaff();
+            const otherStaff = await createTestStaff();
             token = staffGenerateAuthToken(otherStaff);
             cookie = setTokenCookie(token);
             const res = await exec();
