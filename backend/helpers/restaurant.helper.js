@@ -20,6 +20,20 @@ export function convertOpeningHoursToUTC(openingHoursString, timezone = 'Asia/Si
   return converted.join('|');
 }
 
+export function convertUTCOpeningHoursToLocal(utcHoursStr, targetTimezone = 'Asia/Singapore') {
+  if (!utcHoursStr || utcHoursStr.toLowerCase() === 'x') return 'x';
+
+  const [startUTC, endUTC] = utcHoursStr.split('-');
+
+  const start = DateTime.fromFormat(startUTC, 'HH:mm', { zone: 'utc' });
+  const end = DateTime.fromFormat(endUTC, 'HH:mm', { zone: 'utc' });
+
+  const startLocal = start.setZone(targetTimezone);
+  const endLocal = end.setZone(targetTimezone);
+
+  return `${startLocal.toFormat('HH:mm')}-${endLocal.toFormat('HH:mm')}`;
+}
+
 export function createSlots(openingHoursString, localDateTime, slotDuration = 60) {
   const openingHours = openingHoursString.split('|');
   const date = localDateTime;
@@ -41,8 +55,6 @@ export function createSlots(openingHoursString, localDateTime, slotDuration = 60
 
   const slots = [];
   let slotStart = openTime;
-  console.log('openTime', openTime);
-  console.log('closeTime', closeTime);
 
   while (slotStart.plus({ minutes: slotDuration }) <= closeTime) {
     slots.push(slotStart.toFormat('HH:mm'));
@@ -59,20 +71,23 @@ export function filterOpenRestaurants(restaurants, nowUTC = DateTime.utc()) {
     const currentDay = localNow.weekday - 1;
     const days = restaurant.openingHours.split('|');
     const hoursToday = days[currentDay];
-
     if (!hoursToday || hoursToday.toLowerCase() === 'x') return false;
 
-    const [startStr, endStr] = hoursToday.split('-');
+    const localHoursToday = convertUTCOpeningHoursToLocal(hoursToday, timezone);
+
+    const [startStr, endStr] = localHoursToday.split('-');
     if (!startStr || !endStr) return false;
 
     const [startHour, startMin] = startStr.split(':').map(Number);
     const [endHour, endMin] = endStr.split(':').map(Number);
 
-    const startUTC = nowUTC.set({ hour: startHour, minute: startMin, second: 0 });
-    let endUTC = nowUTC.set({ hour: endHour, minute: endMin, second: 59 });
-    if (endUTC < startUTC) endUTC = endUTC.plus({ days: 1 });
+    const localBase = localNow.startOf('day');
+    const localOpen = localBase.plus({ hours: startHour, minutes: startMin }); 
+    const localClose = localBase.plus({ hours: endHour, minutes: endMin });
 
-    return nowUTC >= startUTC && nowUTC <= endUTC;
+    const isOpen = localNow >= localOpen && localNow <= localClose; 
+
+    return isOpen;
   });
 }
 
