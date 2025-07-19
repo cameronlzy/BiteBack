@@ -1,9 +1,5 @@
 import { useForm, FormProvider } from "react-hook-form"
-import {
-  customerSchema,
-  cuisineList,
-  updateCustomerSchema,
-} from "@/utils/schemas"
+import { customerSchema, updateCustomerSchema } from "@/utils/schemas"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import {
   FormField,
@@ -14,13 +10,12 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff } from "lucide-react"
-import { MultiSelect } from "../common/MultiSelect"
 import { useState } from "react"
 import { toast } from "react-toastify"
 import LoadingSpinner from "../common/LoadingSpinner"
 import SubmitButton from "../common/SubmitButton"
 
-const CustomerForm = ({ onRegister, user, from, isLoading }) => {
+const CustomerForm = ({ onRegister, user, from, isLoading, isUpdate }) => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   if (isLoading) return <LoadingSpinner />
@@ -32,7 +27,6 @@ const CustomerForm = ({ onRegister, user, from, isLoading }) => {
       email: user?.email || "",
       name: user?.profile.name || "",
       contactNumber: user?.profile.contactNumber || "",
-      favCuisines: user?.profile.favCuisines || [],
       ...(user
         ? {}
         : {
@@ -47,11 +41,10 @@ const CustomerForm = ({ onRegister, user, from, isLoading }) => {
     try {
       const { confirmPassword: _confirmPassword, ...cleanedData } = data
       await onRegister(cleanedData)
-      localStorage.setItem(
-        "toastMessage",
-        user ? "Profile updated!" : "Registration successful!"
-      )
-      window.location = from
+      if (isUpdate) {
+        localStorage.setItem("toastMessage", "Profile updated!")
+        window.location = from
+      }
     } catch (ex) {
       if (ex.response?.status === 400) {
         const message = ex.response.data.error
@@ -138,25 +131,6 @@ const CustomerForm = ({ onRegister, user, from, isLoading }) => {
             />
           )
         })}
-
-        <FormField
-          control={form.control}
-          name="favCuisines"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Favourite Cuisines</FormLabel>
-              <FormControl>
-                <MultiSelect
-                  options={cuisineList}
-                  onChange={field.onChange}
-                  selected={field.value || []}
-                  placeholder="Select cuisine"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <FormField
           control={form.control}

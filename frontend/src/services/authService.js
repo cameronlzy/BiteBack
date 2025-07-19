@@ -25,6 +25,17 @@ export async function register(user) {
     return data
 }
 
+export async function verifyEmail(verificationCode) {
+    const { data } = await http.post(apiEndpoint + `/verify-email/${verificationCode}`)
+    return data 
+}
+
+export async function resendVerificationEmail(email) {
+    const { data } = await http.post(apiEndpoint + "/resend-verification", {
+        email
+    })
+    return data
+}
 
 async function logout() {
     await http.post(apiEndpoint + "/logout", null)

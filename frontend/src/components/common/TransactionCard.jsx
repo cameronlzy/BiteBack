@@ -83,7 +83,17 @@ const TransactionCard = ({
 
       <CardHeader>
         <CardTitle className="flex justify-between items-center text-xl font-bold">
-          <span className="truncate">{name}</span>
+          {currencyType === "points" ? (
+            <span className="truncate">{name}</span>
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={onClick}
+              className="w-half text-left text-xl font-semibold  ml-1 px-0 py-0 hover:underline hover:bg-transparent"
+            >
+              {name}
+            </Button>
+          )}
           <span className="text-sm text-muted-foreground">
             {price != null
               ? currencyType === "points"
@@ -124,13 +134,15 @@ const TransactionCard = ({
             <span className="font-medium">{remainingTime}</span>
           </p>
         )}
-        {clickMessage && onClick ? (
-          <Button variant="ghost" onClick={onClick} className="w-full">
-            {clickMessage}
-          </Button>
-        ) : (
-          <div className="h-10 w-full rounded-md border border-transparent" />
-        )}
+        {currencyType === "points" ? (
+          clickMessage && onClick ? (
+            <Button variant="ghost" onClick={onClick} className="w-full">
+              {clickMessage}
+            </Button>
+          ) : (
+            <div className="h-10 w-full rounded-md border border-transparent" />
+          )
+        ) : null}
       </CardContent>
     </Card>
   )

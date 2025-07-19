@@ -236,10 +236,6 @@ export const customerSchema = Joi.object({
     "string.empty": "Contact number is required.",
     "any.required": "Contact number is required.",
   }),
-  favCuisines: Joi.array().items(Joi.string().valid(...cuisineList)).min(1).required().messages({
-    "array.min": "Please select at least one favourite cuisine.",
-    "any.required": "Favourite cuisines are required.",
-  }),
 })
 
 export const loginUserSchema = Joi.object({
@@ -370,10 +366,6 @@ export const updateCustomerSchema = Joi.object({
     "string.pattern.base": "Contact number must be an 8-digit number.",
     "string.empty": "Contact number is required.",
     "any.required": "Contact number is required.",
-  }),
-  favCuisines: Joi.array().items(Joi.string().valid(...cuisineList)).min(1).required().messages({
-    "array.min": "Please select at least one favourite cuisine.",
-    "any.required": "Favourite cuisines are required.",
   }),
 }).unknown(true);
 

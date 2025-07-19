@@ -43,6 +43,7 @@ import MembersEvents from "./components/events-booking/MembersEvents"
 import RestaurantMenu from "./components/preorder/RestaurantMenu"
 import MenuItemForm from "./components/preorder/MenuItemForm"
 import KitchenOrders from "./components/staff/KitchenOrders"
+import EmailVerificationForm from "./components/authorisation/EmailVerificationForm"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -258,6 +259,10 @@ function App() {
           />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password/:token" element={<ResetPassword />} />
+          <Route
+            path="verify-email/:token"
+            element={<EmailVerificationForm />}
+          />
           <Route
             path="change-password"
             element={

@@ -4,6 +4,18 @@ import http from './httpService'
 const customerApiEndpoint = import.meta.env.VITE_API_URL + "/customers"
 const ownerApiEndpoint = import.meta.env.VITE_API_URL + "/owners"
 
+export async function registerCust(customer) {
+  const sanitized = sanitizeStrings(customer) 
+  const { data } = http.post(customerApiEndpoint, sanitized)
+  return data
+}
+
+export async function registerOwner(owner) {
+  const sanitized = sanitizeStrings(owner) 
+  const { data } = http.post(ownerApiEndpoint, sanitized)
+  return data
+}
+
 
 export async function updateCustomer(customer) {
      const sanitized = sanitizeStrings(customer)

@@ -32,7 +32,7 @@ import {
 import ImageUpload from "../common/ImageUpload"
 import SubmitButton from "../common/SubmitButton"
 
-const OwnerForm = ({ onRegister, user, from }) => {
+const OwnerForm = ({ onRegister, user, from, isUpdate }) => {
   const [selectedFilesArray, setSelectedFilesArray] = useState([[]])
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -124,7 +124,6 @@ const OwnerForm = ({ onRegister, user, from }) => {
         restaurants,
         ...ownerData
       } = data
-      const isUpdate = !!user
 
       if (!isUpdate) {
         const missingImageIndex = selectedFilesArray.findIndex(
@@ -189,11 +188,10 @@ const OwnerForm = ({ onRegister, user, from }) => {
         }
       }
       toast.success("Images uploaded successfully")
-      localStorage.setItem(
-        "toastMessage",
-        isUpdate ? "Profile updated!" : "Registration successful!"
-      )
-      window.location = from
+      if (isUpdate) {
+        localStorage.setItem("toastMessage", "Profile updated!")
+        window.location = from
+      }
     } catch (ex) {
       if (ex.response.status === 400) {
         const message = ex.response.data.error
