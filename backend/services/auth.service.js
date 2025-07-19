@@ -54,7 +54,8 @@ export async function verifyEmail(token) {
     user.verifyEmailExpires = undefined;
     await user.save();
 
-    return success({ message: 'Email verified successfully' });
+    const authToken = generateAuthToken(user);
+    return { token: authToken, status: 200, body: { message: 'Email verified successfully' }};
 }
 
 export async function resendVerification(data) {

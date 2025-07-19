@@ -42,7 +42,8 @@ export async function register(req, res) {
 }
 
 export async function verifyEmail(req, res) {
-    const { status, body } = await authService.verifyEmail(req.params.token);
+    const { token, status, body } = await authService.verifyEmail(req.params.token);
+    if (token) setAuthCookie(res, token);
     return res.status(status).send(body);
 }
 
