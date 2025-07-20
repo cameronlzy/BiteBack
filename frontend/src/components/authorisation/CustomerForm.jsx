@@ -52,7 +52,7 @@ const CustomerForm = ({
     try {
       const { confirmPassword: _confirmPassword, ...cleanedData } = data
       await onRegister(cleanedData)
-      if (isUpdate || googleAuth) {
+      if (isUpdate) {
         localStorage.setItem("toastMessage", "Submitted!")
         window.location = from
       }
