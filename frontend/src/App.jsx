@@ -78,8 +78,9 @@ function App() {
       try {
         const user =
           savedRole === "owner" ? await getOwnerInfo() : await getCustomerInfo()
-        console.log(user)
-        setUser(user)
+        if (user.profile) {
+          setUser(user)
+        }
       } catch (ex) {
         if (ex.response?.status === 401) {
           await auth.logout()

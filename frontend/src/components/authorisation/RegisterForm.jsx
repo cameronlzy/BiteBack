@@ -110,6 +110,7 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
         username: finalData.username,
         password: finalData.password,
       }
+      console.log(registrationPackage)
       const regResponse = !googleAuth
         ? await register(registrationPackage)
         : await setCredentials(registrationPackage)
@@ -196,7 +197,7 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
           isLoading={isLoading}
           isUpdate={isUpdate}
           handleGoogleRedirect={handleGoogleRedirect}
-          googleAuth={googleAuth && localStorage.getItem("googleAuth")}
+          googleAuth={googleAuth}
         />
       ) : (
         <OwnerForm
@@ -206,7 +207,7 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
           isLoading={isLoading}
           isUpdate={isUpdate}
           handleGoogleRedirect={handleGoogleRedirect}
-          googleAuth={googleAuth && localStorage.getItem("googleAuth")}
+          googleAuth={googleAuth}
         />
       )}
     </div>
