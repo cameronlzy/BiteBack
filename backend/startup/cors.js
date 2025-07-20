@@ -1,8 +1,7 @@
 import cors from 'cors';
-import config from 'config';
 
 const corsOptions = {
-  origin: `${config.get('frontendLink')}`,
+  origin: 'https://bite-back-henna.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true,
 };
