@@ -52,8 +52,8 @@ const CustomerForm = ({
     try {
       const { confirmPassword: _confirmPassword, ...cleanedData } = data
       await onRegister(cleanedData)
-      if (isUpdate) {
-        localStorage.setItem("toastMessage", "Profile updated!")
+      if (isUpdate || googleAuth) {
+        localStorage.setItem("toastMessage", "Submitted!")
         window.location = from
       }
     } catch (ex) {

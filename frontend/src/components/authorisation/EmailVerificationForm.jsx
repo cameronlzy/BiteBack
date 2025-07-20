@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { maskEmail } from "@/utils/stringRegexUtils"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import { verifyEmail } from "@/services/authService"
 import { toast } from "react-toastify"
@@ -13,7 +13,8 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
   const [emailError, setEmailError] = useState("")
   const [loading, setLoading] = useState(false)
   const [timer, setTimer] = useState(0)
-  const { token } = useParams()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get("token")
   const navigate = useNavigate()
 
   useEffect(() => {

@@ -15,7 +15,12 @@ import {
   registerCust,
 } from "@/services/userService"
 import BackButton from "../common/BackButton"
-import { useLocation, useNavigate, useParams } from "react-router-dom"
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom"
 import { objectComparator } from "@/utils/objectComparator"
 import {
   getGoogleRedirect,
@@ -25,9 +30,12 @@ import {
 } from "@/services/authService"
 import EmailVerificationForm from "./EmailVerificationForm"
 import { toast } from "react-toastify"
+import { setAuthCookie } from "@/utils/cookieService"
 
 const RegisterForm = ({ user, isLoading, googleAuth }) => {
   const { googleSignupRole } = useParams()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get("token")
   const [role, setRole] = useState(user?.role || googleSignupRole || "customer")
   const [isUpdate, setIsUpdate] = useState(false)
   const [needsToVerify, setNeedsToVerify] = useState(false)
@@ -45,6 +53,12 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
       navigate("/register", { replace: true })
     }
   }, [user, location.pathname, navigate])
+
+  useEffect(() => {
+    if (token) {
+      setAuthCookie(token)
+    }
+  }, [token])
 
   useEffect(() => {
     if (user) {
@@ -122,7 +136,7 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
           ? await updateOwner(result)
           : await updateCustomer(result)
     }
-
+    localStorage.removeItem("googleAuth")
     localStorage.setItem("role", finalData.role)
     setEmail(finalData.email)
     return response
@@ -154,8 +168,12 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
                 <label className="block text-sm font-medium text-gray-700">
                   Register As
                 </label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger className="w-full">
+                <Select
+                  value={role}
+                  onValueChange={setRole}
+                  disabled={googleAuth}
+                >
+                  <SelectTrigger className="w-full" disabled={googleAuth}>
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>

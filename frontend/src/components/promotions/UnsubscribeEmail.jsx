@@ -1,11 +1,12 @@
 import { useEffect } from "react"
 import LoadingSpinner from "../common/LoadingSpinner"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { unsubscribeEmailThread } from "@/services/userService"
 import { toast } from "react-toastify"
 
 const UnsubscribeEmail = () => {
-  const { token } = useParams()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get("token")
   const navigate = useNavigate()
   useEffect(() => {
     const unsubscribeEmail = async () => {

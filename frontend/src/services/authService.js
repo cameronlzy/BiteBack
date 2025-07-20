@@ -25,8 +25,10 @@ export async function register(user) {
     return data
 }
 
-export async function verifyEmail(verificationCode) {
-    const { data } = await http.post(apiEndpoint + `/verify-email/${verificationCode}`)
+export async function verifyEmail(token) {
+    const { data } = await http.post(apiEndpoint + "/verify-email", {
+        token
+    })
     return data 
 }
 
@@ -61,7 +63,7 @@ async function resetPasswordTrigger(userDetails) {
 }
 
 async function resetPasswordSubmit(token, newPasswordObj) {
-     return await http.post(apiEndpoint + `/reset-password/${token}`, newPasswordObj)
+     return await http.post(apiEndpoint + "/reset-password", {...newPasswordObj, token})
 }
 
 async function changePassword(newPasswordObj) {

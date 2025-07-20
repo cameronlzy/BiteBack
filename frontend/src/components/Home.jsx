@@ -1,8 +1,18 @@
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import bitebackImg from "@/assets/biteback-logo-full.png"
 import BannerCarousel from "./common/BannerCarousel"
+import { useEffect } from "react"
+import { setAuthCookie } from "@/utils/cookieService"
 
 const Home = ({ user }) => {
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get("token")
+
+  useEffect(() => {
+    if (token) {
+      setAuthCookie(token)
+    }
+  }, [token])
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="relative w-screen left-1/2 right-1/2 -mx-[50vw] px-9.5">
