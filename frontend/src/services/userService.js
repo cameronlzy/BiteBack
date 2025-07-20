@@ -3,16 +3,17 @@ import http from './httpService'
 
 const customerApiEndpoint = import.meta.env.VITE_API_URL + "/customers"
 const ownerApiEndpoint = import.meta.env.VITE_API_URL + "/owners"
+const unsubscribeApiEndpoint = import.meta.env.VITE_API_URL + "/unsubscribe"
 
 export async function registerCust(customer) {
   const sanitized = sanitizeStrings(customer) 
-  const { data } = http.post(customerApiEndpoint, sanitized)
+  const { data } = await http.post(customerApiEndpoint, sanitized)
   return data
 }
 
 export async function registerOwner(owner) {
   const sanitized = sanitizeStrings(owner) 
-  const { data } = http.post(ownerApiEndpoint, sanitized)
+  const { data } = await http.post(ownerApiEndpoint, sanitized)
   return data
 }
 
@@ -59,4 +60,9 @@ export async function deleteAccount(confirmation, role) {
     method: "DELETE",
     data: confirmation,
   })
+}
+
+export async function unsubscribeEmailThread(token) {
+  const { data } = await http.get(unsubscribeApiEndpoint, { token })
+  return data
 }

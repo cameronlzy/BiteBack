@@ -12,15 +12,25 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
   const [email, setEmail] = useState("")
   const [emailError, setEmailError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [timer, setTimer] = useState(0)
   const { token } = useParams()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (timer > 0) {
+      const interval = setInterval(() => {
+        setTimer((prev) => prev - 1)
+      }, 1000)
+      return () => clearInterval(interval)
+    }
+  }, [timer])
 
   useEffect(() => {
     const verification = async () => {
       try {
         await verifyEmail(token)
         localStorage.setItem("toastMessage", "Account Verified!")
-        window.location = "/"
+        window.location = "/login"
       } catch (ex) {
         toast.error("Verification Token Invalid")
         navigate("/register", { replace: true })
@@ -48,6 +58,7 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
       setLoading(true)
       setEmailError("")
       await onSubmit(targetEmail)
+      setTimer(30)
     } catch (ex) {
       console.log(ex)
       setEmailError("Verification failed. Try again.")
@@ -58,9 +69,14 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
 
   if (!onSubmit && !providedEmail && token.trim()) {
     return (
-      <div className="flex justify-center items-center py-10">
-        <LoadingSpinner />
-        <span className="ml-2 text-sm text-gray-600">Verifying Email...</span>
+      <div className="flex flex-col items-center justify-center py-10 space-y-2">
+        <div className="flex items-center">
+          <LoadingSpinner />
+          <span className="ml-2 text-sm text-gray-600">Verifying Email...</span>
+        </div>
+        <p className="text-sm text-muted-foreground italic">
+          Customers can also unsubscribe through edit profile
+        </p>
       </div>
     )
   }
@@ -86,10 +102,7 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
               <>
                 <Input
                   value={email}
-                  onChange={(e) => {
-                    console.log(email)
-                    setEmail(e.target.value)
-                  }}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your registered email"
                 />
                 {emailError && (
@@ -105,12 +118,14 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
             type="button"
             onClick={handleVerify}
             className="w-full"
-            disabled={loading}
+            disabled={loading || timer > 0}
           >
             {loading ? (
               <>
                 <LoadingSpinner inline={true} size="sm" /> Sending...
               </>
+            ) : timer > 0 ? (
+              `Resend available in ${timer}s`
             ) : (
               "Resend Email Verification"
             )}

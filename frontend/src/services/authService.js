@@ -37,6 +37,16 @@ export async function resendVerificationEmail(email) {
     return data
 }
 
+export async function getGoogleRedirect(role) {
+    const { data } = await http.get(`${apiEndpoint}/google`, { role })
+    return data
+}
+
+export async function setCredentials(payload) {
+    const { data } = await http.post(apiEndpoint + "/set-credentials", payload)
+    return data
+}
+
 async function logout() {
     await http.post(apiEndpoint + "/logout", null)
     localStorage.removeItem("role")

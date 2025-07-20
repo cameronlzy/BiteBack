@@ -191,7 +191,7 @@ export const ownerSchema = Joi.object({
     "string.min": "Username must be at least 2 characters.",
     "string.max": "Username must not exceed 20 characters.",
   }),
-  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+  email: Joi.string().allow("google-signup-bypass").email({ tlds: { allow: false } }).required().messages({
     "string.email": "Please enter a valid email address.",
     "string.empty": "Email is required.",
     "any.required": "Email is required.",
@@ -218,7 +218,7 @@ export const customerSchema = Joi.object({
     "string.empty": "Username is required.",
     "any.required": "Username is required.",
   }),
-  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+  email: Joi.string().allow("google-signup-bypass").email({ tlds: { allow: false } }).required().messages({
     "string.email": "Please enter a valid email address.",
     "any.required": "Email is required.",
     "string.empty": "Email is required.",
@@ -236,6 +236,7 @@ export const customerSchema = Joi.object({
     "string.empty": "Contact number is required.",
     "any.required": "Contact number is required.",
   }),
+  emailOptOut:  Joi.boolean().required().default(false),
 })
 
 export const loginUserSchema = Joi.object({

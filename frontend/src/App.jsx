@@ -44,6 +44,7 @@ import RestaurantMenu from "./components/preorder/RestaurantMenu"
 import MenuItemForm from "./components/preorder/MenuItemForm"
 import KitchenOrders from "./components/staff/KitchenOrders"
 import EmailVerificationForm from "./components/authorisation/EmailVerificationForm"
+import UnsubscribeEmail from "./components/promotions/UnsubscribeEmail"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -77,7 +78,7 @@ function App() {
       try {
         const user =
           savedRole === "owner" ? await getOwnerInfo() : await getCustomerInfo()
-
+        console.log(user)
         setUser(user)
       } catch (ex) {
         if (ex.response?.status === 401) {
@@ -173,6 +174,10 @@ function App() {
           <Route index element={<Home user={user} />} />
           <Route path="register" element={<RegisterForm user={user} />} />
           <Route
+            path="complete-signup/:googleSignupRole"
+            element={<RegisterForm user={user} googleAuth={true} />}
+          />
+          <Route
             path="me/edit"
             element={
               <ProtectedRoute
@@ -263,6 +268,7 @@ function App() {
             path="verify-email/:token"
             element={<EmailVerificationForm />}
           />
+          <Route path="unsubscribe/:token" element={<UnsubscribeEmail />} />
           <Route
             path="change-password"
             element={

@@ -15,14 +15,20 @@ import {
   registerCust,
 } from "@/services/userService"
 import BackButton from "../common/BackButton"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { objectComparator } from "@/utils/objectComparator"
-import { register, resendVerificationEmail } from "@/services/authService"
+import {
+  getGoogleRedirect,
+  register,
+  resendVerificationEmail,
+  setCredentials,
+} from "@/services/authService"
 import EmailVerificationForm from "./EmailVerificationForm"
 import { toast } from "react-toastify"
 
-const RegisterForm = ({ user, isLoading }) => {
-  const [role, setRole] = useState(user?.role || "customer")
+const RegisterForm = ({ user, isLoading, googleAuth }) => {
+  const { googleSignupRole } = useParams()
+  const [role, setRole] = useState(user?.role || googleSignupRole || "customer")
   const [isUpdate, setIsUpdate] = useState(false)
   const [needsToVerify, setNeedsToVerify] = useState(false)
   const [email, setEmail] = useState("")
@@ -32,6 +38,11 @@ const RegisterForm = ({ user, isLoading }) => {
   useEffect(() => {
     if (user && location.pathname === "/register") {
       navigate("/me/edit", { replace: true })
+    } else if (
+      location.pathname.startsWith("/complete-signup/") &&
+      !localStorage.getItem("googleAuth")
+    ) {
+      navigate("/register", { replace: true })
     }
   }, [user, location.pathname, navigate])
 
@@ -81,28 +92,30 @@ const RegisterForm = ({ user, isLoading }) => {
 
     if (!user) {
       const registrationPackage = {
-        email: finalData.email,
+        ...(!googleAuth && { email: finalData.email, role: finalData.role }),
         username: finalData.username,
         password: finalData.password,
-        role: finalData.role,
       }
-      const regResponse = await register(registrationPackage)
+      const regResponse = !googleAuth
+        ? await register(registrationPackage)
+        : await setCredentials(registrationPackage)
       if (finalData.role === "owner") {
         const ownerRegResponse = await registerOwner({
-          username: finalData.username,
           companyName: finalData.companyName,
         })
         response = { ...regResponse, ...ownerRegResponse }
       } else if (finalData.role === "customer") {
         const customerRegResponse = await registerCust({
-          username: finalData.username,
           name: finalData.name,
           contactNumber: finalData.contactNumber,
+          emailOptOut: finalData.emailOptOut,
         })
         response = { ...regResponse, ...customerRegResponse }
       }
-      setNeedsToVerify(true)
-      toast.info("Email has been sent to registered email for verification")
+      if (!googleAuth) {
+        setNeedsToVerify(true)
+        toast.info("Email has been sent to registered email for verification")
+      }
     } else {
       response =
         role === "owner"
@@ -113,6 +126,16 @@ const RegisterForm = ({ user, isLoading }) => {
     localStorage.setItem("role", finalData.role)
     setEmail(finalData.email)
     return response
+  }
+
+  const handleGoogleRedirect = async (role) => {
+    try {
+      localStorage.setItem("googleAuth", true)
+      await getGoogleRedirect(role)
+    } catch (ex) {
+      toast.error("Google Auth Failed")
+      throw ex
+    }
   }
 
   return (
@@ -154,6 +177,8 @@ const RegisterForm = ({ user, isLoading }) => {
           from={from}
           isLoading={isLoading}
           isUpdate={isUpdate}
+          handleGoogleRedirect={handleGoogleRedirect}
+          googleAuth={googleAuth && localStorage.getItem("googleAuth")}
         />
       ) : (
         <OwnerForm
@@ -162,6 +187,8 @@ const RegisterForm = ({ user, isLoading }) => {
           from={from}
           isLoading={isLoading}
           isUpdate={isUpdate}
+          handleGoogleRedirect={handleGoogleRedirect}
+          googleAuth={googleAuth && localStorage.getItem("googleAuth")}
         />
       )}
     </div>
