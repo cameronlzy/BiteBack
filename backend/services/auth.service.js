@@ -38,8 +38,6 @@ export async function register(data) {
 }
 
 export async function verifyEmail(token) {
-    if (!token) return error(400, 'Token is required');
-
     const hash = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
@@ -71,7 +69,7 @@ export async function resendVerification(data) {
     user.verifyEmailExpires = Date.now() + 30 * 60 * 1000;
     await user.save();
 
-    const link = `${config.get('frontendLink')}/verify-email/${token}`;
+    const link = `${config.get('frontendLink')}/verify-email?token=${token}`;
     await sendVerifyEmail(user.email, user.username, link);
 
     return success(wrapMessage('Verification email resent'));
@@ -109,15 +107,14 @@ export async function forgotPassword(credentials) {
     user.resetPasswordExpires = Date.now() + 30 * 60 * 1000;
     await user.save();
 
-    const resetLink = `${config.get('frontendLink')}/reset-password/${token}`;
+    const resetLink = `${config.get('frontendLink')}/reset-password?token=${token}`;
     await sendResetPasswordEmail(user.email, user.baseModelName, resetLink);
 
     return success(wrapMessage('Password reset link sent to your email'));
 }
 
-export async function resetPassword(data, token) {
-    if (!token) return error(400, 'Token is required');
-
+export async function resetPassword(data) {
+    const { password, token } = data;
     const hash = crypto.createHash('sha256').update(token).digest('hex');
     const now = new Date();
 
@@ -128,7 +125,6 @@ export async function resetPassword(data, token) {
 
     if (!user) return error(400, 'Token is invalid or expired');
 
-    const { password } = data;
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
 

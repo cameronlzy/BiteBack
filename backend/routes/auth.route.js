@@ -21,7 +21,7 @@ router.get('/google/callback', passport.authenticate('google', {
 router.post('/register', authController.register);
 
 // [Public] - Validate token to verify email
-router.post('/verify-email/:token', authController.verifyEmail);
+router.post('/verify-email', authController.verifyEmail);
 
 // [Public] - Resend verification email
 router.post('/resend-verification', authController.resendVerification);
@@ -33,7 +33,7 @@ router.post('/set-credentials', [tempAuth], authController.setCredentials);
 router.post('/forget-password', authController.forgotPassword);
 
 // [Public] - Validates token to reset password
-router.post('/reset-password/:token', authController.resetPassword);
+router.post('/reset-password', authController.resetPassword);
 
 // [User] - Change user's password
 router.put('/change-password', [auth], authController.changePassword);

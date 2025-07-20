@@ -67,7 +67,7 @@ describe('auth test', () => {
         });
     });
 
-    describe('POST /api/auth/verify-email/:token', () => {
+    describe('POST /api/auth/verify-email', () => {
         let user;
         let userId;
         let token;
@@ -75,7 +75,10 @@ describe('auth test', () => {
     
         const exec = () => {
             return request(server)
-            .post(`/api/auth/verify-email/${token}`);
+            .post(`/api/auth/verify-email`)
+            .send({
+                token
+            });
         };
     
         beforeEach(async () => {
@@ -226,7 +229,7 @@ describe('auth test', () => {
         });
     });
 
-    describe('POST /api/auth/reset-password/:token', () => {
+    describe('POST /api/auth/reset-password', () => {
         let user;
         let password;
         let userId;
@@ -235,9 +238,9 @@ describe('auth test', () => {
     
         const exec = () => {
             return request(server)
-            .post(`/api/auth/reset-password/${token}`)
+            .post(`/api/auth/reset-password`)
             .send({
-                password
+                password, token
             });
         };
     

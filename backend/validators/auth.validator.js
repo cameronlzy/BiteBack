@@ -1,6 +1,11 @@
 import Joi from './joi.js';
 import passwordComplexity from 'joi-password-complexity';
 
+const tokenSchema = Joi.string()
+  .alphanum()
+  .min(20)
+  .max(256);
+
 export const userJoiSchema = Joi.object({
   username: Joi.string().min(2).required(),
   email: Joi.string().email().required(),
@@ -42,9 +47,10 @@ export function validateCredentials(credentials) {
   return schema.validate(credentials);
 }
 
-export function validatePassword(password) {
+export function validatePasswordReset(password) {
   const schema = Joi.object({
     password: passwordComplexity().required(),
+    token: tokenSchema.required(),
   });
   return schema.validate(password);
 }
@@ -70,4 +76,11 @@ export function validateFirstCredentials(credentials) {
     password: passwordComplexity().required(),
   });
   return schema.validate(credentials);
+}
+
+export function validateToken(token) {
+  const schema = Joi.object({
+    token: tokenSchema.required(),
+  });
+  return schema.validate(token);
 }

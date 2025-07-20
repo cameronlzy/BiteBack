@@ -41,6 +41,6 @@ const OrderSchema = new mongoose.Schema({
     tableNumber: { type: Number },
 }, { timestamps: true, versionKey: false });
 
-OrderSchema.index({ code: 1, restaurant: 1 }, { unique: true });
+OrderSchema.index({ code: 1, restaurant: 1 }, { unique: true , sparse: true });
 
 export default mongoose.model('Order', OrderSchema);

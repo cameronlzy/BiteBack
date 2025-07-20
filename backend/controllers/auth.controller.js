@@ -1,7 +1,7 @@
 import config from 'config';
 import passport from 'passport';
 import * as authService from '../services/auth.service.js';
-import { validateRole, validateLogin, validateCredentials, validatePassword, validatePasswordChange, validateUser, validateEmail, validateFirstCredentials } from '../validators/auth.validator.js';
+import { validateRole, validateLogin, validateCredentials, validatePasswordReset, validatePasswordChange, validateUser, validateEmail, validateFirstCredentials, validateToken } from '../validators/auth.validator.js';
 import { validateStaffLogin } from '../validators/staff.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
 import { wrapError, wrapMessage } from '../helpers/response.js';
@@ -22,13 +22,11 @@ export async function googleCallback(req, res) {
         ? generateTempToken(req.user)
         : generateAuthToken(req.user);
 
-    setAuthCookie(res, token);
-
     const redirectPath = req.user._isNew
         ? `/complete-signup/${req.user.role}`
         : ``;
 
-    return res.redirect(`${config.get('frontendLink')}${redirectPath}`);
+    return res.redirect(`${config.get('frontendLink')}${redirectPath}?token=${token}`);
 }
 
 export async function register(req, res) {
@@ -42,7 +40,10 @@ export async function register(req, res) {
 }
 
 export async function verifyEmail(req, res) {
-    const { token, status, body } = await authService.verifyEmail(req.params.token);
+    const { error, value } = validateToken(req.body);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+    const { token, status, body } = await authService.verifyEmail(value.token);
     if (token) setAuthCookie(res, token);
     return res.status(status).send(body);
 }
@@ -73,10 +74,10 @@ export async function forgotPassword(req, res) {
 };
 
 export async function resetPassword(req, res) {
-    const { error, value } = validatePassword(req.body);
+    const { error, value } = validatePasswordReset(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await authService.resetPassword(value, req.params.token);
+    const { status, body } = await authService.resetPassword(value);
     return res.status(status).json(body);
 };
 
