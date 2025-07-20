@@ -63,6 +63,6 @@ export async function deleteAccount(confirmation, role) {
 }
 
 export async function unsubscribeEmailThread(token) {
-  const { data } = await http.get(unsubscribeApiEndpoint, { token })
+  const { data } = await http.get(`${unsubscribeApiEndpoint}?token=${token}`)
   return data
 }
