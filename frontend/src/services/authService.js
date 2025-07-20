@@ -38,8 +38,7 @@ export async function resendVerificationEmail(email) {
 }
 
 export async function getGoogleRedirect(role) {
-    const { data } = await http.get(`${apiEndpoint}/google?role=${role}`)
-    return data
+    window.location.href = `${apiEndpoint}/google?role=${role}`
 }
 
 export async function setCredentials(payload) {
