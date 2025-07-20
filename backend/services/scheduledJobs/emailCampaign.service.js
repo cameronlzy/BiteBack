@@ -18,7 +18,7 @@ export async function sendWeeklyPromotionEmails() {
 
     await Promise.all(randomCustomers.map(async (customer) => {
         const token = generateUnsubscribeToken(customer._id);
-        const unsubscribeLink = `${config.get('frontendLink')}/unsubscribe?token=${token}`;
+        const unsubscribeLink = `${config.get('frontendLink')}/unsubscribe/${token}`;
         
         await sendWeeklyPromotionEmail(customer.user.email, randomPromotions, unsubscribeLink);
     }));

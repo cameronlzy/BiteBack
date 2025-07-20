@@ -1,9 +1,9 @@
-import User from '../models/user.model.js';
-import Staff from '../models/staff.model.js';
 import bcrypt from 'bcryptjs';
 import _ from 'lodash';
 import crypto from 'crypto';
 import config from 'config';
+import User from '../models/user.model.js';
+import Staff from '../models/staff.model.js';
 import { generateAuthToken, staffGenerateAuthToken, generateTempToken } from '../helpers/token.helper.js';
 import { sendResetPasswordEmail, sendVerifyEmail } from '../helpers/sendEmail.js';
 import { error, success, wrapMessage } from '../helpers/response.js';
@@ -21,7 +21,7 @@ export async function register(data) {
             return error(400, 'Email already registered');
         }
         if (existingUser.username === data.username) {
-            return error(400, 'Username already taken.');
+            return error(400, 'Username already taken');
         }
     }
 
@@ -81,6 +81,9 @@ export async function setCredentials(tempUser, data) {
     const user = await User.findById(tempUser._id);
     if (!user) return error(404, 'User not found');
     if (user.password) return error(400, 'Password already set');
+
+    const existingUser = await User.exists({ username: data.username });
+    if (existingUser) return error(400, 'Username already taken');
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(data.password, salt);
