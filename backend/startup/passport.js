@@ -6,7 +6,7 @@ import User from '../models/user.model.js';
 passport.use(new GoogleStrategy({
     clientID: config.get('google.clientId'),
     clientSecret: config.get('google.clientSecret'),
-    callbackURL: '/api/auth/google/callback',
+    callbackURL: 'https://biteback1-555cc0fda71c.herokuapp.com/api/auth/google/callback',
     passReqToCallback: true,
 }, async (req, accessToken, refreshToken, profile, done) => {
     try {
