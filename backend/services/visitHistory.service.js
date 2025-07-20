@@ -96,10 +96,28 @@ export async function getRandomEnagagedCustomers(amount, monthsAgo = 3) {
     const customerIds = engagedCustomerIds.map(c => c._id);
 
     const customers = await CustomerProfile.aggregate([
-        { $match: { 
-            _id: { $in: customerIds },
-            emailOptOut: { $ne: true }
-        } 
+        { 
+            $match: { 
+                _id: { $in: customerIds },
+                emailOptOut: { $ne: true }
+            } 
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'user'
+            }
+        },
+        {
+            $unwind: '$user'
+        },
+        {
+            $project: {
+                name: 1,
+                user: { email: 1 }
+            }
         },
         { $sample: { size: amount } }
     ]);

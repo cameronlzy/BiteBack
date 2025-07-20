@@ -20,6 +20,6 @@ export async function sendWeeklyPromotionEmails() {
         const token = generateUnsubscribeToken(customer._id);
         const unsubscribeLink = `${config.get('frontendLink')}/unsubscribe?token=${token}`;
         
-        await sendWeeklyPromotionEmail(customer.email, randomPromotions, unsubscribeLink);
+        await sendWeeklyPromotionEmail(customer.user.email, randomPromotions, unsubscribeLink);
     }));
 }

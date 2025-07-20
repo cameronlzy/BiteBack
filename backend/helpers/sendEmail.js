@@ -31,7 +31,7 @@ export async function sendVerifyEmail(to, username, verificationLink) {
 }
 
 export async function sendWeeklyPromotionEmail(to, promotions, unsubscribeLink) {
-  const html = await renderTemplate('weeklyPromotions', { promotions, unsubscribeLink });
+  const html = await renderTemplate('weekly-promotions', { promotions, unsubscribeLink, frontendLink: config.get('frontendLink') });
 
   // const text = generatePlainTextFromPromotions(promotions, unsubscribeLink);
 
@@ -43,6 +43,18 @@ export async function sendWeeklyPromotionEmail(to, promotions, unsubscribeLink) 
 }
 
 // helpers
+handlebars.registerHelper('formatDate', (dateStr) => {
+  return new Date(dateStr).toLocaleDateString('en-SG', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+});
+
+handlebars.registerHelper('isUpcoming', (startDate) => {
+  return new Date(startDate) > new Date();
+});
+
 const templatesCache = {};
 
 async function renderTemplate(templateName, data) {

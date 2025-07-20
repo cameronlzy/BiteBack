@@ -13,6 +13,7 @@ import QueueEntry from '../models/queueEntry.model.js';
 import RewardPoint from '../models/rewardPoint.model.js';
 import RewardItem from '../models/rewardItem.model.js';
 import DailyAnalytics from '../models/dailyAnalytics.model.js';
+import MenuItem from '../models/menuItem.model.js';
 import { DateTime } from 'luxon';
 import mongoose from 'mongoose';
 import * as reservationService from '../services/reservation.service.js';
@@ -410,6 +411,7 @@ export async function deleteRestaurantAndAssociations(restaurant, session = unde
     RewardPoint,
     RewardItem,
     VisitHistory,
+    MenuItem,
   ];
 
   await Promise.all(

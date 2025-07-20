@@ -215,7 +215,7 @@ export async function deletePromotion(promotion) {
 export async function getRandomActivePromotions(amount) {
     const now = new Date();
 
-    const promotions = await Promotion.aggregrate([
+    const promotions = await Promotion.aggregate([
         {
             $match: {
                 isActive: true,
@@ -223,7 +223,31 @@ export async function getRandomActivePromotions(amount) {
             },
         },
         { $sample: { size: amount }},
+        {
+            $lookup: {
+                from: 'restaurants',
+                localField: 'restaurant',
+                foreignField: '_id',
+                as: 'restaurant',
+            },
+        },
+        {
+            $unwind: '$restaurant',
+        },
+        {
+            $project: {
+                title: 1,
+                description: 1,
+                bannerImage: 1,
+                startDate: 1,
+                endDate: 1,
+                restaurant: {
+                    _id: '$restaurant._id',
+                    name: '$restaurant.name',
+                }
+            },
+        },
     ]);
-    
+
     return promotions;
 }
