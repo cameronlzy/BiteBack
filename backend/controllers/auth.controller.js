@@ -1,7 +1,7 @@
 import config from 'config';
 import passport from 'passport';
 import * as authService from '../services/auth.service.js';
-import { validateRole, validateLogin, validateCredentials, validatePassword, validatePasswordChange, validateUser, validateEmail } from '../validators/auth.validator.js';
+import { validateRole, validateLogin, validateCredentials, validatePassword, validatePasswordChange, validateUser, validateEmail, validateFirstCredentials } from '../validators/auth.validator.js';
 import { validateStaffLogin } from '../validators/staff.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
 import { wrapError, wrapMessage } from '../helpers/response.js';
@@ -55,11 +55,11 @@ export async function resendVerification(req, res) {
     return res.status(status).json(body);
 }
 
-export async function setPassword(req, res) {
-    const { error, value } = validatePassword(req.body);
+export async function setCredentials(req, res) {
+    const { error, value } = validateFirstCredentials(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
     
-    const { status, body } = await authService.setPassword(req.user, value);
+    const { status, body } = await authService.setCredentials(req.user, value);
     return res.status(status).json(body);
 }
 

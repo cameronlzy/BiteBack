@@ -61,7 +61,7 @@ describe('owner test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'email', 'username', 'role', 'profile'
+                'email', 'role', 'profile'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -71,14 +71,14 @@ describe('owner test', () => {
         let token;
         let user;
         let cookie;
-        let username, companyName;
+        let companyName;
 
         const exec = () => {
             return request(server)
                 .post('/api/owners')
                 .set('Cookie', [cookie])
                 .send({
-                    username, companyName
+                    companyName
                 })
         };
 
@@ -94,7 +94,6 @@ describe('owner test', () => {
             token = generateTempToken(user);
             cookie = setTokenCookie(token);
 
-            username = 'username';
             companyName = 'name';
         });
 
@@ -110,7 +109,7 @@ describe('owner test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'username', 'companyName'
+                'companyName'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -167,7 +166,7 @@ describe('owner test', () => {
             staff = await createTestStaff(restaurant._id);
 
             // create owner profile
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             profile.restaurants = [restaurant._id];
 
@@ -223,7 +222,7 @@ describe('owner test', () => {
             await restaurant.save();
 
             // create owner profile
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             await profile.save();
 
             user.profile = profile._id;

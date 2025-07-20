@@ -1,19 +1,12 @@
+import mongoose from 'mongoose';
 import CustomerProfile from '../../models/customerProfile.model.js';
 
-export function createTestCustomerProfile(user = null) {
+export function createTestCustomerProfile(user = new mongoose.Types.ObjectId()) {
     const contactNumber = 98765432;
-    const name =  `test_${Date.now()}`;
-    const favCuisines = ['Chinese'];
-    let username;
-    if (!user) {
-        username = `user_${Date.now()}`;
-    } else {
-        username = user.username;
-    }
+    const name = `test_${Date.now()}`;
 
     const profile = new CustomerProfile({
-        user: user._id,
-        name, username, contactNumber, favCuisines
+        user, name, contactNumber
     });
     return profile;
 }

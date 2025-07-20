@@ -142,16 +142,16 @@ describe('auth test', () => {
         });
     });
 
-    describe('POST /api/auth/set-password', () => {
+    describe('POST /api/auth/set-credentials', () => {
         let user, token, cookie;
-        let password;
+        let password, username;
     
         const exec = () => {
             return request(server)
-            .post('/api/auth/set-password')
+            .post('/api/auth/set-credentials')
             .set('Cookie', [cookie])
             .send({
-                password
+                password, username
             });
         };
     
@@ -160,11 +160,13 @@ describe('auth test', () => {
 
             user = await createTestUser('customer');
             user.password = undefined;
+            user.username = undefined;
             await user.save();
             token = generateTempToken(user);
             cookie = setTokenCookie(token);
 
             password = 'Password@123';
+            username = 'username';
         });
     
         it('should return 200 and set password', async () => {
@@ -172,6 +174,7 @@ describe('auth test', () => {
             expect(res.status).toBe(200);
             const userInDb = await User.findById(user._id).lean();
             expect(userInDb.password).toBeDefined();
+            expect(userInDb.username).toEqual(username);
         });
     });
 

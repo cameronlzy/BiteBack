@@ -89,7 +89,7 @@ describe('event test', () => {
 
             // create owner
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             await user.save();
             token = generateAuthToken(user);

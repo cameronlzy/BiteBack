@@ -66,7 +66,7 @@ describe('review service test', () => {
                 { _id: new mongoose.Types.ObjectId() },
             ];
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
 
             // create some votes
@@ -110,21 +110,18 @@ describe('review service test', () => {
             await Review.create([
                 { 
                     customer: new mongoose.Types.ObjectId(),
-                    username: "username",
                     restaurant: restaurant1._id, 
                     rating: 5, reviewText: "test", 
                     dateVisited: new Date()
                 },
                 { 
                     customer: new mongoose.Types.ObjectId(),
-                    username: "username",
                     restaurant: restaurant1._id, 
                     rating: 3, reviewText: "test", 
                     dateVisited: new Date()
                 },
                 { 
                     customer: new mongoose.Types.ObjectId(),
-                    username: "username",
                     restaurant: restaurant2._id, 
                     rating: 3, reviewText: "test", 
                     dateVisited: new Date() 

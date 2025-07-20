@@ -55,7 +55,7 @@ describe('customer test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'email', 'username', 'role', 'profile'
+                'email', 'role', 'profile'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -79,7 +79,7 @@ describe('customer test', () => {
             user = await createTestUser('customer');
 
             // create customer profile
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             await profile.save();
             customerId = profile._id;
 
@@ -98,7 +98,7 @@ describe('customer test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'dateJoined', 'username'
+                'dateJoined'
             ]
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -108,7 +108,7 @@ describe('customer test', () => {
         let token;
         let user;
         let cookie;
-        let username, name, contactNumber;
+        let name, contactNumber;
 
         beforeEach(async () => {
             await User.deleteMany({});
@@ -121,7 +121,6 @@ describe('customer test', () => {
             token = generateTempToken(user);
             cookie = setTokenCookie(token);
 
-            username = 'username';
             name = 'name';
             contactNumber = '87654321';
         });
@@ -131,7 +130,7 @@ describe('customer test', () => {
                 .post('/api/customers')
                 .set('Cookie', [cookie])
                 .send({
-                    username, name, contactNumber
+                    name, contactNumber
                 });
         };
 
@@ -147,7 +146,7 @@ describe('customer test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'username', 'name', 'contactNumber'
+                'name', 'contactNumber'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -155,11 +154,6 @@ describe('customer test', () => {
 
     describe('PATCH /api/customers/me', () => {
         let token;
-        let email;
-        let username;
-        let name;
-        let contactNumber;
-        let favCuisines;
         let user;
         let profile;
         let newContactNumber;
@@ -171,17 +165,9 @@ describe('customer test', () => {
 
             // creates user with password: Password@123
             user = await createTestUser('customer');
-            email = user.email;
-            username = user.username;
 
             // create customer profile
-            name = "test";
-            contactNumber = "87654321";
-            favCuisines = ['Chinese'];
-            profile = new CustomerProfile({
-                user: user._id,
-                name, contactNumber, username, favCuisines
-            });
+            profile = createTestCustomerProfile(user._id);
             await profile.save();
 
             user.profile = profile._id;
@@ -198,16 +184,9 @@ describe('customer test', () => {
                 .patch('/api/customers/me')
                 .set('Cookie', [cookie])
                 .send({
-                    email, username, name, 
-                    contactNumber: newContactNumber, favCuisines
+                    contactNumber: newContactNumber
                 });
         };
-
-        it('should return 400 if invalid request', async () => {
-            email = 'notEmail';
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
 
          it('should return 404 if user not found', async () => {
             let otherUser = await createTestUser('customer');
@@ -220,8 +199,12 @@ describe('customer test', () => {
         it('should return 400 if username already taken', async () => {
             let otherUser = await createTestUser('customer');
             await otherUser.save();
-            username = otherUser.username;
-            const res = await exec();
+            const res = await request(server)
+            .patch('/api/customers/me')
+            .set('Cookie', [cookie])
+            .send({
+                username: otherUser.username
+            });
             expect(res.status).toBe(400);
         });
 

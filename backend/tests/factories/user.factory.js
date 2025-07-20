@@ -8,14 +8,11 @@ export async function createTestUser(role = 'customer') {
   const password = await bcrypt.hash('Password@123', 10);
   const isVerified = true;
 
-  const roleProfile = role === 'customer' ? 'CustomerProfile' : 'OwnerProfile';
-
   const user = new User({
     email,
     username,
     password,
     role,
-    roleProfile,
     profile: new mongoose.Types.ObjectId(),
     isVerified,
   });

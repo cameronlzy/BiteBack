@@ -3,7 +3,6 @@ import passwordComplexity from 'joi-password-complexity';
 
 export function validateOwner(profile) {
   const schema = Joi.object({
-    username: Joi.string().min(2).required(),
     companyName: Joi.string().min(2).max(255).required(),
   });
   return schema.validate(profile);

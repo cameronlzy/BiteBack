@@ -32,7 +32,7 @@ export async function createProfile(tempUser, data) {
         const user = await User.findById(tempUser._id).session(session);
         if (!user) return error(404, 'User not found');
 
-        const profile = new OwnerProfile(_.pick(data, ['companyName', 'username']));
+        const profile = new OwnerProfile(_.pick(data, ['companyName']));
         profile.user = user._id;
         await profile.save(wrapSession(session));
         
@@ -129,7 +129,6 @@ export async function updateMe(update, authUser) {
         await user.save(wrapSession(session));
 
         // selectively update profile fields
-        if (update.username !== undefined) user.profile.username = update.username;
         if (update.companyName !== undefined) user.profile.companyName = update.companyName;
 
         await user.profile.save(wrapSession(session));

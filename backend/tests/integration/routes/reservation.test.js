@@ -315,7 +315,7 @@ describe('reservation test', () => {
 
             // create a user
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             await user.save();
             await profile.save();

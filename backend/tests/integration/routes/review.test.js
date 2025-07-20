@@ -53,7 +53,7 @@ describe('review test', () => {
             
             // create customer 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             await profile.save();
             await user.save();
@@ -111,7 +111,9 @@ describe('review test', () => {
             
             // create customer 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
+            user.profile = profile._id;
+            await user.save();
             await profile.save();
 
             review = createTestReview(profile, restaurantId);
@@ -173,7 +175,9 @@ describe('review test', () => {
             
             // create customer 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
+            user.profile = profile._id;
+            await user.save();
             await profile.save();
             customerId = profile._id;
 
@@ -222,9 +226,6 @@ describe('review test', () => {
         let user;
         let restaurant;
         let profile;
-        let rating;
-        let reviewText;
-        let dateVisited;
 
 		beforeEach(async () => {
 			// clear all
@@ -238,19 +239,13 @@ describe('review test', () => {
             
             // create customer 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
+            user.profile = profile._id;
+            await user.save();
             await profile.save();
 
             // create a review
-            rating = 3;
-            reviewText = "Good";
-            dateVisited = new Date();
-            review = new Review({
-                customer: profile._id,
-                username: user.username,
-                restaurant: restaurant._id,
-                rating, reviewText, dateVisited
-            });
+            review = createTestReview(profile._id, restaurant._id);
             await review.save();
             reviewId = review._id;
 		});
@@ -300,7 +295,7 @@ describe('review test', () => {
             
             // create customer 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -351,9 +346,6 @@ describe('review test', () => {
         let owner;
         let restaurant;
         let profile;
-        let rating;
-        let reviewText;
-        let dateVisited;
         let replyText;
         let token;
         let cookie;
@@ -377,19 +369,11 @@ describe('review test', () => {
             
             // create customer 
             customer = await createTestUser('customer');
-            profile = createTestCustomerProfile(customer);
+            profile = createTestCustomerProfile(customer._id);
             await profile.save();
 
             // create a review
-            rating = 3;
-            reviewText = "Good";
-            dateVisited = new Date();
-            review = new Review({
-                customer: profile._id,
-                username: customer.username,
-                restaurant: restaurant._id,
-                rating, reviewText, dateVisited
-            });
+            review = createTestReview(profile._id, restaurant._id);
             await review.save();
             reviewId = review._id;
             replyText = "test";
@@ -457,7 +441,7 @@ describe('review test', () => {
             
             // create customer 
             customer = await createTestUser('customer');
-            profile = createTestCustomerProfile(customer);
+            profile = createTestCustomerProfile(customer._id);
             customer.profile = profile._id;
             await customer.save();
             await profile.save();
@@ -469,7 +453,6 @@ describe('review test', () => {
             dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
-                username: customer.username,
                 restaurant: restaurant._id,
                 rating, reviewText, dateVisited,
                 reply: {
@@ -483,7 +466,7 @@ describe('review test', () => {
 
             // create other customer
             otherCustomer = await createTestUser('customer');
-            otherCustomerProfile = createTestCustomerProfile(otherCustomer);
+            otherCustomerProfile = createTestCustomerProfile(otherCustomer._id);
             otherCustomer.profile = otherCustomerProfile._id;
             await otherCustomer.save();
             await otherCustomerProfile.save();
@@ -527,7 +510,7 @@ describe('review test', () => {
 
             // create customer
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             await user.save();
             await profile.save();
@@ -603,7 +586,7 @@ describe('review test', () => {
             // create customer 
             user = await createTestUser('customer');
 
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             await profile.save();
             user.profile = profile._id;
             await user.save();
@@ -618,7 +601,6 @@ describe('review test', () => {
             images = [];
             review = new Review({
                 customer: profile._id,
-                username: user.username,
                 restaurant: restaurant._id,
                 rating, reviewText, dateVisited, images
             });
@@ -689,7 +671,7 @@ describe('review test', () => {
             
             // create customer 
             customer = await createTestUser('customer');
-            profile = createTestCustomerProfile(customer);
+            profile = createTestCustomerProfile(customer._id);
             await profile.save();
 
             // create a review
@@ -699,7 +681,6 @@ describe('review test', () => {
             dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
-                username: customer.username,
                 restaurant: restaurant._id,
                 rating, reviewText, dateVisited,
                 reply: {
@@ -765,7 +746,7 @@ describe('review test', () => {
             
             // create customer 
             customer = await createTestUser('customer');
-            profile = createTestCustomerProfile(customer);
+            profile = createTestCustomerProfile(customer._id);
             customer.profile = profile._id;
             await customer.save();
             await profile.save();
@@ -777,7 +758,6 @@ describe('review test', () => {
             dateVisited = new Date();
             review = new Review({
                 customer: profile._id,
-                username: customer.username,
                 restaurant: restaurant._id,
                 rating, reviewText, dateVisited,
                 reply: {
@@ -791,7 +771,7 @@ describe('review test', () => {
 
             // create other customer
             otherCustomer = await createTestUser('customer');
-            otherCustomerProfile = createTestCustomerProfile(otherCustomer);
+            otherCustomerProfile = createTestCustomerProfile(otherCustomer._id);
             otherCustomer.profile = otherCustomerProfile._id;
             await otherCustomer.save();
             await otherCustomerProfile.save();

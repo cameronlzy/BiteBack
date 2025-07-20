@@ -63,3 +63,11 @@ export function validateEmail(email) {
   });
   return schema.validate(email);
 }
+
+export function validateFirstCredentials(credentials) {
+  const schema = Joi.object({
+    username: Joi.string().min(2).required(),
+    password: passwordComplexity().required(),
+  });
+  return schema.validate(credentials);
+}

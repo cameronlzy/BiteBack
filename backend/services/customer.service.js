@@ -23,11 +23,18 @@ export async function getMe(userId) {
 export async function publicProfile(customerId) {
     // get customer
     const customer = await CustomerProfile.findById(customerId)
-        .select('dateJoined username')
+        .populate({
+            path: 'user',
+            select: 'username'
+        })
+        .select('dateJoined user')
         .lean();
     if (!customer) return error(404, 'Customer not found');
 
-    return success(customer);
+    return success({
+        dateJoined: customer.dateJoined,
+        username: customer.user.username,
+    });
 }
 
 export async function createProfile(tempUser, data) {
@@ -35,7 +42,7 @@ export async function createProfile(tempUser, data) {
         const user = await User.findById(tempUser._id).session(session);
         if (!user) return error(404, 'User not found');
 
-        const profile = new CustomerProfile(_.pick(data, ['name', 'username', 'contactNumber', 'emailOptOut']));
+        const profile = new CustomerProfile(_.pick(data, ['name', 'contactNumber', 'emailOptOut']));
         profile.user = user._id;
         await profile.save(wrapSession(session));
 
@@ -96,10 +103,10 @@ export async function updateMe(update, authUser) {
         await user.save(wrapSession(session));
 
         // selectively update profile fields
-        if (update.username !== undefined) user.profile.username = update.username;
         if (update.name !== undefined) user.profile.name = update.name;
         if (update.contactNumber !== undefined) user.profile.contactNumber = update.contactNumber;
         if (update.favCuisines !== undefined) user.profile.favCuisines = update.favCuisines;
+        if (update.emailOptOut !== undefined) user.profile.emailOptOut = update.emailOptOut;
 
         await user.profile.save(wrapSession(session));
 

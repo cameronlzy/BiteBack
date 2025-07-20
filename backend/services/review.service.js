@@ -39,7 +39,14 @@ export async function getReviewsByRestaurant(restaurantId, authUser, query) {
 
     // get reviews by restaurant
     let [reviews, total] = await Promise.all([
-        Review.find({ restaurant: restaurantId }).populate('customer', 'username').sort({ [sortBy]: order === 'asc' ? 1 : -1 }).skip(skip).limit(limit).lean(),
+        Review.find({ restaurant: restaurantId })
+        .populate({
+            path: 'customer',
+            populate: {
+                path: 'user',
+                select: 'username'
+            }
+        }).sort({ [sortBy]: order === 'asc' ? 1 : -1 }).skip(skip).limit(limit).lean(),
         Review.countDocuments({ restaurant: restaurantId }),
     ]);
 
@@ -56,7 +63,7 @@ export async function getReviewsByRestaurant(restaurantId, authUser, query) {
     reviews = reviews.map(r => {
         return {
             ...r,
-            username: r.customer.username,
+            username: r.customer.user.username,
             customer: r.customer._id
         };
     });
@@ -81,12 +88,12 @@ export async function getReviewsByCustomer(customerId, authUser, query) {
     const skip = (page - 1) * limit;
 
     // find customer profile
-    const customer = await CustomerProfile.exists({ _id: customerId });
+    const customer = await CustomerProfile.findById(customerId).populate('user', 'username').lean();
     if (!customer) return error(404, 'Customer profile not found');
 
     // get reviews by customer
     let [reviews, total] = await Promise.all([
-        Review.find({ customer: customerId }).populate('customer', 'username').sort({ [sortBy]: order === 'asc' ? 1 : -1 }).skip(skip).limit(limit).lean(),
+        Review.find({ customer: customerId }).sort({ [sortBy]: order === 'asc' ? 1 : -1 }).skip(skip).limit(limit).lean(),
         Review.countDocuments({ customer: customerId }),
     ])
 
@@ -100,13 +107,11 @@ export async function getReviewsByCustomer(customerId, authUser, query) {
         });
     }
 
-    reviews = reviews.map(r => {
-        return {
-            ...r,
-            username: r.customer.username,
-            customer: r.customer._id
-        };
-    });
+    reviews = reviews.map(r => ({
+        ...r,
+        username: customer.user.username,
+        customer: customerId,
+    }));
 
     // get badges count
     reviews = await getBadgesCount(reviews);
@@ -125,9 +130,16 @@ export async function getReviewsByCustomer(customerId, authUser, query) {
 
 export async function getReviewById(reviewId) {
     // get review
-    const review = await Review.findById(reviewId).populate('customer', 'username').lean();
+    const review = await Review.findById(reviewId)
+    .populate({
+        path: 'customer',
+        populate: {
+            path: 'user',
+            select: 'username'
+        }
+    }).lean();
     if (!review) return error(404, 'Review not found');
-    review.username = review.customer.username;
+    review.username = review.customer.user.username;
     review.customer = review.customer._id;
     return success(review);
 }

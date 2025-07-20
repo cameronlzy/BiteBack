@@ -31,7 +31,7 @@ describe('reward point test', () => {
             await Restaurant.deleteMany({});
 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -68,7 +68,7 @@ describe('reward point test', () => {
             await Restaurant.deleteMany({});
 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);

@@ -27,7 +27,7 @@ router.post('/verify-email/:token', authController.verifyEmail);
 router.post('/resend-verification', authController.resendVerification);
 
 // [User] - Sets password for the first time (for google oauth)
-router.post('/set-password', [tempAuth], authController.setPassword);
+router.post('/set-credentials', [tempAuth], authController.setCredentials);
 
 // [Public] - Generate token for password reset
 router.post('/forget-password', authController.forgotPassword);

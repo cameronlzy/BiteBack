@@ -1,31 +1,7 @@
 import Joi from './joi.js';
 
-const cuisineList = [
-  'Chinese',
-  'Malay',
-  'Indian',
-  'Peranakan',
-  'Western',
-  'Thai',
-  'Japanese',
-  'Korean',
-  'Vietnamese',
-  'Indonesian',
-  'Filipino',
-  'Middle Eastern',
-  'Mexican',
-  'Italian',
-  'French',
-  'Hawker',
-  'Fusion',
-  'Seafood',
-  'Vegetarian',
-  'Halal'
-];
-
 export function validateCustomer(profile) {
   const schema = Joi.object({
-    username: Joi.string().min(2).required(),
     name: Joi.string().min(2).max(20).required(),
     contactNumber: Joi.string()
       .pattern(/^\d{8}$/)
@@ -34,7 +10,7 @@ export function validateCustomer(profile) {
         "string.pattern.base": "Contact number must be an 8-digit number.",
         "string.empty": `"contactNumber" is required`
       }),
-      emailOptOut: Joi.boolean().default(false),
+    emailOptOut: Joi.boolean().default(false),
   });
   return schema.validate(profile);
 }
@@ -50,12 +26,7 @@ export function validatePatch(update) {
         "string.pattern.base": "Contact number must be an 8-digit number.",
         "string.empty": `"contactNumber" is required`
       }),
-    favCuisines: Joi.array()
-      .items(Joi.string().valid(...cuisineList))
-      .min(1)
-      .messages({
-        "array.min": "Please select at least one favourite cuisine.",
-      }),
+    emailOptOut: Joi.boolean().default(false),
   }).min(1);
   return schema.validate(update);
 }
