@@ -59,25 +59,23 @@ export async function openGooglePopup(role = 'customer') {
       'https://biteback1-555cc0fda71c.herokuapp.com'
     ]
 
-    window.addEventListener('message', (e) => {
- const messageData = JSON.parse(JSON.stringify(e.data))
-console.log('[FULL] Message data:', messageData)
-});
-
-    function handleMessage(event) {
+    const handleMessage = async (event) => {
       if (!allowedOrigins.includes(event.origin)) return
 
-      const { status, isNewUser } = event.data || {}
+      const { status, isNewUser, tempToken  } = event.data || {}
 
       if (status === 'success') {
         clearInterval(checkClosed)
         window.removeEventListener('message', handleMessage)
+        
+        await tokenExchange(tempToken)
 
         if (isNewUser) {
           window.location.href = `/complete-signup/${role || 'customer'}`
         } else {
           window.location.reload()
         }
+
 
         resolve()
       }
@@ -99,6 +97,11 @@ console.log('[FULL] Message data:', messageData)
       }
     }, 500)
   })
+}
+
+export async function tokenExchange(token) {
+    const { data } = await http.post(apiEndpoint + "/consume-token", {token})
+    return data
 }
 
 export async function setCredentials(payload) {
