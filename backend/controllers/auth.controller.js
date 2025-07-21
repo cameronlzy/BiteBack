@@ -23,6 +23,8 @@ export async function googleCallback(req, res) {
 
     setAuthCookie(res, token);
 
+    res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
     return res.send(`
         <!DOCTYPE html>
         <html>
