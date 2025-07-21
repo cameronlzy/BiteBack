@@ -20,25 +20,29 @@ export async function googleRedirect(req, res, next) {
 export async function googleCallback(req, res) {
     const tempToken = generateExchangeToken(req.user);
 
+    const data = {
+        status: 'success',
+        isNewUser: req.user._isNew,
+        tempToken,
+    };
+
     res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
     res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+
     return res.send(`
         <!DOCTYPE html>
         <html>
         <head><title>Authenticated</title></head>
         <body>
         <script>
-            window.opener.postMessage({
-            status: 'success',
-            isNewUser: ${req.user._isNew},
-            tempToken: ${tempToken}
-            }, '${config.get('frontendLink')}');
+            window.opener.postMessage(${JSON.stringify(data)}, '${config.get('frontendLink')}');
             window.close();
         </script>
         </body>
         </html>
     `);
 }
+
 
 export async function consumeToken(req, res) {
     const { error, value } = validateJWTToken(req.body);
