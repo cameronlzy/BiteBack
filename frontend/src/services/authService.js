@@ -40,6 +40,7 @@ export async function resendVerificationEmail(email) {
 }
 
 export async function openGooglePopup(role = 'customer') {
+   
   return new Promise((resolve, reject) => {
     const width = 500
     const height = 600
@@ -70,11 +71,15 @@ export async function openGooglePopup(role = 'customer') {
         
         await tokenExchange(tempToken)
 
+        if (!isNewUser) {
+            localStorage.removeItem("mid-registration") 
+        }
+
         setTimeout(() => {
             if (isNewUser) {
                 window.location.href = `/complete-signup/${role || 'customer'}`
             } else {
-                window.location.reload()
+                window.location.href = "/"
             }
         }, 300)
 
