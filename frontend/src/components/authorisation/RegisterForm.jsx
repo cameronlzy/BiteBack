@@ -138,7 +138,7 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
   const handleGoogleRedirect = async (role) => {
     try {
       localStorage.setItem("mid-registration", true)
-      openGooglePopup(role)
+      await openGooglePopup(role)
     } catch (ex) {
       toast.error("Google Auth Failed")
       throw ex

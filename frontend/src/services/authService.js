@@ -39,7 +39,7 @@ export async function resendVerificationEmail(email) {
     return data
 }
 
-export function openGooglePopup(role) {
+export async function openGooglePopup(role) {
   return new Promise((resolve, reject) => {
     const width = 500
     const height = 600
