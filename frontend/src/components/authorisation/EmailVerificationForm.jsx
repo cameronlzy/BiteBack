@@ -29,17 +29,21 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
   useEffect(() => {
     const verification = async () => {
       try {
+        localStorage.setItem("TokenToCheck", token)
         await verifyEmail(token)
         localStorage.setItem("toastMessage", "Account Verified!")
         window.location = "/login"
       } catch (ex) {
-        toast.error("Verification Token Invalid")
+        toast.error("Verification Token Invalid", {
+          toastId: "verification-email-fail",
+        })
         navigate("/register", { replace: true })
         throw ex
       }
     }
-    if (token?.trim()) {
-      verification()
+    if (token) {
+      const data = verification()
+      console.log(data)
     }
   }, [token])
 
@@ -68,7 +72,7 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
     }
   }
 
-  if (!onSubmit && !providedEmail && token.trim()) {
+  if (!onSubmit && !providedEmail && token?.trim()) {
     return (
       <div className="flex flex-col items-center justify-center py-10 space-y-2">
         <div className="flex items-center">

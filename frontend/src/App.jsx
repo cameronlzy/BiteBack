@@ -264,12 +264,9 @@ function App() {
             }
           />
           <Route path="forgot-password" element={<ForgotPassword />} />
-          <Route path="reset-password/:token" element={<ResetPassword />} />
-          <Route
-            path="verify-email/:token"
-            element={<EmailVerificationForm />}
-          />
-          <Route path="unsubscribe/:token" element={<UnsubscribeEmail />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="verify-email" element={<EmailVerificationForm />} />
+          <Route path="unsubscribe" element={<UnsubscribeEmail />} />
           <Route
             path="change-password"
             element={
