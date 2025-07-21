@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint . --ext .js --fix",
-    "test": "export NODE_ENV=test && node --experimental-vm-modules node_modules/.bin/jest --verbose",
+    "test": "export NODE_ENV=test && node --experimental-vm-modules node_modules/.bin/jest",
     "test:dev": "export NODE_ENV=test && node --experimental-vm-modules node_modules/.bin/jest --watchAll --verbose",
     "test:debug": "export NODE_ENV=test && node --experimental-vm-modules ./node_modules/.bin/jest --detectOpenHandles",
     "test:cov": "export NODE_ENV=test && node --experimental-vm-modules ./node_modules/.bin/jest --coverage",
@@ -36,6 +36,7 @@
     "generate-password": "^1.7.1",
     "handlebars": "^4.7.8",
     "helmet": "^8.1.0",
+    "html-to-text": "^9.0.5",
     "joi": "^17.13.3",
     "joi-objectid": "^4.0.2",
     "joi-password": "^4.2.0",

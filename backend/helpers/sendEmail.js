@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import handlebars from 'handlebars';
 import { fileURLToPath } from 'url';
+import { htmlToText } from 'html-to-text';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,8 +33,6 @@ export async function sendVerifyEmail(to, username, verificationLink) {
 
 export async function sendWeeklyPromotionEmail(to, promotions, unsubscribeLink) {
   const html = await renderTemplate('weekly-promotions', { promotions, unsubscribeLink, frontendLink: config.get('frontendLink') });
-
-  // const text = generatePlainTextFromPromotions(promotions, unsubscribeLink);
 
   await sendEmail({
     to,
@@ -84,7 +83,12 @@ async function sendEmail({ to, subject, text, html, attachments }) {
     from: config.get('email.user'),
     to,
     subject,
-    text,
+    text: text || htmlToText(html, { 
+      wordwrap: 130,
+      selectors: [
+        { selector: 'a', options: { hideLinkHrefIfSameAsText: true } },
+      ],
+    }),
     html,
     attachments,
   };

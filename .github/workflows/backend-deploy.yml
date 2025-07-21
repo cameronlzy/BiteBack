@@ -52,7 +52,7 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm test
+        run: npm run test -- --no-verbose
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh

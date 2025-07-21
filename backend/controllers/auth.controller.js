@@ -1,4 +1,3 @@
-import config from 'config';
 import passport from 'passport';
 import * as authService from '../services/auth.service.js';
 import { validateRole, validateLogin, validateCredentials, validatePasswordReset, validatePasswordChange, validateUser, validateEmail, validateFirstCredentials, validateToken } from '../validators/auth.validator.js';
@@ -22,11 +21,23 @@ export async function googleCallback(req, res) {
         ? generateTempToken(req.user)
         : generateAuthToken(req.user);
 
-    const redirectPath = req.user._isNew
-        ? `/complete-signup/${req.user.role}`
-        : ``;
+    setAuthCookie(res, token);
 
-    return res.redirect(`${config.get('frontendLink')}${redirectPath}?token=${token}`);
+    return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Authenticated</title></head>
+        <body>
+        <script>
+            window.opener.postMessage({
+            status: 'success',
+            isNewUser: ${req.user._isNew}
+            }, window.location.origin);
+            window.close();
+        </script>
+        </body>
+        </html>
+    `);
 }
 
 export async function register(req, res) {
