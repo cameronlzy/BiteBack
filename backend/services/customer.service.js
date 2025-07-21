@@ -47,7 +47,6 @@ export async function createProfile(tempUser, data) {
         await profile.save(wrapSession(session));
 
         user.profile = profile._id;
-        user.username = data.username;
         await user.save(wrapSession(session));
         
         if (user.isVerified) {

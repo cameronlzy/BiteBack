@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
       message: 'Invalid email'
     }
   },
-  username: { type: String, minlength: 2, unique: true, trim: true },
+  username: { type: String, minlength: 2, unique: true, trim: true, sparse: true },
   password: { type: String },
   role: { type: String, enum: ['customer', 'owner'], required: true },
   profile: {
