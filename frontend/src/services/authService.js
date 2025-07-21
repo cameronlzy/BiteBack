@@ -73,6 +73,7 @@ export async function openGooglePopup(role = 'customer') {
 
         if (!isNewUser) {
             localStorage.removeItem("mid-registration") 
+            localStorage.setItem("toastMessage", "Successfully Logged in")
         }
 
         setTimeout(() => {
