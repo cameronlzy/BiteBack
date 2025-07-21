@@ -44,13 +44,12 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
   const location = useLocation()
   const from = location.state?.from || "/"
   useEffect(() => {
-    if (user && location.pathname === "/register") {
-      navigate("/me/edit", { replace: true })
-    } else if (
-      location.pathname.startsWith("/complete-signup/") &&
-      !localStorage.getItem("googleAuth")
+    if (
+      user &&
+      (location.pathname === "/register" ||
+        location.pathname.startsWith("/complete-signup/"))
     ) {
-      navigate("/register", { replace: true })
+      navigate("/me/edit", { replace: true })
     }
   }, [user, location.pathname, navigate])
 
@@ -137,7 +136,6 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
           ? await updateOwner(result)
           : await updateCustomer(result)
     }
-    localStorage.removeItem("googleAuth")
     localStorage.setItem("role", finalData.role)
     setEmail(finalData.email)
     return response
@@ -145,7 +143,6 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
 
   const handleGoogleRedirect = async (role) => {
     try {
-      localStorage.setItem("googleAuth", true)
       await getGoogleRedirect(role)
     } catch (ex) {
       toast.error("Google Auth Failed")
