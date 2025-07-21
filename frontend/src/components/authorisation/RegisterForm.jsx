@@ -140,6 +140,13 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
           ? await updateOwner(result)
           : await updateCustomer(result)
     }
+    if (isUpdate || googleAuth) {
+      localStorage.setItem(
+        "toastMessage",
+        isUpdate ? "Updated!" : "Registered!"
+      )
+      window.location = from
+    }
     localStorage.setItem("role", finalData.role)
     setEmail(finalData.email)
     return response
