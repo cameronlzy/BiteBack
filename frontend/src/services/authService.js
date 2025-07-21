@@ -55,11 +55,15 @@ export async function openGooglePopup(role = 'customer') {
     if (!popup) return reject(new Error('Popup blocked'));
 
     function handleMessage(event) {
-      if (event.origin !== window.location.origin) return;
+      const allowedOrigins = [
+        window.location.origin,
+        'https://biteback1-555cc0fda71c.herokuapp.com'
+        ]
+      if (!allowedOrigins.includes(event.origin)) return
 
       if (event.data?.status === 'success') {
         window.removeEventListener('message', handleMessage);
-        resolve(); // no token needed
+        resolve(); 
       }
     }
 
