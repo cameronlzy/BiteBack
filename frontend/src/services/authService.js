@@ -59,10 +59,14 @@ export async function openGooglePopup(role = 'customer') {
       'https://biteback1-555cc0fda71c.herokuapp.com'
     ]
 
+    window.addEventListener('message', (e) => {
+  console.log('[GLOBAL] received postMessage:', e);
+});
+
     function handleMessage(event) {
       if (!allowedOrigins.includes(event.origin)) return
 
-      const { status, isNewUser, role } = event.data || {}
+      const { status, isNewUser } = event.data || {}
 
       if (status === 'success') {
         clearInterval(checkClosed)
