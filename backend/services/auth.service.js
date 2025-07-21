@@ -10,6 +10,7 @@ import { error, success, wrapMessage } from '../helpers/response.js';
 
 export async function register(data) {
     // if user exists
+    console.log("data", data);
     let existingUser = await User.findOne({
         $or: [
             { email: data.email },
@@ -27,6 +28,7 @@ export async function register(data) {
 
     // create new user
     let user = new User(_.pick(data, ['email', 'username', 'role']));
+    console.log(data.username);
 
     // hash password and add references
     const salt = await bcrypt.genSalt(10);

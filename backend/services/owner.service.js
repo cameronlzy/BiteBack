@@ -52,7 +52,7 @@ export async function createProfile(tempUser, data) {
             user.verifyEmailExpires = Date.now() + 30 * 60 * 1000;
             await user.save(wrapSession(session));
 
-            const link = `${config.get('frontendLink')}/verify-email/${token}`;
+            const link = `${config.get('frontendLink')}/verify-email?token=${token}`;
             await sendVerifyEmail(user.email, user.username, link);
             return success(profile.toObject());
         }

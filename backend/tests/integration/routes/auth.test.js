@@ -64,6 +64,7 @@ describe('auth test', () => {
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
             expect(res.body).not.toHaveProperty('password');
+            
         });
     });
 
