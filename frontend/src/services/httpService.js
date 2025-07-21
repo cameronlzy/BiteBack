@@ -2,6 +2,12 @@ import axios from "axios"
 import { log } from "@/services/logService"
 import { toast } from "react-toastify"
 
+const ignoreUnauthorisedRoutes = [
+    "/register",
+    "/verify-email",
+    "/complete-signup"
+]
+
 axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use(null, (error) => {
@@ -13,12 +19,20 @@ axios.interceptors.response.use(null, (error) => {
     }
 
     if (error.response?.status === 401) {
+    const path = window.location.pathname;
+
+    const isIgnored = ignoreUnauthorisedRoutes.some(route =>
+        path.startsWith(route)
+    );
+
+    if (!isIgnored) {
         localStorage.removeItem("role");
         toast.error("Session expired. Please log in again.", {
             toastId: "sessionExpiry"
-        })
+        });
         window.location.href = "/login";
     }
+}
     return Promise.reject(error);
 })
 

@@ -4,7 +4,7 @@ import { Link, Navigate, useLocation } from "react-router-dom"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { loginUserSchema } from "@/utils/schemas"
 import FormWithCard from "../common/FormWithCard"
-import auth, { getGoogleRedirect } from "@/services/authService"
+import auth, { openGooglePopup } from "@/services/authService"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { toast } from "react-toastify"
 
@@ -52,10 +52,10 @@ const LoginForm = ({ user, loading }) => {
     { name: "password", label: "Password", placeholder: "your password" },
   ]
 
-  const handleGoogleRedirect = async () => {
+  const handleGoogleRedirect = () => {
     try {
       localStorage.setItem("role", role)
-      await getGoogleRedirect(role)
+      openGooglePopup(role)
     } catch (ex) {
       toast.error("Google Auth Failed")
       throw ex

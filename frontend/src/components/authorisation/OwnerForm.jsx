@@ -473,7 +473,7 @@ const OwnerForm = ({
       </FormProvider>
       {!googleAuth && !user && (
         <GoogleAuthorisationButton
-          onClick={() => handleGoogleRedirect("customer")}
+          onClick={() => handleGoogleRedirect("owner")}
         />
       )}
     </>

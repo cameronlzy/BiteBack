@@ -15,28 +15,19 @@ import {
   registerCust,
 } from "@/services/userService"
 import BackButton from "../common/BackButton"
-import {
-  useLocation,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { objectComparator } from "@/utils/objectComparator"
 import {
-  // openGooglePopup,
-  getGoogleRedirect,
+  openGooglePopup,
   register,
   resendVerificationEmail,
   setCredentials,
 } from "@/services/authService"
 import EmailVerificationForm from "./EmailVerificationForm"
 import { toast } from "react-toastify"
-import { setAuthCookie } from "@/utils/cookieService"
 
 const RegisterForm = ({ user, isLoading, googleAuth }) => {
   const { googleSignupRole } = useParams()
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get("token")
   const [role, setRole] = useState(user?.role || googleSignupRole || "customer")
   const [isUpdate, setIsUpdate] = useState(false)
   const [needsToVerify, setNeedsToVerify] = useState(false)
@@ -53,16 +44,6 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
       navigate("/me/edit", { replace: true })
     }
   }, [user, location.pathname, navigate])
-
-  useEffect(() => {
-    const settingCookie = async () => {
-      await setAuthCookie(token)
-    }
-    if (token) {
-      settingCookie()
-    }
-  }, [token])
-
   useEffect(() => {
     if (user) {
       setIsUpdate(true)
@@ -113,7 +94,6 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
         username: finalData.username,
         password: finalData.password,
       }
-      console.log(registrationPackage)
       const regResponse = !googleAuth
         ? await register(registrationPackage)
         : await setCredentials(registrationPackage)
@@ -131,6 +111,7 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
         response = { ...regResponse, ...customerRegResponse }
       }
       if (!googleAuth) {
+        localStorage.setItem("mid-registration", true)
         setNeedsToVerify(true)
         toast.info("Email has been sent to registered email for verification")
       }
@@ -140,11 +121,13 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
           ? await updateOwner(result)
           : await updateCustomer(result)
     }
+
     if (isUpdate || googleAuth) {
       localStorage.setItem(
         "toastMessage",
         isUpdate ? "Updated!" : "Registered!"
       )
+      localStorage.removeItem("mid-registration")
       window.location = from
     }
     localStorage.setItem("role", finalData.role)
@@ -154,8 +137,8 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
 
   const handleGoogleRedirect = async (role) => {
     try {
-      await getGoogleRedirect(role)
-      // openGooglePopup(role, () => window.location.reload())
+      localStorage.setItem("mid-registration", true)
+      openGooglePopup(role)
     } catch (ex) {
       toast.error("Google Auth Failed")
       throw ex

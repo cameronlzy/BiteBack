@@ -2,7 +2,6 @@ import "./App.css"
 import { useEffect, useState, Fragment } from "react"
 import { Routes, Route } from "react-router-dom"
 import { toast, ToastContainer } from "react-toastify"
-import auth from "./services/authService"
 import { getCustomerInfo, getOwnerInfo } from "./services/userService"
 import Home from "./components/Home"
 import LoginForm from "./components/authorisation/LoginForm"
@@ -61,8 +60,9 @@ function App() {
   }, [])
   useEffect(() => {
     const savedRole = localStorage.getItem("role")
+    const midRegistration = localStorage.getItem("mid-registration")
 
-    if (!savedRole) {
+    if (!savedRole || midRegistration) {
       setLoading(false)
       return
     }
@@ -82,16 +82,8 @@ function App() {
           setUser(user)
         }
       } catch (ex) {
-        if (ex.response?.status === 401) {
-          await auth.logout()
-          localStorage.removeItem("role")
-          toast.info("Please re-login", {
-            toastId: "toast-relogin",
-          })
-        } else {
-          setUser(null)
-          throw ex
-        }
+        setUser(null)
+        throw ex
       } finally {
         setLoading(false)
       }

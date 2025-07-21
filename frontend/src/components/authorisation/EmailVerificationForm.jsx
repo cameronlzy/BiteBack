@@ -39,6 +39,8 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
         })
         navigate("/register", { replace: true })
         throw ex
+      } finally {
+        localStorage.removeItem("mid-registration")
       }
     }
     if (token) {
