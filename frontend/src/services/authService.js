@@ -57,7 +57,7 @@ export function openGooglePopup(role) {
     function handleMessage(event) {
       if (event.origin !== window.location.origin) return
 
-      const { status, isNewUser, role } = event.data || {}
+      const { status, isNewUser } = event.data || {}
       if (status === 'success') {
         window.removeEventListener('message', handleMessage)
 
