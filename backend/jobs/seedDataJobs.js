@@ -3,6 +3,8 @@ import { runJob } from '../helpers/jobRunner.js';
 import { seedReservations, seedQueueAndReview, markPastReservations } from '../services/scheduledJobs/seedData.service.js';
 
 export function registerSeedDataJobs(timezone = 'Asia/Singapore') {
+    if (process.env.NODE_ENV === 'test') return;
+    
     // runs at 12am every day - creates reservations for the upcoming day
     cron.schedule('0 0 * * *', async () => {
         await runJob('SeedReservations', async () => {

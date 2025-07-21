@@ -43,7 +43,6 @@ export async function googleCallback(req, res) {
     `);
 }
 
-
 export async function consumeToken(req, res) {
     const { error, value } = validateJWTToken(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));

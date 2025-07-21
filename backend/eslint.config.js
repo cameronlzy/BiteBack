@@ -1,7 +1,7 @@
 import js from "@eslint/js";
 import globals from "globals";
 import { defineConfig } from "eslint/config";
-
+import promise from 'eslint-plugin-promise';
 
 export default defineConfig([
   {
@@ -30,11 +30,17 @@ export default defineConfig([
     },
   },
   {
+    plugins: {
+      promise,
+    },
     rules: {
       'no-unused-vars': ['error', {
         varsIgnorePattern: '^_',    // ignore vars starting with _
         argsIgnorePattern: '^_',    // ignore args starting with _
       }],
+      'promise/always-return': 'error',
+      'promise/catch-or-return': 'error',
+      'promise/no-return-wrap': 'error'
     },
   },
   { files: ["**/*.{js,mjs,cjs}"], plugins: { js }, extends: ["js/recommended"] },
