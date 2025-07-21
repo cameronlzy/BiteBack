@@ -60,7 +60,8 @@ export async function openGooglePopup(role = 'customer') {
     ]
 
     window.addEventListener('message', (e) => {
-  console.log('[GLOBAL] received postMessage:', e);
+ const messageData = JSON.parse(JSON.stringify(e.data))
+console.log('[FULL] Message data:', messageData)
 });
 
     function handleMessage(event) {
