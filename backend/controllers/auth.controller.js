@@ -1,4 +1,5 @@
 import passport from 'passport';
+import config from 'config';
 import * as authService from '../services/auth.service.js';
 import { validateRole, validateLogin, validateCredentials, validatePasswordReset, validatePasswordChange, validateUser, validateEmail, validateFirstCredentials, validateToken } from '../validators/auth.validator.js';
 import { validateStaffLogin } from '../validators/staff.validator.js';
@@ -34,7 +35,7 @@ export async function googleCallback(req, res) {
             window.opener.postMessage({
             status: 'success',
             isNewUser: ${req.user._isNew}
-            }, window.location.origin);
+            }, '${config.get('frontendLink')}');
             window.close();
         </script>
         </body>
