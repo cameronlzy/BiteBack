@@ -1,11 +1,11 @@
 import passport from 'passport';
 import config from 'config';
 import * as authService from '../services/auth.service.js';
-import { validateRole, validateLogin, validateCredentials, validatePasswordReset, validatePasswordChange, validateUser, validateEmail, validateFirstCredentials, validateToken } from '../validators/auth.validator.js';
+import { validateRole, validateLogin, validateCredentials, validatePasswordReset, validatePasswordChange, validateUser, validateEmail, validateFirstCredentials, validateToken, validateJWTToken } from '../validators/auth.validator.js';
 import { validateStaffLogin } from '../validators/staff.validator.js';
 import { setAuthCookie } from '../helpers/cookie.helper.js';
 import { wrapError, wrapMessage } from '../helpers/response.js';
-import { generateTempToken, generateAuthToken } from '../helpers/token.helper.js';
+import { generateExchangeToken } from '../helpers/token.helper.js';
 
 export async function googleRedirect(req, res, next) {
     const { error, value } = validateRole(req.query);
@@ -18,11 +18,7 @@ export async function googleRedirect(req, res, next) {
 }
 
 export async function googleCallback(req, res) {
-    const token = req.user._isNew
-        ? generateTempToken(req.user)
-        : generateAuthToken(req.user);
-
-    setAuthCookie(res, token);
+    const tempToken = generateExchangeToken(req.user);
 
     res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
     res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
@@ -34,12 +30,23 @@ export async function googleCallback(req, res) {
         <script>
             window.opener.postMessage({
             status: 'success',
-            isNewUser: ${req.user._isNew}
+            isNewUser: ${req.user._isNew},
+            tempToken: ${tempToken}
             }, '${config.get('frontendLink')}');
+            window.close();
         </script>
         </body>
         </html>
     `);
+}
+
+export async function consumeToken(req, res) {
+    const { error, value } = validateJWTToken(req.body);
+    if (error) return res.status(400).json(wrapError(error.details[0].message));
+
+    const { token, body, status } = await authService.consumeToken(value.token);
+    if (token) setAuthCookie(res, token);
+    return res.status(status).json(body);
 }
 
 export async function register(req, res) {
@@ -47,7 +54,7 @@ export async function register(req, res) {
     const { error, value } = validateUser(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const {token, body, status } = await authService.register(value);
+    const { token, body, status } = await authService.register(value);
     if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 }

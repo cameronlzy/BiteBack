@@ -49,3 +49,12 @@ export function generateUnsubscribeToken(customerId) {
   );
 }
 
+export function generateExchangeToken(user) {
+  return jwt.sign(
+    { 
+      _id: user._id,
+      isNewUser: user._isNew
+    }, 
+    JWT_SECRET, { expiresIn: '5m' }
+  );
+}

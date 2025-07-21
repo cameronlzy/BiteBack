@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import _ from 'lodash';
 import crypto from 'crypto';
 import config from 'config';
@@ -7,6 +8,32 @@ import Staff from '../models/staff.model.js';
 import { generateAuthToken, staffGenerateAuthToken, generateTempToken } from '../helpers/token.helper.js';
 import { sendResetPasswordEmail, sendVerifyEmail } from '../helpers/sendEmail.js';
 import { error, success, wrapMessage } from '../helpers/response.js';
+
+export async function consumeToken(token) {
+    try {
+        const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+        if (decoded.isNewUser === undefined) return error(401, 'Invalid token for consumption');
+        const user = await User.findById(decoded._id).lean();
+        if (!user) return error(404, 'User not found');
+        if (decoded.isNewUser) {
+            const tempToken = generateTempToken(user);
+            return {
+                token: tempToken,
+                status: 200,
+                body: wrapMessage('Proceed to registration')
+            };
+        } else {
+            const permToken = generateAuthToken(user);
+            return { 
+                token: permToken, 
+                status: 200, 
+                body: _.pick(user, ['_id', 'username', 'email', 'profile', 'role'])
+            };
+        }
+    } catch {
+        return error(401, 'Invalid token');
+    }
+}
 
 export async function register(data) {
     // if user exists

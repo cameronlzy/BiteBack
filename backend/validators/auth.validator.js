@@ -84,3 +84,10 @@ export function validateToken(token) {
   });
   return schema.validate(token);
 }
+
+export function validateJWTToken(token) {
+  const schema = Joi.object({
+    token: Joi.string().required()
+  });
+  return schema.validate(token);
+}

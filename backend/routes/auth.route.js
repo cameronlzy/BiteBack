@@ -17,6 +17,9 @@ router.get('/google/callback', passport.authenticate('google', {
     failureRedirect: `${config.get('frontendLink')}/login`
 }), authController.googleCallback);
 
+// [Public] - Exchange temp token for real token
+router.post('/consume-token', authController.consumeToken);
+
 // [Public] - Registration for owners and customers
 router.post('/register', authController.register);
 

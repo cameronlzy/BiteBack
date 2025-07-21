@@ -11,7 +11,7 @@ import OwnerProfile from '../../../models/ownerProfile.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
 import Staff from '../../../models/staff.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
-import { generateAuthToken, generateTempToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, generateExchangeToken, generateTempToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import simpleCrypto from '../../../helpers/encryption.helper.js';
@@ -25,6 +25,73 @@ describe('auth test', () => {
     afterAll(async () => {
         await mongoose.connection.close();
         await server.close();
+    });
+
+    describe('POST /api/auth/consume-token', () => {
+        let user, token;
+
+        beforeEach(async () => { 
+            await User.deleteMany({});
+            await CustomerProfile.deleteMany({});
+            user = await createTestUser('customer');
+            await user.save();
+            user._isNew = false;
+            token = generateExchangeToken(user);
+        });
+
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/consume-token')
+            .send({
+                token
+            });
+        };
+    
+        it('should return 200 and set perm token', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body).not.toHaveProperty('password');
+
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const tokenRequiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(tokenRequiredKeys));
+        });
+
+        it('should return 200 and set temp token', async () => {
+            user._isNew = true;
+            token = generateExchangeToken(user);
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const jwtToken = parsed.token;
+            expect(jwtToken).toBeDefined();
+    
+            const decoded = jwt.verify(jwtToken, config.get('jwtPrivateKey'));
+
+            const tokenRequiredKeys = [
+                '_id', 'email', 'role', 'isVerified'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(tokenRequiredKeys));
+        });
+
     });
 
     describe('POST /api/auth/register', () => {
