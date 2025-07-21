@@ -23,7 +23,7 @@ import {
 } from "react-router-dom"
 import { objectComparator } from "@/utils/objectComparator"
 import {
-  getGoogleRedirect,
+  openGooglePopup,
   register,
   resendVerificationEmail,
   setCredentials,
@@ -54,8 +54,11 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
   }, [user, location.pathname, navigate])
 
   useEffect(() => {
+    const settingCookie = async () => {
+      await setAuthCookie(token)
+    }
     if (token) {
-      setAuthCookie(token)
+      settingCookie()
     }
   }, [token])
 
@@ -143,7 +146,8 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
 
   const handleGoogleRedirect = async (role) => {
     try {
-      await getGoogleRedirect(role)
+      // await getGoogleRedirect(role)
+      openGooglePopup(role, () => window.location.reload())
     } catch (ex) {
       toast.error("Google Auth Failed")
       throw ex

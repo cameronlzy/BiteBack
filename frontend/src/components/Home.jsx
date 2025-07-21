@@ -9,8 +9,11 @@ const Home = ({ user }) => {
   const token = searchParams.get("token")
 
   useEffect(() => {
+    const settingCookie = async () => {
+      await setAuthCookie(token)
+    }
     if (token) {
-      setAuthCookie(token)
+      settingCookie()
     }
   }, [token])
   return (
