@@ -41,42 +41,59 @@ export async function resendVerificationEmail(email) {
 
 export async function openGooglePopup(role = 'customer') {
   return new Promise((resolve, reject) => {
-    const width = 500;
-    const height = 600;
-    const left = (window.screen.width / 2) - (width / 2);
-    const top = (window.screen.height / 2) - (height / 2);
+    const width = 500
+    const height = 600
+    const left = (window.screen.width / 2) - (width / 2)
+    const top = (window.screen.height / 2) - (height / 2)
 
     const popup = window.open(
       `/api/auth/google?role=${role}`,
       'GoogleLogin',
       `width=${width},height=${height},top=${top},left=${left}`
-    );
+    )
 
-    if (!popup) return reject(new Error('Popup blocked'));
+    if (!popup) return reject(new Error('Popup blocked'))
+
+    const allowedOrigins = [
+      window.location.origin,
+      'https://biteback1-555cc0fda71c.herokuapp.com'
+    ]
 
     function handleMessage(event) {
-      const allowedOrigins = [
-        window.location.origin,
-        'https://biteback1-555cc0fda71c.herokuapp.com'
-        ]
       if (!allowedOrigins.includes(event.origin)) return
 
-      if (event.data?.status === 'success') {
-        window.removeEventListener('message', handleMessage);
-        resolve(); 
+      const { status, isNewUser, role } = event.data || {}
+
+      if (status === 'success') {
+        clearInterval(checkClosed)
+        window.removeEventListener('message', handleMessage)
+
+        if (isNewUser) {
+          window.location.href = `/complete-signup/${role || 'customer'}`
+        } else {
+          window.location.reload()
+        }
+
+        resolve()
       }
     }
 
-    window.addEventListener('message', handleMessage);
+    window.addEventListener('message', handleMessage)
 
     const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        window.removeEventListener('message', handleMessage);
-        reject(new Error('Popup closed by user'));
+      try {
+        if (popup.closed) {
+          clearInterval(checkClosed)
+          window.removeEventListener('message', handleMessage)
+          reject(new Error('Popup closed by user'))
+        }
+      } catch {
+        clearInterval(checkClosed)
+        window.removeEventListener('message', handleMessage)
+        reject(new Error('Popup inaccessible or blocked'))
       }
-    }, 500);
-  });
+    }, 500)
+  })
 }
 
 export async function setCredentials(payload) {
