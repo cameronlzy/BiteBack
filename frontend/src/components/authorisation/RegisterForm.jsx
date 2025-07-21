@@ -120,7 +120,6 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
         response = { ...regResponse, ...ownerRegResponse }
       } else if (finalData.role === "customer") {
         const customerRegResponse = await registerCust({
-          username: finalData.username,
           name: finalData.name,
           contactNumber: finalData.contactNumber,
           emailOptOut: finalData.emailOptOut,
