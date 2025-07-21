@@ -70,11 +70,13 @@ export async function openGooglePopup(role = 'customer') {
         
         await tokenExchange(tempToken)
 
-        if (isNewUser) {
-          window.location.href = `/complete-signup/${role || 'customer'}`
-        } else {
-          window.location.reload()
-        }
+        setTimeout(() => {
+            if (isNewUser) {
+                window.location.href = `/complete-signup/${role || 'customer'}`
+            } else {
+                window.location.reload()
+            }
+        }, 300)
 
 
         resolve()
