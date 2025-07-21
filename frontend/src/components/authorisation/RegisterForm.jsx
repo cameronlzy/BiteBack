@@ -23,7 +23,8 @@ import {
 } from "react-router-dom"
 import { objectComparator } from "@/utils/objectComparator"
 import {
-  openGooglePopup,
+  // openGooglePopup,
+  getGoogleRedirect,
   register,
   resendVerificationEmail,
   setCredentials,
@@ -146,8 +147,8 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
 
   const handleGoogleRedirect = async (role) => {
     try {
-      // await getGoogleRedirect(role)
-      openGooglePopup(role, () => window.location.reload())
+      await getGoogleRedirect(role)
+      // openGooglePopup(role, () => window.location.reload())
     } catch (ex) {
       toast.error("Google Auth Failed")
       throw ex
