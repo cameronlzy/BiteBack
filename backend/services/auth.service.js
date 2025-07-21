@@ -27,6 +27,7 @@ export async function register(data) {
     }
 
     // create new user
+    console.log('Picked data:', _.pick(data, ['email', 'username', 'role']));
     let user = new User(_.pick(data, ['email', 'username', 'role']));
 
     try {
@@ -38,6 +39,9 @@ export async function register(data) {
         console.error(err);
     }
     console.log('Created user:', user);
+
+    const checkInDb = await User.findById(user._id).lean();
+    console.log('Saved in DB:', checkInDb);
     
     const token = generateTempToken(user);
     return { token, status: 200, body: _.pick(user, ['_id', 'email', 'username', 'role']) };
