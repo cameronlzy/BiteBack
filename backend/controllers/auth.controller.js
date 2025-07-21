@@ -36,7 +36,6 @@ export async function googleCallback(req, res) {
             status: 'success',
             isNewUser: ${req.user._isNew}
             }, '${config.get('frontendLink')}');
-            window.close();
         </script>
         </body>
         </html>
