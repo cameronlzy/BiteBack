@@ -59,6 +59,7 @@ export function openGooglePopup(role) {
 
       const { status, isNewUser } = event.data || {}
       if (status === 'success') {
+        clearInterval(checkClosed)
         window.removeEventListener('message', handleMessage)
 
         if (isNewUser) {
@@ -74,10 +75,16 @@ export function openGooglePopup(role) {
     window.addEventListener('message', handleMessage)
 
     const checkClosed = setInterval(() => {
-      if (popup.closed) {
+      try {
+        if (popup.closed) {
+          clearInterval(checkClosed)
+          window.removeEventListener('message', handleMessage)
+          reject(new Error('Popup closed by user'))
+        }
+      } catch {
         clearInterval(checkClosed)
         window.removeEventListener('message', handleMessage)
-        reject(new Error('Popup closed by user'))
+        reject(new Error('Cannot check popup status due to cross-origin'))
       }
     }, 500)
   })
