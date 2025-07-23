@@ -7,7 +7,7 @@ import { DateTime } from 'luxon';
 import mongoose from 'mongoose';
 import { addVisitToHistory } from './visitHistory.service.js';
 import { adjustPoints } from './rewardPoint.service.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
 export async function getReservationsByCustomer(profile, query) {
@@ -232,7 +232,7 @@ export async function deleteReservation(reservation) {
     }
     // delete reservation
     await Reservation.deleteOne({ _id: reservation._id });
-    return success(reservation.toObject());
+    return success(wrapMessage('Reservation deleted successfully'));
 }
 
 // helper service

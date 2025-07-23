@@ -336,12 +336,7 @@ describe('owner test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            const requiredKeys = [
-                'email', 'username', 'role', 'profile'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-
-            let dbUser = await User.findById(userId).lean();
+            let dbUser = await User.exists({ _id: userId });
             expect(dbUser).toBeNull();
         });
     });

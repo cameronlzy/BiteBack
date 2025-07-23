@@ -25,7 +25,7 @@ import _ from 'lodash';
 import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.service.js';
 import { geocodeAddress } from '../helpers/geocode.js';
 import { escapeRegex } from '../helpers/regex.helper.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 
 export async function searchRestaurants(filters) {
   const { search, page, limit, sortBy, order } = filters;
@@ -356,7 +356,7 @@ export async function deleteRestaurant(restaurant, authUser) {
 
     await deleteRestaurantAndAssociations(restaurant, session);
 
-    return success(restaurant);
+    return success(wrapMessage('Restaurant deleted successfully'));
   });
 }
 

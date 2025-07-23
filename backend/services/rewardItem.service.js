@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 import RewardItem from '../models/rewardItem.model.js';
 
 export async function getAllItems(restaurant, query) {
@@ -45,7 +45,6 @@ export async function updateItem(update, rewardItem) {
 }
 
 export async function deleteItem(rewardItem) {
-    const deletedItem = rewardItem.toObject();
     await rewardItem.deleteOne();
-    return success(deletedItem);
+    return success(wrapMessage('Reward Item deleted successfully'));
 }

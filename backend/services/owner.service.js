@@ -10,7 +10,7 @@ import * as restaurantService from '../services/restaurant.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import simpleCrypto from '../helpers/encryption.helper.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 import { sendVerifyEmail } from '../helpers/sendEmail.js';
 
 export async function getMe(userId) {
@@ -158,6 +158,6 @@ export async function deleteMe(user) {
         // delete user
         await user.deleteOne(wrapSession(session));
         
-        return success(user.toObject());
+        return success(wrapMessage('Owner successfully deleted'));
     });
 }

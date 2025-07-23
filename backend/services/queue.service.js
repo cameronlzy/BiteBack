@@ -7,7 +7,7 @@ import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
 import { addVisitToHistory } from './visitHistory.service.js';
 import { adjustPoints } from './rewardPoint.service.js';
 // import { notifyClient } from '../helpers/sse.helper.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 
 export async function joinQueue(authUser, data) {
     return await withTransaction(async (session) => {
@@ -25,9 +25,8 @@ export async function joinQueue(authUser, data) {
 }
 
 export async function leaveQueue(queueEntry) {
-    const entryData = queueEntry.toObject();
     await queueEntry.deleteOne();
-    return success(entryData);
+    return success(wrapMessage('Queue entry deleted successfully'));
 }
 
 export async function getRestaurantQueue(restaurant) {

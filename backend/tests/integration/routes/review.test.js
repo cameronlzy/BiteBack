@@ -560,8 +560,7 @@ describe('review test', () => {
     });
 
     describe('DELETE /api/reviews/:id', () => {
-        let review;
-        let reviewId;
+        let review, reviewId;
         let user;
         let restaurant;
         let profile;
@@ -623,17 +622,11 @@ describe('review test', () => {
             expect(res.status).toBe(403);
         });
 
-        it('should return 200 and delete the review from the database', async () => {
+        it('should return 200 and delete review', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            const requiredKeys = [
-                'rating', 'dateVisited',
-                'createdAt', 'isVisible'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-
-            const reviewInDb = await Review.findById(res.body._id);
+            const reviewInDb = await Review.exists({ _id: reviewId });
             expect(reviewInDb).toBeNull();
         });
 	});
@@ -701,12 +694,9 @@ describe('review test', () => {
         it('should return 200 and review object with required properties', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            const requiredKeys = [
-                'rating', 'dateVisited',
-                'createdAt', 'isVisible'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            expect(res.body.reply).toBeUndefined();
+
+            const reviewInDb = await Review.findById(reviewId).select('reply').lean();
+            expect(reviewInDb.reply).toBeUndefined();
         });
 	});
 

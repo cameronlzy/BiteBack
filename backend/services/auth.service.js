@@ -181,6 +181,11 @@ export async function login(credentials) {
     // find user and verify credentials
     const { status, body } = await verifyUserCredentials(credentials);
     if (status !== 200) return { status, body };
+
+    if (!body.isVerified) {
+        return error(403, 'Please verify your email before logging in');
+    }
+    
     const token = generateAuthToken(body);
     return { token, status: 200, body: _.pick(body, ['_id', 'email', 'username', 'role']) };
 }

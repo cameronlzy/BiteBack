@@ -948,16 +948,11 @@ describe('restaurant test', () => {
             expect(res.status).toBe(403);
         });
 
-        it('should return 200 if valid request', async () => {
+        it('should return 200 and delete restaurant', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            const requiredKeys = [
-                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-
-            const restaurantInDb = await Restaurant.findById(res.body._id);
+            const restaurantInDb = await Restaurant.exists({ _id: restaurantId });
             expect(restaurantInDb).toBeNull();
         });
     });

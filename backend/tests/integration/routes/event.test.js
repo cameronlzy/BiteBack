@@ -500,16 +500,9 @@ describe('event test', () => {
         it('should return 200 and event', async () => {
             const res = await exec();
             expect(res.status).toBe(200);  
-            const requiredKeys = [
-                'restaurant',
-                'title',
-                'description',
-                'startDate',
-                'endDate',
-                'paxLimit',
-                'status'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            
+            const eventInDb = await Event.exists({ _id: eventId });
+            expect(eventInDb).toBeNull();
         });
     });
 });

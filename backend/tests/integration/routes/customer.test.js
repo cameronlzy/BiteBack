@@ -280,16 +280,11 @@ describe('customer test', () => {
             expect(res.status).toBe(400);
         });
 
-        it('should return 200 if valid token and delete user', async () => {
+        it('should return 200 and delete user', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            const requiredKeys = [
-                'email', 'username', 'role', 'profile'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-
-            let dbUser = await User.findById(userId).lean();
+            let dbUser = await User.exists({ _id: userId });
             expect(dbUser).toBeNull();
         });
     });

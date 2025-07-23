@@ -415,10 +415,7 @@ describe('auth test', () => {
         let email;
         let username;
         let password;
-        let role;
         let user;
-        let hashedPassword;
-        let roleProfile;
     
         const emailLogin = () => {
             return request(server)
@@ -441,18 +438,12 @@ describe('auth test', () => {
             await CustomerProfile.deleteMany({});
             await OwnerProfile.deleteMany({});
             await Restaurant.deleteMany({});
-            email = "myEmail@gmail.com";
-            username = "username";
-            password = "myPassword@123";
-            role = "customer";
-            roleProfile = "CustomerProfile";
-            const salt = await bcrypt.genSalt(10);
-            hashedPassword = await bcrypt.hash(password, salt); 
-            user = new User({
-                email, username, password: hashedPassword, role, roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
+
+            user = await createTestUser('customer');
             await user.save();
+            email = user.email;
+            username = user.username;
+            password = 'Password@123';
         });
     
         it('should return 400 if invalid request', async () => {
@@ -479,14 +470,7 @@ describe('auth test', () => {
         });
     
         it('should return 200 when logging in through email for owner', async () => {
-            role = "owner";
-            roleProfile = "OwnerProfile";
-            username = "myOwner";
-            email = "myOwner@gmail.com";
-            user = new User({
-                email, username, password: hashedPassword, role, roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
+            user = await createTestUser('owner');
             await user.save();
             const res = await emailLogin();
             expect(res.status).toBe(200);

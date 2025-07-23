@@ -8,7 +8,7 @@ import VisitHistory from '../models/visitHistory.model.js';
 import { adjustPoints } from './rewardPoint.service.js';
 import { deleteImagesFromDocument } from './image.service.js';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 import { updateVisitReviewedStatus } from './visitHistory.service.js';
 
 export async function getEligibleVisits(restaurantId, authUser) {
@@ -252,7 +252,7 @@ export async function deleteReview(review) {
         // delete the review and associations
         await deleteReviewAndAssociations(review, session);
 
-        return success(review.toObject());
+        return success(wrapMessage('Review deleted successfully'));
     });
 }
 
@@ -261,7 +261,7 @@ export async function deleteReply(review) {
     review.reply = undefined;
     await review.save();
 
-    return success(review.toObject());
+    return success(wrapMessage('Reply deleted successfully'));
 }
 
 export async function deleteBadge(reviewId, authUser) {

@@ -8,8 +8,9 @@ import Reservation from '../models/reservation.model.js';
 import * as reviewService from '../services/review.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 import { sendVerifyEmail } from '../helpers/sendEmail.js';
+import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
@@ -31,9 +32,29 @@ export async function publicProfile(customerId) {
         .lean();
     if (!customer) return error(404, 'Customer not found');
 
+    const reviews = await Review.find({ customer: customer._id }).select('_id').lean();
+    const reviewIds = reviews.map(r => r._id);
+
+    const badgeCounts = await ReviewBadgeVote.aggregate([
+        { $match: { review: { $in: reviewIds } } },
+        {
+            $group: {
+                _id: '$badgeIndex',
+                count: { $sum: 1 }
+            }
+        }
+    ]);
+
+    const totalBadges = [0, 0, 0, 0];
+    for (const { _id, count } of badgeCounts) {
+        totalBadges[_id] = count;
+    }
+
     return success({
         dateJoined: customer.dateJoined,
         username: customer.user.username,
+        totalBadges, 
+        reviewCount: reviewIds.length
     });
 }
 
@@ -138,6 +159,6 @@ export async function deleteMe(user) {
         // delete user
         await user.deleteOne(wrapSession(session));
         
-        return success(user.toObject());
+        return success(wrapMessage('Customer deleted successfully'));
     });
 }
