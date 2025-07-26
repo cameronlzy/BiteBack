@@ -1,6 +1,6 @@
 import { useIsMobile } from "@/hooks/useIsMobile"
 import { Button } from "@/components/ui/button"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Calendar, Users, Store, Star, Crown, Utensils } from "lucide-react"
 import { isWithinOpeningHours } from "@/utils/timeConverter"
 
@@ -12,6 +12,7 @@ const CarouselButtonSwitcher = ({
 }) => {
   const isMobile = useIsMobile()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const isCustomer = !user || user.role === "customer"
 
@@ -19,7 +20,10 @@ const CarouselButtonSwitcher = ({
     isCustomer && {
       wordShown: "Queue",
       icon: Users,
-      onClick: () => navigate(`/online-queue/${restaurant._id}`),
+      onClick: () =>
+        navigate(`/online-queue/${restaurant._id}`, {
+          state: { from: location.pathname },
+        }),
       bgColor: "bg-white",
       hoverColor: "hover:bg-gray-100",
       textColor: "text-black",
@@ -30,7 +34,10 @@ const CarouselButtonSwitcher = ({
     isCustomer && {
       wordShown: "Make Reservation",
       icon: Calendar,
-      onClick: () => navigate(`/reservation/${restaurant._id}`),
+      onClick: () =>
+        navigate(`/reservation/${restaurant._id}`, {
+          state: { from: location.pathname },
+        }),
       bgColor: "bg-black",
       hoverColor: "hover:bg-gray-900",
       textColor: "text-white",
@@ -39,7 +46,10 @@ const CarouselButtonSwitcher = ({
     isCustomer && {
       wordShown: "Rewards",
       icon: Store,
-      onClick: () => navigate(`/current-rewards/${restaurant._id}`),
+      onClick: () =>
+        navigate(`/current-rewards/${restaurant._id}`, {
+          state: { from: location.pathname },
+        }),
       bgColor: "bg-indigo-600",
       hoverColor: "hover:bg-indigo-700",
       textColor: "text-white",
@@ -55,7 +65,10 @@ const CarouselButtonSwitcher = ({
     isCustomer && {
       wordShown: "Member Events",
       icon: Crown,
-      onClick: () => navigate(`/member-events/${restaurant._id}`),
+      onClick: () =>
+        navigate(`/member-events/${restaurant._id}`, {
+          state: { from: location.pathname },
+        }),
       bgColor: "bg-emerald-500",
       hoverColor: "hover:bg-emerald-600",
       textColor: "text-white",
@@ -64,7 +77,10 @@ const CarouselButtonSwitcher = ({
     isCustomer && {
       wordShown: "Menu",
       icon: Utensils,
-      onClick: () => navigate(`/pre-order/${restaurant._id}`),
+      onClick: () =>
+        navigate(`/pre-order/${restaurant._id}`, {
+          state: { from: location.pathname },
+        }),
       bgColor: "bg-orange-500",
       hoverColor: "hover:bg-orange-600",
       textColor: "text-white",

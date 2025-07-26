@@ -63,7 +63,7 @@ export async function openGooglePopup(role = 'customer') {
     const handleMessage = async (event) => {
       if (!allowedOrigins.includes(event.origin)) return
 
-      const { status, isNewUser, tempToken  } = event.data || {}
+      const { status, isNewUser, tempToken, role  } = event.data || {}
 
       if (status === 'success') {
         clearInterval(checkClosed)
@@ -73,6 +73,7 @@ export async function openGooglePopup(role = 'customer') {
 
         if (!isNewUser) {
             localStorage.removeItem("mid-registration") 
+            localStorage.setItem("role", role)
             localStorage.setItem("toastMessage", "Successfully Logged in")
         }
 

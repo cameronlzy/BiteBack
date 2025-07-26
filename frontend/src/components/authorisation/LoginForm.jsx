@@ -59,7 +59,6 @@ const LoginForm = ({ user, loading }) => {
 
   const handleGoogleRedirect = async () => {
     try {
-      localStorage.setItem("role", role)
       await openGooglePopup(role)
     } catch (ex) {
       toast.error("Google Auth Failed")

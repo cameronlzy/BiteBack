@@ -67,9 +67,15 @@ const Restaurant = ({ user }) => {
           JSON.stringify(queriedRestaurant)
         )
         const data = await getRestaurantFootfallData(id)
-        if (data) {
+        const sgtData = data.map((d) => {
+          return {
+            ...d,
+            startHour: d?.startHour + 8,
+          }
+        })
+        if (data?.length > 0) {
           const normalisedData = {
-            visitLoadByWeekday: data,
+            visitLoadByWeekday: sgtData,
           }
           setFootfallData([{ aggregated: normalisedData }])
           sessionStorage.setItem(
@@ -297,15 +303,16 @@ const Restaurant = ({ user }) => {
               height={200}
             />
           )}
-
-          <div className="mt-6 flex gap-4 justify-center">
-            <CarouselButtonSwitcher
-              restaurant={restaurant}
-              user={user}
-              showReviewForm={showReviewForm}
-              setShowReviewForm={setShowReviewForm}
-            />
-          </div>
+          {user?.role === "customer" && (
+            <div className="mt-6 flex gap-4 justify-center">
+              <CarouselButtonSwitcher
+                restaurant={restaurant}
+                user={user}
+                showReviewForm={showReviewForm}
+                setShowReviewForm={setShowReviewForm}
+              />
+            </div>
+          )}
 
           <ReviewSection
             restaurant={restaurant}

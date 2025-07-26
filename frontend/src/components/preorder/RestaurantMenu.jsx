@@ -31,6 +31,7 @@ const RestaurantMenu = ({ user }) => {
   const [showConfirm, setShowConfirm] = useState(false)
   const [restaurant, setRestaurant] = useState(null)
   const [editingOrder, setEditingOrder] = useState(false)
+  const [editingBackup, setEditingBackup] = useState(null)
   const [originalOrderItems, setOriginalOrderItems] = useState([])
   const [canOrder, setCanOrder] = useState(false)
   const { restaurantId } = useParams()
@@ -151,8 +152,7 @@ const RestaurantMenu = ({ user }) => {
         }),
       })
     }
-    console.log(existing)
-
+    setEditingBackup(null)
     localStorage.setItem("order_items", JSON.stringify(existing))
     setOrderItems(existing)
   }
@@ -287,6 +287,7 @@ const RestaurantMenu = ({ user }) => {
             (orderItem.remarks || "").toLowerCase()
         )
     )
+    setEditingBackup(orderItem)
     setOrderItems(updated)
     localStorage.setItem("order_items", JSON.stringify(updated))
 
@@ -301,6 +302,18 @@ const RestaurantMenu = ({ user }) => {
     })
 
     setShowConfirm(false)
+  }
+
+  const handleCloseItemPage = () => {
+    if (editingBackup) {
+      setOrderItems((prev) => [...prev, editingBackup])
+      localStorage.setItem(
+        "order_items",
+        JSON.stringify([...orderItems, editingBackup])
+      )
+      setEditingBackup(null)
+    }
+    setCurrentItemShown(null)
   }
 
   const handleTogglePreorder = async () => {
@@ -481,7 +494,7 @@ const RestaurantMenu = ({ user }) => {
         canOrder={canOrder}
         item={currentItemShown}
         restaurant={restaurant}
-        onClose={() => setCurrentItemShown(null)}
+        onClose={handleCloseItemPage}
         onAddToCart={handleAddToCart}
         user={user}
         setMenuItems={setMenuItems}

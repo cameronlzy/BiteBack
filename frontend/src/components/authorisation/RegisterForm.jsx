@@ -123,10 +123,6 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
     }
 
     if (isUpdate || googleAuth) {
-      localStorage.setItem(
-        "toastMessage",
-        isUpdate ? "Updated!" : "Registered!"
-      )
       localStorage.removeItem("mid-registration")
     }
     localStorage.setItem("role", finalData.role)

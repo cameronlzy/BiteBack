@@ -198,7 +198,7 @@ const OwnerForm = ({
       }
       toast.success("Images uploaded successfully")
       if (isUpdate || googleAuth) {
-        localStorage.setItem("toastMessage", "Profile updated!")
+        localStorage.setItem("toastMessage", "Submitted!")
         window.location = from
       }
     } catch (ex) {
