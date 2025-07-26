@@ -24,6 +24,7 @@ export async function googleCallback(req, res) {
         status: 'success',
         isNewUser: req.user._isNew,
         tempToken,
+        role: req.user.role,
     };
 
     res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
