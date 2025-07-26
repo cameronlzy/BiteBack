@@ -12,7 +12,6 @@ import { addBadgeVote, removeBadgeVote } from "@/services/reviewService"
 import BadgeReactions from "../common/BadgeReactions"
 import OwnerReply from "./OwnerReply"
 import StarRating from "../common/StarRating"
-import { userIsOwner } from "@/utils/ownerCheck"
 import { badges } from "@/utils/badges"
 
 const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
@@ -163,16 +162,14 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
             </Button>
           )}
         </div>
-        {user && userIsOwner(user) && (
-          <OwnerReply
-            review={review}
-            user={user}
-            restaurant={restaurant}
-            onReplyChange={(newReply) => {
-              review.reply = newReply
-            }}
-          />
-        )}
+        <OwnerReply
+          review={review}
+          user={user}
+          restaurant={restaurant}
+          onReplyChange={(newReply) => {
+            review.reply = newReply
+          }}
+        />
       </CardContent>
     </Card>
   )

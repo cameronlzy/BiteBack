@@ -303,7 +303,9 @@ const EventForm = ({ user }) => {
       }
 
       toast.success(isEdit ? "Event updated" : "Event created")
-      navigate(`/owner/events-promos`, { replace: true })
+      navigate(eventId ? `/events/${eventId}` : "/owner/events-promos", {
+        replace: true,
+      })
     } catch (ex) {
       if (ex.response?.status === 400) {
         const message = ex.response.data?.error
@@ -437,6 +439,12 @@ const EventForm = ({ user }) => {
                 type="event"
                 disabled={isEdit}
               />
+            </div>
+          )}
+
+          {!selectedDate && (
+            <div className="text-sm text-red-500 text-center">
+              Please select a date to see available time slots
             </div>
           )}
 
