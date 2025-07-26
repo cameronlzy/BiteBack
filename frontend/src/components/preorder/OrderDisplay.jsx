@@ -13,6 +13,7 @@ const OrderDisplay = ({
   handlePreOrderNavigate,
   restaurant,
   isStaff = false,
+  code = null,
 }) => {
   return (
     <Card className="shadow-xl border border-muted-foreground/10">
@@ -20,6 +21,11 @@ const OrderDisplay = ({
         <CardTitle className="text-lg font-semibold">
           {isStaff ? "Customer Order" : "Current Order"}
         </CardTitle>
+        {code && (
+          <span className="text-sm text-muted-foreground">
+            Order Code: <strong>{code}</strong>
+          </span>
+        )}
       </CardHeader>
       <CardContent className="space-y-3 pt-4">
         {orderItems.length > 0 ? (

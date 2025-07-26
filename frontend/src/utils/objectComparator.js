@@ -13,7 +13,13 @@ const flattenUser = (user) => {
   }
 }
 
-export const objectComparator = (original, updated) => {
+export const objectComparator = (
+  original,
+  updated,
+  type = null,
+  originalStartDateTime = null,
+  originalEndDateTime = null
+) => {
   const result = {}
 
   if (original && typeof original === "object" && "profile" in original) {
@@ -27,8 +33,31 @@ export const objectComparator = (original, updated) => {
       let v1 = value
       let v2 = updated[key]
 
+      if (type === "promotion" && (key === "startDate" || key === "endDate")) {
+        const originalDateTime = DateTime.fromISO(
+          key === "startDate" ? originalStartDateTime : originalEndDateTime
+        )
+
+        const updatedDate = DateTime.fromISO(v2)
+        const mergedDateTime = updatedDate.set({
+          hour: originalDateTime.hour,
+          minute: originalDateTime.minute,
+          second: originalDateTime.second,
+          millisecond: originalDateTime.millisecond,
+        })
+
+        v2 = mergedDateTime.toISO()
+        v1 = originalDateTime.toISO()
+
+        if (!isEqual(v1, v2)) {
+          result[key] = v2
+        }
+
+        return
+      }
+
       if (DATE_KEYS.includes(key)) {
-        v1 = DateTime.fromISO(value).toISO()
+        v1 = DateTime.fromISO(v1).toISO()
         v2 = DateTime.fromISO(v2).toISO()
       }
 

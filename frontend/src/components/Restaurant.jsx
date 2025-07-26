@@ -7,7 +7,11 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Link, useNavigate, useParams, useLocation } from "react-router-dom"
-import { deleteRestaurant, getRestaurant } from "@/services/restaurantService"
+import {
+  deleteRestaurant,
+  getRestaurant,
+  getRestaurantFootfallData,
+} from "@/services/restaurantService"
 import { useEffect, useState } from "react"
 import { useConfirm } from "./common/ConfirmProvider"
 import { toast } from "react-toastify"
@@ -24,6 +28,7 @@ import BackButton from "./common/BackButton"
 import defaultRestImg from "@/assets/default-restaurant-img.png"
 import { ownedByUser } from "@/utils/ownerCheck"
 import CarouselButtonSwitcher from "./common/CarouselButtonSwitcher"
+import FootFall from "./common/charts/FootFall"
 
 const Restaurant = ({ user }) => {
   const { id } = useParams()
@@ -34,6 +39,7 @@ const Restaurant = ({ user }) => {
 
   const [restaurant, setRestaurant] = useState(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
+  const [footfallData, setFootfallData] = useState(null)
   const isOwnedByUser = ownedByUser(restaurant, user)
   const imageShow = location.state?.imageShow
   useEffect(() => {
@@ -44,13 +50,18 @@ const Restaurant = ({ user }) => {
       return
     }
 
-    const fetchRestaurant = async () => {
+    const fetchRestaurantAndData = async () => {
       try {
         const queriedRestaurant = await getRestaurant(id)
         sessionStorage.setItem(
           "restaurant_cache",
           JSON.stringify(queriedRestaurant)
         )
+        const data = await getRestaurantFootfallData(id)
+        const normalisedData = {
+          visitLoadByWeekday: data,
+        }
+        setFootfallData([{ aggregated: normalisedData }])
         setRestaurant(queriedRestaurant)
       } catch (ex) {
         if (ex.response?.status === 404 || ex.response?.status === 400) {
@@ -60,7 +71,7 @@ const Restaurant = ({ user }) => {
       }
     }
 
-    fetchRestaurant()
+    fetchRestaurantAndData()
   }, [id])
 
   const handleRestaurantDelete = async (id) => {
@@ -259,6 +270,7 @@ const Restaurant = ({ user }) => {
               </ul>
             </div>
           </div>
+          <FootFall data={footfallData} mode="month" width={220} height={200} />
 
           <div className="mt-6 flex gap-4 justify-center">
             <CarouselButtonSwitcher

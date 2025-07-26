@@ -95,30 +95,13 @@ export const convertOpeningHoursToString = (openingHours) => {
 }
 
 export const isOpenToday = (restaurant) => {
-  if (!restaurant?.openingHours) return false;
+  if (!restaurant?.openingHours) return false
 
-  const now = DateTime.now().setZone("Asia/Singapore");
-  const currentDay = now.weekdayLong.toLowerCase(); 
-  const hours = restaurant.openingHours[currentDay];
+  const now = DateTime.now().setZone("Asia/Singapore")
+  const currentDay = now.weekdayLong.toLowerCase()
+  const hours = restaurant.openingHours[currentDay]
 
-  if (!hours || hours.toLowerCase() === "closed") return false;
-
-  const [openStr, closeStr] = hours.split("-").map(s => s.trim());
-
-  try {
-    const openTime = DateTime.fromFormat(openStr, "HH:mm", {
-      zone: "Asia/Singapore",
-    }).set({ year: now.year, month: now.month, day: now.day });
-
-    let closeTime = DateTime.fromFormat(closeStr, "HH:mm", {
-      zone: "Asia/Singapore",
-    }).set({ year: now.year, month: now.month, day: now.day });
-
-    return now >= openTime && now <= closeTime;
-  } catch (ex) {
-    console.error("Error parsing opening hours:", ex);
-    return false;
-  }
+  return !!hours && hours.toLowerCase() !== "closed"
 }
 
 export const isWithinOpeningHours = (openingHours) => {
@@ -184,7 +167,7 @@ export const isPromotionAvailable = (promotion) => {
     }
   }
 
-  return true
+  return true 
 }
 
 export const hasItemStarted = (item) => {
@@ -208,4 +191,30 @@ export const isRestaurantClosed = (restaurant, date) => {
   }).toLowerCase()
 
   return restaurant.openingHours[day]?.toLowerCase() === "closed"
+}
+
+export const isRestaurantNotOpenYet = (restaurant) => {
+  if (!restaurant?.openingHours) return true
+
+  const now = DateTime.now().setZone("Asia/Singapore")
+  const weekday = now.weekdayLong.toLowerCase()
+  const hoursString = restaurant.openingHours[weekday]
+
+  if (!hoursString || hoursString.toLowerCase() === "closed") return true
+
+  const nowTime = now.toFormat("HH:mm")
+  const [startTime] = hoursString.split("-")
+
+  return nowTime < startTime
+}
+
+export const computeDateWithOptionalTime = (dateISO, time, isStart) => {
+  const dt = DateTime.fromISO(dateISO, { zone: "Asia/Singapore" })
+
+  if (time?.trim()) {
+    const [hour, minute] = time.split(":").map(Number)
+    return dt.set({ hour, minute }).toISO()
+  }
+
+  return isStart ? dt.startOf("day").toISO() : dt.endOf("day").toISO()
 }

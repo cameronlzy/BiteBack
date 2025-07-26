@@ -20,6 +20,7 @@ import { ownedByUser, userIsOwner } from "@/utils/ownerCheck"
 import CustomerPoints from "./CustomerPoints"
 import Pagination from "../common/Pagination"
 import BackButton from "../common/BackButton"
+import NoResultsFound from "../common/NoResultsFound"
 
 const RestaurantRewardStore = ({ user }) => {
   const { restaurantId } = useParams()
@@ -88,9 +89,7 @@ const RestaurantRewardStore = ({ user }) => {
       ) : null}
 
       {rewards.length === 0 ? (
-        <p className="text-muted-foreground text-center">
-          No rewards available
-        </p>
+        <NoResultsFound text="No rewards available." />
       ) : (
         <div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -121,7 +120,7 @@ const RestaurantRewardStore = ({ user }) => {
                     })
                   }
                   disabled={!reward.isActive}
-                  disabledMessage="Reward is currently inactive"
+                  disabledMessage="Reward is currently temporarily unavailable"
                 />
               )
             })}

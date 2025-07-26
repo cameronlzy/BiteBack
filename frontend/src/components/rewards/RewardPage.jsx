@@ -16,6 +16,7 @@ import { categoryOptions, iconMap } from "@/utils/rewardUtils"
 import { ownedByUserWithId } from "@/utils/ownerCheck"
 import RestaurantRelatedItemUI from "../common/RestaurantRelatedItemUI"
 import { AlertTriangle, DollarSign } from "lucide-react"
+import RewardRestock from "./RewardRestock"
 
 const RewardPage = ({ user }) => {
   const [reward, setReward] = useState(null)
@@ -66,7 +67,9 @@ const RewardPage = ({ user }) => {
         _id: reward._id,
         isActive: !reward.isActive,
       })
-      toast.success(`Reward ${updated.isActive ? "Activated" : "Deactivated"}`)
+      toast.success(
+        `Reward made ${updated.isActive ? "Available" : "Unavailable"}`
+      )
       setReward((prev) => ({
         ...prev,
         ...updated,
@@ -159,6 +162,8 @@ const RewardPage = ({ user }) => {
       description={description}
       onActivate={handleToggleActivate}
       currentlyActive={isActive}
+      activatePhrase="Make Available"
+      deactivatePhrase="Mark as Unavailable"
       metaContent={
         <>
           <p>
@@ -168,6 +173,13 @@ const RewardPage = ({ user }) => {
             <p>
               Stock available: <strong>{stock}</strong>
             </p>
+          )}
+          {isOwnedByUser && reward.stock && (
+            <RewardRestock
+              reward={reward}
+              restaurantId={restaurant._id}
+              setReward={setReward}
+            />
           )}
         </>
       }
@@ -192,7 +204,9 @@ const RewardPage = ({ user }) => {
           <div className="bg-gray-100 text-gray-800 border-t-4 border-gray-400 px-4 py-3 flex items-center justify-between rounded-t-md">
             <div className="flex items-center space-x-2">
               <AlertTriangle className="w-5 h-5" />
-              <span className="font-medium">This reward is inactive</span>
+              <span className="font-medium">
+                This reward is temporarily unavailable
+              </span>
             </div>
           </div>
         ) : null

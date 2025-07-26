@@ -105,9 +105,11 @@ const CarouselButtonSwitcher = ({
 
   return (
     <div className="flex items-center justify-center gap-4 mt-4">
-      <Button variant="ghost" size="icon" onClick={handlePrev}>
-        <ChevronLeft className="h-5 w-5" />
-      </Button>
+      {user?.role !== "owner" && (
+        <Button variant="ghost" size="icon" onClick={handlePrev}>
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+      )}
 
       <div>
         <div className="w-full flex justify-center flex-col items-center">
@@ -132,9 +134,11 @@ const CarouselButtonSwitcher = ({
         </div>
       </div>
 
-      <Button variant="ghost" size="icon" onClick={handleNext}>
-        <ChevronRight className="h-5 w-5" />
-      </Button>
+      {user?.role !== "owner" && (
+        <Button variant="ghost" size="icon" onClick={handleNext}>
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      )}
     </div>
   )
 }

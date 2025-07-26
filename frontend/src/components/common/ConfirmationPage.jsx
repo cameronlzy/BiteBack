@@ -1,21 +1,36 @@
+import { Calendar, User, MapPin, MessageSquare } from "lucide-react"
 import SubmitButton from "./SubmitButton"
+
+const iconMap = {
+  "Restaurant Name": <MapPin className="w-4 h-4 text-gray-500" />,
+  "Reservation Date": <Calendar className="w-4 h-4 text-gray-500" />,
+  Guests: <User className="w-4 h-4 text-gray-500" />,
+  Remarks: <MessageSquare className="w-4 h-4 text-gray-500" />,
+}
 
 const ConfirmationPage = ({ formName = "Details", details, isSubmitting }) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <h3 className="text-xl font-semibold">Confirm Details</h3>
-      <ul className="text-gray-700 space-y-1">
-        {Object.entries(details).map(([name, value]) => (
-          <li key={name}>
-            <b>{name}:</b> {String(value)}
-          </li>
+      <div className="space-y-2 text-gray-700 text-center">
+        {Object.entries(details).map(([label, value]) => (
+          <div key={label} className="flex items-center gap-2 justify-center">
+            {iconMap[label] || null}
+            {label === "Remarks" && value === "-" ? (
+              <span className="italic text-gray-500">No Remarks</span>
+            ) : (
+              <span>
+                {formName === "Reservation" ? value : `${label}: ${value}`}
+              </span>
+            )}
+          </div>
         ))}
-      </ul>
+      </div>
       <SubmitButton
         type="submit"
         className="w-full"
         condition={isSubmitting}
-        normalText={`Confirm ${formName ? formName : "Submission"}`}
+        normalText={`Confirm ${formName}`}
       />
     </div>
   )

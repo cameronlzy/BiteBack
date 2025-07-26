@@ -15,7 +15,11 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LayoutDashboard, Calendar, Star, Clock, BarChart } from "lucide-react"
 import LoadingSpinner from "../common/LoadingSpinner"
-import { isOpenToday, isWithinOpeningHours } from "@/utils/timeConverter"
+import {
+  isOpenToday,
+  isRestaurantNotOpenYet,
+  isWithinOpeningHours,
+} from "@/utils/timeConverter"
 import { ownedByUser, userIsOwner } from "@/utils/ownerCheck"
 
 const RestaurantPerformance = ({ user }) => {
@@ -26,6 +30,7 @@ const RestaurantPerformance = ({ user }) => {
   const [analyticsLoading, setAnalyticsLoading] = useState(true)
   const [snapshotData, setSnapshotData] = useState(null)
   const [isOpen, setIsOpen] = useState(true)
+  const [restaurantHasOpened, setRestaurantHasOpened] = useState(false)
   const [withinOpeningHours, setWithinOpeningHours] = useState(false)
 
   const [reservationTrendData, setReservationTrendData] = useState([])
@@ -40,6 +45,7 @@ const RestaurantPerformance = ({ user }) => {
         const res = await getRestaurant(restaurantId)
         setRestaurant(res)
         setIsOpen(isOpenToday(res))
+        setRestaurantHasOpened(!isRestaurantNotOpenYet(res))
         setWithinOpeningHours(isWithinOpeningHours(res.openingHours))
       } catch (ex) {
         if (ex.response && ex.response.status === 404) {
@@ -70,7 +76,7 @@ const RestaurantPerformance = ({ user }) => {
 
     async function fetchAnalytics() {
       try {
-        if (isOpen) {
+        if (isOpen && restaurantHasOpened) {
           const snapshot = await getTodaySnapshot(restaurant._id)
           setSnapshotData(snapshot)
         }
@@ -168,7 +174,10 @@ const RestaurantPerformance = ({ user }) => {
               <TodaySnapshot data={snapshotData} isOpen={withinOpeningHours} />
             ) : (
               <div className="text-muted-foreground mt-4 text-sm italic">
-                Restaurant is closed today. No snapshot available.
+                {isOpen && !restaurantHasOpened
+                  ? "This restaurant has not opened for the day yet."
+                  : "Restaurant is closed today."}{" "}
+                No snapshot available.
               </div>
             )}
           </div>

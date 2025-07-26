@@ -154,3 +154,8 @@ export async function togglePreordersEnabled(restaurantId, preordersEnabled) {
   const { data } = await http.patch(`${apiEndpoint}/${restaurantId}/preorders-enabled`, { preordersEnabled })
   return data
 }
+
+export async function getRestaurantFootfallData(restaurantId) {
+  const { data } = await http.get(`${apiEndpoint}/${restaurantId}/footfall`)
+  return data 
+}

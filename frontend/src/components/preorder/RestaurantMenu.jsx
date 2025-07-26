@@ -12,12 +12,17 @@ import {
 import { toast } from "react-toastify"
 import ItemPage from "./ItemPage"
 import OrderConfirmationPage from "./OrderConfirmationPage"
-import { getMenuByRestaurant } from "@/services/menuService"
+import {
+  getMenuByRestaurant,
+  saveMenuItem,
+  toggleInStock,
+} from "@/services/menuService"
 import { ownedByUser, userIsOwner } from "@/utils/ownerCheck"
 import BackButton from "../common/BackButton"
 import { saveOrder } from "@/services/orderService"
 import PreviousOrderBar from "./PreviousOrderBar"
 import LoadingSpinner from "../common/LoadingSpinner"
+import ListMenuView from "./ListMenuView"
 
 const RestaurantMenu = ({ user }) => {
   const [menuItems, setMenuItems] = useState([])
@@ -35,6 +40,7 @@ const RestaurantMenu = ({ user }) => {
     JSON.parse(localStorage.getItem("order_items")) || []
   )
 
+  const isStaff = user?.role === "staff" && user?.restaurant === restaurantId
   const isOwnedByUser = ownedByUser(restaurant, user)
   const from = location.state?.from
     ? location.state.from
@@ -326,6 +332,52 @@ const RestaurantMenu = ({ user }) => {
     setShowConfirm(true)
   }
 
+  const handleToggleActive = async (item) => {
+    const togglingTo = !item?.isAvailable
+    const actionLabel = togglingTo ? "enabled" : "disabled"
+
+    try {
+      const newItem = await saveMenuItem({
+        _id: item._id,
+        isAvailable: togglingTo,
+      })
+      setMenuItems((prev) =>
+        prev.map((i) => (i._id === newItem._id ? newItem : i))
+      )
+      toast.success(`Item ${actionLabel}`)
+      setCurrentItemShown(null)
+    } catch (ex) {
+      toast.error(`Failed to ${togglingTo ? "enable" : "disable"} item`)
+      console.error(ex)
+    }
+  }
+
+  const handleToggleOOS = async (item) => {
+    const togglingTo = !item?.isInStock
+    const actionLabel = togglingTo ? "enabled" : "disabled"
+
+    try {
+      const data = await toggleInStock(item._id, {
+        isInStock: togglingTo,
+      })
+
+      const newItem = {
+        ...item,
+        isInStock: data.isInStock,
+      }
+
+      setMenuItems((prev) =>
+        prev.map((i) => (i._id === newItem._id ? newItem : i))
+      )
+
+      toast.success(`Item ${actionLabel}`)
+      setCurrentItemShown(null)
+    } catch (ex) {
+      toast.error(`Failed to ${togglingTo ? "enable" : "disable"} item`)
+      console.error(ex)
+    }
+  }
+
   return loadingMenu ? (
     <div className="flex justify-center py-10">
       <LoadingSpinner />
@@ -341,7 +393,7 @@ const RestaurantMenu = ({ user }) => {
         <h2 className="text-2xl font-bold text-center">
           {restaurant?.name} Menu
         </h2>
-        {!existingOrder && user && (
+        {!existingOrder && user?.role === "customer" && (
           <PreviousOrderBar
             customerId={user._id}
             restaurantId={restaurantId}
@@ -406,11 +458,21 @@ const RestaurantMenu = ({ user }) => {
           .filter(({ value }) => (menuByCategory[value] || []).length > 0)
           .map(({ value }) => (
             <TabsContent key={value} value={value} className="mt-4">
-              <RestaurantMenuSection
-                category={value}
-                items={menuByCategory[value] || []}
-                handleItemSelect={handleItemSelect}
-              />
+              {isOwnedByUser || isStaff ? (
+                <ListMenuView
+                  items={menuByCategory[value] || []}
+                  handleItemSelect={handleItemSelect}
+                  onToggleActive={handleToggleActive}
+                  onToggleStock={handleToggleOOS}
+                  user={user}
+                />
+              ) : (
+                <RestaurantMenuSection
+                  category={value}
+                  items={menuByCategory[value] || []}
+                  handleItemSelect={handleItemSelect}
+                />
+              )}
             </TabsContent>
           ))}
       </Tabs>
@@ -423,6 +485,8 @@ const RestaurantMenu = ({ user }) => {
         onAddToCart={handleAddToCart}
         user={user}
         setMenuItems={setMenuItems}
+        onToggleActive={handleToggleActive}
+        onToggleOOS={handleToggleOOS}
       />
       {user?.role === "customer" && canOrder && (
         <OrderConfirmationPage

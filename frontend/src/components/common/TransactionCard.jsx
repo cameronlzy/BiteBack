@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { DateTime } from "luxon"
 import DisabledBlur from "@/components/common/DisabledBlur"
 import { readableTimeSettings } from "@/utils/timeConverter"
+import { getRestaurant } from "@/services/restaurantService"
 
 const TransactionCard = ({
   _id,
@@ -15,6 +16,7 @@ const TransactionCard = ({
   date,
   description,
   disabled = false,
+  personalRewards = false,
   disabledMessage = "",
   rewardCode,
   contentMessage,
@@ -24,10 +26,27 @@ const TransactionCard = ({
   clickMessage,
   expiry,
   onClick,
+  restaurant = null,
 }) => {
   const [showContentMessage, setShowContentMessage] = useState(true)
   const [remainingTime, setRemainingTime] = useState(null)
   const [isExpired, setIsExpired] = useState(false)
+  const [restaurantName, setRestaurantName] = useState("")
+
+  useEffect(() => {
+    const fetchRestaurantName = async () => {
+      try {
+        const res = await getRestaurant(restaurant)
+        setRestaurantName(res.name || "Unknown Restaurant")
+      } catch (ex) {
+        setRestaurantName("Unknown Restaurant")
+        throw ex
+      }
+    }
+    if (restaurant) {
+      fetchRestaurantName()
+    }
+  }, [restaurant])
 
   useEffect(() => {
     if (!startTime || !timeDuration) return
@@ -82,18 +101,25 @@ const TransactionCard = ({
       ) : null}
 
       <CardHeader>
-        <CardTitle className="flex justify-between items-center text-xl font-bold">
-          {currencyType === "points" ? (
-            <span className="truncate">{name}</span>
-          ) : (
-            <Button
-              variant="ghost"
-              onClick={onClick}
-              className="w-half text-left text-xl font-semibold  ml-1 px-0 py-0 hover:underline hover:bg-transparent"
-            >
-              {name}
-            </Button>
-          )}
+        <CardTitle className="flex justify-between items-center text-sm font-bold">
+          <div className="flex flex-col text-left">
+            {personalRewards || !onClick ? (
+              <span className="text-lg font-semibold">{name}</span>
+            ) : (
+              <Button
+                variant="ghost"
+                onClick={onClick}
+                className="text-left text-lg font-semibold px-0 py-0 hover:underline hover:bg-transparent"
+              >
+                {name}
+              </Button>
+            )}
+            {restaurantName && (
+              <span className="text-sm text-muted-foreground mt-1">
+                by {restaurantName}
+              </span>
+            )}
+          </div>
           <span className="text-sm text-muted-foreground">
             {price != null
               ? currencyType === "points"
@@ -134,7 +160,7 @@ const TransactionCard = ({
             <span className="font-medium">{remainingTime}</span>
           </p>
         )}
-        {currencyType === "points" ? (
+        {personalRewards ? (
           clickMessage && onClick ? (
             <Button variant="ghost" onClick={onClick} className="w-full">
               {clickMessage}

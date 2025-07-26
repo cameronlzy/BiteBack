@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "react-toastify"
 import Pagination from "@/components/common/Pagination"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
+import NoResultsFound from "../common/NoResultsFound"
 
 const ListOwnerPromotions = ({ user }) => {
   const [promotions, setPromotions] = useState([])
@@ -84,9 +85,9 @@ const ListOwnerPromotions = ({ user }) => {
       {loading ? (
         <LoadingSpinner />
       ) : promotions.length === 0 ? (
-        <p className="text-gray-500 text-center">
-          No {showUpcoming ? "current" : "past"} promotions
-        </p>
+        <NoResultsFound
+          text={`No ${showUpcoming ? "current" : "past"} promotions.`}
+        />
       ) : (
         <>
           <div className="space-y-4">

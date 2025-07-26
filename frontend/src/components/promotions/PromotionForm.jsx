@@ -32,12 +32,15 @@ import { objectCleaner, objectComparator } from "@/utils/objectComparator"
 import { DateTime } from "luxon"
 import BackButton from "../common/BackButton"
 import { ownedByUser } from "@/utils/ownerCheck"
+import { computeDateWithOptionalTime } from "@/utils/timeConverter"
 
 const PromotionForm = ({ user }) => {
   const navigate = useNavigate()
   const [mainImageFile, setMainImageFile] = useState(null)
   const [bannerImageFile, setBannerImageFile] = useState(null)
   const [promotion, setPromotion] = useState(null)
+  const [originalStartDateTime, setOriginalStartDateTime] = useState(null)
+  const [originalEndDateTime, setOriginalEndDateTime] = useState(null)
   const { promotionId } = useParams()
   const location = useLocation()
   const from = location.state?.from || "/promotions"
@@ -55,6 +58,8 @@ const PromotionForm = ({ user }) => {
       try {
         const promotion = await getPromotionById(promotionId)
         setPromotion(promotion)
+        setOriginalStartDateTime(promotion.startDate)
+        setOriginalEndDateTime(promotion.endDate)
         const isOwned = ownedByUser(promotion?.restaurant, user)
 
         if (!isOwned) {
@@ -162,41 +167,36 @@ const PromotionForm = ({ user }) => {
       if (!hasStart && !hasEnd) {
         delete payload.timeWindow
       }
-      if (isEdit) {
-        payload._id = promotionId
-      }
 
-      const startDateDT = DateTime.fromISO(data.startDate, {
-        zone: "Asia/Singapore",
-      })
-      const endDateDT = DateTime.fromISO(data.endDate, {
-        zone: "Asia/Singapore",
-      })
-
-      if (hasStart && hasEnd) {
-        payload.startDate = startDateDT
-          .set({
-            hour: Number(startTime.split(":")[0]),
-            minute: Number(startTime.split(":")[1]),
-          })
-          .toISO()
-
-        payload.endDate = endDateDT
-          .set({
-            hour: Number(endTime.split(":")[0]),
-            minute: Number(endTime.split(":")[1]),
-          })
-          .toISO()
-      } else {
-        payload.startDate = startDateDT.startOf("day").toISO()
-        payload.endDate = endDateDT.endOf("day").toISO()
-      }
       const cleanedNoEmpty = objectCleaner(payload)
+
       let changes = promotionId
-        ? objectComparator(promotion, cleanedNoEmpty)
+        ? objectComparator(
+            promotion,
+            cleanedNoEmpty,
+            "promotion",
+            originalStartDateTime,
+            originalEndDateTime
+          )
         : cleanedNoEmpty
       if (changes.restaurant === promotion?.restaurant?._id) {
         delete changes.restaurant
+      }
+
+      if (!isEdit || "startDate" in changes) {
+        changes.startDate = computeDateWithOptionalTime(
+          data.startDate,
+          startTime,
+          true
+        )
+      }
+
+      if (!isEdit || "endDate" in changes) {
+        changes.endDate = computeDateWithOptionalTime(
+          data.endDate,
+          endTime,
+          false
+        )
       }
       if (
         Object.keys(changes).length === 0 &&

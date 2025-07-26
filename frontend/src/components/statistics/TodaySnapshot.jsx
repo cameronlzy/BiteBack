@@ -13,7 +13,7 @@ import React from "react"
 import LiveBubble from "../common/LiveBubble"
 
 const TodaySnapshot = ({ data, isOpen }) => {
-  const { reservation, queue } = data
+  const { reservations, queue } = data
   const { attended, averageWaitTime, byQueueGroup } = queue || {}
 
   const pieData = ["small", "medium", "large"]
@@ -28,11 +28,11 @@ const TodaySnapshot = ({ data, isOpen }) => {
     })
     .filter((d) => d.value > 0)
 
-  const totalReservations = reservation?.total || 0
-  const upcoming = reservation?.upcoming || 0
-  const noShow = Math.max(totalReservations - (reservation?.attended || 0), 0)
+  const totalReservations = reservations?.total || 0
+  const upcoming = reservations?.upcoming || 0
+  const noShow = Math.max(totalReservations - (reservations?.attended || 0), 0)
   const completed = Math.max(totalReservations - upcoming, 0)
-  const reservationProgress = totalReservations
+  const reservationsProgress = totalReservations
     ? (completed / totalReservations) * 100
     : 0
 
@@ -98,7 +98,7 @@ const TodaySnapshot = ({ data, isOpen }) => {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <Progress value={reservationProgress} className="h-2" />
+            <Progress value={reservationsProgress} className="h-2" />
           </div>
         </CardContent>
       </Card>

@@ -1,16 +1,18 @@
-import { Link, Outlet } from "react-router-dom"
+import { Link, Outlet, useLocation } from "react-router-dom"
 import React, { useState } from "react"
 import SearchBar from "./SearchBar"
 import { Button } from "./ui/button"
+import BannerCarousel from "./common/BannerCarousel"
 
 const NavBar = ({ name, links }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const location = useLocation()
+  const isHomePage = location.pathname === "/"
 
   return (
     <React.Fragment>
-      <header className="w-full px-4 py-4 shadow-md bg-indigo-100">
+      <header className="w-full px-4 py-4 shadow-md bg-indigo-100 mb-2">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          {/* Logo */}
           <Link
             to="/"
             className="text-2xl font-bold text-gray-800 hover:opacity-70 transition"
@@ -63,6 +65,7 @@ const NavBar = ({ name, links }) => {
           </div>
         )}
       </header>
+      {isHomePage && <BannerCarousel />}
 
       <main className="p-4 max-w-3xl mx-auto">
         <Outlet />

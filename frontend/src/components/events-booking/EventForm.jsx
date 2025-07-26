@@ -560,7 +560,7 @@ const EventForm = ({ user }) => {
             name="remarks"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Remarks (max 50 words)</FormLabel>
+                <FormLabel>Remarks For Staff (max 50 words)</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Any remarks (optional)" />
                 </FormControl>

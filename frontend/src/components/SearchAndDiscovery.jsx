@@ -88,27 +88,42 @@ const SearchAndDiscovery = () => {
     restoreFromCache()
   }, [])
 
-  const handlePositionClick = () => {
+  const handlePositionClick = async () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation not supported")
       return
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude, heading } = pos.coords
-        setPosition({ latitude, longitude })
-        if (typeof heading === "number" && !isNaN(heading)) {
-          setHeading(heading)
-        }
-        form.setValue("lat", latitude)
-        form.setValue("lng", longitude)
-      },
-      () => {
-        toast.error("Failed to get current location. Try again.")
-      },
-      { enableHighAccuracy: true }
-    )
+    try {
+      const status = await navigator.permissions.query({ name: "geolocation" })
+
+      if (status.state === "denied") {
+        toast.error(
+          "Location access denied. Please allow location permissions."
+        )
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude, heading } = pos.coords
+          setPosition({ latitude, longitude })
+          if (typeof heading === "number" && !isNaN(heading)) {
+            setHeading(heading)
+          }
+          form.setValue("lat", latitude)
+          form.setValue("lng", longitude)
+        },
+        (err) => {
+          console.error("Geo error:", err)
+          toast.error("Unable to fetch location. Try reconnecting Wi-Fi.")
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      )
+    } catch (ex) {
+      console.error(ex)
+      toast.error("Unable to check location permission.")
+    }
   }
 
   const handleSearchClick = () => {

@@ -67,6 +67,7 @@ const QueueStatus = ({
 
       try {
         const existingOrder = await getOrderById(orderId)
+        console.log(existingOrder)
         if (existingOrder?.status === "pending") {
           setExistingCustomerOrder(existingOrder)
         }
@@ -255,6 +256,7 @@ const QueueStatus = ({
                         orderItems={existingCustomerOrder.items}
                         restaurant={restaurant}
                         handlePreOrderNavigate={handlePreOrderNavigate}
+                        code={existingCustomerOrder.code}
                       />
                     </motion.div>
                   )}

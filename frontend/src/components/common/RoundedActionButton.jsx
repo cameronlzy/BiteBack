@@ -37,6 +37,7 @@ const RoundedActionButton = ({
 `}
       >
         <Icon className="w-5 h-5 ml-0.5" />
+
         <span
           className={`${
             showOnlyOnHover ? "opacity-0 group-hover:opacity-100" : ""
