@@ -128,7 +128,6 @@ const RegisterForm = ({ user, isLoading, googleAuth }) => {
         isUpdate ? "Updated!" : "Registered!"
       )
       localStorage.removeItem("mid-registration")
-      window.location = from
     }
     localStorage.setItem("role", finalData.role)
     setEmail(finalData.email)
