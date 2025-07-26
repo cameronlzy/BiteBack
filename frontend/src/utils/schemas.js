@@ -629,7 +629,7 @@ export const menuCategoryList = [
   { value: "mains", label: "Mains" },
   { value: "desserts", label: "Desserts" },
   { value: "drinks", label: "Drinks" },
-  { value: "kids-menu", label: "Kids Menu" },
+  { value: "kids menu", label: "Kids Menu" },
   { value: "specials", label: "Specials" },
 ]
 

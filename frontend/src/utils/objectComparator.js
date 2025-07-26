@@ -67,6 +67,14 @@ export const objectComparator = (
     }
   })
 
+  if (
+    type === "promotion" &&
+    "timeWindow" in updated &&
+    (!("timeWindow" in original) || !isEqual(updated.timeWindow, original.timeWindow))
+  ) {
+    result.timeWindow = updated.timeWindow
+  }
+
   return result
 }
 

@@ -82,7 +82,7 @@ const PromotionPage = ({ user }) => {
       try {
         await deletePromotion(_id)
         toast.success("Promotion deleted")
-        window.location = "/promotions"
+        window.location = "/owner/events-promos"
       } catch (ex) {
         toast.error("Failed to delete promotion")
         throw ex

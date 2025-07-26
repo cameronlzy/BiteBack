@@ -396,8 +396,21 @@ const RestaurantMenu = ({ user }) => {
       <LoadingSpinner />
     </div>
   ) : menuItems.length === 0 ? (
-    <div className="text-center text-muted-foreground py-10 text-lg font-medium">
-      No Menu Available
+    <div className="py-10 px-4">
+      <div className="text-center text-muted-foreground text-lg font-medium mb-4">
+        No Menu Available
+      </div>
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleCreateMenuItem}
+          className="flex items-center gap-1"
+        >
+          <PlusCircle className="w-5 h-5" />
+          Add Menu Item
+        </Button>
+      </div>
     </div>
   ) : (
     <div className="w-full space-y-6">

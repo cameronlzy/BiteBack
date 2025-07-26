@@ -71,8 +71,7 @@ const OwnerReply = ({ review, user, restaurant, onReplyChange }) => {
                   minute: undefined,
                 })}
               </span>
-
-              {review.reply.owner === user?.profile && (
+              {review.reply.owner === user?.profile._id && (
                 <Button
                   type="button"
                   variant="destructive"

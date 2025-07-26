@@ -33,6 +33,8 @@ import { DateTime } from "luxon"
 import BackButton from "../common/BackButton"
 import { ownedByUser } from "@/utils/ownerCheck"
 import { computeDateWithOptionalTime } from "@/utils/timeConverter"
+import { Checkbox } from "../ui/checkbox"
+import { Label } from "../ui/label"
 
 const PromotionForm = ({ user }) => {
   const navigate = useNavigate()
@@ -41,6 +43,7 @@ const PromotionForm = ({ user }) => {
   const [promotion, setPromotion] = useState(null)
   const [originalStartDateTime, setOriginalStartDateTime] = useState(null)
   const [originalEndDateTime, setOriginalEndDateTime] = useState(null)
+  const [showTimeWindow, setShowTimeWindow] = useState(!!promotion?.timeWindow)
   const { promotionId } = useParams()
   const location = useLocation()
   const from = location.state?.from || "/promotions"
@@ -65,6 +68,10 @@ const PromotionForm = ({ user }) => {
         if (!isOwned) {
           toast.error("You are not authorised to edit this promotion")
           return navigate(`/promotions/${promotionId}`, { replace: true })
+        }
+
+        if (promotion.timeWindow) {
+          setShowTimeWindow(true)
         }
 
         form.reset({
@@ -143,34 +150,47 @@ const PromotionForm = ({ user }) => {
 
       const payload = {
         ...data,
+        timeWindow: {
+          startTime: "",
+          endTime: "",
+        },
       }
 
-      const { startTime, endTime } = data.timeWindow || {}
+      let startTime = data.timeWindow?.startTime?.trim() || ""
+      let endTime = data.timeWindow?.endTime?.trim() || ""
 
-      const hasStart = !!startTime?.trim()
-      const hasEnd = !!endTime?.trim()
+      if (showTimeWindow) {
+        const hasStart = !!startTime
+        const hasEnd = !!endTime
 
-      if (hasStart && !hasEnd) {
-        setError("timeWindow.endTime", {
-          type: "manual",
-          message: "End time is required if start time is set.",
-        })
-        return
-      } else if (!hasStart && hasEnd) {
-        setError("timeWindow.startTime", {
-          type: "manual",
-          message: "Start time is required if end time is set.",
-        })
-        return
+        if (hasStart && !hasEnd) {
+          setError("timeWindow.endTime", {
+            type: "manual",
+            message: "End time is required if start time is set.",
+          })
+          return
+        }
+
+        if (!hasStart && hasEnd) {
+          setError("timeWindow.startTime", {
+            type: "manual",
+            message: "Start time is required if end time is set.",
+          })
+          return
+        }
+
+        payload.timeWindow.startTime = hasStart ? startTime : ""
+        payload.timeWindow.endTime = hasEnd ? endTime : ""
+      } else {
+        payload.timeWindow.startTime = "00:00"
+        payload.timeWindow.endTime = "23:59"
       }
 
-      if (!hasStart && !hasEnd) {
-        delete payload.timeWindow
-      }
+      console.log(payload)
 
       const cleanedNoEmpty = objectCleaner(payload)
-
-      let changes = promotionId
+      console.log(promotion)
+      let changes = isEdit
         ? objectComparator(
             promotion,
             cleanedNoEmpty,
@@ -179,6 +199,7 @@ const PromotionForm = ({ user }) => {
             originalEndDateTime
           )
         : cleanedNoEmpty
+
       if (changes.restaurant === promotion?.restaurant?._id) {
         delete changes.restaurant
       }
@@ -186,7 +207,7 @@ const PromotionForm = ({ user }) => {
       if (!isEdit || "startDate" in changes) {
         changes.startDate = computeDateWithOptionalTime(
           data.startDate,
-          startTime,
+          showTimeWindow ? startTime : null,
           true
         )
       }
@@ -194,10 +215,11 @@ const PromotionForm = ({ user }) => {
       if (!isEdit || "endDate" in changes) {
         changes.endDate = computeDateWithOptionalTime(
           data.endDate,
-          endTime,
+          showTimeWindow ? endTime : null,
           false
         )
       }
+
       if (
         Object.keys(changes).length === 0 &&
         !(mainImageFile instanceof File) &&
@@ -207,16 +229,19 @@ const PromotionForm = ({ user }) => {
         navigate(`/promotions/${promotionId}`, { replace: true })
         return
       }
-      promotionId ? (changes._id = promotionId) : delete changes._id
+
+      if (isEdit) {
+        changes._id = promotionId
+      } else {
+        delete changes._id
+      }
+
       const newPromotion = await savePromotion(changes)
 
       const changedImages = {}
-      if (mainImageFile instanceof File) {
-        changedImages.mainImage = mainImageFile
-      }
-      if (bannerImageFile instanceof File) {
+      if (mainImageFile instanceof File) changedImages.mainImage = mainImageFile
+      if (bannerImageFile instanceof File)
         changedImages.bannerImage = bannerImageFile
-      }
 
       if (Object.keys(changedImages).length > 0) {
         if (isEdit) {
@@ -230,7 +255,7 @@ const PromotionForm = ({ user }) => {
       }
 
       toast.success(isEdit ? "Promotion updated" : "Promotion created")
-      navigate(`/owner/events-promos`, { replace: true })
+      navigate(`/promotions/${promotionId}`, { replace: true })
     } catch (ex) {
       if (ex.response?.status === 400) {
         const message = ex.response.data?.error
@@ -328,64 +353,76 @@ const PromotionForm = ({ user }) => {
             )}
           />
 
-          <FormField
-            control={control}
-            name="timeWindow.startTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Daily Start Time (HH:mm) - Optional</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <p className="text-sm text-muted-foreground">
-                  Leave both blank to allow promotion to last 24/7.
-                </p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="set-time-window"
+              checked={showTimeWindow}
+              onCheckedChange={(val) => setShowTimeWindow(!!val)}
+            />
+            <Label htmlFor="set-time-window">Set Time Window</Label>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Uncheck to allow promotion to last 24/7.
+          </p>
+          {showTimeWindow && (
+            <>
+              <FormField
+                control={control}
+                name="timeWindow.startTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Daily Start Time (HH:mm) - Optional</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={control}
-            name="timeWindow.endTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Daily End Time (HH:mm) - Optional</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={control}
+                name="timeWindow.endTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Daily End Time (HH:mm) - Optional</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={control}
-            name="restaurant"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Restaurant</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a restaurant" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {user.profile.restaurants?.map((r) => (
-                      <SelectItem key={r._id} value={r._id}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={control}
+                name="restaurant"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Restaurant</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a restaurant" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {user.profile.restaurants?.map((r) => (
+                          <SelectItem key={r._id} value={r._id}>
+                            {r.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
 
           <ImageUpload
             index={0}

@@ -103,13 +103,15 @@ export async function uploadRestaurantImages(restaurantId, files) {
   const formData = new FormData()
   limitedFiles.forEach((file) => formData.append("images", file))
 
-  const { data: imageUrls }  = await http.post(`${apiEndpoint}/${restaurantId}/images`, formData, {
+  const { data }  = await http.post(`${apiEndpoint}/${restaurantId}/images`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
   })
 
-  return imageUrls 
+  console.log(data)
+
+  return data 
 }
 
 export async function updateRestaurantImages(restaurantId, imageUrls) {

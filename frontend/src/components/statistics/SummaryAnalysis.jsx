@@ -66,7 +66,8 @@ const SummaryAnalysis = ({ restaurant }) => {
       if (response.type === "range") {
         setTempNumber(Math.min(n, response.dataPoints))
       }
-      console.log(data?.entries[0].aggregated.visitLoadByWeekday)
+
+      console.log(response)
       setData(response)
     } catch (ex) {
       toast.error("Failed to fetch summary", {

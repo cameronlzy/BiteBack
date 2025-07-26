@@ -70,7 +70,7 @@ const CustomerForm = ({
 
   const inputFields = [
     { name: "username", label: "Username" },
-    !googleAuth && { name: "email", label: "Email" },
+    !googleAuth && !user && { name: "email", label: "Email" },
     !user && { name: "password", label: "Password", type: "password" },
     !user && {
       name: "confirmPassword",
