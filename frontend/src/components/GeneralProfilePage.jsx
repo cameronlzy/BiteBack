@@ -1,25 +1,29 @@
 import { readableTimeSettings } from "@/utils/timeConverter"
 import { DateTime } from "luxon"
 import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { toast } from "react-toastify"
 import CustomerReviews from "./reviews/CustomerReviews"
 import { getGeneralCustomerInfo } from "@/services/userService"
 import LoadingSpinner from "./common/LoadingSpinner"
 import { Award, Star } from "lucide-react"
 import { badges } from "@/utils/badges"
+import BackButton from "./common/BackButton"
 
 const GeneralProfilePage = ({ user }) => {
   // user details will be for following in the future
   const { custId } = useParams()
   const [viewedCustomer, setViewedCustomer] = useState(null)
   const [loading, setLoading] = useState(true)
+  const location = useLocation()
   const navigate = useNavigate()
+  const from = location.state?.from || "/restaurants"
 
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
         const customer = await getGeneralCustomerInfo(custId)
+        console.log(customer)
         const viewedCustomer = {
           ...customer,
           profile: {
@@ -44,6 +48,7 @@ const GeneralProfilePage = ({ user }) => {
   if (loading) return <LoadingSpinner />
   return (
     <div className="container mx-auto p-4">
+      <BackButton from={from} />
       <div className="text-center mb-6">
         <h1 className="text-3xl font-extrabold text-gray-900 mb-1">
           {viewedCustomer.username}
@@ -84,14 +89,13 @@ const GeneralProfilePage = ({ user }) => {
                   {badge.label}
                 </span>
                 <span className="text-sm text-gray-600">
-                  {(viewedCustomer.badgeCounts?.[index] ?? 0).toLocaleString()}
+                  {(viewedCustomer.totalBadges?.[index] ?? 0).toLocaleString()}
                 </span>
               </div>
             ))}
           </div>
         </div>
       </div>
-      {/* Badges Count when implementing those will go here */}
       <CustomerReviews viewedCustomer={viewedCustomer} user={user} />
     </div>
   )

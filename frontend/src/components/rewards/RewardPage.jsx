@@ -112,7 +112,12 @@ const RewardPage = ({ user }) => {
     try {
       await redeemRewardItem({ rewardItem: reward._id })
       toast.success("Reward redeemed successfully")
-      navigate("/my-rewards", { replace: true })
+      navigate("/my-rewards", {
+        replace: true,
+        state: {
+          from: location.pathname,
+        },
+      })
     } catch (ex) {
       toast.error("Failed to redeem reward")
       throw ex

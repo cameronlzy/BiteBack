@@ -527,6 +527,13 @@ const EventForm = ({ user }) => {
             </motion.div>
           )}
 
+          {isEdit && (
+            <div className="flex items-start text-sm text-muted-foreground mt-1">
+              <Info className="w-4 h-4 mr-1 mt-[2px]" />
+              <span>Date and Time cannot be changed for existing events</span>
+            </div>
+          )}
+
           <FormField
             control={control}
             name="paxLimit"

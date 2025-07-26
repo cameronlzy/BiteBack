@@ -84,6 +84,7 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
             <div>
               <Link
                 to={`/user-details/${review.customer}`}
+                state={{ from: location.pathname }}
                 className="font-semibold text-blue-600 underline"
               >
                 {review.username}

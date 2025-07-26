@@ -27,7 +27,7 @@ import StarRating from "./common/StarRating"
 import BackButton from "./common/BackButton"
 import defaultRestImg from "@/assets/default-restaurant-img.png"
 import { ownedByUser } from "@/utils/ownerCheck"
-import CarouselButtonSwitcher from "./common/CarouselButtonSwitcher"
+import CarouselButtonSwitcher from "./CarouselButtonSwitcher"
 import FootFall from "./common/charts/FootFall"
 
 const Restaurant = ({ user }) => {
@@ -40,13 +40,22 @@ const Restaurant = ({ user }) => {
   const [restaurant, setRestaurant] = useState(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [footfallData, setFootfallData] = useState(null)
+  const [footFallRetrieved, setFootFallRetrieved] = useState(false)
   const isOwnedByUser = ownedByUser(restaurant, user)
   const imageShow = location.state?.imageShow
   useEffect(() => {
-    if (sessionStorage.getItem("restaurant_cache") && imageShow) {
-      const cached = sessionStorage.getItem("restaurant_cache")
-      const parsed = JSON.parse(cached)
-      setRestaurant(parsed)
+    if (
+      sessionStorage.getItem("restaurant_cache") &&
+      imageShow &&
+      sessionStorage.getItem("footfall_cache")
+    ) {
+      const cachedRest = sessionStorage.getItem("restaurant_cache")
+      const parsedRest = JSON.parse(cachedRest)
+      setRestaurant(parsedRest)
+      const cachedFootfall = sessionStorage.getItem("footfall_cache")
+      const parsedFootfall = JSON.parse(cachedFootfall)
+      setFootfallData(parsedFootfall)
+      setFootFallRetrieved(true)
       return
     }
 
@@ -58,21 +67,31 @@ const Restaurant = ({ user }) => {
           JSON.stringify(queriedRestaurant)
         )
         const data = await getRestaurantFootfallData(id)
-        const normalisedData = {
-          visitLoadByWeekday: data,
+        if (data) {
+          const normalisedData = {
+            visitLoadByWeekday: data,
+          }
+          setFootfallData([{ aggregated: normalisedData }])
+          sessionStorage.setItem(
+            "footfall_cache",
+            JSON.stringify([{ aggregated: normalisedData }])
+          )
+        } else {
+          sessionStorage.setItem("footfall_cache", JSON.stringify([]))
         }
-        setFootfallData([{ aggregated: normalisedData }])
         setRestaurant(queriedRestaurant)
       } catch (ex) {
         if (ex.response?.status === 404 || ex.response?.status === 400) {
           toast.error("Restaurant not found")
           navigate("/not-found")
         }
+      } finally {
+        setFootFallRetrieved(true)
       }
     }
 
     fetchRestaurantAndData()
-  }, [id])
+  }, [id, imageShow, navigate])
 
   const handleRestaurantDelete = async (id) => {
     const confirmed = await confirm(
@@ -85,7 +104,7 @@ const Restaurant = ({ user }) => {
     }
   }
 
-  if (!restaurant) return <LoadingSpinner />
+  if (!restaurant || !footFallRetrieved) return <LoadingSpinner />
 
   const {
     name,
@@ -270,7 +289,14 @@ const Restaurant = ({ user }) => {
               </ul>
             </div>
           </div>
-          <FootFall data={footfallData} mode="month" width={220} height={200} />
+          {footfallData && (
+            <FootFall
+              data={footfallData}
+              mode="month"
+              width={220}
+              height={200}
+            />
+          )}
 
           <div className="mt-6 flex gap-4 justify-center">
             <CarouselButtonSwitcher

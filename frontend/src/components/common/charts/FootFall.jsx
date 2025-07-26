@@ -13,7 +13,6 @@ const FootFall = ({ data, mode = "day", width = 160, height = 100 }) => {
   const [dayIndex, setDayIndex] = useState(0)
 
   const getCurrentData = () => {
-    console.log(data)
     if (!isMultiDay) return data[0]?.aggregated
 
     const week = data[weekIndex]?.aggregated

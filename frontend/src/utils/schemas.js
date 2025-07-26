@@ -85,10 +85,11 @@ const dailyTimeSchema = Joi.string()
 const singaporePostalCodeRegex = /^\d{6}$/
 
 export const cuisineList = [
-  "Chinese", "Malay", "Indian", "Peranakan", "Western", "Thai",
-  "Korean", "Vietnamese", "Indonesian", "Filipino", "Middle Eastern",
-  "Mexican", "Italian", "French", "Hawker", "Fusion", "Seafood",
-  "Japanese", 'Fast Food',
+  "Chinese", "Fast Food", "Filipino", "French",
+  "Fusion", "Hawker", "Indian", "Indonesian",
+  "Italian", "Japanese", "Korean", "Malay",
+  "Mexican", "Middle Eastern", "Peranakan", "Seafood",
+  "Thai", "Vietnamese", "Western",
 ]
 
 export const tagList = [

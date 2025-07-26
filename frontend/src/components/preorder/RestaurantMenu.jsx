@@ -408,7 +408,7 @@ const RestaurantMenu = ({ user }) => {
         <div className="flex justify-end">
           {user?.role === "customer" && canOrder ? (
             <Button size="sm" variant="ghost" onClick={handleShowConfirm}>
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-7 h-7" />
             </Button>
           ) : isOwnedByUser ? (
             <div className="flex flex-col items-end gap-2">

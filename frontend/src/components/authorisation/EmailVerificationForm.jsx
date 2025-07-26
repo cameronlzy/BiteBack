@@ -81,9 +81,6 @@ const EmailVerificationForm = ({ onSubmit, email: providedEmail }) => {
           <LoadingSpinner />
           <span className="ml-2 text-sm text-gray-600">Verifying Email...</span>
         </div>
-        <p className="text-sm text-muted-foreground italic">
-          Customers can also unsubscribe through edit profile
-        </p>
       </div>
     )
   }
