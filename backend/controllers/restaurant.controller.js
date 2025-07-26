@@ -98,7 +98,7 @@ export async function createRestaurantBulk(req, res) {
 
 export async function addRestaurantImages(req, res) {
     const { status, body } = await imageService.addImages(Restaurant, req.restaurant._id, req.files, 'images');
-    return res.status(status).json(body.image);
+    return res.status(status).json(body.images);
 };
 
 export async function updateRestaurantImages(req, res) {
