@@ -181,7 +181,7 @@ const OwnerForm = ({
 
       if (!isUpdate) {
         const savedRestaurantIds = await saveRestaurants(processedRestaurants)
-
+        console.log(savedRestaurantIds)
         for (let i = 0; i < savedRestaurantIds.length; i++) {
           const restaurantId = savedRestaurantIds[i]
           const files = selectedFilesArray[i] || []
