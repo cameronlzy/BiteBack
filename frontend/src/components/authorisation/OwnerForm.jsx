@@ -414,6 +414,9 @@ const OwnerForm = ({
                     setSelectedFiles={(files) => {
                       setSelectedFilesArray((prev) => {
                         const copy = [...prev]
+                        while (copy.length <= index) {
+                          copy.push([])
+                        }
                         copy[index] = files
                         return copy
                       })
