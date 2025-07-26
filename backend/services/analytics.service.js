@@ -7,6 +7,7 @@ import { groupVisitLoadByWeekdayPattern, computeMode, getPeriodFromLabel, getCur
 import { DateTime } from 'luxon';
 import _ from 'lodash';
 import { getRedisClient } from '../startup/redisClient.js';
+import Restaurant from '../models/restaurant.model.js';
 
 export async function getSnapshot(restaurant) {
     const openHour = getOpeningHoursToday(restaurant);
@@ -128,7 +129,7 @@ export async function getSummary(restaurant, query) {
     }
 
     const now = DateTime.utc().setZone(restaurant.timezone);
-    const currentPattern = getCurrentOpeningPattern(restaurant);
+    const currentPattern = getCurrentOpeningPattern(restaurant.openingHours);
     let start, end, groupFormat;
 
     if (unit === 'day') {
@@ -356,4 +357,26 @@ export async function getTrends(restaurant, days) {
     await redisClient.set(cacheKey, JSON.stringify(response), { EX: 86400 });
 
     return response;
+}
+
+// helper services
+export async function getFootfall(restaurantId) {
+    const restaurant = await Restaurant.findById(restaurantId).select('_id timezone openingHours')
+    const now = DateTime.utc().setZone(restaurant.timezone);
+    const startOfCurrentMonth = now.startOf('month');
+    const endOfPreviousMonth = startOfCurrentMonth.minus({ days: 1 }).endOf('day');
+    const startOfPreviousMonth = endOfPreviousMonth.startOf('month');
+
+    const rawDocs = await DailyAnalytics.find({
+        restaurant: restaurant._id,
+        date: {
+            $gte: startOfPreviousMonth.toJSDate(),
+            $lte: endOfPreviousMonth.toJSDate(),
+        }
+    }).select('date visitLoadByHour').lean();
+
+    const currentPattern = getCurrentOpeningPattern(restaurant.openingHours);
+    const filtered = rawDocs.filter(doc => matchesCurrentHours(doc, currentPattern));
+    const grouped = groupVisitLoadByWeekdayPattern(filtered);
+    return success(grouped);
 }

@@ -72,9 +72,9 @@ export function getPeriodFromLabel(label, unit, timezone = 'Asia/Singapore') {
     };
 }
 
-export function getCurrentOpeningPattern(restaurant) {
+export function getCurrentOpeningPattern(openingHours) {
     const map = new Map();
-    const segments = restaurant.openingHours.split('|');
+    const segments = openingHours.split('|');
 
     segments.forEach((seg, idx) => {
         const weekday = idx + 1;

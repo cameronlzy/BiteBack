@@ -26,6 +26,9 @@ router.get('/:id', [validateObjectId()], restaurantController.getRestaurantById)
 // [Public] - Get availability of restaurant by date
 router.get('/:id/availability', [validateObjectId()], restaurantController.getAvailability);
 
+// [Public] - Get footfall of restaurant in the previous month
+router.get('/:id/footfall', [validateObjectId()], restaurantController.getFootfall);
+
 // [Customer] - Get customer's number of visits to restaurant
 router.get('/:id/visits', [validateObjectId(), auth, isCustomer], restaurantController.getVisitCount);
 
