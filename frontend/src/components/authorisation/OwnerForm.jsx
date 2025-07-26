@@ -185,11 +185,12 @@ const OwnerForm = ({
         for (let i = 0; i < savedRestaurantIds.length; i++) {
           const restaurantId = savedRestaurantIds[i]
           const files = selectedFilesArray[i] || []
-
+          console.log(files)
           if (files.length > 0) {
             try {
               await uploadRestaurantImages(restaurantId, files)
-            } catch {
+            } catch (ex) {
+              console.log(ex)
               toast.error(`Image upload failed for Restaurant #${i + 1}`)
             }
           }

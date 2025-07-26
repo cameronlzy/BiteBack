@@ -13,13 +13,10 @@ const CarouselButtonSwitcher = ({
   const isMobile = useIsMobile()
   const navigate = useNavigate()
 
-  const isOwnedByUser = user?.profile?.restaurants?.some(
-    (r) => r._id === restaurant._id
-  )
   const isCustomer = !user || user.role === "customer"
 
   const actions = [
-    user?.role !== "owner" && {
+    isCustomer && {
       wordShown: "Queue",
       icon: Users,
       onClick: () => navigate(`/online-queue/${restaurant._id}`),
@@ -30,7 +27,7 @@ const CarouselButtonSwitcher = ({
         !isWithinOpeningHours(restaurant.openingHours) ||
         !restaurant.queueEnabled,
     },
-    (isOwnedByUser || isCustomer) && {
+    isCustomer && {
       wordShown: "Make Reservation",
       icon: Calendar,
       onClick: () => navigate(`/reservation/${restaurant._id}`),
@@ -39,7 +36,7 @@ const CarouselButtonSwitcher = ({
       textColor: "text-white",
       wide: true,
     },
-    user?.role !== "owner" && {
+    isCustomer && {
       wordShown: "Rewards",
       icon: Store,
       onClick: () => navigate(`/current-rewards/${restaurant._id}`),
@@ -47,7 +44,7 @@ const CarouselButtonSwitcher = ({
       hoverColor: "hover:bg-indigo-700",
       textColor: "text-white",
     },
-    user?.role !== "owner" && {
+    isCustomer && {
       wordShown: showReviewForm ? "Cancel" : "Review",
       icon: Star,
       onClick: () => setShowReviewForm((prev) => !prev),
@@ -55,7 +52,7 @@ const CarouselButtonSwitcher = ({
       hoverColor: "hover:bg-yellow-500",
       textColor: "text-black",
     },
-    user?.role !== "owner" && {
+    isCustomer && {
       wordShown: "Member Events",
       icon: Crown,
       onClick: () => navigate(`/member-events/${restaurant._id}`),
@@ -64,7 +61,7 @@ const CarouselButtonSwitcher = ({
       textColor: "text-white",
       wide: true,
     },
-    user?.role !== "owner" && {
+    isCustomer && {
       wordShown: "Menu",
       icon: Utensils,
       onClick: () => navigate(`/pre-order/${restaurant._id}`),
