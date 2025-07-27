@@ -92,8 +92,6 @@ export function filterOpenRestaurants(restaurants, nowUTC = DateTime.utc()) {
 }
 
 export function getCurrentTimeSlotStartUTC(restaurant) {
-  const now = DateTime.utc();
-  const today = now.startOf('day');
   const todayOpening = getOpeningHoursToday(restaurant);
 
   if (todayOpening === 'x') {
@@ -101,22 +99,26 @@ export function getCurrentTimeSlotStartUTC(restaurant) {
       return null;
   }
 
-  const [openStr, closeStr] = todayOpening.split('-');
+  const localOpening = convertUTCOpeningHoursToLocal(todayOpening, restaurant.timezone);
+
+  const [openStr, closeStr] = localOpening.split('-');
   const [openHour, openMinute] = openStr.split(':').map(Number);
   const [closeHour, closeMinute] = closeStr.split(':').map(Number);
+  const localNow = DateTime.utc().setZone(restaurant.timezone);
+  const localToday = localNow.startOf('day');
 
-  const openingTime = today.set({ hour: openHour, minute: openMinute, second: 0, millisecond: 0 });
-  let closingTime = today.set({ hour: closeHour, minute: closeMinute, second: 0, millisecond: 0 });
+  const openingTime = localToday.set({ hour: openHour, minute: openMinute, second: 0, millisecond: 0 });
+  let closingTime = localToday.set({ hour: closeHour, minute: closeMinute, second: 0, millisecond: 0 });
 
   if (closingTime <= openingTime) {
     closingTime = closingTime.plus({ days: 1 });
   }
 
-  if (now < openingTime || now >= closingTime) {
+  if (localNow < openingTime || localNow >= closingTime) {
     return null;
   }
 
-  const minutesSinceOpen = Math.floor(now.diff(openingTime, 'minutes').minutes);
+  const minutesSinceOpen = Math.floor(localNow.diff(openingTime, 'minutes').minutes);
   const slotIndex = Math.floor(minutesSinceOpen / restaurant.slotDuration);
   const slotStart = openingTime.plus({ minutes: slotIndex * restaurant.slotDuration }).set({ second: 0, millisecond: 0 });
 

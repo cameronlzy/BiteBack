@@ -248,7 +248,7 @@ export async function getReservationsByRestaurant(restaurant, query) {
     };
 
     if (query.event === 'true') {
-        baseFilter.event = { $ne: undefined };
+        baseFilter.event = { $exists: true, $ne: null };
     }
 
     const reservations = await Reservation.find(baseFilter)
