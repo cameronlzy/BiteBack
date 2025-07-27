@@ -6,6 +6,7 @@ import Restaurant from '../models/restaurant.model.js';
 import Review from '../models/review.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
 import { getOpeningWindow } from '../helpers/restaurant.helper.js';
+import { updateRatingForRestaurant } from '../services/review.service.js';
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -126,6 +127,8 @@ async function seedAnalytics(days, restaurantIdArg, timezone) {
         },
     };
 
+    let cumulateRatingSum = 0;
+    let cumulativeReviewCount = 0;
     for (let i = days - 1; i >= 0; i--) {
         const date = today.minus({ days: i });
         const window = getOpeningWindow(date, restaurant.openingHours);
@@ -143,6 +146,8 @@ async function seedAnalytics(days, restaurantIdArg, timezone) {
         const reviewsForDay = await createReviewsForDay(restaurant._id, date, customers);
         const reviewCount = reviewsForDay.length;
         const ratingSum = reviewsForDay.reduce((sum, r) => sum + r.rating, 0);
+        cumulateRatingSum += ratingSum;
+        cumulativeReviewCount += reviewCount;
         const ratingFreq = [0, 0, 0, 0, 0];
 
         for (const r of reviewsForDay) {
@@ -210,6 +215,8 @@ async function seedAnalytics(days, restaurantIdArg, timezone) {
     }
 
     await DailyAnalytics.insertMany(analyticsData);
+
+    await updateRatingForRestaurant(restaurant._id, cumulateRatingSum, cumulativeReviewCount);
     console.log(`${days} DailyAnalytics entries created.`);
     await mongoose.disconnect();
 }

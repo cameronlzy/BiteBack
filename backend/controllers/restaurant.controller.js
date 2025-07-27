@@ -1,5 +1,6 @@
 import * as restaurantService from '../services/restaurant.service.js';
 import * as imageService from '../services/image.service.js';
+import * as analyticsService from '../services/analytics.service.js';
 import Restaurant from '../models/restaurant.model.js';
 import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImages, validateDiscover, validateSearch, validateEventQuery, validatePreordersToggle } from '../validators/restaurant.validator.js';
 import Joi from '../validators/joi.js';
@@ -55,9 +56,14 @@ export async function getAvailability(req, res) {
     const { error, value } = schema.validate(req.query);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const data = await restaurantService.getAvailability(req.params.id, value);
-    return res.status(data.status).json(data.body);
+    const { status, body } = await restaurantService.getAvailability(req.params.id, value);
+    return res.status(status).json(body);
 };
+
+export async function getFootfall(req, res) {
+    const { status, body } = await analyticsService.getFootfall(req.params.id);
+    return res.status(status).json(body);
+}
 
 export async function getVisitCount(req, res) {
     const { status, body } = await restaurantService.getVisitCount(req.user, req.params.id);
@@ -92,7 +98,7 @@ export async function createRestaurantBulk(req, res) {
 
 export async function addRestaurantImages(req, res) {
     const { status, body } = await imageService.addImages(Restaurant, req.restaurant._id, req.files, 'images');
-    return res.status(status).json(body.image);
+    return res.status(status).json(body.images);
 };
 
 export async function updateRestaurantImages(req, res) {

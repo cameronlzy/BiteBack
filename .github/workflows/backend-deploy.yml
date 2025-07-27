@@ -27,6 +27,10 @@ jobs:
       CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
       MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
       ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_SECRET }}
+      FRONTEND_LINK: ${{ secrets.FRONTEND_LINK }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
 
     defaults:
       run:
@@ -48,7 +52,7 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npm test
+        run: npm run test -- --no-verbose
 
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install.sh | sh

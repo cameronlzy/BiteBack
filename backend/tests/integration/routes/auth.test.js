@@ -11,7 +11,7 @@ import OwnerProfile from '../../../models/ownerProfile.model.js';
 import Restaurant from '../../../models/restaurant.model.js';
 import Staff from '../../../models/staff.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, generateExchangeToken, generateTempToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import simpleCrypto from '../../../helpers/encryption.helper.js';
@@ -25,6 +25,228 @@ describe('auth test', () => {
     afterAll(async () => {
         await mongoose.connection.close();
         await server.close();
+    });
+
+    describe('POST /api/auth/consume-token', () => {
+        let user, token;
+
+        beforeEach(async () => { 
+            await User.deleteMany({});
+            await CustomerProfile.deleteMany({});
+            user = await createTestUser('customer');
+            await user.save();
+            user._isNew = false;
+            token = generateExchangeToken(user);
+        });
+
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/consume-token')
+            .send({
+                token
+            });
+        };
+    
+        it('should return 200 and set perm token', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body).not.toHaveProperty('password');
+
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const tokenRequiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(tokenRequiredKeys));
+        });
+
+        it('should return 200 and set temp token', async () => {
+            user._isNew = true;
+            token = generateExchangeToken(user);
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const jwtToken = parsed.token;
+            expect(jwtToken).toBeDefined();
+    
+            const decoded = jwt.verify(jwtToken, config.get('jwtPrivateKey'));
+
+            const tokenRequiredKeys = [
+                '_id', 'email', 'role', 'isVerified'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(tokenRequiredKeys));
+        });
+
+    });
+
+    describe('POST /api/auth/register', () => {
+        let email;
+        let username;
+        let password;
+        let role;
+
+        beforeEach(async () => { 
+            await User.deleteMany({});
+            await CustomerProfile.deleteMany({});
+            email = "myCustomer@gmail.com";
+            username = "myCustomer";
+            password = "myPassword@123";
+            role = "customer";
+        });
+
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/register')
+            .send({
+                email, username, password, role
+            });
+        };
+    
+        it('should return 400 if the user exists', async () => {
+            await exec();
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200 + username, email, role', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                '_id', 'email', 'username', 'role'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            expect(res.body).not.toHaveProperty('password');
+            
+        });
+    });
+
+    describe('POST /api/auth/verify-email', () => {
+        let user;
+        let userId;
+        let token;
+        let hash;
+    
+        const exec = () => {
+            return request(server)
+            .post(`/api/auth/verify-email`)
+            .send({
+                token
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+            user = await createTestUser('customer');
+            user.isVerified = false;
+            userId = user._id;
+
+            // create token
+            token = crypto.randomBytes(32).toString('hex');
+            hash = crypto.createHash('sha256').update(token).digest('hex');
+            user.verifyEmailToken = hash;
+            user.verifyEmailExpires = Date.now() + 30 * 60 * 1000;
+            await user.save();
+        });
+
+        it('should return 400 if username/email does not belong to anyone', async () => {
+            let otherToken = crypto.randomBytes(32).toString('hex');
+            token = otherToken;
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+    
+        it('should return 200 and change the password', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+
+            let updatedUser = await User.findById(userId).select('isVerified').lean();
+            expect(updatedUser.isVerified).toBe(true);
+        });
+    });
+
+    describe('POST /api/auth/resend-verification', () => {
+        let email;
+        let user;
+    
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/resend-verification')
+            .send({
+                email
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+            user = await createTestUser('customer');
+            user.isVerified = false;
+            user.email = "benlua73@gmail.com";
+            await user.save();
+            email = user.email;
+        });
+
+        it('should return 400 if username/email does not belong to anyone', async () => {
+            email = "otherEmail@gamil.com"
+            const res = await exec();
+            expect(res.status).toBe(400);
+        });
+
+        // skip to avoid spamming emails
+        it.skip('should return 200 and send email when using email', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+        });
+    });
+
+    describe('POST /api/auth/set-credentials', () => {
+        let user, token, cookie;
+        let password, username;
+    
+        const exec = () => {
+            return request(server)
+            .post('/api/auth/set-credentials')
+            .set('Cookie', [cookie])
+            .send({
+                password, username
+            });
+        };
+    
+        beforeEach(async () => {
+            await User.deleteMany({});
+
+            user = await createTestUser('customer');
+            user.password = undefined;
+            user.username = undefined;
+            await user.save();
+            token = generateTempToken(user);
+            cookie = setTokenCookie(token);
+
+            password = 'Password@123';
+            username = 'username';
+        });
+    
+        it('should return 200 and set password', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const userInDb = await User.findById(user._id).lean();
+            expect(userInDb.password).toBeDefined();
+            expect(userInDb.username).toEqual(username);
+        });
     });
 
     describe('POST /api/auth/forget-password', () => {
@@ -56,7 +278,7 @@ describe('auth test', () => {
         });
 
         // skip to avoid spamming emails
-        it.skip('should return 200 and send email when using username', async () => {
+        it.skip('should return 200 and send email when using email', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
         });
@@ -84,9 +306,9 @@ describe('auth test', () => {
     
         const exec = () => {
             return request(server)
-            .post(`/api/auth/reset-password/${token}`)
+            .post(`/api/auth/reset-password`)
             .send({
-                password
+                password, token
             });
         };
     
@@ -187,190 +409,13 @@ describe('auth test', () => {
 
             expect(isMatch).toBe(true);
         });
-
-        it('should return valid jwtToken', async () => {
-            const res = await exec();
-            const cookies = res.headers['set-cookie'];
-            expect(cookies).toBeDefined();
-
-            const parsed = cookieParser.parse(cookies[0]);
-            const token = parsed.token;
-            expect(token).toBeDefined();
-    
-            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
-
-            const requiredKeys = [
-                'email', 'username', 'role', 'profile'
-            ];
-            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
-        });
-    });
-
-    describe('POST /api/auth/register - for customer', () => {
-        let email;
-        let username;
-        let password;
-        let role;
-
-        let name;
-        let contactNumber;
-        let favCuisines;
-    
-        const exec = () => {
-            return request(server)
-            .post('/api/auth/register')
-            .send({
-                email, username, password, role, name, contactNumber, favCuisines
-            });
-        };
-    
-        beforeEach(async () => { 
-            await User.deleteMany({});
-            await CustomerProfile.deleteMany({});
-            email = "myCustomer@gmail.com";
-            username = "myCustomer";
-            password = "myPassword@123";
-            role = "customer";
-            name = "name";
-            contactNumber = "87654321";
-            favCuisines = ["Chinese"];
-        });
-    
-        it('should return 400 if the request has invalid email', async () => {
-            email = "email";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 400 if the request has short username', async () => {
-            username = "a";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the request has simple password', async () => {
-            password = "password";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the request had invalid contact number', async () => {
-            contactNumber = "a";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the user exists', async () => {
-            await exec();
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 200 + username, email, role', async () => {
-            const res = await exec();
-            expect(res.status).toBe(200);
-            const requiredKeys = [
-                '_id', 'email', 'username', 'role'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            expect(res.body).not.toHaveProperty('password');
-        });
-
-        it('should return create a customer profile', async () => {
-            await exec();
-            const user = await User.findOne({ email: email })
-                .populate('profile');
-            const requiredKeys = [
-                'name',
-                'contactNumber', 
-                'favCuisines',
-                'dateJoined'
-            ];
-            expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));
-        });
-    });
-
-    describe('POST /api/auth/register - for owner', () => {
-        let email;
-        let username;
-        let password;
-        let role;
-        let companyName;
-    
-        const exec = () => {
-            return request(server)
-            .post('/api/auth/register')
-            .send({
-                email, username, password, role, companyName
-            });
-        };
-    
-        beforeEach(async () => { 
-            await User.deleteMany({});
-            await OwnerProfile.deleteMany({});
-            await Restaurant.deleteMany({});
-
-            // creating a owner
-            email = "myOwner@gmail.com";
-            username = "myOwner";
-            password = "myPassword@123";
-            role = "owner";
-            companyName = "name";
-        });
-
-        it('should return 400 if the request has invalid email', async () => {
-            email = "email";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-
-        it('should return 400 if the request has short username', async () => {
-            username = "a";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the request has simple password', async () => {
-            password = "password";
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 400 if the user exists', async () => {
-            await exec();
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
-    
-        it('should return 200 and username, email, role', async () => {
-            const res = await exec();
-            expect(res.status).toBe(200);
-            const requiredKeys = [
-                '_id', 'email', 'username', 'role'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            expect(res.body).not.toHaveProperty('password');
-        });
-
-        it('should return create a owner profile', async () => {
-            await exec();
-            const user = await User.findOne({ email: email })
-                .populate('profile');
-            const requiredKeys = [
-                'companyName', 'restaurants', 'dateJoined'
-            ];
-            expect(Object.keys(user.profile.toObject())).toEqual(expect.arrayContaining(requiredKeys));
-        });
     });
 
     describe('POST /api/auth/login', () => {
         let email;
         let username;
         let password;
-        let role;
         let user;
-        let hashedPassword;
-        let roleProfile;
     
         const emailLogin = () => {
             return request(server)
@@ -393,18 +438,12 @@ describe('auth test', () => {
             await CustomerProfile.deleteMany({});
             await OwnerProfile.deleteMany({});
             await Restaurant.deleteMany({});
-            email = "myEmail@gmail.com";
-            username = "username";
-            password = "myPassword@123";
-            role = "customer";
-            roleProfile = "CustomerProfile";
-            const salt = await bcrypt.genSalt(10);
-            hashedPassword = await bcrypt.hash(password, salt); 
-            user = new User({
-                email, username, password: hashedPassword, role, roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
+
+            user = await createTestUser('customer');
             await user.save();
+            email = user.email;
+            username = user.username;
+            password = 'Password@123';
         });
     
         it('should return 400 if invalid request', async () => {
@@ -431,14 +470,7 @@ describe('auth test', () => {
         });
     
         it('should return 200 when logging in through email for owner', async () => {
-            role = "owner";
-            roleProfile = "OwnerProfile";
-            username = "myOwner";
-            email = "myOwner@gmail.com";
-            user = new User({
-                email, username, password: hashedPassword, role, roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
+            user = await createTestUser('owner');
             await user.save();
             const res = await emailLogin();
             expect(res.status).toBe(200);

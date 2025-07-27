@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import RewardRedemption from '../models/rewardRedemption.model.js';
 import RewardItem from '../models/rewardItem.model.js';
 import { adjustPoints } from '../services/rewardPoint.service.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 import { DateTime } from 'luxon';
 import { withTransaction, wrapSession } from '../helpers/transaction.helper.js';
 
@@ -109,7 +109,7 @@ export async function completeRedemption(authUser, code) {
     rewardRedemption.code = undefined;
     await rewardRedemption.save();
 
-    return success({ message: 'Redemption completed'});
+    return success(wrapMessage('Redemption completed'));
 }
 
 export async function activateRedemption(rewardRedemption) {

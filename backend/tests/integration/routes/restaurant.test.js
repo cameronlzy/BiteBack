@@ -179,9 +179,9 @@ describe('restaurant test', () => {
 
             // create 4 openingHours
             openingHours = [
-                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
-                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
-                '00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59|00:00-23:59',
+                '16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59',
+                '16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59',
+                '16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59|16:00-15:59',
                 'x|x|x|x|x|x|x',
             ];
 
@@ -514,11 +514,7 @@ describe('restaurant test', () => {
 
         let owner;
         let ownerProfile;
-
-        let email;
-        let username;
-        let password;
-        let role;
+        
         let token;
         let cookie;
 
@@ -528,18 +524,12 @@ describe('restaurant test', () => {
             await OwnerProfile.deleteMany({});
 
             // create an owner
-            email = "myOwner@gmail.com";
-            username = "myOwner";
-            password = "myPassword@123";
-            role = "owner";
-            owner = await User({
-                email, username, password, role, profile: new mongoose.Types.ObjectId(), roleProfile: "OwnerProfile"
-            });
+            owner = await createTestUser('owner');
             token = generateAuthToken(owner);
             cookie = setTokenCookie(token);
 
             // creating an ownerProfile
-            ownerProfile = createTestOwnerProfile(owner);
+            ownerProfile = createTestOwnerProfile(owner._id);
             await ownerProfile.save();
 
             owner.profile = ownerProfile._id;
@@ -617,7 +607,7 @@ describe('restaurant test', () => {
 
             // creating a owner
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             await profile.save();
             user.profile = profile._id;
             await user.save();
@@ -688,7 +678,7 @@ describe('restaurant test', () => {
             cookie = setTokenCookie(token);
 
             // creating an ownerProfile
-            ownerProfile = createTestOwnerProfile(owner);
+            ownerProfile = createTestOwnerProfile(owner._id);
             await ownerProfile.save();
 
             owner.profile = ownerProfile._id;
@@ -925,7 +915,7 @@ describe('restaurant test', () => {
             owner = await createTestUser('owner');
 
             // creating an ownerProfile
-            ownerProfile = createTestOwnerProfile(owner);
+            ownerProfile = createTestOwnerProfile(owner._id);
             await ownerProfile.save();
 
             owner.profile = ownerProfile._id;
@@ -947,8 +937,7 @@ describe('restaurant test', () => {
 
         it('should return 403 if restaurant does not belong to user', async () => {
             let otherOwner = await createTestUser('owner');
-
-            let otherOwnerProfile = createTestOwnerProfile(otherOwner);
+            let otherOwnerProfile = createTestOwnerProfile(otherOwner._id);
             await otherOwnerProfile.save();
             otherOwner.profile = otherOwnerProfile._id;
             await otherOwner.save();
@@ -959,16 +948,11 @@ describe('restaurant test', () => {
             expect(res.status).toBe(403);
         });
 
-        it('should return 200 if valid request', async () => {
+        it('should return 200 and delete restaurant', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            const requiredKeys = [
-                'name', 'address', 'contactNumber', 'cuisines', 'openingHours', 'maxCapacity'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-
-            const restaurantInDb = await Restaurant.findById(res.body._id);
+            const restaurantInDb = await Restaurant.exists({ _id: restaurantId });
             expect(restaurantInDb).toBeNull();
         });
     });

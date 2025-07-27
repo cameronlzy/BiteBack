@@ -10,7 +10,7 @@ fi
 if [ -n "$BACKEND_FILES" ] && [ -z "$FRONTEND_FILES" ]; then
   echo "Running backend lint and tests"
   npx --prefix backend lint-staged
-  cd backend && npm test
+  cd backend && npm run test
   exit $?
 fi
 

@@ -189,9 +189,8 @@ describe('reward item test', () => {
         it('should return 200 and delete reward item', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            const requiredKeys = ['category', 'description', 'pointsRequired', 'isActive'];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            const itemInDb = await RewardItem.findById(res.body._id).lean();
+
+            const itemInDb = await RewardItem.exists({ _id: rewardItemId });
             expect(itemInDb).toBeNull();
         });
     });

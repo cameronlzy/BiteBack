@@ -13,6 +13,7 @@ import QueueEntry from '../models/queueEntry.model.js';
 import RewardPoint from '../models/rewardPoint.model.js';
 import RewardItem from '../models/rewardItem.model.js';
 import DailyAnalytics from '../models/dailyAnalytics.model.js';
+import MenuItem from '../models/menuItem.model.js';
 import { DateTime } from 'luxon';
 import mongoose from 'mongoose';
 import * as reservationService from '../services/reservation.service.js';
@@ -24,7 +25,7 @@ import _ from 'lodash';
 import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.service.js';
 import { geocodeAddress } from '../helpers/geocode.js';
 import { escapeRegex } from '../helpers/regex.helper.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 
 export async function searchRestaurants(filters) {
   const { search, page, limit, sortBy, order } = filters;
@@ -237,25 +238,27 @@ export async function getVisitCount(authUser, restaurant) {
 }
 
 export async function getReservationsByRestaurant(restaurant, query) {
-    const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
-    if (!timeSlotStartUTC) return success([]);
+  const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
+  if (!timeSlotStartUTC) return success([]);
 
-    const baseFilter = {
-        restaurant: restaurant._id,
-        startDate: { $lt: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate() },
-        endDate: { $gt: timeSlotStartUTC.toJSDate() }
-    };
+  const baseFilter = {
+    restaurant: restaurant._id,
+    startDate: { $lt: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate() },
+    endDate: { $gt: timeSlotStartUTC.toJSDate() }
+  };
 
-    if (query.event === 'true') {
-        baseFilter.event = { $ne: undefined };
-    }
+  if (query.event) {
+    baseFilter.event = { $exists: true };
+  } else {
+    baseFilter.event = { $exists: false };
+  }
 
-    const reservations = await Reservation.find(baseFilter)
-        .populate('customer', 'name contactNumber')
-        .populate('event', '_id title')
-        .lean();
+  const reservations = await Reservation.find(baseFilter)
+    .populate('customer', 'name contactNumber')
+    .populate('event', '_id title')
+    .lean();
 
-    return success(reservations);
+  return success(reservations);
 }
 
 export async function createRestaurant(authUser, data) {
@@ -355,7 +358,7 @@ export async function deleteRestaurant(restaurant, authUser) {
 
     await deleteRestaurantAndAssociations(restaurant, session);
 
-    return success(restaurant);
+    return success(wrapMessage('Restaurant deleted successfully'));
   });
 }
 
@@ -410,6 +413,7 @@ export async function deleteRestaurantAndAssociations(restaurant, session = unde
     RewardPoint,
     RewardItem,
     VisitHistory,
+    MenuItem,
   ];
 
   await Promise.all(

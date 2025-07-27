@@ -54,8 +54,19 @@ describe('auth middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should call next and set req.user if token is valid', () => {
-    const decoded = { _id: 'user123' };
+  it('should return 401 if decoded token has no username', () => {
+    req.cookies.token = 'valid.token';
+    jwt.verify.mockReturnValue({}); // no username property
+
+    auth(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith(wrapError('Complete signup to access this route'));
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('should call next and set req.user if token is valid and has username', () => {
+    const decoded = { _id: 'user123', username: 'testuser' };
     req.cookies.token = 'valid.token';
     jwt.verify.mockReturnValue(decoded);
 

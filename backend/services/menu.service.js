@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 import MenuItem from '../models/menuItem.model.js';
 import Restaurant from '../models/restaurant.model.js';
 
@@ -50,7 +50,6 @@ export async function updateItem(update, menuItem) {
 }
 
 export async function deleteItem(menuItem) {
-    const deletedItem = menuItem.toObject();
     await menuItem.deleteOne();
-    return success(deletedItem);
+    return success(wrapMessage('Menu Item deleted successfully'));
 }

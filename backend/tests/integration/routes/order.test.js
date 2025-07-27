@@ -38,7 +38,7 @@ describe('order test', () => {
             await Restaurant.deleteMany({});
 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -80,7 +80,7 @@ describe('order test', () => {
             await Staff.deleteMany({});
 
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             
             restaurant = createTestRestaurant(user.profile);
@@ -126,7 +126,7 @@ describe('order test', () => {
             await Staff.deleteMany({});
 
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             
             restaurant = createTestRestaurant(user.profile);
@@ -171,7 +171,7 @@ describe('order test', () => {
             await Staff.deleteMany({});
 
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             
             restaurant = createTestRestaurant(user.profile);
@@ -222,7 +222,7 @@ describe('order test', () => {
             await CustomerProfile.deleteMany({});
 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -257,7 +257,7 @@ describe('order test', () => {
             await OwnerProfile.deleteMany({});
 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             await profile.save();
 
@@ -312,7 +312,7 @@ describe('order test', () => {
             await MenuItem.deleteMany({});
 
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             
             restaurant = createTestRestaurant(user.profile);
@@ -370,7 +370,7 @@ describe('order test', () => {
             await MenuItem.deleteMany({});
 
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             
             restaurant = createTestRestaurant(user.profile);
@@ -429,7 +429,7 @@ describe('order test', () => {
             await MenuItem.deleteMany({});
 
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             await profile.save();
 
@@ -497,7 +497,6 @@ describe('order test', () => {
             .send({
                 remove: [entryId]
             });
-            console.log(res.text);
             expect(res.status).toBe(200);
             expect(res.body.items.length).toBe(1);
         });

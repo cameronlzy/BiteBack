@@ -372,9 +372,8 @@ describe('menu item test', () => {
         it('should return 200 and delete reward item', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            const requiredKeys = ['restaurant', 'name', 'description', 'price', 'category', 'isAvailable'];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-            const itemInDb = await MenuItem.findById(res.body._id).lean();
+
+            const itemInDb = await MenuItem.exists({ _id: menuItemId });
             expect(itemInDb).toBeNull();
         });
     });

@@ -4,7 +4,7 @@ import Event from '../models/event.model.js';
 import Reservation from '../models/reservation.model.js';
 import Restaurant from '../models/restaurant.model.js';
 import { deleteImagesFromDocument } from '../services/image.service.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
 
 export async function getAllPublicEvents(query) {
     const { page, limit } = query;
@@ -111,8 +111,7 @@ export async function getPrivateEventsByRestaurant(restaurant, query) {
 export async function getEventById(eventId) {
     const event = await Event.findById(eventId).lean();
     if (!event) return error(404, 'Event not found');
-    if (event.endDate < new Date()) return error(404, 'Event expired');
-    event.reservedPax = await getBookedPaxForEvent(event._id);
+    if (event.endDate > new Date()) event.reservedPax = await getBookedPaxForEvent(event._id);
     return success(event);
 }
 
@@ -309,9 +308,8 @@ export async function deleteEvent(event) {
         deleteImagesFromDocument(event, 'mainImage'),
     ]);
 
-    const deletedEvent = event.toObject();
     await event.deleteOne();
-    return success(deletedEvent);
+    return success(wrapMessage('Event deleted successfully'));
 }
 
 // helper services

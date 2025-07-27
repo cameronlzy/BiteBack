@@ -15,3 +15,7 @@ export function success(data, status = 200) {
 export function wrapError(message) {
   return { error: message };
 }
+
+export function wrapMessage(message) {
+  return { message };
+}

@@ -8,7 +8,7 @@ export default async function() {
     await mongoose.connect(db, { autoIndex: false })
       .then(() => {
         const uri = new URL(db);
-        logger.info(`Connected to ${uri.host}/${uri.pathname.replace('/', '')}`);
+        return logger.info(`Connected to ${uri.host}/${uri.pathname.replace('/', '')}`);
       });
   }
 }

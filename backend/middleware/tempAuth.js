@@ -8,8 +8,8 @@ export default function (req, res, next) {
 
   try {
     const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
-    if (!decoded.username) {
-      return res.status(401).json(wrapError('Complete signup to access this route'));
+    if (decoded.username) {
+      return res.status(401).json(wrapError('Invalid temp token'));
     }
 
     req.user = decoded;

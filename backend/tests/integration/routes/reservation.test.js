@@ -315,7 +315,7 @@ describe('reservation test', () => {
 
             // create a user
             user = await createTestUser('customer');
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             user.profile = profile._id;
             await user.save();
             await profile.save();
@@ -472,16 +472,11 @@ describe('reservation test', () => {
             .set('Cookie', [cookie]);
         };
 
-        it('should return 200 if valid request', async () => {
+        it('should return 200 and delete reservation', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            
-            const requiredKeys = [
-                'customer', 'restaurant', 'startDate', 'pax'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
 
-            const reservationInDb = await Reservation.findById(res.body._id);
+            const reservationInDb = await Reservation.exists({ _id: reservationId });
             expect(reservationInDb).toBeNull();
         });
     });

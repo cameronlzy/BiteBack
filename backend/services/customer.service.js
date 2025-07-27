@@ -1,3 +1,6 @@
+import _ from 'lodash';
+import crypto from 'crypto';
+import config from 'config';
 import User from '../models/user.model.js';
 import CustomerProfile from '../models/customerProfile.model.js';
 import Review from '../models/review.model.js';
@@ -5,7 +8,9 @@ import Reservation from '../models/reservation.model.js';
 import * as reviewService from '../services/review.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
+import { sendVerifyEmail } from '../helpers/sendEmail.js';
+import ReviewBadgeVote from '../models/reviewBadgeVote.model.js';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
@@ -19,11 +24,69 @@ export async function getMe(userId) {
 export async function publicProfile(customerId) {
     // get customer
     const customer = await CustomerProfile.findById(customerId)
-        .select('+totalBadges +dateJoined +username')
+        .populate({
+            path: 'user',
+            select: 'username'
+        })
+        .select('dateJoined user')
         .lean();
     if (!customer) return error(404, 'Customer not found');
 
-    return success(customer);
+    const reviews = await Review.find({ customer: customer._id }).select('_id').lean();
+    const reviewIds = reviews.map(r => r._id);
+
+    const badgeCounts = await ReviewBadgeVote.aggregate([
+        { $match: { review: { $in: reviewIds } } },
+        {
+            $group: {
+                _id: '$badgeIndex',
+                count: { $sum: 1 }
+            }
+        }
+    ]);
+
+    const totalBadges = [0, 0, 0, 0];
+    for (const { _id, count } of badgeCounts) {
+        totalBadges[_id] = count;
+    }
+
+    return success({
+        dateJoined: customer.dateJoined,
+        username: customer.user.username,
+        totalBadges, 
+        reviewCount: reviewIds.length
+    });
+}
+
+export async function createProfile(tempUser, data) {
+    return await withTransaction(async (session) => {
+        const user = await User.findById(tempUser._id).session(session);
+        if (!user) return error(404, 'User not found');
+
+        const profile = new CustomerProfile(_.pick(data, ['name', 'contactNumber', 'emailOptOut']));
+        profile.user = user._id;
+        await profile.save(wrapSession(session));
+
+        user.profile = profile._id;
+        await user.save(wrapSession(session));
+        
+        if (user.isVerified) {
+            const token = generateAuthToken(user);
+            return { token, status: 200, body: profile.toObject() };
+        } else {
+            // send email
+            const token = crypto.randomBytes(32).toString('hex');
+            const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+            user.verifyEmailToken = hash;
+            user.verifyEmailExpires = Date.now() + 30 * 60 * 1000;
+            await user.save(wrapSession(session));
+
+            const link = `${config.get('frontendLink')}/verify-email?token=${token}`;
+            await sendVerifyEmail(user.email, user.username, link);
+            return success(profile.toObject());
+        }
+    });
 }
 
 export async function updateMe(update, authUser) {
@@ -60,10 +123,10 @@ export async function updateMe(update, authUser) {
         await user.save(wrapSession(session));
 
         // selectively update profile fields
-        if (update.username !== undefined) user.profile.username = update.username;
         if (update.name !== undefined) user.profile.name = update.name;
         if (update.contactNumber !== undefined) user.profile.contactNumber = update.contactNumber;
         if (update.favCuisines !== undefined) user.profile.favCuisines = update.favCuisines;
+        if (update.emailOptOut !== undefined) user.profile.emailOptOut = update.emailOptOut;
 
         await user.profile.save(wrapSession(session));
 
@@ -96,6 +159,6 @@ export async function deleteMe(user) {
         // delete user
         await user.deleteOne(wrapSession(session));
         
-        return success(user.toObject());
+        return success(wrapMessage('Customer deleted successfully'));
     });
 }

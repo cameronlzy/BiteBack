@@ -2,11 +2,14 @@ import User from '../../../models/user.model.js';
 import CustomerProfile from '../../../models/customerProfile.model.js';
 import { createTestUser } from '../../factories/user.factory.js';
 import { createTestCustomerProfile } from '../../factories/customerProfile.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, generateTempToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import config from 'config';
+import cookieParser from 'cookie';
+import jwt from 'jsonwebtoken';
 
 describe('customer test', () => {
     let server;
@@ -52,7 +55,7 @@ describe('customer test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'email', 'username', 'role', 'profile'
+                'email', 'role', 'profile'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -76,7 +79,7 @@ describe('customer test', () => {
             user = await createTestUser('customer');
 
             // create customer profile
-            profile = createTestCustomerProfile(user);
+            profile = createTestCustomerProfile(user._id);
             await profile.save();
             customerId = profile._id;
 
@@ -95,19 +98,62 @@ describe('customer test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'dateJoined', 'totalBadges'
+                'dateJoined'
             ]
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/customers', () => {
+        let token;
+        let user;
+        let cookie;
+        let name, contactNumber;
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+            await CustomerProfile.deleteMany({});
+
+            user = await createTestUser('customer');
+            user.profile = undefined;
+            user.username = undefined;
+            await user.save();
+            token = generateTempToken(user);
+            cookie = setTokenCookie(token);
+
+            name = 'name';
+            contactNumber = '87654321';
+        });
+
+        const exec = () => {
+            return request(server)
+                .post('/api/customers')
+                .set('Cookie', [cookie])
+                .send({
+                    name, contactNumber
+                });
+        };
+
+        it('should return 403 if owner', async () => {
+            let owner = await createTestUser('owner');
+            token = generateTempToken(owner);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 and profile', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'name', 'contactNumber'
+            ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
     describe('PATCH /api/customers/me', () => {
         let token;
-        let email;
-        let username;
-        let name;
-        let contactNumber;
-        let favCuisines;
         let user;
         let profile;
         let newContactNumber;
@@ -119,17 +165,9 @@ describe('customer test', () => {
 
             // creates user with password: Password@123
             user = await createTestUser('customer');
-            email = user.email;
-            username = user.username;
 
             // create customer profile
-            name = "test";
-            contactNumber = "87654321";
-            favCuisines = ['Chinese'];
-            profile = new CustomerProfile({
-                user: user._id,
-                name, contactNumber, username, favCuisines
-            });
+            profile = createTestCustomerProfile(user._id);
             await profile.save();
 
             user.profile = profile._id;
@@ -146,16 +184,9 @@ describe('customer test', () => {
                 .patch('/api/customers/me')
                 .set('Cookie', [cookie])
                 .send({
-                    email, username, name, 
-                    contactNumber: newContactNumber, favCuisines
+                    contactNumber: newContactNumber
                 });
         };
-
-        it('should return 400 if invalid request', async () => {
-            email = 'notEmail';
-            const res = await exec();
-            expect(res.status).toBe(400);
-        });
 
          it('should return 404 if user not found', async () => {
             let otherUser = await createTestUser('customer');
@@ -168,8 +199,12 @@ describe('customer test', () => {
         it('should return 400 if username already taken', async () => {
             let otherUser = await createTestUser('customer');
             await otherUser.save();
-            username = otherUser.username;
-            const res = await exec();
+            const res = await request(server)
+            .patch('/api/customers/me')
+            .set('Cookie', [cookie])
+            .send({
+                username: otherUser.username
+            });
             expect(res.status).toBe(400);
         });
 
@@ -190,6 +225,23 @@ describe('customer test', () => {
             expect(res.body).not.toHaveProperty('password');
             expect(res.body.profile).toHaveProperty('name');
             expect(res.body.profile).toHaveProperty('contactNumber');
+        });
+
+        it('should return valid jwtToken', async () => {
+            const res = await exec();
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
         });
     });
 
@@ -228,16 +280,11 @@ describe('customer test', () => {
             expect(res.status).toBe(400);
         });
 
-        it('should return 200 if valid token and delete user', async () => {
+        it('should return 200 and delete user', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            const requiredKeys = [
-                'email', 'username', 'role', 'profile'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-
-            let dbUser = await User.findById(userId).lean();
+            let dbUser = await User.exists({ _id: userId });
             expect(dbUser).toBeNull();
         });
     });

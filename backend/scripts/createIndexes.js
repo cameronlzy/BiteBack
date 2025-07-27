@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const modelsFolder = path.resolve(__dirname, '../models');
 
-async function createAllIndexes() {
+async function createIndexes() {
   try {
     await mongoose.connect(config.get('mongoURI'), {
       autoIndex: false,
@@ -40,4 +40,4 @@ async function createAllIndexes() {
   }
 }
 
-createAllIndexes();
+createIndexes();

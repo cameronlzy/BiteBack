@@ -206,7 +206,53 @@ export async function deletePromotion(promotion) {
         deleteImagesFromDocument(promotion, 'mainImage'),
     ]);
 
-    const deletedPromotion = promotion.toObject();
     await promotion.deleteOne();
-    return success(deletedPromotion);
+    return success('Promotion successfully deleted');
+}
+
+// helper services
+export async function getRandomActivePromotions(amount) {
+    const now = new Date();
+
+    const promotions = await Promotion.aggregate([
+        {
+            $match: {
+                isActive: true,
+                endDate: { $gte: now },
+            },
+        },
+        { $sample: { size: amount } },
+        {
+            $addFields: {
+                hasStarted: { $lte: ['$startDate', now] }
+            }
+        },
+        {
+            $sort: { hasStarted: -1 }
+        },
+        {
+            $lookup: {
+                from: 'restaurants',
+                localField: 'restaurant',
+                foreignField: '_id',
+                as: 'restaurant',
+            },
+        },
+        { $unwind: '$restaurant' },
+        {
+            $project: {
+                title: 1,
+                description: 1,
+                bannerImage: 1,
+                startDate: 1,
+                endDate: 1,
+                restaurant: {
+                    _id: '$restaurant._id',
+                    name: '$restaurant.name',
+                }
+            },
+        },
+    ]);
+
+    return promotions;
 }

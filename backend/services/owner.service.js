@@ -1,3 +1,7 @@
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import _ from 'lodash';
+import config from 'config';
 import User from '../models/user.model.js';
 import OwnerProfile from '../models/ownerProfile.model.js';
 import Restaurant from '../models/restaurant.model.js';
@@ -5,10 +9,9 @@ import Staff from '../models/staff.model.js';
 import * as restaurantService from '../services/restaurant.service.js';
 import { generateAuthToken } from '../helpers/token.helper.js';
 import { wrapSession, withTransaction } from '../helpers/transaction.helper.js';
-import _ from 'lodash';
 import simpleCrypto from '../helpers/encryption.helper.js';
-import bcrypt from 'bcryptjs';
-import { error, success } from '../helpers/response.js';
+import { error, success, wrapMessage } from '../helpers/response.js';
+import { sendVerifyEmail } from '../helpers/sendEmail.js';
 
 export async function getMe(userId) {
     const user = await User.findById(userId)
@@ -22,6 +25,37 @@ export async function getMe(userId) {
         .select('-password').lean();
     if (!user) return error(400, 'Owner not found');
     return success(user);
+}
+
+export async function createProfile(tempUser, data) {
+    return await withTransaction(async (session) => {
+        const user = await User.findById(tempUser._id).session(session);
+        if (!user) return error(404, 'User not found');
+
+        const profile = new OwnerProfile(_.pick(data, ['companyName']));
+        profile.user = user._id;
+        await profile.save(wrapSession(session));
+        
+        user.profile = profile._id;
+        await user.save(wrapSession(session));
+
+        if (user.isVerified) {
+            const token = generateAuthToken(user);
+            return { token, status: 200, body: profile.toObject() };
+        } else {
+            // send email
+            const token = crypto.randomBytes(32).toString('hex');
+            const hash = crypto.createHash('sha256').update(token).digest('hex');
+
+            user.verifyEmailToken = hash;
+            user.verifyEmailExpires = Date.now() + 30 * 60 * 1000;
+            await user.save(wrapSession(session));
+
+            const link = `${config.get('frontendLink')}/verify-email?token=${token}`;
+            await sendVerifyEmail(user.email, user.username, link);
+            return success(profile.toObject());
+        }
+    });
 }
 
 export async function getStaffWithStepUp(authUser, password) {
@@ -94,7 +128,6 @@ export async function updateMe(update, authUser) {
         await user.save(wrapSession(session));
 
         // selectively update profile fields
-        if (update.username !== undefined) user.profile.username = update.username;
         if (update.companyName !== undefined) user.profile.companyName = update.companyName;
 
         await user.profile.save(wrapSession(session));
@@ -125,6 +158,6 @@ export async function deleteMe(user) {
         // delete user
         await user.deleteOne(wrapSession(session));
         
-        return success(user.toObject());
+        return success(wrapMessage('Owner successfully deleted'));
     });
 }

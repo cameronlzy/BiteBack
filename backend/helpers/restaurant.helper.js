@@ -20,6 +20,20 @@ export function convertOpeningHoursToUTC(openingHoursString, timezone = 'Asia/Si
   return converted.join('|');
 }
 
+export function convertUTCOpeningHoursToLocal(utcHoursStr, targetTimezone = 'Asia/Singapore') {
+  if (!utcHoursStr || utcHoursStr.toLowerCase() === 'x') return 'x';
+
+  const [startUTC, endUTC] = utcHoursStr.split('-');
+
+  const start = DateTime.fromFormat(startUTC, 'HH:mm', { zone: 'utc' });
+  const end = DateTime.fromFormat(endUTC, 'HH:mm', { zone: 'utc' });
+
+  const startLocal = start.setZone(targetTimezone);
+  const endLocal = end.setZone(targetTimezone);
+
+  return `${startLocal.toFormat('HH:mm')}-${endLocal.toFormat('HH:mm')}`;
+}
+
 export function createSlots(openingHoursString, localDateTime, slotDuration = 60) {
   const openingHours = openingHoursString.split('|');
   const date = localDateTime;
@@ -32,8 +46,12 @@ export function createSlots(openingHoursString, localDateTime, slotDuration = 60
   const openTime = DateTime.fromFormat(openStr, 'HH:mm', { zone: 'utc' })
     .set({ year: date.year, month: date.month, day: date.day });
 
-  const closeTime = DateTime.fromFormat(closeStr, 'HH:mm', { zone: 'utc' })
+  let closeTime = DateTime.fromFormat(closeStr, 'HH:mm', { zone: 'utc' })
     .set({ year: date.year, month: date.month, day: date.day });
+
+  if (closeTime <= openTime) {
+    closeTime = closeTime.plus({ days: 1 });
+  }
 
   const slots = [];
   let slotStart = openTime;
@@ -53,26 +71,27 @@ export function filterOpenRestaurants(restaurants, nowUTC = DateTime.utc()) {
     const currentDay = localNow.weekday - 1;
     const days = restaurant.openingHours.split('|');
     const hoursToday = days[currentDay];
-
     if (!hoursToday || hoursToday.toLowerCase() === 'x') return false;
 
-    const [startStr, endStr] = hoursToday.split('-');
+    const localHoursToday = convertUTCOpeningHoursToLocal(hoursToday, timezone);
+
+    const [startStr, endStr] = localHoursToday.split('-');
     if (!startStr || !endStr) return false;
 
     const [startHour, startMin] = startStr.split(':').map(Number);
     const [endHour, endMin] = endStr.split(':').map(Number);
 
-    const startUTC = nowUTC.set({ hour: startHour, minute: startMin, second: 0 });
-    let endUTC = nowUTC.set({ hour: endHour, minute: endMin, second: 59 });
-    if (endUTC < startUTC) endUTC = endUTC.plus({ days: 1 });
+    const localBase = localNow.startOf('day');
+    const localOpen = localBase.plus({ hours: startHour, minutes: startMin }); 
+    const localClose = localBase.plus({ hours: endHour, minutes: endMin });
 
-    return nowUTC >= startUTC && nowUTC <= endUTC;
+    const isOpen = localNow >= localOpen && localNow <= localClose; 
+
+    return isOpen;
   });
 }
 
 export function getCurrentTimeSlotStartUTC(restaurant) {
-  const now = DateTime.utc();
-  const today = now.startOf('day');
   const todayOpening = getOpeningHoursToday(restaurant);
 
   if (todayOpening === 'x') {
@@ -80,22 +99,26 @@ export function getCurrentTimeSlotStartUTC(restaurant) {
       return null;
   }
 
-  const [openStr, closeStr] = todayOpening.split('-');
+  const localOpening = convertUTCOpeningHoursToLocal(todayOpening, restaurant.timezone);
+
+  const [openStr, closeStr] = localOpening.split('-');
   const [openHour, openMinute] = openStr.split(':').map(Number);
   const [closeHour, closeMinute] = closeStr.split(':').map(Number);
+  const localNow = DateTime.utc().setZone(restaurant.timezone);
+  const localToday = localNow.startOf('day');
 
-  const openingTime = today.set({ hour: openHour, minute: openMinute, second: 0, millisecond: 0 });
-  let closingTime = today.set({ hour: closeHour, minute: closeMinute, second: 0, millisecond: 0 });
+  const openingTime = localToday.set({ hour: openHour, minute: openMinute, second: 0, millisecond: 0 });
+  let closingTime = localToday.set({ hour: closeHour, minute: closeMinute, second: 0, millisecond: 0 });
 
   if (closingTime <= openingTime) {
     closingTime = closingTime.plus({ days: 1 });
   }
 
-  if (now < openingTime || now >= closingTime) {
+  if (localNow < openingTime || localNow >= closingTime) {
     return null;
   }
 
-  const minutesSinceOpen = Math.floor(now.diff(openingTime, 'minutes').minutes);
+  const minutesSinceOpen = Math.floor(localNow.diff(openingTime, 'minutes').minutes);
   const slotIndex = Math.floor(minutesSinceOpen / restaurant.slotDuration);
   const slotStart = openingTime.plus({ minutes: slotIndex * restaurant.slotDuration }).set({ second: 0, millisecond: 0 });
 

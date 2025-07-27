@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import config from 'config';
 
+const JWT_SECRET = config.get('jwtPrivateKey');
+
 export function generateAuthToken(user) {
   return jwt.sign(
     {
@@ -10,7 +12,19 @@ export function generateAuthToken(user) {
       role: user.role,
       profile: user.profile,
     },
-    config.get('jwtPrivateKey')
+    JWT_SECRET
+  );
+}
+
+export function generateTempToken(user) {
+  return jwt.sign(
+    {
+      _id: user._id,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+    },
+    JWT_SECRET, { expiresIn: '15m' }
   );
 }
 
@@ -22,7 +36,25 @@ export function staffGenerateAuthToken(staff) {
       role: staff.role,
       restaurant: staff.restaurant
     },
-    config.get('jwtPrivateKey')
+    JWT_SECRET
   );
 }
 
+export function generateUnsubscribeToken(customerId) {
+  return jwt.sign(
+    { 
+      customerId 
+    }, 
+    JWT_SECRET, { expiresIn: '15m' }
+  );
+}
+
+export function generateExchangeToken(user) {
+  return jwt.sign(
+    { 
+      _id: user._id,
+      isNewUser: user._isNew
+    }, 
+    JWT_SECRET, { expiresIn: '5m' }
+  );
+}

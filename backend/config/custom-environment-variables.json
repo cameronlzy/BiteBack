@@ -5,6 +5,7 @@
   },
   "jwtPrivateKey": "BITEBACK_JWT_PRIVATE_KEY",
   "mongoURI": "BITEBACK_DB",
+  "frontendLink": "FRONTEND_LINK",
   "cloudinary": {
 		"cloudName": "CLOUDINARY_CLOUD_NAME",
 		"apiKey": "CLOUDINARY_API_KEY",
@@ -14,5 +15,9 @@
   "encryptionSecret": "ENCRYPTION_SECRET",
   "redis": {
     "url": "REDIS_URL"
+  },
+  "google": {
+    "clientId": "GOOGLE_CLIENT_ID",
+    "clientSecret": "GOOGLE_CLIENT_SECRET"
   }
 }

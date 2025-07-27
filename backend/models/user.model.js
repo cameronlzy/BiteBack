@@ -11,22 +11,23 @@ const userSchema = new mongoose.Schema({
       message: 'Invalid email'
     }
   },
-  username: { type: String, minlength: 2, required: true, unique: true, trim: true },
-  password: { type: String, required: true },
+  username: { type: String, minlength: 2, unique: true, trim: true, sparse: true },
+  password: { type: String },
   role: { type: String, enum: ['customer', 'owner'], required: true },
   profile: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'roleProfile',
-    required: true,
+    refPath: 'profileModel',
   },
-  roleProfile: {
-    type: String,
-    enum: ['CustomerProfile', 'OwnerProfile'],
-    required: true,
-  },
+  isVerified: { type: Boolean, default: false },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+  verifyEmailToken: { type: String },
+  verifyEmailExpires: { type: Date },
 }, { versionKey: false });
+
+userSchema.virtual('profileModel').get(function () {
+  return this.role === 'customer' ? 'CustomerProfile' : 'OwnerProfile';
+});
 
 const User = mongoose.model('User', userSchema);
 

@@ -1,32 +1,8 @@
 import mongoose from 'mongoose';
 
-const cuisineList = [
-  'Chinese',
-  'Malay',
-  'Indian',
-  'Peranakan',
-  'Western',
-  'Thai',
-  'Japanese',
-  'Korean',
-  'Vietnamese',
-  'Indonesian',
-  'Filipino',
-  'Middle Eastern',
-  'Mexican',
-  'Italian',
-  'French',
-  'Hawker',
-  'Fusion',
-  'Seafood',
-  'Vegetarian',
-  'Halal'
-];
-
 const customerProfileSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   name: { type: String, minlength: 2, required: true },
-  username: { type: String, minlength: 2, required: true },
   contactNumber: {
     type: String,
     required: true,
@@ -37,38 +13,7 @@ const customerProfileSchema = new mongoose.Schema({
       message: props => `${props.value} is not a valid 8-digit contact number!`
     }
   },
-  favCuisines: {
-    type: [String],
-    required: true,
-    validate: [
-      {
-      validator: function (arr) {
-        return arr.length > 0;
-      },
-      message: 'favouriteCuisines must contain at least one cuisine.'
-      },
-      {
-        validator: function (arr) {
-        return arr.every(cuisine => cuisineList.includes(cuisine));
-      },
-        message: 'One or more cuisines are invalid.'
-      }
-    ]
-  },
-  totalBadges: {
-    type: [Number],
-    required: true,
-    validate: {
-      validator: function (arr) {
-        return (
-          Array.isArray(arr) &&
-          arr.length === 4 &&
-          arr.every(num => Number.isInteger(num) && num >= 0)
-        );
-      },
-      message: 'totalBadges must be an array of 4 non-negative integers.'
-    }, default: [0, 0, 0, 0]
-  }
+  emailOptOut: { type: Boolean, default: false },
 }, {
   timestamps: { createdAt: 'dateJoined', updatedAt: false }, 
   versionKey: false

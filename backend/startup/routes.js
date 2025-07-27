@@ -16,6 +16,7 @@ import rewardRedemption from '../routes/rewardRedemption.route.js';
 import events from '../routes/event.route.js';
 import menus from '../routes/menu.route.js';
 import orders from '../routes/order.route.js';
+import unsubscribe from '../routes/unsubscribe.route.js';
 
 export default function(app) {
   app.use(express.json());
@@ -35,6 +36,7 @@ export default function(app) {
   app.use('/api/events', events)
   app.use('/api/menu', menus);
   app.use('/api/orders', orders);
+  app.use('/api/unsubscribe', unsubscribe);
 
   // to log error
   app.use(error);

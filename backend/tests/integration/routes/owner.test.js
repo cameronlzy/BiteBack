@@ -6,12 +6,15 @@ import { createTestUser } from '../../factories/user.factory.js';
 import { createTestRestaurant } from '../../factories/restaurant.factory.js';
 import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
 import { createTestStaff } from '../../factories/staff.factory.js';
-import { generateAuthToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, generateTempToken } from '../../../helpers/token.helper.js';
 import { setTokenCookie } from '../../../helpers/cookie.helper.js';
 import { serverPromise } from '../../../index.js';
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import config from 'config';
+import cookieParser from 'cookie';
+import jwt from 'jsonwebtoken';
 
 describe('owner test', () => {
     let server;
@@ -25,11 +28,6 @@ describe('owner test', () => {
     });
 
     describe('GET /api/owners/me', () => {
-        let email;
-        let username;
-        let password;
-        let role;
-        let roleProfile;
         let token;
         let user;
         let cookie;
@@ -45,24 +43,7 @@ describe('owner test', () => {
             await OwnerProfile.deleteMany({});
             await Restaurant.deleteMany({});
 
-            email = "myEmail@gmail.com";
-            username = "username";
-            password = "myPassword@123";
-            role = "owner";
-            roleProfile = "OwnerProfile";
-
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-
-            user = new User({
-                email,
-                username,
-                password: hashedPassword,
-                role,
-                roleProfile,
-                profile: new mongoose.Types.ObjectId(),
-            });
-
+            user = await createTestUser('owner');
             await user.save();
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -80,7 +61,55 @@ describe('owner test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
             const requiredKeys = [
-                'email', 'username', 'role', 'profile'
+                'email', 'role', 'profile'
+            ];
+            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+        });
+    });
+
+    describe('POST /api/owners', () => {
+        let token;
+        let user;
+        let cookie;
+        let companyName;
+
+        const exec = () => {
+            return request(server)
+                .post('/api/owners')
+                .set('Cookie', [cookie])
+                .send({
+                    companyName
+                })
+        };
+
+        beforeEach(async () => {
+            await User.deleteMany({});
+            await OwnerProfile.deleteMany({});
+            await Restaurant.deleteMany({});
+
+            user = await createTestUser('owner');
+            user.username = undefined;
+            user.profile = undefined;
+            await user.save();
+            token = generateTempToken(user);
+            cookie = setTokenCookie(token);
+
+            companyName = 'name';
+        });
+
+        it('should return 403 if customer', async () => {
+            let customer = await createTestUser('customer');
+            token = generateTempToken(customer);
+            cookie = setTokenCookie(token);
+            const res = await exec();
+            expect(res.status).toBe(403);
+        });
+
+        it('should return 200 + user details', async () => {
+            const res = await exec();
+            expect(res.status).toBe(200);
+            const requiredKeys = [
+                'companyName'
             ];
             expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
         });
@@ -137,7 +166,7 @@ describe('owner test', () => {
             staff = await createTestStaff(restaurant._id);
 
             // create owner profile
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             profile.restaurants = [restaurant._id];
 
@@ -193,7 +222,7 @@ describe('owner test', () => {
             await restaurant.save();
 
             // create owner profile
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             await profile.save();
 
             user.profile = profile._id;
@@ -249,6 +278,23 @@ describe('owner test', () => {
             expect(res.body.profile).toHaveProperty('companyName');
             expect(res.body.profile).toHaveProperty('restaurants');
         });
+
+        it('should return valid jwtToken', async () => {
+            const res = await exec();
+            const cookies = res.headers['set-cookie'];
+            expect(cookies).toBeDefined();
+
+            const parsed = cookieParser.parse(cookies[0]);
+            const token = parsed.token;
+            expect(token).toBeDefined();
+    
+            const decoded = jwt.verify(token, config.get('jwtPrivateKey'));
+
+            const requiredKeys = [
+                'email', 'username', 'role', 'profile'
+            ];
+            expect(Object.keys(decoded)).toEqual(expect.arrayContaining(requiredKeys));
+        });
     });
 
     describe('DELETE /api/owners/me', () => {
@@ -290,12 +336,7 @@ describe('owner test', () => {
             const res = await exec();
             expect(res.status).toBe(200);
 
-            const requiredKeys = [
-                'email', 'username', 'role', 'profile'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
-
-            let dbUser = await User.findById(userId).lean();
+            let dbUser = await User.exists({ _id: userId });
             expect(dbUser).toBeNull();
         });
     });

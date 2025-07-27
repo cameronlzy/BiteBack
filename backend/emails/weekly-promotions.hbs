@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Promotions You Might Like</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; background: #f8f8f8; padding: 20px; color: #333;">
+    <h2 style="text-align: center; color: #20c4d8;">🎁 Promotions You Might Like</h2>
+
+    {{#each promotions}}
+    <div style="background: #fff; border-radius: 8px; overflow: hidden; margin: 20px auto; max-width: 600px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+      <img src="{{bannerImage}}" alt="{{title}}" style="width: 100%; height: auto; display: block;" />
+      <div style="padding: 15px;">
+        <div style="margin: 0 0 10px; font-size: 18px;">
+          <a href="{{../frontendLink}}/promotions/{{_id}}" style="color: #000; text-decoration: none; font-weight: bold;">
+            {{title}}
+          </a>
+          <span style="color: #000; font-size: 15px;"> by </span>
+          <a href="{{../frontendLink}}/restaurants/{{restaurant._id}}" style="color: #000; text-decoration: none; font-size: 15px">
+            {{restaurant.name}}
+          </a>
+        </div>
+        <p style="color: #000; margin: 0 0 10px;">{{description}}</p>
+
+        {{#if (isUpcoming startDate)}}
+          <p style="font-size: 14px; color: #888;">Starts on {{formatDate startDate}}</p>
+        {{else}}
+          <p style="font-size: 14px; color: #888;">Available until {{formatDate endDate}}</p>
+        {{/if}}
+      </div>
+    </div>
+    {{/each}}
+
+    <p style="text-align: center; margin-top: 40px; font-size: 14px; color: #999;">
+      Don’t want to receive these emails? 
+      <a href="{{unsubscribeLink}}" style="color: #20c4d8;">Unsubscribe</a>
+    </p>
+  </body>
+</html>

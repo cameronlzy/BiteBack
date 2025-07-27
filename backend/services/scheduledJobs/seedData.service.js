@@ -6,6 +6,7 @@ import QueueEntry from '../../models/queueEntry.model.js';
 import QueueCounter from '../../models/queueCounter.model.js';
 import Review from '../../models/review.model.js';
 import { createSlots, filterOpenRestaurants } from '../../helpers/restaurant.helper.js';
+import { updateRatingForRestaurant } from '../review.service.js';
 const QUEUE_GROUPS = ['small', 'medium', 'large'];
 
 function getRandomInt(min, max) {
@@ -14,7 +15,6 @@ function getRandomInt(min, max) {
 
 export async function seedReservations() {
     const localToday = DateTime.utc().setZone('Asia/Singapore').startOf('day');
-    const utcToday = localToday.toUTC();
     const [allRestaurants, customers] = await Promise.all([
         Restaurant.find().lean(),
         CustomerProfile.find().select('_id').lean(),
@@ -28,8 +28,8 @@ export async function seedReservations() {
 
         for (let i = 0; i < getRandomInt(20, 50); i++) {
             const randomSlot = slots[getRandomInt(0, slots.length - 1)];
-            const startTime = DateTime.fromFormat(randomSlot, 'HH:mm', { zone: 'utc' })
-                .set({ year: utcToday.year, month: utcToday.month, day: utcToday.day });
+            const [hour, minute] = randomSlot.split(':').map(Number);
+            const startTime = localToday.set({ hour, minute }).toUTC();
             const endTime = startTime.plus({ minutes: 60 });
 
             reservations.push(new Reservation({
@@ -133,6 +133,11 @@ export async function seedQueueAndReview() {
 
         if (reviews.length > 0) {
             await Review.insertMany(reviews);
+
+            const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
+            const count = reviews.length;
+
+            await updateRatingForRestaurant(restaurant._id, totalRating, count);
         }
     }
 }

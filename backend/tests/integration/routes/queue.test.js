@@ -158,15 +158,11 @@ describe('queue test', () => {
             queueEntryId = queueEntry._id;
         });
 
-        it('should return 200 if valid and delete it from the database', async () => {
+        it('should return 200 if valid and delete queue', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            const requiredKeys = [
-                'restaurant', 'customer', 'pax', 'queueGroup', 'status'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
 
-            const queueEntryInDb = await QueueEntry.findById(res.body._id);
+            const queueEntryInDb = await QueueEntry.exists({ _id: queueEntryId });
             expect(queueEntryInDb).toBeNull();
         });
     });

@@ -151,7 +151,7 @@ describe('promotion test', () => {
 
             // create owner
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             await user.save();
             token = generateAuthToken(user);
@@ -522,15 +522,11 @@ describe('promotion test', () => {
             expect(res.status).toBe(400);
         });
 
-        it('should return 200 and promotion object with required properties', async () => {
+        it('should return 200 and delete promotion', async () => {
             const res = await exec();
             expect(res.status).toBe(200);
-            const requiredKeys = [
-                'title', 'description', 'startDate', 'endDate'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
 
-            const promotionInDb = await Promotion.findById(res.body._id);
+            const promotionInDb = await Promotion.exists({ _id: promotionId });
             expect(promotionInDb).toBeNull();
         });
     });

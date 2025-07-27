@@ -47,7 +47,7 @@ describe('analytics test', () => {
             await OwnerProfile.deleteMany({});
 
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -93,7 +93,7 @@ describe('analytics test', () => {
             await OwnerProfile.deleteMany({});
 
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);
@@ -162,7 +162,7 @@ describe('analytics test', () => {
             await redisClient.flushall();
 
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             token = generateAuthToken(user);
             cookie = setTokenCookie(token);

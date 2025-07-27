@@ -89,7 +89,7 @@ describe('event test', () => {
 
             // create owner
             user = await createTestUser('owner');
-            profile = createTestOwnerProfile(user);
+            profile = createTestOwnerProfile(user._id);
             user.profile = profile._id;
             await user.save();
             token = generateAuthToken(user);
@@ -207,17 +207,6 @@ describe('event test', () => {
 
         it('should return 404 if no event with ID', async () => {
             eventId = new mongoose.Types.ObjectId();
-            const res = await exec();
-            expect(res.status).toBe(404);  
-        });
-
-        it('should return 404 if past event', async () => {
-            event = createTestEvent({ 
-                startDate: DateTime.utc().minus({ weeks: 2 }).toJSDate(), 
-                endDate: DateTime.utc().minus({ weeks: 1 }).toJSDate(),
-            });
-            await event.save();
-            eventId = event._id;
             const res = await exec();
             expect(res.status).toBe(404);  
         });
@@ -511,16 +500,9 @@ describe('event test', () => {
         it('should return 200 and event', async () => {
             const res = await exec();
             expect(res.status).toBe(200);  
-            const requiredKeys = [
-                'restaurant',
-                'title',
-                'description',
-                'startDate',
-                'endDate',
-                'paxLimit',
-                'status'
-            ];
-            expect(Object.keys(res.body)).toEqual(expect.arrayContaining(requiredKeys));
+            
+            const eventInDb = await Event.exists({ _id: eventId });
+            expect(eventInDb).toBeNull();
         });
     });
 });
