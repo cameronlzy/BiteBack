@@ -238,25 +238,27 @@ export async function getVisitCount(authUser, restaurant) {
 }
 
 export async function getReservationsByRestaurant(restaurant, query) {
-    const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
-    if (!timeSlotStartUTC) return success([]);
+  const timeSlotStartUTC = getCurrentTimeSlotStartUTC(restaurant);
+  if (!timeSlotStartUTC) return success([]);
 
-    const baseFilter = {
-        restaurant: restaurant._id,
-        startDate: { $lt: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate() },
-        endDate: { $gt: timeSlotStartUTC.toJSDate() }
-    };
+  const baseFilter = {
+    restaurant: restaurant._id,
+    startDate: { $lt: timeSlotStartUTC.plus({ minutes: restaurant.slotDuration }).toJSDate() },
+    endDate: { $gt: timeSlotStartUTC.toJSDate() }
+  };
 
-    if (query.event === 'true') {
-        baseFilter.event = { $exists: true, $ne: null };
-    }
+  if (query.event === 'true') {
+    baseFilter.event = { $exists: true };
+  } else if (query.event === 'false') {
+    baseFilter.event = { $exists: false };
+  }
 
-    const reservations = await Reservation.find(baseFilter)
-        .populate('customer', 'name contactNumber')
-        .populate('event', '_id title')
-        .lean();
+  const reservations = await Reservation.find(baseFilter)
+    .populate('customer', 'name contactNumber')
+    .populate('event', '_id title')
+    .lean();
 
-    return success(reservations);
+  return success(reservations);
 }
 
 export async function createRestaurant(authUser, data) {
