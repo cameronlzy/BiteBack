@@ -7,6 +7,7 @@ import ReviewCard from "./ReviewCard"
 import { useSearchParams } from "react-router-dom"
 import Pagination from "../common/Pagination"
 import LoadingSpinner from "../common/LoadingSpinner"
+import NoResultsFound from "../common/NoResultsFound"
 
 const CustomerReviews = ({ viewedCustomer, user }) => {
   const [reviews, setReviews] = useState([])
@@ -82,7 +83,7 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
       </h2>
 
       {reviews?.length === 0 ? (
-        <p className="text-gray-500 mb-2">No reviews found.</p>
+        <NoResultsFound text="No reviews found." />
       ) : (
         <>
           <SortBy
@@ -99,7 +100,11 @@ const CustomerReviews = ({ viewedCustomer, user }) => {
               review={review}
               currentRestaurant={review.restaurant}
               user={viewedCustomer}
-              onDelete={handleReviewDelete}
+              onDelete={
+                user?.profile?._id === viewedCustomer?.profile?._id
+                  ? handleReviewDelete
+                  : null
+              }
               showRestaurant={true}
             />
           ))}

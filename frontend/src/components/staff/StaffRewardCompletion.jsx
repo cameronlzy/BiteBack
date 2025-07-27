@@ -66,8 +66,8 @@ const StaffRewardCompletion = () => {
             type="submit"
             className="w-full"
             condition={form.formState.isSubmitting}
-            normalText="Update Points"
-            loadingText="Updating..."
+            normalText="Redeem Reward"
+            loadingText="Redeeming..."
           />
         </form>
       </FormProvider>

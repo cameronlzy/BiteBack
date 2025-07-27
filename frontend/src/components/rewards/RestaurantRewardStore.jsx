@@ -20,12 +20,16 @@ import { ownedByUser, userIsOwner } from "@/utils/ownerCheck"
 import CustomerPoints from "./CustomerPoints"
 import Pagination from "../common/Pagination"
 import BackButton from "../common/BackButton"
+import NoResultsFound from "../common/NoResultsFound"
+import { Info } from "lucide-react"
+import HowToPage from "./HowToPage"
 
 const RestaurantRewardStore = ({ user }) => {
   const { restaurantId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const [isOwner, setIsOwner] = useState(false)
+  const [showHowTo, setShowHowTo] = useState(false)
   const [rewards, setRewards] = useState(null)
   const [restaurant, setRestaurant] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -69,10 +73,17 @@ const RestaurantRewardStore = ({ user }) => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
+      <HowToPage showHowTo={showHowTo} setShowHowTo={setShowHowTo} />
       <h1 className="text-2xl font-bold mb-6 text-center">
         Rewards @ {restaurant?.name} - {getShortAddress(restaurant?.address)}
       </h1>
       <BackButton from={from} />
+      <Button
+        onClick={() => setShowHowTo(true)}
+        className="mb-4 bg-blue-100 hover:bg-blue-200 text-blue-900 font-semibold"
+      >
+        <Info /> How to earn points
+      </Button>
       {isOwner ? (
         <div className="flex justify-center mb-4">
           <Button onClick={() => navigate(`/rewards/${restaurantId}/new`)}>
@@ -88,9 +99,7 @@ const RestaurantRewardStore = ({ user }) => {
       ) : null}
 
       {rewards.length === 0 ? (
-        <p className="text-muted-foreground text-center">
-          No rewards available
-        </p>
+        <NoResultsFound text="No rewards available." />
       ) : (
         <div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -121,7 +130,7 @@ const RestaurantRewardStore = ({ user }) => {
                     })
                   }
                   disabled={!reward.isActive}
-                  disabledMessage="Reward is currently inactive"
+                  disabledMessage="Reward is currently temporarily unavailable"
                 />
               )
             })}

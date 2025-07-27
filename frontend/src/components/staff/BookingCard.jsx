@@ -8,10 +8,15 @@ const statusColours = {
   "no-show": "bg-red-100 text-red-800",
 }
 
-const BookingCard = ({ booking: b, onStatusUpdate }) => {
+const BookingCard = ({ booking: b, onStatusUpdate, eventTitle }) => {
   return (
     <div className="border rounded-md p-4 mb-3 flex justify-between items-start">
       <div className="flex flex-col text-left space-y-1">
+        {eventTitle && (
+          <p className="font-semibold text-sm text-muted-foreground">
+            Event: {eventTitle}
+          </p>
+        )}
         {b.status === "event" ? (
           <p className="font-semibold">Booked By Owner</p>
         ) : (

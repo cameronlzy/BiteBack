@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react"
-import { useNavigate, useParams, useSearchParams } from "react-router-dom"
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom"
 import { toast } from "react-toastify"
 import { getEventsByRestaurant } from "@/services/eventService"
 import Pagination from "@/components/common/Pagination"
@@ -8,6 +13,8 @@ import LoadingSpinner from "../common/LoadingSpinner"
 import { Crown } from "lucide-react"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import EventCard from "./EventCard"
+import NoResultsFound from "../common/NoResultsFound"
+import BackButton from "../common/BackButton"
 
 const MembersEvents = () => {
   const { restaurantId } = useParams()
@@ -17,6 +24,8 @@ const MembersEvents = () => {
   const [totalCount, setTotalCount] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(false)
+  const location = useLocation()
+  const from = location.state?.from || `/restaurants/${restaurantId}`
 
   const navigate = useNavigate()
   const page = parseInt(searchParams.get("page") || "1", 10)
@@ -54,14 +63,13 @@ const MembersEvents = () => {
 
   return (
     <div className="max-w-6xl mx-auto my-10 px-4 space-y-6">
+      <BackButton from={from} />
       <h2 className="text-3xl font-bold text-center flex items-center justify-center gap-2">
         <Crown className="w-6 h-6" />
         Member Events by {restaurant?.name}
       </h2>
       {events.length === 0 ? (
-        <div className="text-center py-10 text-gray-500 italic">
-          No member events found.
-        </div>
+        <NoResultsFound text="No member events found." />
       ) : (
         <div className="flex flex-col gap-6">
           {events.map((e) => (

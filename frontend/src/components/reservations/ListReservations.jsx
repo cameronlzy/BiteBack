@@ -1,21 +1,27 @@
 import React, { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  MessageSquare,
+  Pen,
+  Trash2,
+  User,
+} from "lucide-react"
 import { DateTime } from "luxon"
-import { readableTimeSettings } from "@/utils/timeConverter"
 import { getReservations } from "@/services/reservationService"
 import { getRestaurant } from "@/services/restaurantService"
 import Pagination from "@/components/common/Pagination"
 import LoadingSpinner from "../common/LoadingSpinner"
-import { Link, useLocation } from "react-router-dom"
+import NoResultsFound from "../common/NoResultsFound"
 
-const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
+const ListReservations = ({ onEdit, onDelete, showTag }) => {
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const location = useLocation()
 
   const fetchReservations = async () => {
     try {
@@ -46,97 +52,95 @@ const ListReservations = ({ user, onEdit, onDelete, showTag }) => {
   }, [page])
 
   const handleDelete = async (id) => {
-    await onDelete(id)
-    setReservations((prev) => prev.filter((res) => res._id !== id))
+    const response = await onDelete(id)
+    if (response === "confirmed") {
+      setReservations((prev) => prev.filter((res) => res._id !== id))
+    }
   }
 
   if (loading) return <LoadingSpinner size="md" />
 
   if (reservations.length === 0)
-    return <p className="text-gray-500">No current bookings.</p>
+    return <NoResultsFound text="No current bookings." />
 
   return (
     <>
-      {reservations.map((res, index) => (
-        <Card key={index} className="mb-4 shadow">
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <span>Booking Details</span>
-              {!res.event && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onEdit(res._id, res.restaurant)}
-                >
-                  Edit Details
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 text-sm text-gray-700">
-            {res.event && (
-              <Link
-                to={`/events/${res.event._id}`}
-                state={{ from: location.pathname }}
-                className="text-blue-800 text-base hover:underline font-medium"
-              >
-                {res.event.title}
-              </Link>
-            )}
-            <p>
-              <strong>Email:</strong> {user.email}
-            </p>
-            <p>
-              <strong>Phone:</strong> {user.profile.contactNumber || "-"}
-            </p>
-            <p>
-              <strong>Start Date & Time:</strong>{" "}
-              {DateTime.fromISO(res.startDate).toLocaleString(
-                readableTimeSettings
-              )}
-            </p>
-            <p>
-              <strong>End Date & Time:</strong>{" "}
-              {DateTime.fromISO(res.endDate).toLocaleString(
-                readableTimeSettings
-              )}
-            </p>
-            <p>
-              <strong>Guests:</strong> {res.pax}
-            </p>
-            <p>
-              <strong>Restaurant:</strong> {res.restaurantName} @{" "}
-              {res.restaurantAddress}
-            </p>
-            <p>
-              <strong>Remarks:</strong> {res.remarks || "-"}
-            </p>
-            <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {reservations.map((res, index) => (
+          <Card
+            key={index}
+            className="shadow p-4 flex flex-col justify-between"
+          >
+            <div className="space-y-2 text-sm text-gray-700">
+              <div className="flex items-center gap-2 font-semibold text-base">
+                <Calendar className="w-4 h-4" />
+                {res.event?.title || "Reservation Details"}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-500" />
+                {DateTime.fromISO(res.startDate).toFormat("DDD")} (
+                {DateTime.fromISO(res.startDate).toFormat("h:mm a")} -{" "}
+                {DateTime.fromISO(res.endDate).toFormat("h:mm a")})
+              </div>
+
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-gray-500" />
+                {res.pax} {res.pax > 1 ? "Guests" : "Guest"}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-gray-500" />
+                {res.restaurantName}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-gray-500" />
+                {res.remarks ? (
+                  <span>{res.remarks}</span>
+                ) : (
+                  <span className="italic text-gray-500">No Remarks</span>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-0 flex items-end justify-between">
               <span
-                className={`inline-block text-xs font-medium px-2 py-1 rounded-full ${
-                  showTag(res) === "Event"
-                    ? res?.status === "cancelled"
-                      ? "bg-red-100 text-red-700"
-                      : "bg-blue-100 text-blue-700"
+                className={`text-xs font-medium px-2 py-1 rounded-full ${
+                  res.status === "cancelled"
+                    ? "bg-orange-100 text-orange-700"
                     : "bg-green-100 text-green-700"
                 }`}
               >
-                {res?.status === "cancelled" ? "Cancelled" : showTag(res)}
+                {res.status === "cancelled" ? "Cancelled" : showTag(res)}
               </span>
+
+              <div className="flex space-x-2">
+                {!res.event && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="border"
+                    onClick={() => onEdit(res._id, res.restaurant)}
+                  >
+                    <Pen className="w-4 h-4" />
+                  </Button>
+                )}
+                {DateTime.fromISO(res.startDate) > DateTime.local() && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="border"
+                    onClick={() => handleDelete(res._id)}
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                )}
+              </div>
             </div>
-            {DateTime.fromISO(res.startDate) > DateTime.local() && (
-              <Button
-                className="text-red-600 hover:bg-red-100 transition-colors"
-                variant="ghost"
-                onClick={() => handleDelete(res._id)}
-              >
-                <Trash2 className="w-5 h-5" />
-                Delete Booking
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+          </Card>
+        ))}
+      </div>
 
       <div className="flex justify-center mt-6">
         <Pagination

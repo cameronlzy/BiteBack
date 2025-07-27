@@ -63,13 +63,10 @@ const PromotionPage = ({ user }) => {
         _id,
         isActive: !promotion.isActive,
       })
-      toast.success(
-        `Promotion ${updated.isActive ? "activated" : "deactivated"}`
-      )
+      toast.success(`Promotion ${updated.isActive ? "resumed" : "paused"}`)
       setPromotion((prev) => ({
         ...prev,
-        ...updated,
-        restaurant: prev?.restaurant,
+        isActive: updated.isActive,
       }))
     } catch (ex) {
       toast.error("Failed to toggle promotion status")
@@ -85,7 +82,7 @@ const PromotionPage = ({ user }) => {
       try {
         await deletePromotion(_id)
         toast.success("Promotion deleted")
-        window.location = "/promotions"
+        window.location = "/owner/events-promos"
       } catch (ex) {
         toast.error("Failed to delete promotion")
         throw ex
@@ -142,6 +139,8 @@ const PromotionPage = ({ user }) => {
       onDelete={!hasStarted ? handleDeletePromotion : null}
       onActivate={handleToggleActivate}
       currentlyActive={isActive}
+      activatePhrase="Resume Promotion"
+      deactivatePhrase="Pause Promotion"
       banner={
         !hasStarted ? (
           <div className="bg-yellow-50 text-yellow-900 border-t-4 border-yellow-400 px-4 py-3 flex items-center justify-between rounded-t-md">
@@ -189,7 +188,7 @@ const PromotionPage = ({ user }) => {
             {timeWindow?.startTime && timeWindow?.endTime && (
               <p className="text-gray-500 flex items-center gap-1">
                 <Clock className="w-4 h-4 inline-block" />
-                Active from {timeWindow.startTime} - {timeWindow.endTime}
+                Available from {timeWindow.startTime} - {timeWindow.endTime}
               </p>
             )}
           </div>

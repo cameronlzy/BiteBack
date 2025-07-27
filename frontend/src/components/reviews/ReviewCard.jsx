@@ -8,22 +8,11 @@ import { readableTimeSettings } from "@/utils/timeConverter"
 import { DateTime } from "luxon"
 import { Link } from "react-router-dom"
 import LoadingSpinner from "../common/LoadingSpinner"
-import ohnoImg from "@/assets/ohnobadge.png"
-import lovethisImg from "@/assets/lovethisbadge.png"
-import helpfulImg from "@/assets/helpfulbadge.png"
-import thanksImg from "@/assets/thanksbadge.png"
 import { addBadgeVote, removeBadgeVote } from "@/services/reviewService"
 import BadgeReactions from "../common/BadgeReactions"
 import OwnerReply from "./OwnerReply"
 import StarRating from "../common/StarRating"
-import { userIsOwner } from "@/utils/ownerCheck"
-
-const badges = [
-  { name: "helpful", image: helpfulImg },
-  { name: "thanks", image: thanksImg },
-  { name: "lovethis", image: lovethisImg },
-  { name: "ohno", image: ohnoImg },
-]
+import { badges } from "@/utils/badges"
 
 const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
   const [restaurant, setRestaurant] = useState(null)
@@ -89,11 +78,12 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
   return (
     <Card key={review._id} className="mb-4">
       <CardHeader>
-        <CardTitle className="flex flex-wrap justify-between items-start">
+        <CardTitle className="flex flex-wrap justify-between items-start space-y-1">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div>
               <Link
                 to={`/user-details/${review.customer}`}
+                state={{ from: location.pathname }}
                 className="font-semibold text-blue-600 underline"
               >
                 {review.username}
@@ -161,30 +151,25 @@ const ReviewCard = ({ review, user, onDelete, showRestaurant }) => {
               isSubmitting={isSubmitting}
             />
           </div>
-          {user &&
-            showRestaurant &&
-            (user?.profile?._id === review.customer ||
-              user._id === review.customer) && (
-              <Button
-                variant="ghost"
-                className="text-red-600 hover:bg-red-100 transition-colors"
-                onClick={() => onDelete(review._id)}
-              >
-                <Trash2 className="w-5 h-5" />
-                Delete Review
-              </Button>
-            )}
+          {user && showRestaurant && onDelete && (
+            <Button
+              variant="ghost"
+              className="text-red-600 hover:bg-red-100 transition-colors"
+              onClick={() => onDelete(review._id)}
+            >
+              <Trash2 className="w-5 h-5" />
+              Delete Review
+            </Button>
+          )}
         </div>
-        {user && userIsOwner(user) && (
-          <OwnerReply
-            review={review}
-            user={user}
-            restaurant={restaurant}
-            onReplyChange={(newReply) => {
-              review.reply = newReply
-            }}
-          />
-        )}
+        <OwnerReply
+          review={review}
+          user={user}
+          restaurant={restaurant}
+          onReplyChange={(newReply) => {
+            review.reply = newReply
+          }}
+        />
       </CardContent>
     </Card>
   )

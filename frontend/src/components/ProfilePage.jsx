@@ -86,12 +86,12 @@ const ProfilePage = ({ user, isLoading }) => {
         <div className="text-center mt-2">
           <h1 className="text-3xl font-bold">
             {user.role === "customer"
-              ? user.profile.name
-              : user.profile.companyName}
+              ? user.profile?.name
+              : user.profile?.companyName}
           </h1>
           {user.role === "customer" && (
             <p className="text-sm text-gray-500">
-              Contact: {user.profile.contactNumber}
+              Contact: {user.profile?.contactNumber}
             </p>
           )}
           <p className="text-sm text-gray-500">{user.email}</p>

@@ -223,11 +223,24 @@ const RestaurantForm = ({ user }) => {
         if (!restaurantId) finalRestaurantId = res._id
       }
 
-      if (selectedFiles.length > 0) {
-        const newFiles = selectedFiles.filter((f) => f instanceof File)
-        const keptUrls = selectedFiles.filter((f) => typeof f === "string")
+      const newFiles = selectedFiles.filter((f) => f instanceof File)
+      const keptUrls = selectedFiles.filter((f) => typeof f === "string")
 
+      const imagesChanged =
+        newFiles.length > 0 ||
+        existingImageUrls.length !== keptUrls.length ||
+        !keptUrls.every((url) => existingImageUrls.includes(url))
+
+      if (!restaurantId) {
+        if (newFiles.length === 0) {
+          toast.error("Please upload at least one image")
+          return
+        }
+
+        await uploadRestaurantImages(finalRestaurantId, newFiles)
+      } else if (imagesChanged) {
         let newImageUrls = []
+
         if (newFiles.length > 0) {
           newImageUrls = await uploadRestaurantImages(
             finalRestaurantId,

@@ -29,6 +29,9 @@ const CustomerReservations = ({ user }) => {
     if (confirmed) {
       await deleteReservation(reservationId)
       toast.success(`Booking deleted!`)
+      return "confirmed"
+    } else {
+      return "cancelled"
     }
   }
 

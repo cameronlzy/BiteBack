@@ -5,9 +5,12 @@ import CustomerPastRewards from "./CustomerPastRewards"
 import CustomerCurrentRewards from "./CustomerCurrentRewards"
 import { Button } from "@/components/ui/button"
 import BackButton from "../common/BackButton"
+import { Info } from "lucide-react"
+import HowToPage from "./HowToPage"
 
 const CustomerRewards = ({ user }) => {
   const [showPast, setShowPast] = useState(false)
+  const [showHowTo, setShowHowTo] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -24,7 +27,7 @@ const CustomerRewards = ({ user }) => {
   return (
     <>
       <BackButton from={from} />
-      <div className="max-w-5xl mx-auto mt-10 px-4">
+      <div className="max-w-5xl mx-auto mt-6 px-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">
             {showPast ? "Your Past Rewards" : "Your Current Rewards"}
@@ -36,6 +39,13 @@ const CustomerRewards = ({ user }) => {
             {showPast ? "Show Current" : "Show Past"}
           </Button>
         </div>
+        <Button
+          onClick={() => setShowHowTo(true)}
+          className="mb-2 bg-blue-100 hover:bg-blue-200 text-blue-900 font-semibold"
+        >
+          <Info /> How to earn points
+        </Button>
+        <HowToPage showHowTo={showHowTo} setShowHowTo={setShowHowTo} />
         {showPast ? <CustomerPastRewards /> : <CustomerCurrentRewards />}
       </div>
     </>

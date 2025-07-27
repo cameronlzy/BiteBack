@@ -4,7 +4,7 @@ import auth from "../../services/authService"
 import { toast } from "react-toastify"
 import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
-import { useLocation, useNavigate, useParams } from "react-router-dom"
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import {
   FormControl,
@@ -24,7 +24,8 @@ const ResetPassword = ({ user }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const from = location?.state?.from || "/"
-  const { token } = useParams()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get("token")
   const form = useForm({
     resolver: safeJoiResolver(
       user ? passwordChangeSchema : passwordResetSchema

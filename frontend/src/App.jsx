@@ -2,7 +2,6 @@ import "./App.css"
 import { useEffect, useState, Fragment } from "react"
 import { Routes, Route } from "react-router-dom"
 import { toast, ToastContainer } from "react-toastify"
-import auth from "./services/authService"
 import { getCustomerInfo, getOwnerInfo } from "./services/userService"
 import Home from "./components/Home"
 import LoginForm from "./components/authorisation/LoginForm"
@@ -43,6 +42,8 @@ import MembersEvents from "./components/events-booking/MembersEvents"
 import RestaurantMenu from "./components/preorder/RestaurantMenu"
 import MenuItemForm from "./components/preorder/MenuItemForm"
 import KitchenOrders from "./components/staff/KitchenOrders"
+import EmailVerificationForm from "./components/authorisation/EmailVerificationForm"
+import UnsubscribeEmail from "./components/promotions/UnsubscribeEmail"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -59,8 +60,9 @@ function App() {
   }, [])
   useEffect(() => {
     const savedRole = localStorage.getItem("role")
+    const midRegistration = localStorage.getItem("mid-registration")
 
-    if (!savedRole) {
+    if (!savedRole || midRegistration) {
       setLoading(false)
       return
     }
@@ -76,19 +78,12 @@ function App() {
       try {
         const user =
           savedRole === "owner" ? await getOwnerInfo() : await getCustomerInfo()
-
-        setUser(user)
-      } catch (ex) {
-        if (ex.response?.status === 401) {
-          await auth.logout()
-          localStorage.removeItem("role")
-          toast.info("Please re-login", {
-            toastId: "toast-relogin",
-          })
-        } else {
-          setUser(null)
-          throw ex
+        if (user.profile) {
+          setUser(user)
         }
+      } catch (ex) {
+        setUser(null)
+        throw ex
       } finally {
         setLoading(false)
       }
@@ -171,6 +166,10 @@ function App() {
           />
           <Route index element={<Home user={user} />} />
           <Route path="register" element={<RegisterForm user={user} />} />
+          <Route
+            path="complete-signup/:googleSignupRole"
+            element={<RegisterForm user={user} googleAuth={true} />}
+          />
           <Route
             path="me/edit"
             element={
@@ -257,7 +256,9 @@ function App() {
             }
           />
           <Route path="forgot-password" element={<ForgotPassword />} />
-          <Route path="reset-password/:token" element={<ResetPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="verify-email" element={<EmailVerificationForm />} />
+          <Route path="unsubscribe" element={<UnsubscribeEmail />} />
           <Route
             path="change-password"
             element={

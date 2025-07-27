@@ -303,15 +303,16 @@ const ReservationForm = ({ user }) => {
   const selectedTime = startDate
     ? DateTime.fromJSDate(startDate).toFormat("HH:mm")
     : null
-  const capacityForSlot = availableSlots.find(
-    (s) => s.time === selectedTime
-  )?.available
+  const capacityForSlot = (() => {
+    const slot = availableSlots.find((s) => s.time === selectedTime)
+    return slot && slot.available != null ? slot.available : 0
+  })()
 
   const availableTimeSlots = availableSlots.map((s) => s.time)
 
   const slotFullChecker = (time) => {
     const slot = availableSlots.find((s) => s.time === time)
-    const isFull = !slot || slot.available === 0
+    const isFull = !slot || slot.available === 0 || slot.available === null
     return isFull
   }
 

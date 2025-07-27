@@ -202,6 +202,8 @@ const EventPage = ({ user }) => {
       description={description}
       onActivate={handleToggleCancel}
       currentlyActive={isActive}
+      activatePhrase="Undo Cancellation"
+      deactivatePhrase="Mark as Cancelled"
       metaContent={
         <>
           <p className="text-base">

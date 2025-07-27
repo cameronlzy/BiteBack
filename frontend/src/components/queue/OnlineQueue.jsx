@@ -199,7 +199,9 @@ const OnlineQueue = ({ user }) => {
               </TableBody>
             </Table>
           </div>
-          <JoinQueue onJoin={handleJoin} restaurantId={restaurantId} />
+          {user?.role === "customer" && (
+            <JoinQueue onJoin={handleJoin} restaurantId={restaurantId} />
+          )}
         </React.Fragment>
       ) : (
         <React.Fragment>

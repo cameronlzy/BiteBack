@@ -25,6 +25,98 @@ export async function register(user) {
     return data
 }
 
+export async function verifyEmail(token) {
+    const { data } = await http.post(apiEndpoint + "/verify-email", {
+        token
+    })
+    return data 
+}
+
+export async function resendVerificationEmail(email) {
+    const { data } = await http.post(apiEndpoint + "/resend-verification", {
+        email
+    })
+    return data
+}
+
+export async function openGooglePopup(role = 'customer') {
+   
+  return new Promise((resolve, reject) => {
+    const width = 500
+    const height = 600
+    const left = (window.screen.width / 2) - (width / 2)
+    const top = (window.screen.height / 2) - (height / 2)
+
+    const popup = window.open(
+      `/api/auth/google?role=${role}`,
+      'GoogleLogin',
+      `width=${width},height=${height},top=${top},left=${left}`
+    )
+
+    if (!popup) return reject(new Error('Popup blocked'))
+
+    const allowedOrigins = [
+      window.location.origin,
+      'https://biteback1-555cc0fda71c.herokuapp.com'
+    ]
+
+    const handleMessage = async (event) => {
+      if (!allowedOrigins.includes(event.origin)) return
+
+      const { status, isNewUser, tempToken, role  } = event.data || {}
+
+      if (status === 'success') {
+        clearInterval(checkClosed)
+        window.removeEventListener('message', handleMessage)
+        
+        await tokenExchange(tempToken)
+
+        if (!isNewUser) {
+            localStorage.removeItem("mid-registration") 
+            localStorage.setItem("role", role)
+            localStorage.setItem("toastMessage", "Successfully Logged in")
+        }
+
+        setTimeout(() => {
+            if (isNewUser) {
+                window.location.href = `/complete-signup/${role || 'customer'}`
+            } else {
+                window.location.href = "/"
+            }
+        }, 300)
+
+
+        resolve()
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+
+    const checkClosed = setInterval(() => {
+      try {
+        if (popup.closed) {
+          clearInterval(checkClosed)
+          window.removeEventListener('message', handleMessage)
+          reject(new Error('Popup closed by user'))
+        }
+      } catch {
+        clearInterval(checkClosed)
+        window.removeEventListener('message', handleMessage)
+        reject(new Error('Popup inaccessible or blocked'))
+      }
+    }, 500)
+  })
+}
+
+export async function tokenExchange(token) {
+    const { data } = await http.post(apiEndpoint + "/consume-token", {token})
+    return data
+}
+
+export async function setCredentials(payload) {
+    const { data } = await http.post(apiEndpoint + "/set-credentials", payload)
+    return data
+}
 
 async function logout() {
     await http.post(apiEndpoint + "/logout", null)
@@ -41,7 +133,7 @@ async function resetPasswordTrigger(userDetails) {
 }
 
 async function resetPasswordSubmit(token, newPasswordObj) {
-     return await http.post(apiEndpoint + `/reset-password/${token}`, newPasswordObj)
+     return await http.post(apiEndpoint + "/reset-password", {...newPasswordObj, token})
 }
 
 async function changePassword(newPasswordObj) {

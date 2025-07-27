@@ -303,7 +303,9 @@ const EventForm = ({ user }) => {
       }
 
       toast.success(isEdit ? "Event updated" : "Event created")
-      navigate(`/owner/events-promos`, { replace: true })
+      navigate(eventId ? `/events/${eventId}` : "/owner/events-promos", {
+        replace: true,
+      })
     } catch (ex) {
       if (ex.response?.status === 400) {
         const message = ex.response.data?.error
@@ -440,6 +442,12 @@ const EventForm = ({ user }) => {
             </div>
           )}
 
+          {!selectedDate && (
+            <div className="text-sm text-red-500 text-center">
+              Please select a date to see available time slots
+            </div>
+          )}
+
           {selectedDate && startTimeOptions.length > 0 && (
             <motion.div
               key="time-select"
@@ -527,6 +535,13 @@ const EventForm = ({ user }) => {
             </motion.div>
           )}
 
+          {isEdit && (
+            <div className="flex items-start text-sm text-muted-foreground mt-1">
+              <Info className="w-4 h-4 mr-1 mt-[2px]" />
+              <span>Date and Time cannot be changed for existing events</span>
+            </div>
+          )}
+
           <FormField
             control={control}
             name="paxLimit"
@@ -560,7 +575,7 @@ const EventForm = ({ user }) => {
             name="remarks"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Remarks (max 50 words)</FormLabel>
+                <FormLabel>Remarks For Staff (max 50 words)</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Any remarks (optional)" />
                 </FormControl>

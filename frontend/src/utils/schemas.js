@@ -85,10 +85,11 @@ const dailyTimeSchema = Joi.string()
 const singaporePostalCodeRegex = /^\d{6}$/
 
 export const cuisineList = [
-  "Chinese", "Malay", "Indian", "Peranakan", "Western", "Thai",
-  "Korean", "Vietnamese", "Indonesian", "Filipino", "Middle Eastern",
-  "Mexican", "Italian", "French", "Hawker", "Fusion", "Seafood",
-  "Japanese", 'Fast Food',
+  "Chinese", "Fast Food", "Filipino", "French",
+  "Fusion", "Hawker", "Indian", "Indonesian",
+  "Italian", "Japanese", "Korean", "Malay",
+  "Mexican", "Middle Eastern", "Peranakan", "Seafood",
+  "Thai", "Vietnamese", "Western",
 ]
 
 export const tagList = [
@@ -191,7 +192,7 @@ export const ownerSchema = Joi.object({
     "string.min": "Username must be at least 2 characters.",
     "string.max": "Username must not exceed 20 characters.",
   }),
-  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+  email: Joi.string().allow("google-signup-bypass").email({ tlds: { allow: false } }).required().messages({
     "string.email": "Please enter a valid email address.",
     "string.empty": "Email is required.",
     "any.required": "Email is required.",
@@ -218,7 +219,7 @@ export const customerSchema = Joi.object({
     "string.empty": "Username is required.",
     "any.required": "Username is required.",
   }),
-  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+  email: Joi.string().allow("google-signup-bypass").email({ tlds: { allow: false } }).required().messages({
     "string.email": "Please enter a valid email address.",
     "any.required": "Email is required.",
     "string.empty": "Email is required.",
@@ -236,10 +237,7 @@ export const customerSchema = Joi.object({
     "string.empty": "Contact number is required.",
     "any.required": "Contact number is required.",
   }),
-  favCuisines: Joi.array().items(Joi.string().valid(...cuisineList)).min(1).required().messages({
-    "array.min": "Please select at least one favourite cuisine.",
-    "any.required": "Favourite cuisines are required.",
-  }),
+  emailOptOut:  Joi.boolean().required().default(false),
 })
 
 export const loginUserSchema = Joi.object({
@@ -370,10 +368,6 @@ export const updateCustomerSchema = Joi.object({
     "string.pattern.base": "Contact number must be an 8-digit number.",
     "string.empty": "Contact number is required.",
     "any.required": "Contact number is required.",
-  }),
-  favCuisines: Joi.array().items(Joi.string().valid(...cuisineList)).min(1).required().messages({
-    "array.min": "Please select at least one favourite cuisine.",
-    "any.required": "Favourite cuisines are required.",
   }),
 }).unknown(true);
 
@@ -635,7 +629,7 @@ export const menuCategoryList = [
   { value: "mains", label: "Mains" },
   { value: "desserts", label: "Desserts" },
   { value: "drinks", label: "Drinks" },
-  { value: "kids-menu", label: "Kids Menu" },
+  { value: "kids menu", label: "Kids Menu" },
   { value: "specials", label: "Specials" },
 ]
 

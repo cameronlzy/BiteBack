@@ -2,11 +2,12 @@ import { useEffect, useState } from "react"
 import { getRedemptionHistory } from "@/services/rewardService"
 import { toast } from "react-toastify"
 import TransactionCard from "@/components/common/TransactionCard"
-import { iconMap } from "@/utils/rewardUtils"
+import { categoryOptions, iconMap } from "@/utils/rewardUtils"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import Pagination from "@/components/common/Pagination"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { useSearchParams } from "react-router-dom"
+import NoResultsFound from "../common/NoResultsFound"
 
 const CustomerPastRewards = () => {
   const [rewards, setRewards] = useState([])
@@ -42,18 +43,21 @@ const CustomerPastRewards = () => {
   return (
     <div className="max-w-5xl mx-auto mt-10 px-4">
       {rewards.length === 0 ? (
-        <p className="text-gray-500">No Rewards Found</p>
+        <NoResultsFound text="No rewards found." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {rewards.map((reward) => {
             const snapshot = reward.rewardItemSnapshot || {}
             const { icon: Icon, colour } = iconMap[snapshot.category] || {}
+            const categoryLabel =
+              categoryOptions.find((opt) => opt.value === snapshot.category)
+                ?.label || snapshot.category
 
             return (
               <TransactionCard
                 key={reward._id}
                 _id={reward._id}
-                name={snapshot.title || "Reward"}
+                name={`${categoryLabel} Reward`}
                 price={snapshot.pointsRequired}
                 currencyType="points"
                 iconComponent={

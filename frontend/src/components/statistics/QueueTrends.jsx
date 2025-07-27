@@ -10,9 +10,9 @@ const QueueTrends = ({ data }) => {
   const queueData = useMemo(() => {
     return data.map((d) => ({
       date: d.date,
-      averageWaitTime: d.queue.averageWaitTime,
-      abandonmentRate: d.queue.abandonmentRate,
-      byQueueGroup: d.queue.byQueueGroup,
+      averageWaitTime: d.queue?.averageWaitTime,
+      abandonmentRate: d.queue?.abandonmentRate,
+      byQueueGroup: d.queue?.byQueueGroup,
     }))
   }, [data])
 
@@ -25,7 +25,7 @@ const QueueTrends = ({ data }) => {
     const last = queueData[data.length - 1]
     return ["small", "medium", "large"].map((key) => ({
       label: key.charAt(0).toUpperCase() + key.slice(1),
-      value: last.byQueueGroup[key]?.total,
+      value: last?.byQueueGroup[key]?.total,
     }))
   }, [data]).filter((d) => d.value > 0)
 

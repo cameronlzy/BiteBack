@@ -33,6 +33,8 @@ const RestaurantRelatedItemUI = ({
   action = null,
   form = null,
   onBack = null,
+  activatePhrase = "Activate",
+  deactivatePhrase = "Deactivate",
 }) => {
   return (
     <div className="max-w-3xl mx-auto mt-8 px-4">
@@ -144,14 +146,7 @@ const RestaurantRelatedItemUI = ({
                         className="hover:bg-gray-100 text-gray-800"
                         onClick={onActivate}
                       >
-                        {type === "Event"
-                          ? currentlyActive
-                            ? "Cancel"
-                            : "Re-Open"
-                          : currentlyActive
-                          ? "Deactivate"
-                          : "Activate"}{" "}
-                        {type}
+                        {currentlyActive ? deactivatePhrase : activatePhrase}
                       </DropdownMenuItem>
                     )}
                     {onDelete && (

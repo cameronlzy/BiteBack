@@ -5,12 +5,13 @@ import {
 } from "@/services/rewardService"
 import { toast } from "react-toastify"
 import TransactionCard from "@/components/common/TransactionCard"
-import { iconMap } from "@/utils/rewardUtils"
+import { categoryOptions, iconMap } from "@/utils/rewardUtils"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import Pagination from "@/components/common/Pagination"
 import { DateTime } from "luxon"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { useSearchParams } from "react-router-dom"
+import NoResultsFound from "../common/NoResultsFound"
 
 const CustomerCurrentRewards = () => {
   const [rewards, setRewards] = useState([])
@@ -26,6 +27,7 @@ const CustomerCurrentRewards = () => {
       try {
         const params = { page, limit: 8, status: "activated,active" }
         const data = await getRedemptionHistory(params)
+        console.log(data)
         data.redemptions = data.redemptions.sort((r1, r2) => {
           return (r2.status === "activated") - (r1.status === "activated")
         })
@@ -62,7 +64,7 @@ const CustomerCurrentRewards = () => {
   return (
     <div className="max-w-5xl mx-auto mt-10 px-4">
       {rewards.length === 0 ? (
-        <p className="text-gray-500">No Rewards Found</p>
+        <NoResultsFound text="No rewards found." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {rewards.map((reward) => {
@@ -73,18 +75,23 @@ const CustomerCurrentRewards = () => {
             const expiry = activatedAt
               ? DateTime.fromISO(activatedAt).plus({ minutes: 15 })
               : null
+            const categoryLabel =
+              categoryOptions.find((opt) => opt.value === snapshot.category)
+                ?.label || snapshot.category
 
             return (
               <TransactionCard
                 key={reward._id}
                 _id={reward._id}
-                name={snapshot.title || "Reward"}
+                name={`${categoryLabel} Reward`}
                 price={snapshot.pointsRequired}
                 currencyType="points"
+                personalRewards={true}
                 iconComponent={
                   Icon ? <Icon className={`w-20 h-20 ${colour}`} /> : null
                 }
                 rewardCode={isActivated ? reward.code : null}
+                restaurant={reward.restaurant}
                 description={
                   !isActivated
                     ? getCardMessageFromDescription(snapshot.description)
@@ -98,8 +105,6 @@ const CustomerCurrentRewards = () => {
                   clickMessage: "Claim Reward",
                   onClick: () => handleActivate(reward._id),
                 })}
-                disabled={!reward.isActive}
-                disabledMessage="Reward is currently inactive"
               />
             )
           })}

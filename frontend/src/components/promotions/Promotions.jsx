@@ -7,6 +7,7 @@ import { toast } from "react-toastify"
 import SearchBar from "../SearchBar"
 import SortBy from "../common/SortBy"
 import LoadingSpinner from "../common/LoadingSpinner"
+import NoResultsFound from "../common/NoResultsFound"
 
 const Promotions = ({ user }) => {
   const [promotions, setPromotions] = useState([])
@@ -107,11 +108,15 @@ const Promotions = ({ user }) => {
         />
       </div>
 
-      <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-        {promotions.map((promo) => (
-          <PromotionCard key={promo._id} {...promo} user={user} />
-        ))}
-      </div>
+      {promotions.length === 0 ? (
+        <NoResultsFound text="No promotions found." />
+      ) : (
+        <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+          {promotions.map((promo) => (
+            <PromotionCard key={promo._id} {...promo} user={user} />
+          ))}
+        </div>
+      )}
 
       <div className="mt-8">
         <Pagination

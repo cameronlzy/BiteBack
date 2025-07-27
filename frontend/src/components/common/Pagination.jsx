@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { Button } from "../ui/button"
 
 const Pagination = ({ currentPage, totalPages, totalCount, onPageChange }) => {
-  return (
+  return totalCount === 0 ? null : (
     <div className="flex flex-col items-center mt-6 space-y-2 w-full">
       <div className="flex items-center justify-center space-x-4 w-full max-w-sm">
         <Button

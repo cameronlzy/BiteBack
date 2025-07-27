@@ -11,6 +11,7 @@ import SortBy from "../common/SortBy"
 import { useSearchParams } from "react-router-dom"
 import Pagination from "../common/Pagination"
 import LoadingSpinner from "../common/LoadingSpinner"
+import NoResultsFound from "../common/NoResultsFound"
 
 const ReviewSection = ({
   restaurant,
@@ -97,16 +98,20 @@ const ReviewSection = ({
         />
       </div>
 
-      {reviews?.map((r) => (
-        <ReviewCard
-          key={r._id}
-          review={r}
-          currentRestaurant={restaurant}
-          user={user}
-          onDelete={handleReviewDelete}
-          showRestaurant={showRestaurant}
-        />
-      ))}
+      {reviews.length === 0 ? (
+        <NoResultsFound text="No reviews found." />
+      ) : (
+        reviews?.map((r) => (
+          <ReviewCard
+            key={r._id}
+            review={r}
+            currentRestaurant={restaurant}
+            user={user}
+            onDelete={handleReviewDelete}
+            showRestaurant={showRestaurant}
+          />
+        ))
+      )}
 
       <Pagination
         currentPage={page}

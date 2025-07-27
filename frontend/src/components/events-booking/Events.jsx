@@ -6,6 +6,7 @@ import { toast } from "react-toastify"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import LoadingSpinner from "../common/LoadingSpinner"
 import EventCard from "./EventCard"
+import NoResultsFound from "../common/NoResultsFound"
 
 const Events = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -41,9 +42,7 @@ const Events = () => {
       <h2 className="text-3xl font-bold text-center">Events</h2>
 
       {events.length === 0 ? (
-        <div className="text-center py-10 text-gray-500 italic">
-          No events found.
-        </div>
+        <NoResultsFound text="No events found." />
       ) : (
         <div className="flex flex-col gap-6">
           {events.map((e) => (

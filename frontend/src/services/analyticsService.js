@@ -17,9 +17,11 @@ export async function getSummary(restaurantId, { date, amount, unit } = {}) {
   const { data } = await http.get(`${apiEndpoint}/${restaurantId}/summary?${params.toString()}`)
 
   if (data.type === "single") {
-    data.aggregated.date = toSGT(data.aggregated.date).toISO()
+    if(data.aggregated?.date) {
+      data.aggregated.date = toSGT(data.aggregated.date).toISO()
+    }
 
-    if (data.aggregated.visitLoadByHour) {
+    if (data.aggregated?.visitLoadByHour) {
       data.aggregated.visitLoadByHour.startHour =
         (data.aggregated.visitLoadByHour.startHour + 8) % 24
     }

@@ -17,8 +17,20 @@ import {
 } from "@/components/ui/form"
 import SubmitButton from "./SubmitButton"
 import { Eye, EyeOff } from "lucide-react"
+import { ToggleGroup } from "../ui/toggle-group"
+import { ToggleGroupItem } from "@radix-ui/react-toggle-group"
+import GoogleAuthorisationButton from "../authorisation/GoogleAuthorisationButton"
 
-const FormWithCard = ({ title, description, onSubmit, form, inputFields }) => {
+const FormWithCard = ({
+  title,
+  description,
+  onSubmit,
+  form,
+  inputFields,
+  role,
+  setRole,
+  onGoogleRedirect,
+}) => {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
@@ -28,6 +40,34 @@ const FormWithCard = ({ title, description, onSubmit, form, inputFields }) => {
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
+        {role && setRole && (
+          <div className="space-y-2 flex flex-col items-center mb-2">
+            <label className="text-sm font-medium">Select Role</label>
+            <ToggleGroup
+              type="single"
+              value={role}
+              onValueChange={(value) => {
+                if (value) setRole(value)
+              }}
+              className="flex gap-2"
+            >
+              <ToggleGroupItem
+                value="customer"
+                className="px-3 py-2 text-sm border rounded-md data-[state=on]:bg-primary data-[state=on]:text-white hover:bg-accent hover:text-accent-foreground"
+                aria-label="Customer"
+              >
+                Customer
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="owner"
+                className="px-4 py-2 text-sm border rounded-md data-[state=on]:bg-primary data-[state=on]:text-white hover:bg-accent hover:text-accent-foreground"
+                aria-label="Owner"
+              >
+                Owner
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-4">
@@ -82,6 +122,12 @@ const FormWithCard = ({ title, description, onSubmit, form, inputFields }) => {
             </div>
           </form>
         </Form>
+        {onGoogleRedirect && (
+          <GoogleAuthorisationButton
+            onClick={onGoogleRedirect}
+            padding="mt-4"
+          />
+        )}
       </CardContent>
     </Card>
   )

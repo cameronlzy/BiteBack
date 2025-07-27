@@ -12,12 +12,17 @@ import {
 import { toast } from "react-toastify"
 import ItemPage from "./ItemPage"
 import OrderConfirmationPage from "./OrderConfirmationPage"
-import { getMenuByRestaurant } from "@/services/menuService"
+import {
+  getMenuByRestaurant,
+  saveMenuItem,
+  toggleInStock,
+} from "@/services/menuService"
 import { ownedByUser, userIsOwner } from "@/utils/ownerCheck"
 import BackButton from "../common/BackButton"
 import { saveOrder } from "@/services/orderService"
 import PreviousOrderBar from "./PreviousOrderBar"
 import LoadingSpinner from "../common/LoadingSpinner"
+import ListMenuView from "./ListMenuView"
 
 const RestaurantMenu = ({ user }) => {
   const [menuItems, setMenuItems] = useState([])
@@ -26,6 +31,7 @@ const RestaurantMenu = ({ user }) => {
   const [showConfirm, setShowConfirm] = useState(false)
   const [restaurant, setRestaurant] = useState(null)
   const [editingOrder, setEditingOrder] = useState(false)
+  const [editingBackup, setEditingBackup] = useState(null)
   const [originalOrderItems, setOriginalOrderItems] = useState([])
   const [canOrder, setCanOrder] = useState(false)
   const { restaurantId } = useParams()
@@ -35,6 +41,7 @@ const RestaurantMenu = ({ user }) => {
     JSON.parse(localStorage.getItem("order_items")) || []
   )
 
+  const isStaff = user?.role === "staff" && user?.restaurant === restaurantId
   const isOwnedByUser = ownedByUser(restaurant, user)
   const from = location.state?.from
     ? location.state.from
@@ -145,8 +152,7 @@ const RestaurantMenu = ({ user }) => {
         }),
       })
     }
-    console.log(existing)
-
+    setEditingBackup(null)
     localStorage.setItem("order_items", JSON.stringify(existing))
     setOrderItems(existing)
   }
@@ -281,6 +287,7 @@ const RestaurantMenu = ({ user }) => {
             (orderItem.remarks || "").toLowerCase()
         )
     )
+    setEditingBackup(orderItem)
     setOrderItems(updated)
     localStorage.setItem("order_items", JSON.stringify(updated))
 
@@ -295,6 +302,18 @@ const RestaurantMenu = ({ user }) => {
     })
 
     setShowConfirm(false)
+  }
+
+  const handleCloseItemPage = () => {
+    if (editingBackup) {
+      setOrderItems((prev) => [...prev, editingBackup])
+      localStorage.setItem(
+        "order_items",
+        JSON.stringify([...orderItems, editingBackup])
+      )
+      setEditingBackup(null)
+    }
+    setCurrentItemShown(null)
   }
 
   const handleTogglePreorder = async () => {
@@ -326,13 +345,72 @@ const RestaurantMenu = ({ user }) => {
     setShowConfirm(true)
   }
 
+  const handleToggleActive = async (item) => {
+    const togglingTo = !item?.isAvailable
+    const actionLabel = togglingTo ? "enabled" : "disabled"
+
+    try {
+      const newItem = await saveMenuItem({
+        _id: item._id,
+        isAvailable: togglingTo,
+      })
+      setMenuItems((prev) =>
+        prev.map((i) => (i._id === newItem._id ? newItem : i))
+      )
+      toast.success(`Item ${actionLabel}`)
+      setCurrentItemShown(null)
+    } catch (ex) {
+      toast.error(`Failed to ${togglingTo ? "enable" : "disable"} item`)
+      console.error(ex)
+    }
+  }
+
+  const handleToggleOOS = async (item) => {
+    const togglingTo = !item?.isInStock
+    const actionLabel = togglingTo ? "enabled" : "disabled"
+
+    try {
+      const data = await toggleInStock(item._id, {
+        isInStock: togglingTo,
+      })
+
+      const newItem = {
+        ...item,
+        isInStock: data.isInStock,
+      }
+
+      setMenuItems((prev) =>
+        prev.map((i) => (i._id === newItem._id ? newItem : i))
+      )
+
+      toast.success(`Item ${actionLabel}`)
+      setCurrentItemShown(null)
+    } catch (ex) {
+      toast.error(`Failed to ${togglingTo ? "enable" : "disable"} item`)
+      console.error(ex)
+    }
+  }
+
   return loadingMenu ? (
     <div className="flex justify-center py-10">
       <LoadingSpinner />
     </div>
   ) : menuItems.length === 0 ? (
-    <div className="text-center text-muted-foreground py-10 text-lg font-medium">
-      No Menu Available
+    <div className="py-10 px-4">
+      <div className="text-center text-muted-foreground text-lg font-medium mb-4">
+        No Menu Available
+      </div>
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleCreateMenuItem}
+          className="flex items-center gap-1"
+        >
+          <PlusCircle className="w-5 h-5" />
+          Add Menu Item
+        </Button>
+      </div>
     </div>
   ) : (
     <div className="w-full space-y-6">
@@ -341,7 +419,7 @@ const RestaurantMenu = ({ user }) => {
         <h2 className="text-2xl font-bold text-center">
           {restaurant?.name} Menu
         </h2>
-        {!existingOrder && user && (
+        {!existingOrder && user?.role === "customer" && (
           <PreviousOrderBar
             customerId={user._id}
             restaurantId={restaurantId}
@@ -356,7 +434,7 @@ const RestaurantMenu = ({ user }) => {
         <div className="flex justify-end">
           {user?.role === "customer" && canOrder ? (
             <Button size="sm" variant="ghost" onClick={handleShowConfirm}>
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-7 h-7" />
             </Button>
           ) : isOwnedByUser ? (
             <div className="flex flex-col items-end gap-2">
@@ -406,11 +484,21 @@ const RestaurantMenu = ({ user }) => {
           .filter(({ value }) => (menuByCategory[value] || []).length > 0)
           .map(({ value }) => (
             <TabsContent key={value} value={value} className="mt-4">
-              <RestaurantMenuSection
-                category={value}
-                items={menuByCategory[value] || []}
-                handleItemSelect={handleItemSelect}
-              />
+              {isOwnedByUser || isStaff ? (
+                <ListMenuView
+                  items={menuByCategory[value] || []}
+                  handleItemSelect={handleItemSelect}
+                  onToggleActive={handleToggleActive}
+                  onToggleStock={handleToggleOOS}
+                  user={user}
+                />
+              ) : (
+                <RestaurantMenuSection
+                  category={value}
+                  items={menuByCategory[value] || []}
+                  handleItemSelect={handleItemSelect}
+                />
+              )}
             </TabsContent>
           ))}
       </Tabs>
@@ -419,10 +507,13 @@ const RestaurantMenu = ({ user }) => {
         canOrder={canOrder}
         item={currentItemShown}
         restaurant={restaurant}
+        onBack={handleCloseItemPage}
         onClose={() => setCurrentItemShown(null)}
         onAddToCart={handleAddToCart}
         user={user}
         setMenuItems={setMenuItems}
+        onToggleActive={handleToggleActive}
+        onToggleOOS={handleToggleOOS}
       />
       {user?.role === "customer" && canOrder && (
         <OrderConfirmationPage

@@ -5,11 +5,7 @@ import { Input } from "@/components/ui/input"
 import { AlertTriangle, ShoppingCart } from "lucide-react"
 import RestaurantRelatedItemUI from "@/components/common/RestaurantRelatedItemUI"
 import { useLocation, useNavigate } from "react-router-dom"
-import {
-  deleteMenuItem,
-  saveMenuItem,
-  toggleInStock,
-} from "@/services/menuService"
+import { deleteMenuItem } from "@/services/menuService"
 import { useConfirm } from "../common/ConfirmProvider"
 import { ownedByUser } from "@/utils/ownerCheck"
 import { toast } from "react-toastify"
@@ -22,6 +18,9 @@ const ItemPage = ({
   user,
   setMenuItems,
   canOrder,
+  onToggleActive,
+  onToggleOOS,
+  onBack,
 }) => {
   const [showForm, setShowForm] = useState(false)
   const [quantity, setQuantity] = useState(1)
@@ -63,52 +62,6 @@ const ItemPage = ({
     }
   }, [item])
 
-  const handleToggleOOS = async () => {
-    const togglingTo = !item?.isInStock
-    const actionLabel = togglingTo ? "enabled" : "disabled"
-
-    try {
-      const data = await toggleInStock(item._id, {
-        isInStock: togglingTo,
-      })
-
-      const newItem = {
-        ...item,
-        isInStock: data.isInStock,
-      }
-
-      setMenuItems((prev) =>
-        prev.map((i) => (i._id === newItem._id ? newItem : i))
-      )
-
-      toast.success(`Item ${actionLabel}`)
-      onClose()
-    } catch (ex) {
-      toast.error(`Failed to ${togglingTo ? "enable" : "disable"} item`)
-      console.error(ex)
-    }
-  }
-
-  const onActivate = async () => {
-    const togglingTo = !item?.isAvailable
-    const actionLabel = togglingTo ? "enabled" : "disabled"
-
-    try {
-      const newItem = await saveMenuItem({
-        _id: item._id,
-        isAvailable: togglingTo,
-      })
-      setMenuItems((prev) =>
-        prev.map((i) => (i._id === newItem._id ? newItem : i))
-      )
-      toast.success(`Item ${actionLabel}`)
-      onClose()
-    } catch (ex) {
-      toast.error(`Failed to ${togglingTo ? "enable" : "disable"} item`)
-      console.error(ex)
-    }
-  }
-
   return (
     <AnimatePresence>
       {item && (
@@ -129,7 +82,7 @@ const ItemPage = ({
               price={item.price}
               isOwnedByUser={ownedByUser(restaurant, user)}
               isStaff={user?.role === "staff"}
-              onToggleOOS={handleToggleOOS}
+              onToggleOOS={() => onToggleOOS(item)}
               currentlyActive={item?.isAvailable}
               currentlyInStock={item?.isInStock}
               onEdit={() => {
@@ -139,9 +92,11 @@ const ItemPage = ({
                   },
                 })
               }}
-              onActivate={onActivate}
+              onActivate={() => onToggleActive(item)}
               onDelete={handleDelete}
-              onBack={onClose}
+              onBack={onBack}
+              activatePhrase="Make Available"
+              deactivatePhrase="Mark as Unavailable"
               action={
                 user?.role === "customer" &&
                 item?.isAvailable &&

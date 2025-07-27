@@ -1,14 +1,15 @@
 import { useForm } from "react-hook-form"
-import React from "react"
+import React, { useState } from "react"
 import { Link, Navigate, useLocation } from "react-router-dom"
 import { safeJoiResolver } from "@/utils/safeJoiResolver"
 import { loginUserSchema } from "@/utils/schemas"
 import FormWithCard from "../common/FormWithCard"
-import auth from "@/services/authService"
+import auth, { openGooglePopup } from "@/services/authService"
 import LoadingSpinner from "../common/LoadingSpinner"
 import { toast } from "react-toastify"
 
 const LoginForm = ({ user, loading }) => {
+  const [role, setRole] = useState("customer")
   const form = useForm({
     resolver: safeJoiResolver(loginUserSchema),
     mode: "onChange",
@@ -32,11 +33,16 @@ const LoginForm = ({ user, loading }) => {
       window.location = from
       toast.success("Login Successful")
     } catch (ex) {
-      if (ex.response?.status === 400) {
+      if (ex.response?.status === 400 || ex.response?.status === 403) {
         const message = ex.response?.data?.error
+        console.log(message)
         form.setError("identifier", {
           type: "manual",
-          message: message || "Invalid email/username or password",
+          message:
+            message ??
+            (ex.response?.status === 400
+              ? "Invalid email/username or password"
+              : "Please verify your email before logging in"),
         })
       }
     }
@@ -51,6 +57,15 @@ const LoginForm = ({ user, loading }) => {
     { name: "password", label: "Password", placeholder: "your password" },
   ]
 
+  const handleGoogleRedirect = async () => {
+    try {
+      await openGooglePopup(role)
+    } catch (ex) {
+      toast.error("Google Auth Failed")
+      throw ex
+    }
+  }
+
   return (
     <React.Fragment>
       <FormWithCard
@@ -60,6 +75,9 @@ const LoginForm = ({ user, loading }) => {
         buttonText="Login"
         onSubmit={onSubmit}
         form={form}
+        role={role}
+        setRole={setRole}
+        onGoogleRedirect={handleGoogleRedirect}
       />
       <p>
         If you don&apos;t have an account, you can register{" "}

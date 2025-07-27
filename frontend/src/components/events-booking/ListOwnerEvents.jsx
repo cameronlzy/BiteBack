@@ -7,6 +7,7 @@ import Pagination from "@/components/common/Pagination"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import { getCardMessageFromDescription } from "@/utils/stringRegexUtils"
 import EventCard from "./EventCard"
+import NoResultsFound from "../common/NoResultsFound"
 
 const ListOwnerEvents = ({ user }) => {
   const [events, setEvents] = useState([])
@@ -85,9 +86,9 @@ const ListOwnerEvents = ({ user }) => {
       {loading ? (
         <LoadingSpinner />
       ) : events.length === 0 ? (
-        <p className="text-gray-500">
-          No {showUpcoming ? "current" : "past"} events
-        </p>
+        <NoResultsFound
+          text={`No ${showUpcoming ? "current" : "past"} events.`}
+        />
       ) : (
         <>
           <div className="space-y-4">

@@ -7,6 +7,7 @@ import { toast } from "react-toastify"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { handle401 } from "@/utils/handleStaffTimeout"
 import BookingCard from "./BookingCard"
+import LoadingSpinner from "../common/LoadingSpinner"
 
 const StaffBookings = () => {
   const [bookings, setBookings] = useState([])
@@ -43,6 +44,8 @@ const StaffBookings = () => {
       toast.error("Failed to update booking")
     }
   }
+
+  if (!loaded) return <LoadingSpinner />
 
   return (
     <div className="p-6">
@@ -86,6 +89,7 @@ const StaffBookings = () => {
                 key={b._id}
                 booking={b}
                 onStatusUpdate={handleStatusUpdate}
+                eventTitle={b?.event?.title}
               />
             ))
           )}

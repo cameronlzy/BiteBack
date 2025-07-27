@@ -1,7 +1,13 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ClipboardList, CalendarDays, Gift, Settings } from "lucide-react"
+import {
+  ClipboardList,
+  CalendarDays,
+  Gift,
+  Settings,
+  Search,
+} from "lucide-react"
 import authService from "@/services/authService"
 import StaffQueue from "./StaffQueue"
 import StaffBookings from "./StaffBookings"
@@ -13,6 +19,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
+import OrderLookup from "./OrderLookup"
 
 const StaffControlCenter = ({ user }) => {
   const handleLogout = async () => {
@@ -56,7 +63,7 @@ const StaffControlCenter = ({ user }) => {
       </div>
 
       <Tabs defaultValue="queue" className="w-full max-w-6xl">
-        <TabsList className="grid w-full grid-cols-3 mb-6 text-xs md:text-sm">
+        <TabsList className="grid w-full grid-cols-4 mb-6 text-xs md:text-sm">
           <TabsTrigger
             value="queue"
             className="flex items-center justify-center gap-2"
@@ -78,10 +85,21 @@ const StaffControlCenter = ({ user }) => {
             <CalendarDays className="w-5 h-5" />
             <span className="hidden md:inline">Bookings</span>
           </TabsTrigger>
+          <TabsTrigger
+            value="order-lookup"
+            className="flex items-center justify-center gap-2"
+          >
+            <Search className="w-5 h-5" />
+            <span className="hidden md:inline">Order Lookup</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="queue">
           <StaffQueue user={user} />
+        </TabsContent>
+
+        <TabsContent value="order-lookup">
+          <OrderLookup />
         </TabsContent>
 
         <TabsContent value="rewards">

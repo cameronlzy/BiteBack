@@ -23,14 +23,24 @@ const FootFall = ({ data, mode = "day", width = 160, height = 100 }) => {
 
     const currentDay = weekdayData[dayIndex]
 
-    return {
-      totalVisits: week.totalVisits ?? 0,
-      visitLoadByHour: {
+    const result = {}
+
+    if (week.totalVisits != null) {
+      result.totalVisits = week.totalVisits
+    }
+
+    if (currentDay?.averageLoad && currentDay?.startHour != null) {
+      result.visitLoadByHour = {
         load: currentDay.averageLoad,
         startHour: currentDay.startHour,
-      },
-      weekday: currentDay.weekday,
+      }
     }
+
+    if (currentDay?.weekday != null) {
+      result.weekday = currentDay.weekday
+    }
+
+    return result
   }
 
   const currentData = getCurrentData()
@@ -156,7 +166,7 @@ const FootFall = ({ data, mode = "day", width = 160, height = 100 }) => {
         </div>
       )}
 
-      {currentData && (
+      {currentData?.totalVisits && (
         <div className="flex items-center text-muted-foreground text-sm">
           <span className="mr-2">Total Visits:</span>
           <span className="text-foreground font-medium">

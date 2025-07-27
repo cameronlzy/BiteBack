@@ -12,6 +12,7 @@ const urgencyColours = {
 }
 
 const StatisticsCard = ({ restaurant, today }) => {
+  console.log(today)
   const navigate = useNavigate()
   const location = useLocation()
   const averageWaitTime =
@@ -20,17 +21,21 @@ const StatisticsCard = ({ restaurant, today }) => {
   const reservationCount =
     today?.reservations?.total != null ? today.reservations.total : "--"
 
-  const queueBreakdown = ["small", "medium", "large"]
-    .map((key) => {
-      const val = today?.queue?.byQueueGroup?.[key]?.attended || 0
-      return {
-        label: key
-          .replace(/([a-z])([A-Z])/g, "$1 $2")
-          .replace(/^./, (s) => s.toUpperCase()),
-        value: val,
-      }
-    })
-    .filter((d) => d.value > 0)
+  const queueBreakdownRaw = ["small", "medium", "large"].map((key) => {
+    const val = today?.queue?.byQueueGroup?.[key]?.attended
+    return {
+      label: key
+        .replace(/([a-z])([A-Z])/g, "$1 $2")
+        .replace(/^./, (s) => s.toUpperCase()),
+      value: typeof val === "number" ? val : null,
+    }
+  })
+
+  const queueBreakdown = queueBreakdownRaw.filter(
+    (d) => d.value !== null && d.value > 0
+  )
+
+  const hasQueueData = queueBreakdown.length > 0
 
   const isOpen = isWithinOpeningHours(restaurant.openingHours)
 
@@ -89,12 +94,18 @@ const StatisticsCard = ({ restaurant, today }) => {
       </div>
 
       <div className="flex flex-col items-center justify-center w-[100px]">
-        <MiniPieChart
-          data={queueBreakdown}
-          width={80}
-          height={80}
-          showLabels={false}
-        />
+        {hasQueueData ? (
+          <MiniPieChart
+            data={queueBreakdown}
+            width={80}
+            height={80}
+            showLabels={false}
+          />
+        ) : (
+          <div className="w-[80px] h-[80px] flex items-center justify-center text-lg text-gray-400 font-bold ">
+            --
+          </div>
+        )}
         <div className="text-xs mt-1 text-muted-foreground">
           Queue Breakdown
         </div>

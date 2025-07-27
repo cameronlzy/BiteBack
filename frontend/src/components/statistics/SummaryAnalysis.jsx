@@ -66,6 +66,8 @@ const SummaryAnalysis = ({ restaurant }) => {
       if (response.type === "range") {
         setTempNumber(Math.min(n, response.dataPoints))
       }
+
+      console.log(response)
       setData(response)
     } catch (ex) {
       toast.error("Failed to fetch summary", {

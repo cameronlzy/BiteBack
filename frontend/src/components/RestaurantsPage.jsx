@@ -9,6 +9,7 @@ import { Button } from "./ui/button"
 import { Utensils } from "lucide-react"
 import { toast } from "react-toastify"
 import LoadingSpinner from "./common/LoadingSpinner"
+import NoResultsFound from "./common/NoResultsFound"
 
 const Restaurants = () => {
   const [restaurants, setRestaurants] = useState([])
@@ -113,15 +114,19 @@ const Restaurants = () => {
         />
       </div>
 
-      <div className="max-w-4xl mx-auto py-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {restaurants.map((restaurant) => (
-          <RestaurantCard
-            key={restaurant._id}
-            {...restaurant}
-            currentTag={searchInput}
-          />
-        ))}
-      </div>
+      {restaurants.length === 0 ? (
+        <NoResultsFound text="No restaurants found." />
+      ) : (
+        <div className="max-w-4xl mx-auto py-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {restaurants.map((restaurant) => (
+            <RestaurantCard
+              key={restaurant._id}
+              {...restaurant}
+              currentTag={searchInput}
+            />
+          ))}
+        </div>
+      )}
 
       <Pagination
         currentPage={page}
