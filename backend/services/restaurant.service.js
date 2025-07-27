@@ -247,9 +247,9 @@ export async function getReservationsByRestaurant(restaurant, query) {
     endDate: { $gt: timeSlotStartUTC.toJSDate() }
   };
 
-  if (query.event === 'true') {
+  if (query.event) {
     baseFilter.event = { $exists: true };
-  } else if (query.event === 'false') {
+  } else {
     baseFilter.event = { $exists: false };
   }
 
