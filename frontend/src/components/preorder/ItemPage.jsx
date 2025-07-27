@@ -20,6 +20,7 @@ const ItemPage = ({
   canOrder,
   onToggleActive,
   onToggleOOS,
+  onBack,
 }) => {
   const [showForm, setShowForm] = useState(false)
   const [quantity, setQuantity] = useState(1)
@@ -93,7 +94,7 @@ const ItemPage = ({
               }}
               onActivate={() => onToggleActive(item)}
               onDelete={handleDelete}
-              onBack={onClose}
+              onBack={onBack}
               activatePhrase="Make Available"
               deactivatePhrase="Mark as Unavailable"
               action={

@@ -507,7 +507,8 @@ const RestaurantMenu = ({ user }) => {
         canOrder={canOrder}
         item={currentItemShown}
         restaurant={restaurant}
-        onClose={handleCloseItemPage}
+        onBack={handleCloseItemPage}
+        onClose={() => setCurrentItemShown(null)}
         onAddToCart={handleAddToCart}
         user={user}
         setMenuItems={setMenuItems}
