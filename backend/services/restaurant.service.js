@@ -282,7 +282,7 @@ export async function createRestaurant(authUser, data) {
 export async function createRestaurantBulk(authUser, data) {
   return await withTransaction(async (session) => {
     // update owner
-    const user = await User.findById(authUser._id).populate('profile').session(session);
+    let user = await User.findById(authUser._id).populate('profile').session(session);
     if (!user) return error(404, 'User not found');
     if (!user.profile) return error(404, 'Owner Profile not found');
 
@@ -297,6 +297,7 @@ export async function createRestaurantBulk(authUser, data) {
     await user.profile.save(wrapSession(session));
 
     if (user.isVerified) {
+      user.profile = user.profile._id;
       const token = generateAuthToken(user);
       return { token, status: 200, body: restaurantIds };
     } else {
