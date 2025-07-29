@@ -9,6 +9,7 @@ import * as restaurantController from '../controllers/restaurant.controller.js';
 import validateObjectId from '../middleware/validateObjectId.js';
 import wrapRoutes from '../helpers/wrapRoutes.js';
 import isCustomer from '../middleware/isCustomer.js';
+import tempAuth from '../middleware/tempAuth.js';
 
 const router = wrapRoutes(express.Router());
 
@@ -39,7 +40,7 @@ router.get('/:id/reservations', [validateObjectId(), auth, isStaff, authorizedRe
 router.post('/', [auth, isOwner], restaurantController.createRestaurant);
 
 // [Owner] - Create multiple restaurants (for registration)
-router.post('/bulk', [auth, isOwner], restaurantController.createRestaurantBulk);
+router.post('/bulk', [tempAuth, isOwner], restaurantController.createRestaurantBulk);
 
 // [Owner] - Upload images for their restaurant
 router.post('/:id/images', [validateObjectId(), auth, isOwner, authorizedRestaurantOwner, restaurantParser.array('images', 5)], restaurantController.addRestaurantImages);

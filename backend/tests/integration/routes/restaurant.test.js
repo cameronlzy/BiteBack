@@ -9,7 +9,7 @@ import { createTestStaff } from '../../factories/staff.factory.js';
 import { createTestVisitHistory } from '../../factories/visitHistory.factory.js';
 import { createTestOwnerProfile } from '../../factories/ownerProfile.factory.js';
 import { createTestReservation } from '../../factories/reservation.factory.js';
-import { generateAuthToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
+import { generateAuthToken, generateTempToken, staffGenerateAuthToken } from '../../../helpers/token.helper.js';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { fileURLToPath } from 'url';
@@ -610,8 +610,9 @@ describe('restaurant test', () => {
             profile = createTestOwnerProfile(user._id);
             await profile.save();
             user.profile = profile._id;
+            user.isVerified = false;
             await user.save();
-            token = generateAuthToken(user);
+            token = generateTempToken(user);
             cookie = setTokenCookie(token);
         });
 
