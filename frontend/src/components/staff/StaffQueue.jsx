@@ -69,6 +69,10 @@ const StaffQueue = () => {
   const handleCallNext = async (group) => {
     try {
       const data = await callNextCustomer(restaurantId, group)
+      if (!data) {
+        toast.info("No customers waiting in this queue")
+        return
+      }
       const updated = [...calledCustomers, { ...data, group }]
       setCalledCustomers(updated)
       localStorage.setItem("called_customer", JSON.stringify(updated))
