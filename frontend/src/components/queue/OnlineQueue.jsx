@@ -190,8 +190,12 @@ const OnlineQueue = ({ user }) => {
                     {(restaurantQueueData.medium.calledNumber % 1000) + 2000}
                   </TableCell>
                   <TableCell className="text-xl font-bold">
-                    {restaurantQueueData.medium.lastNumber -
-                      restaurantQueueData.medium.calledNumber}
+                    {Math.max(
+                      restaurantQueueData.medium.lastNumber -
+                        restaurantQueueData.medium.calledNumber -
+                        1,
+                      0
+                    )}
                   </TableCell>
                 </TableRow>
                 <TableRow className="border-t border-black">
@@ -202,8 +206,12 @@ const OnlineQueue = ({ user }) => {
                     {(restaurantQueueData.large.calledNumber % 1000) + 3000}
                   </TableCell>
                   <TableCell className="text-xl font-bold">
-                    {restaurantQueueData.large.lastNumber -
-                      restaurantQueueData.large.calledNumber}
+                    {Math.max(
+                      restaurantQueueData.large.lastNumber -
+                        restaurantQueueData.large.calledNumber -
+                        1,
+                      0
+                    )}
                   </TableCell>
                 </TableRow>
               </TableBody>

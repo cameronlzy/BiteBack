@@ -83,9 +83,8 @@ const QueueStatus = ({
   const handleLeaveQueue = async () => {
     setIsSubmitting(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
       await leaveQueue(customerQueueData._id)
-      localStorage.removeItem("queueId")
+      localStorage.removeItem("queueEntry")
       localStorage.removeItem("currentQueue")
       localStorage.removeItem("order_items")
       setCurrentlyQueuing(false)
@@ -124,7 +123,7 @@ const QueueStatus = ({
           customerQueueData.queueNumber -
             (restaurantQueueData[getQueueIndex(customerQueueData.pax)]
               ?.calledNumber ?? 0) -
-            1,
+            2,
           0
         )
       : 0
