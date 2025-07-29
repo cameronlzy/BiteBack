@@ -74,10 +74,14 @@ const OnlineQueue = ({ user }) => {
   }, [restaurantId, navigate])
 
   useEffect(() => {
-    const queueId = localStorage.getItem("queueId")
-    if (user.role === "customer" && queueId) {
+    const queueEntry = JSON.parse(localStorage.getItem("queueEntry") || "{}")
+    if (
+      user.role === "customer" &&
+      queueEntry?._id &&
+      queueEntry?.restaurantId === restaurantId
+    ) {
       async function fetchData() {
-        const data = await getCurrentCustomerQueue(queueId)
+        const data = await getCurrentCustomerQueue(queueEntry._id)
         if (
           data?.status &&
           data?.status !== "seated" &&
@@ -111,7 +115,13 @@ const OnlineQueue = ({ user }) => {
     }
     try {
       const queueResponse = await joinQueue(queueDetails)
-      localStorage.setItem("queueId", queueResponse._id)
+      localStorage.setItem(
+        "queueEntry",
+        JSON.stringify({
+          _id: queueResponse._id,
+          restaurantId: queueResponse.restaurant,
+        })
+      )
       toast.success("Successfully joined queue")
       setCurrentlyQueuing(true)
     } catch (ex) {
