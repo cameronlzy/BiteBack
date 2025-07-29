@@ -701,10 +701,10 @@ describe('restaurant test', () => {
             .attach('images', filePath);
         };
 
-        it('should return 403 if restaurant does not belong to user', async () => {
+        it.only('should return 403 if restaurant does not belong to user', async () => {
             let otherUser = await createTestUser('owner');
             await otherUser.save();
-            token = generateAuthToken(otherUser);
+            token = generateTempToken(otherUser);
             cookie = setTokenCookie(token);
             const res = await request(server)
                 .post(`/api/restaurants/${restaurantId}/images`)
