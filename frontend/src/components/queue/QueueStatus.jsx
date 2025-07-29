@@ -84,7 +84,7 @@ const QueueStatus = ({
     setIsSubmitting(true)
     try {
       await leaveQueue(customerQueueData._id)
-      localStorage.removeItem("queueEntry")
+      localStorage.removeItem(`queueEntry_${customerQueueData.restaurant}`)
       localStorage.removeItem("currentQueue")
       localStorage.removeItem("order_items")
       setCurrentlyQueuing(false)
