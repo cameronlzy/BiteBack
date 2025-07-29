@@ -1,8 +1,4 @@
-import {
-  closeEventSource,
-  createQueueEventSource,
-  leaveQueue,
-} from "@/services/queueService"
+import { leaveQueue } from "@/services/queueService"
 import React, { useEffect, useState } from "react"
 import { Button } from "../ui/button"
 import LoadingSpinner from "../common/LoadingSpinner"
@@ -62,13 +58,18 @@ const QueueStatus = ({
 
   useEffect(() => {
     const fetchExistingOrder = async () => {
-      const orderId = localStorage.getItem("order_id")
+      const orderId = localStorage.getItem(
+        `order_id_${customerQueueData?.restaurant}`
+      )
       if (!orderId) return
 
       try {
         const existingOrder = await getOrderById(orderId)
         console.log(existingOrder)
-        if (existingOrder?.status === "pending") {
+        if (
+          existingOrder?.status === "pending" &&
+          existingOrder?.restaurant === customerQueueData?.restaurant
+        ) {
           setExistingCustomerOrder(existingOrder)
         }
       } catch (ex) {
@@ -84,44 +85,11 @@ const QueueStatus = ({
       window.removeEventListener("order_id_change", fetchExistingOrder)
   }, [])
 
-  useEffect(() => {
-    if (!customerQueueData?._id) return
-
-    const handleStatusUpdate = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-
-        if (data.queueEntry === "seated") {
-          return
-        }
-
-        if (data.queueEntry === customerQueueData._id) {
-          const newStatus =
-            data.status === "called"
-              ? "Called"
-              : data.status === "skipped"
-              ? "Skipped"
-              : "Pending"
-          setQueueStatus(newStatus)
-        }
-      } catch (ex) {
-        console.error("Error processing SSE message:", ex)
-      }
-    }
-
-    const es = createQueueEventSource(customerQueueData._id, handleStatusUpdate)
-
-    return () => {
-      closeEventSource(es)
-    }
-  }, [customerQueueData?._id])
-
   const handleLeaveQueue = async () => {
     setIsSubmitting(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
       await leaveQueue(customerQueueData._id)
-      localStorage.removeItem("queueId")
+      localStorage.removeItem(`queueEntry_${customerQueueData.restaurant}`)
       localStorage.removeItem("currentQueue")
       localStorage.removeItem("order_items")
       setCurrentlyQueuing(false)
@@ -149,9 +117,9 @@ const QueueStatus = ({
   }
 
   const getQueueIndex = (pax) => {
-    if (pax <= 2) return 0
-    if (pax <= 4) return 1
-    return 2
+    if (pax <= 2) return "small"
+    if (pax <= 4) return "medium"
+    return "large"
   }
 
   const groupsInFront =
@@ -159,8 +127,8 @@ const QueueStatus = ({
       ? Math.max(
           customerQueueData.queueNumber -
             (restaurantQueueData[getQueueIndex(customerQueueData.pax)]
-              ?.currentQueueNumber ?? 0) -
-            1,
+              ?.calledNumber ?? 0) -
+            2,
           0
         )
       : 0

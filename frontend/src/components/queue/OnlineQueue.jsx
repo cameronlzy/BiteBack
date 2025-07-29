@@ -74,10 +74,10 @@ const OnlineQueue = ({ user }) => {
   }, [restaurantId, navigate])
 
   useEffect(() => {
-    const queueId = localStorage.getItem("queueId")
-    if (user.role === "customer" && queueId) {
+    const queueEntry = localStorage.getItem(`queueEntry_${restaurantId}`)
+    if (user.role === "customer" && queueEntry) {
       async function fetchData() {
-        const data = await getCurrentCustomerQueue(queueId)
+        const data = await getCurrentCustomerQueue(queueEntry)
         if (
           data?.status &&
           data?.status !== "seated" &&
@@ -111,7 +111,7 @@ const OnlineQueue = ({ user }) => {
     }
     try {
       const queueResponse = await joinQueue(queueDetails)
-      localStorage.setItem("queueId", queueResponse._id)
+      localStorage.setItem(`queueEntry_${restaurantId}`, queueResponse._id)
       toast.success("Successfully joined queue")
       setCurrentlyQueuing(true)
     } catch (ex) {
@@ -180,8 +180,12 @@ const OnlineQueue = ({ user }) => {
                     {(restaurantQueueData.medium.calledNumber % 1000) + 2000}
                   </TableCell>
                   <TableCell className="text-xl font-bold">
-                    {restaurantQueueData.medium.lastNumber -
-                      restaurantQueueData.medium.calledNumber}
+                    {Math.max(
+                      restaurantQueueData.medium.lastNumber -
+                        restaurantQueueData.medium.calledNumber -
+                        1,
+                      0
+                    )}
                   </TableCell>
                 </TableRow>
                 <TableRow className="border-t border-black">
@@ -192,8 +196,12 @@ const OnlineQueue = ({ user }) => {
                     {(restaurantQueueData.large.calledNumber % 1000) + 3000}
                   </TableCell>
                   <TableCell className="text-xl font-bold">
-                    {restaurantQueueData.large.lastNumber -
-                      restaurantQueueData.large.calledNumber}
+                    {Math.max(
+                      restaurantQueueData.large.lastNumber -
+                        restaurantQueueData.large.calledNumber -
+                        1,
+                      0
+                    )}
                   </TableCell>
                 </TableRow>
               </TableBody>

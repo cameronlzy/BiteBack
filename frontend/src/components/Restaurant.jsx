@@ -303,7 +303,7 @@ const Restaurant = ({ user }) => {
               height={200}
             />
           )}
-          {user?.role === "customer" && (
+          {user?.role !== "owner" && user?.role !== "staff" && (
             <div className="mt-6 flex gap-4 justify-center">
               <CarouselButtonSwitcher
                 restaurant={restaurant}
