@@ -13,8 +13,7 @@ export async function createProfile(req, res) {
     const { error, value } = validateOwner(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { token, status, body } = await ownerService.createProfile(req.user, value);
-    if (token) setAuthCookie(res, token);
+    const { status, body } = await ownerService.createProfile(req.user, value);
     return res.status(status).json(body);
 }
 

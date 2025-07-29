@@ -6,6 +6,7 @@ import { validateRestaurant, validateRestaurantBulk, validatePatch, validateImag
 import Joi from '../validators/joi.js';
 import { dateFullOnly } from '../helpers/time.helper.js';
 import { wrapError } from '../helpers/response.js';
+import { setAuthCookie } from '../helpers/cookie.helper.js';
 
 export async function searchRestaurants(req, res) {
     // validate query
@@ -92,7 +93,8 @@ export async function createRestaurantBulk(req, res) {
     const { error, value } = validateRestaurantBulk(req.body);
     if (error) return res.status(400).json(wrapError(error.details[0].message));
 
-    const { status, body } = await restaurantService.createRestaurantBulk(req.user, value.restaurants);
+    const { token, status, body } = await restaurantService.createRestaurantBulk(req.user, value.restaurants);
+    if (token) setAuthCookie(res, token);
     return res.status(status).json(body);
 };
 

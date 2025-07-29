@@ -26,6 +26,7 @@ import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.se
 import { geocodeAddress } from '../helpers/geocode.js';
 import { escapeRegex } from '../helpers/regex.helper.js';
 import { error, success, wrapMessage } from '../helpers/response.js';
+import { generateAuthToken } from '../helpers/token.helper.js';
 
 export async function searchRestaurants(filters) {
   const { search, page, limit, sortBy, order } = filters;
@@ -295,7 +296,8 @@ export async function createRestaurantBulk(authUser, data) {
     user.profile.restaurants = restaurantIds;
     await user.profile.save(wrapSession(session));
 
-    return success(restaurantIds);
+    const token = generateAuthToken(user);
+    return { token, status: 200, body: restaurantIds };
   });
 }
 
