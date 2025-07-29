@@ -703,6 +703,7 @@ describe('restaurant test', () => {
 
         it('should return 403 if restaurant does not belong to user', async () => {
             let otherUser = await createTestUser('owner');
+            await otherUser.save();
             token = generateAuthToken(otherUser);
             cookie = setTokenCookie(token);
             const res = await request(server)

@@ -296,8 +296,12 @@ export async function createRestaurantBulk(authUser, data) {
     user.profile.restaurants = restaurantIds;
     await user.profile.save(wrapSession(session));
 
-    const token = generateAuthToken(user);
-    return { token, status: 200, body: restaurantIds };
+    if (user.isVerified) {
+      const token = generateAuthToken(user);
+      return { token, status: 200, body: restaurantIds };
+    } else {
+      return success(restaurantIds);
+    }
   });
 }
 
