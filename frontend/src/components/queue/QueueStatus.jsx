@@ -58,13 +58,18 @@ const QueueStatus = ({
 
   useEffect(() => {
     const fetchExistingOrder = async () => {
-      const orderId = localStorage.getItem("order_id")
+      const orderId = localStorage.getItem(
+        `order_id_${customerQueueData?.restaurant}`
+      )
       if (!orderId) return
 
       try {
         const existingOrder = await getOrderById(orderId)
         console.log(existingOrder)
-        if (existingOrder?.status === "pending") {
+        if (
+          existingOrder?.status === "pending" &&
+          existingOrder?.restaurant === customerQueueData?.restaurant
+        ) {
           setExistingCustomerOrder(existingOrder)
         }
       } catch (ex) {

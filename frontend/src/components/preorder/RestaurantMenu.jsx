@@ -38,7 +38,7 @@ const RestaurantMenu = ({ user }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const [orderItems, setOrderItems] = useState(
-    JSON.parse(localStorage.getItem("order_items")) || []
+    JSON.parse(localStorage.getItem(`order_items_${restaurantId}`)) || []
   )
 
   const isStaff = user?.role === "staff" && user?.restaurant === restaurantId
@@ -63,7 +63,10 @@ const RestaurantMenu = ({ user }) => {
         remarks: item.remarks,
       }))
 
-      localStorage.setItem("order_items", JSON.stringify(normalised))
+      localStorage.setItem(
+        `order_items_${restaurantId}`,
+        JSON.stringify(normalised)
+      )
       setOrderItems(normalised)
       setOriginalOrderItems(normalised)
       setEditingOrder(true)
@@ -130,7 +133,9 @@ const RestaurantMenu = ({ user }) => {
 
   const handleAddToCart = (item, quantity = 1, remarks = "") => {
     const normalisedRemarks = remarks.toLowerCase()
-    const existing = JSON.parse(localStorage.getItem("order_items") || "[]")
+    const existing = JSON.parse(
+      localStorage.getItem(`order_items_${restaurantId}`) || "[]"
+    )
 
     const existingIndex = existing.findIndex(
       (i) =>
@@ -153,7 +158,10 @@ const RestaurantMenu = ({ user }) => {
       })
     }
     setEditingBackup(null)
-    localStorage.setItem("order_items", JSON.stringify(existing))
+    localStorage.setItem(
+      `order_items_${restaurantId}`,
+      JSON.stringify(existing)
+    )
     setOrderItems(existing)
   }
 
@@ -167,7 +175,7 @@ const RestaurantMenu = ({ user }) => {
     })
     try {
       if (editingOrder) {
-        const orderId = localStorage.getItem("order_id")
+        const orderId = localStorage.getItem(`order_id_${restaurantId}`)
 
         const update = cleanedOrderItems.filter((item) => {
           const original = originalOrderItems.find(
@@ -246,13 +254,13 @@ const RestaurantMenu = ({ user }) => {
           })),
         }
         const order = await saveOrder(payload)
-        localStorage.setItem("order_id", order._id)
+        localStorage.setItem(`order_id_${restaurantId}`, order._id)
         window.dispatchEvent(new Event("order_id_change"))
         toast.success("Order submitted successfully")
       }
 
       setOrderItems([])
-      localStorage.removeItem("order_items")
+      localStorage.removeItem(`order_items_${restaurantId}`)
       navigate(from, { replace: true })
     } catch (ex) {
       toast.error("Failed to submit order")
@@ -270,7 +278,7 @@ const RestaurantMenu = ({ user }) => {
           (item.remarks || "").toLowerCase() === normalizedRemarks
         )
     )
-    localStorage.setItem("order_items", JSON.stringify(updated))
+    localStorage.setItem(`order_items_${restaurantId}`, JSON.stringify(updated))
     setOrderItems(updated)
   }
 
@@ -278,7 +286,9 @@ const RestaurantMenu = ({ user }) => {
     const fullItem = menuItems.find((m) => m._id === orderItem._id)
     if (!fullItem) return
 
-    const existing = JSON.parse(localStorage.getItem("order_items") || "[]")
+    const existing = JSON.parse(
+      localStorage.getItem(`order_items_${restaurantId}`) || "[]"
+    )
     const updated = existing.filter(
       (i) =>
         !(
@@ -289,7 +299,7 @@ const RestaurantMenu = ({ user }) => {
     )
     setEditingBackup(orderItem)
     setOrderItems(updated)
-    localStorage.setItem("order_items", JSON.stringify(updated))
+    localStorage.setItem(`order_items_${restaurantId}`, JSON.stringify(updated))
 
     setCurrentItemShown({
       ...fullItem,
@@ -308,7 +318,7 @@ const RestaurantMenu = ({ user }) => {
     if (editingBackup) {
       setOrderItems((prev) => [...prev, editingBackup])
       localStorage.setItem(
-        "order_items",
+        `order_items_${restaurantId}`,
         JSON.stringify([...orderItems, editingBackup])
       )
       setEditingBackup(null)
@@ -426,7 +436,10 @@ const RestaurantMenu = ({ user }) => {
             canOrder={canOrder}
             setOrderItems={(items) => {
               setOrderItems(items)
-              localStorage.setItem("order_items", JSON.stringify(items))
+              localStorage.setItem(
+                `order_items_${restaurantId}`,
+                JSON.stringify(items)
+              )
             }}
           />
         )}
