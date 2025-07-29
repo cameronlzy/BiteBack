@@ -288,7 +288,7 @@ export async function createRestaurantBulk(authUser, data) {
       // create restaurants
     const restaurantIds = [];
     for (const item of data) {
-      const restaurant = await createRestaurantHelper(authUser, item, session);
+      const restaurant = await createRestaurantHelper(user, item, session);
       restaurantIds.push(restaurant._id);
     }
 
