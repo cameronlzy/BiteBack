@@ -401,6 +401,8 @@ const RestaurantMenu = ({ user }) => {
     }
   }
 
+  console.log(menuItems)
+
   return loadingMenu ? (
     <div className="flex justify-center py-10">
       <LoadingSpinner />
@@ -410,17 +412,19 @@ const RestaurantMenu = ({ user }) => {
       <div className="text-center text-muted-foreground text-lg font-medium mb-4">
         No Menu Available
       </div>
-      <div className="flex justify-end">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={handleCreateMenuItem}
-          className="flex items-center gap-1"
-        >
-          <PlusCircle className="w-5 h-5" />
-          Add Menu Item
-        </Button>
-      </div>
+      {isOwnedByUser && (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleCreateMenuItem}
+            className="flex items-center gap-1"
+          >
+            <PlusCircle className="w-5 h-5" />
+            Add Menu Item
+          </Button>
+        </div>
+      )}
     </div>
   ) : (
     <div className="w-full space-y-6">
@@ -486,7 +490,7 @@ const RestaurantMenu = ({ user }) => {
         </div>
       </div>
 
-      <Tabs defaultValue={menuCategoryList[0]?.value} className="w-full">
+      <Tabs defaultValue={menuItems[0]?.category} className="w-full">
         <div className="flex justify-center">
           <TabsList className="flex flex-wrap gap-2">
             {menuCategoryList

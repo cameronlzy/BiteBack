@@ -42,7 +42,7 @@ const QueueStatus = ({
         : "Pending"
     setQueueStatus(newStatus)
     if (customerQueueData.status !== "waiting") {
-      localStorage.removeItem("currentQueue")
+      localStorage.removeItem(`queueEntry_${customerQueueData.restaurant}`)
     }
     const fetchRestaurant = async () => {
       try {

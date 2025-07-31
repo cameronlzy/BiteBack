@@ -11,22 +11,39 @@ const ReviewTrends = ({ data }) => {
   const [showReviewRate, setShowReviewRate] = useState(false)
   const mode = data?.[0]?.ratingMode ?? 0
 
-  const reviewData = data.map((d, i, arr) => {
-    const prev = i > 0 ? arr[i - 1] : null
+  let cumulativeRatingSum = 0
+  let cumulativeCount = 0
+
+  const reviewData = data.map((d, i) => {
+    const currentRatingSum = d.averageRating * d.count
+    cumulativeRatingSum += currentRatingSum
+    cumulativeCount += d.count
 
     const value = showReviewRate
       ? d.attendanceCount === 0
         ? 0
         : (d.count / d.attendanceCount) * 100
-      : d.averageRating
+      : cumulativeCount === 0
+      ? 0
+      : cumulativeRatingSum / cumulativeCount
 
-    const prevValue = prev
-      ? showReviewRate
-        ? prev.attendanceCount === 0
-          ? 0
-          : (prev.count / prev.attendanceCount) * 100
-        : prev.averageRating
-      : null
+    const prev = i > 0 ? data[i - 1] : null
+    const prevCount =
+      i > 0 ? data.slice(0, i).reduce((acc, x) => acc + x.count, 0) : 0
+    const prevSum =
+      i > 0
+        ? data
+            .slice(0, i)
+            .reduce((acc, x) => acc + x.averageRating * x.count, 0)
+        : 0
+
+    const prevValue = showReviewRate
+      ? prev?.attendanceCount
+        ? (prev.count / prev.attendanceCount) * 100
+        : 0
+      : prevCount === 0
+      ? null
+      : prevSum / prevCount
 
     const change =
       prevValue && prevValue !== 0
@@ -100,7 +117,7 @@ const ReviewTrends = ({ data }) => {
       <div className="items-center justify-center w-full flex flex-col">
         <h1 className="text-xl font-semibold mt-10 mb-4 flex items-center justify-center gap-2">
           <Star className="w-5 h-5" />
-          Reviews Over Time
+          Average Review Over Time
         </h1>
         <div className="flex justify-center mb-2">
           <Button
