@@ -161,6 +161,31 @@ const StaffQueue = () => {
     }
   }
 
+  const handleDownloadQueueQRCode = async () => {
+    const queueUrl = `${window.location.origin}/online-queue/${restaurantId}`
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+      queueUrl
+    )}&size=300x300`
+
+    try {
+      const response = await fetch(qrUrl, { mode: "cors" })
+      const blob = await response.blob()
+
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = blobUrl
+      link.download = `queue-qr-${encodeURI(restaurant.name)}.jpg`
+      link.style.display = "none"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(blobUrl)
+    } catch (ex) {
+      toast.error("Failed to download QR code")
+      console.error(ex)
+    }
+  }
+
   const queueGroups = [
     { label: "1-2 Pax", key: "small" },
     { label: "3-4 Pax", key: "medium" },
@@ -197,17 +222,22 @@ const StaffQueue = () => {
             </h2>
           )}
         </div>
-        <Button
-          variant={queueEnabled ? "destructive" : "default"}
-          onClick={handleToggleQueue}
-          disabled={togglingQueue}
-        >
-          {togglingQueue
-            ? "Toggling..."
-            : queueEnabled
-            ? "Disable Queue"
-            : "Enable Queue"}
-        </Button>
+        <div className="flex flex-row gap-4">
+          <Button
+            variant={queueEnabled ? "destructive" : "default"}
+            onClick={handleToggleQueue}
+            disabled={togglingQueue}
+          >
+            {togglingQueue
+              ? "Toggling..."
+              : queueEnabled
+              ? "Disable"
+              : "Enable"}
+          </Button>
+          <Button variant="outline" onClick={handleDownloadQueueQRCode}>
+            Download QR
+          </Button>
+        </div>
       </div>
 
       {queueGroups.map(({ label, key }) => (

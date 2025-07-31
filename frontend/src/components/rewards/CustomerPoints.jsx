@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
-import { Progress } from "../ui/progress"
 import { useLocation, useNavigate } from "react-router-dom"
 import {
   Tooltip,
@@ -55,8 +54,9 @@ const CustomerPoints = ({ restaurant }) => {
     fetchPoints()
   }, [restaurant])
 
-  const lowerBound = Math.floor(points / 1000) * 1000
-  const upperBound = points === 0 ? 1000 : Math.ceil(points / 1000) * 1000
+  let lowerBound = Math.floor(points / 1000) * 1000
+  let upperBound = points === 0 ? 1000 : Math.ceil(points / 1000) * 1000
+  if (upperBound === lowerBound) upperBound = lowerBound + 1000
   const progressValue =
     upperBound === lowerBound
       ? 100
@@ -78,10 +78,16 @@ const CustomerPoints = ({ restaurant }) => {
                   <span>{lowerBound}</span>
                   <span>{upperBound}</span>
                 </div>
-                <Progress
-                  value={progressValue}
-                  className="h-4 w-full rounded-full"
-                />
+                <div className="relative h-4 w-full rounded-full bg-muted overflow-hidden ">
+                  {progressValue < 1 ? (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-black rounded-full" />
+                  ) : (
+                    <div
+                      className="h-full bg-black transition-all duration-700"
+                      style={{ width: `${progressValue}%` }}
+                    />
+                  )}
+                </div>
               </div>
             </TooltipTrigger>
             <TooltipContent>

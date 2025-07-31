@@ -33,6 +33,9 @@ const ItemPage = ({
     if (quantity > 0) {
       onAddToCart(item, quantity, remarks)
       onClose()
+    } else {
+      toast.error("Quantity must be at least 1")
+      return
     }
   }
 
@@ -143,9 +146,21 @@ const ItemPage = ({
                         type="number"
                         min={1}
                         value={quantity}
-                        onChange={(e) =>
-                          setQuantity(Math.max(1, Number(e.target.value)))
-                        }
+                        onKeyDown={(e) => {
+                          if (["e", "E", "+", "-", "."].includes(e.key)) {
+                            e.preventDefault()
+                          }
+                        }}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          if (val === "") {
+                            setQuantity("")
+                            return
+                          }
+                          if (/^\d+$/.test(val)) {
+                            setQuantity(Number(val))
+                          }
+                        }}
                       />
                     </div>
 
