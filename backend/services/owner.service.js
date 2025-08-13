@@ -39,10 +39,7 @@ export async function createProfile(tempUser, data) {
         user.profile = profile._id;
         await user.save(wrapSession(session));
 
-        if (user.isVerified) {
-            const token = generateAuthToken(user);
-            return { token, status: 200, body: profile.toObject() };
-        } else {
+        if (!user.isVerified) {
             // send email
             const token = crypto.randomBytes(32).toString('hex');
             const hash = crypto.createHash('sha256').update(token).digest('hex');
@@ -53,8 +50,9 @@ export async function createProfile(tempUser, data) {
 
             const link = `${config.get('frontendLink')}/verify-email?token=${token}`;
             await sendVerifyEmail(user.email, user.username, link);
-            return success(profile.toObject());
+            
         }
+        return success(profile.toObject());
     });
 }
 

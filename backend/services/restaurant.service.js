@@ -26,6 +26,7 @@ import { deleteImagesFromCloudinary, deleteImagesFromDocument } from './image.se
 import { geocodeAddress } from '../helpers/geocode.js';
 import { escapeRegex } from '../helpers/regex.helper.js';
 import { error, success, wrapMessage } from '../helpers/response.js';
+import { generateAuthToken } from '../helpers/token.helper.js';
 
 export async function searchRestaurants(filters) {
   const { search, page, limit, sortBy, order } = filters;
@@ -281,21 +282,27 @@ export async function createRestaurant(authUser, data) {
 export async function createRestaurantBulk(authUser, data) {
   return await withTransaction(async (session) => {
     // update owner
-    const user = await User.findById(authUser._id).populate('profile').session(session);
+    let user = await User.findById(authUser._id).populate('profile').session(session);
     if (!user) return error(404, 'User not found');
     if (!user.profile) return error(404, 'Owner Profile not found');
 
       // create restaurants
     const restaurantIds = [];
     for (const item of data) {
-      const restaurant = await createRestaurantHelper(authUser, item, session);
+      const restaurant = await createRestaurantHelper(user, item, session);
       restaurantIds.push(restaurant._id);
     }
 
     user.profile.restaurants = restaurantIds;
     await user.profile.save(wrapSession(session));
 
-    return success(restaurantIds);
+    if (user.isVerified) {
+      user.profile = user.profile._id;
+      const token = generateAuthToken(user);
+      return { token, status: 200, body: restaurantIds };
+    } else {
+      return success(restaurantIds);
+    }
   });
 }
 

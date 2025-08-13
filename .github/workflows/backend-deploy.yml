@@ -3,7 +3,8 @@ name: Deploy Backend to Heroku
 on:
   push:
     branches:
-      - 'feature/backend-**'
+      - 'feature/backend-*'
+      - 'bugfix/backend*'
   pull_request:
     branches:
       - 'main'

@@ -73,9 +73,6 @@ const transporter = nodemailer.createTransport({
     user: config.get('email.user'),
     pass: config.get('email.pass'),
   },
-  tls: {
-    rejectUnauthorized: false,
-  },
 });
 
 async function sendEmail({ to, subject, text, html, attachments }) {
